@@ -1,0 +1,17 @@
+{
+  "nota": "Transcrito da saída do console de F-migracao.mjs (13/10/2026 ~02:30 BRT). O script quebrou no passo 6 (ja-atendo, seletor) antes de gravar o JSON; o passo 6 foi refeito em F-ja-atendo.mjs (ja-atendo-faxina.json). Capturas: capturas/F-migracao-*-barbearia.png.",
+  "planilha": { "arquivo": "C:/temp/ciclo-medicao/F-clientes-300.csv (fora do repo, gerado por F-gerar-csv.mjs)", "linhas": 305, "formato": "separador ';', latin1/Windows-1252, dd/mm/aaaa", "semTelefone": 12, "telefoneInvalido": 7, "semData": 18, "dataAmericana_m_d_aa": 5, "duplicadasNoFim": 5 },
+  "xlsx": { "alerta": "Não consegui ler o arquivo. Esse arquivo é uma planilha do Excel, e o importador lê CSV. No Excel: Arquivo, Salvar como, e escolha \"CSV UTF-8\". No Google Planilhas: Arquivo, Fazer download, \"Valores separados por vírgula\". Depois envie o arquivo novo." },
+  "csv300": {
+    "msAtePrevia": 323, "msImportar": 1798, "toques": 2,
+    "mapeamentoAutomatico": "Nome→Nome, Telefone→Telefone, E-mail→E-mail, Etiquetas→Nenhuma, Última visita→Última visita (ver captura F-migracao-importar-resultado-barbearia.png)",
+    "servicoPadraoDoMotor": "Barba · volta a cada 14 dias (1º da lista)",
+    "resultadoNaTela": ["266 clientes já passaram da hora de voltar", "De 273 com data de última visita informada. Já estão no Motor de Ciclo.", "294 clientes importados", "4 não importadas (duplicata)", "3 clientes entraram sem a última visita: a data da planilha não estava num formato que eu reconheço.", "7 linha(s) com erro: Telefone inválido: \"1234\" (linhas 43, 84, 125, 166, 207, 248, 289)"]
+  },
+  "banco": { "clientes": 295, "comAcentoCerto": 215, "comCaractereQuebrado": 0, "comUltimaVisita": 273, "ciclos": 273, "nomesRepetidos": 1, "obs": "295 = 294 importados + 1 cliente criado antes à mão" },
+  "depois": {
+    "recuperar": { "ms": 2234, "texto": "DÁ PARA RECUPERAR R$ 1.759,80 · R$ 1.759,80 de lucro · CLIENTES 266" },
+    "hoje": { "ms": 2205, "texto": "DÁ PARA RECUPERAR R$ 1.759,80 · 266 clientes para chamar de volta · VALE A PENA HOJE 261 clientes estão sumindo" },
+    "clientes": { "ms": 6632, "texto": "295 na carteira · 295 cadastros esse mês · 50 clientes na lista. Há mais para carregar." }
+  }
+}

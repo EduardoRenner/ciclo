@@ -1,0 +1,67 @@
+// Agente A · computador 1280×800 e 1440×900: ação principal DENTRO do <main> (exclui barra lateral,
+// barra inferior e assistente flutuante) visível sem rolar; largura do conteúdo vs largura útil.
+// Uso: node A-computador.mjs  → A-computador.json
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs';
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const BASE = 'http://localhost:3200';
+const fonte = readFileSync(new URL('./A-varredura.mjs', import.meta.url), 'utf8');
+// reaproveita a lista de rotas da varredura (rodada já feita); pega as rotas registradas no JSON
+const j = JSON.parse(readFileSync(new URL('./A-varredura.json', import.meta.url), 'utf8'));
+const rotas = [...new Map(Object.values(j).map((r) => [r.rota, r.logado])).entries()];
+void fonte;
+
+const browser = await chromium.launch({ channel: 'chrome' });
+const out = {};
+for (const [w, h] of [[1280, 800], [1440, 900]]) {
+  for (const [rota, logado] of rotas) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h }, colorScheme: 'light', locale: 'pt-BR', timezoneId: 'America/Sao_Paulo', ...(logado ? { storageState: 'C:/temp/ciclo-medicao/estado-A-dono.json' } : {}) });
+    const page = await ctx.newPage();
+    try {
+      await page.goto(BASE + rota, { waitUntil: 'networkidle', timeout: 60000 });
+      await page.waitForTimeout(300);
+      out[`${rota} @${w}`] = await page.evaluate(() => {
+        const vw = innerWidth, vh = innerHeight;
+        const main = document.querySelector('main') || document.body;
+        const fixo = (el) => { for (let p = el; p; p = p.parentElement) { const s = getComputedStyle(p); if (s.position === 'fixed') return true; } return false; };
+        const cands = [...main.querySelectorAll('a,button')].filter((el) => { const c = el.getAttribute('class') || ''; const r = el.getBoundingClientRect(); return /\bbg-acc\b/.test(c) && /text-on-acc/.test(c) && r.width > 0 && !fixo(el) && !el.closest('nav,aside'); });
+        const p = cands[0];
+        const pr = p ? p.getBoundingClientRect() : null;
+        // conteúdo: união horizontal de elementos com texto/borda/fundo dentro do main
+        let l = Infinity, r = -Infinity;
+        for (const n of main.querySelectorAll('*')) {
+          const s = getComputedStyle(n);
+          if (s.display === 'none' || s.visibility === 'hidden') continue;
+          const tem = [...n.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim()) || ['IMG', 'svg', 'INPUT', 'BUTTON', 'SELECT', 'TEXTAREA'].includes(n.tagName) || (s.backgroundColor !== 'rgba(0, 0, 0, 0)') || (s.borderTopStyle !== 'none' && s.borderTopWidth !== '0px');
+          if (!tem) continue;
+          const b = n.getBoundingClientRect(); if (b.width < 1) continue;
+          l = Math.min(l, b.left); r = Math.max(r, b.right);
+        }
+        const lat = [...document.querySelectorAll('nav,aside')].map((e) => e.getBoundingClientRect()).find((b) => b.left < 5 && b.height > vh * 0.8 && b.width < vw / 2);
+        const lw = lat ? Math.round(lat.width) : 0;
+        const util = vw - lw;
+        const larg = Math.round(r - l);
+        const h1 = document.querySelector('h1');
+        return {
+          lateral: lw, util, conteudo: larg, esq: Math.round(l), dir: Math.round(r),
+          vazioPct: Math.round((1 - larg / util) * 100),
+          altura: document.documentElement.scrollHeight, telas: +(document.documentElement.scrollHeight / vh).toFixed(1),
+          h1: h1 ? h1.innerText.trim().slice(0, 40) : null,
+          primarios: cands.length,
+          primario: p ? { texto: (p.innerText || p.getAttribute('aria-label') || '').trim().slice(0, 40), topo: Math.round(pr.top), semRolar: pr.top >= 0 && pr.bottom <= vh } : null,
+        };
+      });
+    } catch (e) { out[`${rota} @${w}`] = { erro: String(e.message).slice(0, 120) }; }
+    await ctx.close();
+  }
+}
+writeFileSync(new URL('./A-computador.json', import.meta.url), JSON.stringify(out, null, 1));
+const L = ['| Rota | Largura | Lateral | Conteúdo (esq→dir) | Vazio horizontal | Telas de altura | Primário no main | Visível sem rolar? |', '|---|---|---|---|---|---|---|---|'];
+for (const [k, v] of Object.entries(out)) {
+  const [rota, w] = k.split(' @');
+  if (v.erro) { L.push(`| ${rota} | ${w} | erro ${v.erro} |||||| `); continue; }
+  L.push(`| ${rota} | ${w} | ${v.lateral} | ${v.conteudo} (${v.esq}→${v.dir}) | ${v.vazioPct}% | ${v.telas} | ${v.primario ? v.primario.texto.replace(/\|/g, '/') + ` (${v.primarios})` : '—'} | ${v.primario ? (v.primario.semRolar ? 'sim' : `não (y=${v.primario.topo})`) : '—'} |`);
+}
+writeFileSync(new URL('./A-computador.md', import.meta.url), L.join('\n'));
+console.log('ok', Object.keys(out).length);
+await browser.close();

@@ -1,0 +1,87 @@
+{
+  "perfil": "celular",
+  "slug": "demo-espaco-vitoria",
+  "modo": "ocupado",
+  "telefone": "•••••••0013",
+  "totalMs": 52590,
+  "pausaFotoMs": 446,
+  "toques": 7,
+  "camposDigitados": 2,
+  "pedidosBook": 1,
+  "ok": false,
+  "horaEscolhida": "09:00",
+  "passos": [
+    {
+      "passo": "servicos visiveis (conteudo util)",
+      "msDesdeInicio": 809
+    },
+    {
+      "passo": "load",
+      "msDesdeInicio": 2285
+    },
+    {
+      "passo": "toca servico",
+      "msDesdeInicio": 2749,
+      "respostaMs": 396
+    },
+    {
+      "passo": "toca 1o profissional",
+      "msDesdeInicio": 2921,
+      "respostaMs": null
+    },
+    {
+      "passo": "toca dia +7 (terça-feira, dia 20)",
+      "msDesdeInicio": 3897,
+      "respostaMs": null
+    },
+    {
+      "passo": "horarios do dia visiveis",
+      "msDesdeInicio": 4381,
+      "esperaMs": 484
+    },
+    {
+      "passo": "toca horario 09:00",
+      "msDesdeInicio": 4603,
+      "respostaMs": 212
+    },
+    {
+      "passo": "toca campo nome",
+      "msDesdeInicio": 4873,
+      "respostaMs": null
+    },
+    {
+      "passo": "toca campo telefone",
+      "msDesdeInicio": 5046,
+      "respostaMs": null
+    },
+    {
+      "passo": "formulario preenchido",
+      "msDesdeInicio": 6695
+    },
+    {
+      "passo": "toca Confirmar (2x em 80 ms)",
+      "msDesdeInicio": 8182,
+      "estadoBotaoApos80ms": {
+        "disabled": true,
+        "ariaBusy": "true",
+        "ariaDisabled": null,
+        "texto": "Confirmar agendamento"
+      }
+    },
+    {
+      "passo": "ERRO/sem sucesso",
+      "msDesdeInicio": 53059,
+      "msDoToqueAteResultado": 45334
+    }
+  ],
+  "alertas": [],
+  "textoFinalTrecho": "Agendar em Espaço Vitória\nNegócio de exemplo. Ele não existe: dá para percorrer o agendamento inteiro, mas nenhum horário marcado será atendido.\nVisão de quem agenda\nVisão de quem atende\n1\nSERVIÇO\nManicure simples · 45min\nTrocar\n2\nPROFISSIONAL\nBruna Siqueira\nTrocar\n3\nDIA\nTER\n13\nQUA\n14\nQUI\n15\nSEX\n16\nSÁB\n17\nDOM\n18\nSEG\n19\nTER\n20\nQUA\n21\nQUI\n22\nSEX\n23\nSÁB\n24\nDOM\n25\nSEG\n26\n35 horários livres em terça-feira, 20 de outubro.\nManhã\n9 horários · a partir de 09:45\n09:45\n10:00\n10:15\n10:30\n10:45\n11:00\n11:15\n11:30\n11:45\nTarde\n24 horários · a partir de 12:00\nNoite\n2 horários · a partir de 18:00\nConfirmar agendamento",
+  "rolagemLateral": 0,
+  "consoleErros": [
+    "Failed to load resource: the server responded with a status of 409 (Conflict)"
+  ],
+  "reservaConcorrente": {
+    "status": 200,
+    "corpo": "{\"data\":{\"appointmentId\":\"61376c02-6db8-415b-92d4-1e9156f6175c\",\"reconhecimentoToken\":\"cmVjb25oZWNpbWVudG8uYmIzN2U4Y2EtZjE0NS00NWVlLTkwMTAtMjQxZmZjYTQ4MTU3Ois1NTExOTg3NjU5OTk5LjE4MDc0MTk5MTIzMjcuODM2ZjhlMGZhYmU3ZDg3NWJlNzE0YWNjZDY2Mjc0ZmRhZjg0OGEzMTI2ZjFiYzljYTA5Y2E4OTUxYzY1ODQ3Yg\"},\"meta\":{\"requestId\":\"req_fbc0b8e8acb048e9b86b4c0362e6f1f8\"}}"
+  }
+}

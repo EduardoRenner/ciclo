@@ -1,0 +1,17 @@
+// Agente A · confere o botão "Confirmar agendamento" do agendamento público (sondado como "coberto").
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs';
+import { fileURLToPath } from 'node:url';
+const browser = await chromium.launch({ channel: 'chrome' });
+const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, locale: 'pt-BR', timezoneId: 'America/Sao_Paulo' });
+const page = await ctx.newPage();
+await page.goto('http://localhost:3200/demo-dom-estilo/agendar', { waitUntil: 'networkidle' });
+const info = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button')].find((x) => /Confirmar agendamento/.test(x.innerText));
+  const out = [];
+  for (let p = b; p; p = p.parentElement) { const s = getComputedStyle(p); out.push(`${p.tagName}.${(p.getAttribute('class') || '').split(' ').slice(0, 3).join('.')} pe=${s.pointerEvents} vis=${s.visibility} op=${s.opacity} pos=${s.position} tr=${s.transform}`); if (out.length > 5) break; }
+  const r = b.getBoundingClientRect();
+  return { disabled: b.disabled, ariaDisabled: b.getAttribute('aria-disabled'), rect: [r.x, r.y, r.width, r.height].map(Math.round), cadeia: out, hit: document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.tagName };
+});
+console.log(JSON.stringify(info, null, 1));
+await page.screenshot({ path: fileURLToPath(new URL('../capturas/verifica-agendar-dobra-390-claro.png', import.meta.url)) });
+await browser.close();

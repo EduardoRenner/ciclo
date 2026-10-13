@@ -1,0 +1,37 @@
+{
+ "rota": "opengraph-image.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/opengraph-image.tsx"
+ ],
+ "componentes_compartilhados_usados": [],
+ "total": 4,
+ "textos": [
+  {
+   "texto": "CICLO: a agenda que avisa quem parou de voltar",
+   "arquivo": "src/app/opengraph-image.tsx",
+   "linha": 18,
+   "tipo": "texto"
+  },
+  {
+   "texto": "72px 80px",
+   "arquivo": "src/app/opengraph-image.tsx",
+   "linha": 31,
+   "tipo": "prop:padding"
+  },
+  {
+   "texto": "A agenda que avisa quem parou de voltar",
+   "arquivo": "src/app/opengraph-image.tsx",
+   "linha": 40,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Agenda, site de agendamento e caixa para quem atende com hora marcada.",
+   "arquivo": "src/app/opengraph-image.tsx",
+   "linha": 44,
+   "tipo": "texto",
+   "tag": "div"
+  }
+ ]
+}

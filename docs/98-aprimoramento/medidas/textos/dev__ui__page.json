@@ -1,0 +1,781 @@
+{
+ "rota": "dev/ui/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/dev/ui/page.tsx",
+  "src/app/dev/ui/vitrine.tsx",
+  "src/components/ui/action-bar.tsx",
+  "src/components/ui/appointment-row.tsx",
+  "src/components/ui/avatar.tsx",
+  "src/components/ui/filter-row.tsx",
+  "src/components/shell/tab-bar.tsx",
+  "src/components/shell/tabs.ts"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/alert-banner.tsx",
+  "src/components/ui/badge.tsx",
+  "src/components/ui/bloqueio-plano.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/chip.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/money-input.tsx",
+  "src/components/ui/phone-input.tsx",
+  "src/components/ui/select.tsx",
+  "src/components/ui/sheet.tsx",
+  "src/components/ui/skeleton.tsx",
+  "src/components/ui/stat-tile.tsx",
+  "src/components/ui/textarea.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/icone-anel.tsx",
+  "src/lib/formato.ts",
+  "src/lib/app-url.ts"
+ ],
+ "total": 115,
+ "textos": [
+  {
+   "texto": "Design system",
+   "arquivo": "src/app/dev/ui/page.tsx",
+   "linha": 18,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Componentes do CICLO",
+   "arquivo": "src/app/dev/ui/page.tsx",
+   "linha": 20,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Tokens de 03-DESIGN-SYSTEM §1. Largura travada em 430 px para conferir a regra dos 390 px.",
+   "arquivo": "src/app/dev/ui/page.tsx",
+   "linha": 22,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "03-DESIGN-SYSTEM §1",
+   "arquivo": "src/app/dev/ui/page.tsx",
+   "linha": 22,
+   "tipo": "texto",
+   "tag": "code"
+  },
+  {
+   "texto": "Button",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 45,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Confirmar",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 46,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Remarcar",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 47,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cobrar",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 48,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cancelar",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 49,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Salvando",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 50,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Confirmar",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 52,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escolha um horário antes de confirmar.",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 51,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Ação primária, largura cheia",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 54,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Chip",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 57,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Badge: cor sempre com marca",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 65,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Confirmado",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 66,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Aguardando",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 67,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Em risco",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 68,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Faltou",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 69,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Sinal pago",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 70,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Ciclo",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 71,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Campos (Input, PhoneInput, MoneyInput, Select, Textarea)",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 74,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Nome de quem vai ser atendido",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 76,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Maria Clara",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 76,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "A máscara é aplicada enquanto você digita.",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 77,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Preço do serviço",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 78,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Profissional",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 79,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Escolha uma",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 81,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Ana",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 83,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Bia",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 84,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Observações",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 86,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Alergia a acetona",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 86,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "E-mail",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 87,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Confira o endereço, falta o @.",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 87,
+   "tipo": "prop:erro"
+  },
+  {
+   "texto": "O Motor de Ciclo trouxe R$ 1.240 este mês.",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 93,
+   "tipo": "texto",
+   "tag": "AlertBanner"
+  },
+  {
+   "texto": "7 clientes estão sumindo",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 95,
+   "tipo": "texto",
+   "tag": "AlertBanner"
+  },
+  {
+   "texto": "Recuperar",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 94,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Alergia registrada nessa ficha.",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 97,
+   "tipo": "texto",
+   "tag": "AlertBanner"
+  },
+  {
+   "texto": "Avatar",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 101,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Maria Clara Souza",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 102,
+   "tipo": "prop:nome"
+  },
+  {
+   "texto": "Bruna Almeida",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 103,
+   "tipo": "prop:nome"
+  },
+  {
+   "texto": "Duda",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 104,
+   "tipo": "prop:nome"
+  },
+  {
+   "texto": "FilterRow: rola, encaixa e esmaece na borda",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 107,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Exemplo de filtros",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 108,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Todas",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 109,
+   "tipo": "texto",
+   "tag": "FilterRow"
+  },
+  {
+   "texto": "Na hora de voltar",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 109,
+   "tipo": "texto",
+   "tag": "FilterRow"
+  },
+  {
+   "texto": "Atrasadas",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 109,
+   "tipo": "texto",
+   "tag": "FilterRow"
+  },
+  {
+   "texto": "Em risco",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 109,
+   "tipo": "texto",
+   "tag": "FilterRow"
+  },
+  {
+   "texto": "Perdidas",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 109,
+   "tipo": "texto",
+   "tag": "FilterRow"
+  },
+  {
+   "texto": "BloqueioPlano: com evidência e sem",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 117,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "avisar todos de uma vez",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 127,
+   "tipo": "prop:acao"
+  },
+  {
+   "texto": "clientes esperando para voltar",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 128,
+   "tipo": "prop:substantivo"
+  },
+  {
+   "texto": "Avisar uma de cada vez, de graça",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 129,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "guardar ficha de saúde",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 135,
+   "tipo": "prop:acao"
+  },
+  {
+   "texto": "Atendido hoje",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 143,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "R$ 1.240",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 144,
+   "tipo": "prop:valor"
+  },
+  {
+   "texto": "Faltam 3 atendimentos hoje",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 145,
+   "tipo": "prop:apoio"
+  },
+  {
+   "texto": "Receita do mês",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 147,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "R$ 12.480",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 147,
+   "tipo": "prop:valor"
+  },
+  {
+   "texto": "Valor parado",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 148,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "R$ 3.150",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 148,
+   "tipo": "prop:valor"
+  },
+  {
+   "texto": "Card",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 151,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Bruna Almeida",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 153,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Volume russo · 14:30 · 2h30",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 154,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Bruna Almeida",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 160,
+   "tipo": "prop:clienteNome"
+  },
+  {
+   "texto": "Volume russo",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 160,
+   "tipo": "prop:servicoNome"
+  },
+  {
+   "texto": "Carla Souza",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 163,
+   "tipo": "prop:clienteNome"
+  },
+  {
+   "texto": "Volume egípcio · Ana",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 164,
+   "tipo": "prop:servicoNome"
+  },
+  {
+   "texto": "Duda Reis",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 169,
+   "tipo": "prop:clienteNome"
+  },
+  {
+   "texto": "Manutenção",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 169,
+   "tipo": "prop:servicoNome"
+  },
+  {
+   "texto": "Skeleton",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 173,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Sem clientes ainda",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 185,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Quando você cadastrar a primeira, ela aparece aqui com o histórico dela.",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 186,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Cadastrar cliente",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 187,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Sheet",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 192,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Abrir bottom sheet",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 194,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Detalhe do agendamento",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 199,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Abre por cima da agenda para não perder o contexto.",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 200,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Volume russo",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 203,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Hoje, 14:30 · R$ 220,00",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 204,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Confirmar",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 208,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Toast",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 214,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Sucesso",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 219,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Prontinho",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 217,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Agendamento confirmado.",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 217,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Erro",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 231,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Esse horário acabou de ser reservado",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 226,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Quer 15h ou 16h30?",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 227,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Ancorada acima da tab bar, no terço inferior da tela (§3.2). Aparece ao selecionar algo.",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 237,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Escala tipográfica",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 241,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "R$ 12.480",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 243,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Título de tela",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 244,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Valor de stat",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 245,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Corpo: português direto, sem jargão.",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 246,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Secundário",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 247,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Label / caption",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 248,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Shell: tab bar (TICKET-014)",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 252,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Fixa no rodapé da viewport, como no app de verdade, não uma cópia visual.",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 254,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ícone de ação",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 258,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "{icones.agenda} Novo agendamento",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 260,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Avisar 3",
+   "arquivo": "src/app/dev/ui/vitrine.tsx",
+   "linha": 266,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Aguardando",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 36,
+   "tipo": "prop:pending"
+  },
+  {
+   "texto": "Confirmado",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 37,
+   "tipo": "confirmação"
+  },
+  {
+   "texto": "Chegou",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 38,
+   "tipo": "prop:arrived"
+  },
+  {
+   "texto": "Concluído",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 39,
+   "tipo": "prop:done"
+  },
+  {
+   "texto": "Faltou",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 40,
+   "tipo": "prop:no_show"
+  },
+  {
+   "texto": "Cancelado",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 41,
+   "tipo": "prop:canceled"
+  },
+  {
+   "texto": "Vencido",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 42,
+   "tipo": "prop:expired"
+  },
+  {
+   "texto": "Risco alto de falta",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 109,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Risco alto de falta",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 107,
+   "tipo": "title"
+  },
+  {
+   "texto": "Atenção na ficha de saúde",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 115,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Atenção na ficha de saúde",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 113,
+   "tipo": "title"
+  },
+  {
+   "texto": "Tem observação",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 121,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Tem observação",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 119,
+   "tipo": "title"
+  },
+  {
+   "texto": "Navegação principal",
+   "arquivo": "src/components/shell/tab-bar.tsx",
+   "linha": 57,
+   "tipo": "aria-label"
+  }
+ ]
+}

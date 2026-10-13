@@ -1,0 +1,223 @@
+{
+ "rota": "onboarding/perfil/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/onboarding/perfil/page.tsx",
+  "src/app/onboarding/perfil/formulario.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/shell/selo.tsx",
+  "src/components/shell/tela-publica.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 32,
+ "textos": [
+  {
+   "texto": "Do seu jeito",
+   "arquivo": "src/app/onboarding/perfil/page.tsx",
+   "linha": 11,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Pra deixar o CICLO do seu jeito",
+   "arquivo": "src/app/onboarding/perfil/page.tsx",
+   "linha": 52,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "30 segundos, e dá pra pular.",
+   "arquivo": "src/app/onboarding/perfil/page.tsx",
+   "linha": 53,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Na minha cabeça ou num caderno",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 21,
+   "tipo": "prop:cabeca_caderno"
+  },
+  {
+   "texto": "No WhatsApp ou nos contatos do celular",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 22,
+   "tipo": "prop:whatsapp_contatos"
+  },
+  {
+   "texto": "Numa planilha",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 23,
+   "tipo": "prop:planilha"
+  },
+  {
+   "texto": "Em outro sistema",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 24,
+   "tipo": "prop:outro_sistema"
+  },
+  {
+   "texto": "Estou começando agora, ainda não tenho",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 25,
+   "tipo": "prop:comecando_agora"
+  },
+  {
+   "texto": "Trinks",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 30,
+   "tipo": "prop:trinks"
+  },
+  {
+   "texto": "Belasis",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 31,
+   "tipo": "prop:belasis"
+  },
+  {
+   "texto": "Booksy",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 33,
+   "tipo": "sucesso"
+  },
+  {
+   "texto": "Outro",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 34,
+   "tipo": "prop:outro"
+  },
+  {
+   "texto": "Só eu",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 43,
+   "tipo": "prop:so_eu"
+  },
+  {
+   "texto": "Eu e mais gente",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 44,
+   "tipo": "prop:com_equipe"
+  },
+  {
+   "texto": "Cliente que some e eu nem percebo",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 48,
+   "tipo": "prop:cliente_some"
+  },
+  {
+   "texto": "Não sei quanto sobra no fim do mês",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 49,
+   "tipo": "prop:quanto_sobra"
+  },
+  {
+   "texto": "Pular tudo e ir pro painel",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 121,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Onde estão seus clientes hoje?",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 128,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "A gente já te leva pro jeito mais rápido de trazer todo mundo, e te mostra na hora quem já passou do tempo de voltar.",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 130,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Onde estão seus clientes hoje?",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 135,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Pular esta pergunta",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 158,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Quem atende no seu negócio?",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 164,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Se for só você, a gente esconde as telas de equipe e comissão, que você não usa. Dá para ligar de volta em Config.",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 166,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Quem atende no seu negócio?",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 170,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Pular esta pergunta",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 195,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "O que mais te incomoda hoje?",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 201,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Quando tiver algo disso para resolver, aparece em primeiro no seu painel.",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 202,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O que mais te incomoda hoje?",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 204,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Pular esta pergunta",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 226,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Qual sistema você usa?",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 232,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Qual sistema você usa?",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 235,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/app/onboarding/perfil/formulario.tsx",
+   "linha": 258,
+   "tipo": "botão",
+   "tag": "button"
+  }
+ ]
+}

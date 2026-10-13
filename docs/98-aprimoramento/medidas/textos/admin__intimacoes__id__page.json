@@ -1,0 +1,344 @@
+{
+ "rota": "admin/intimacoes/[id]/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/intimacoes/[id]/page.tsx",
+  "src/app/admin/intimacoes/[id]/triagem.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/bloqueio-plano.tsx",
+  "src/lib/formato.ts",
+  "src/lib/app-url.ts",
+  "src/lib/utils.ts",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/select.tsx",
+  "src/components/ui/textarea.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/advocacia/escrever.ts"
+ ],
+ "total": 50,
+ "textos": [
+  {
+   "texto": "Triagem da intimação",
+   "arquivo": "src/app/admin/intimacoes/[id]/page.tsx",
+   "linha": 20,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "triar intimações e controlar prazos",
+   "arquivo": "src/app/admin/intimacoes/[id]/page.tsx",
+   "linha": 43,
+   "tipo": "prop:acao"
+  },
+  {
+   "texto": "Ver os casos",
+   "arquivo": "src/app/admin/intimacoes/[id]/page.tsx",
+   "linha": 44,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Hoje",
+   "arquivo": "src/app/admin/intimacoes/[id]/page.tsx",
+   "linha": 68,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Disponibilizada em",
+   "arquivo": "src/app/admin/intimacoes/[id]/page.tsx",
+   "linha": 73,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Regra: {dias} dias {…}{…}",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 33,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Disponibilizada em {…}",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 34,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Considerada publicada em {data(texto(m.publicado_em)!)}",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 35,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Contagem começa em {data(texto(m.inicio_em)!)}",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 36,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Dias que não contaram: {pulados.join(', ')}",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 39,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Último dia: {data(texto(m.vence_em)!)}",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 41,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Trecho lido: “{texto(m.trecho)}”",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 42,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Manifestação",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 60,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui registrar a decisão. Tente de novo.",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 77,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui registrar a decisão. Tente de novo.",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 80,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Prazo criado. Falta a confirmação da advocacia.",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 88,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Prazo confirmado",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 89,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Registrado: não gera prazo",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 91,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Intimação descartada",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 92,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Texto indisponível para o seu perfil.",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 102,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "A abertura do texto fica registrada na trilha.",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 104,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Esta intimação já foi decidida.",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 110,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Caso",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 114,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Nenhum caso (não é do escritório ou ainda não existe)",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 115,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Decisão",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 123,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Gera prazo",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 126,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Não gera prazo",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 127,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Descartar",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 128,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Prazo",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 147,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Sugestão a confirmar",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 150,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Fatal",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 152,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· fazer até {data(s.internoEm)}",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 153,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Confira a conta antes de usar: a data só entra no prazo quando você confirma.",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 162,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Usar a sugestão",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 172,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Informe a data.",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 176,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Não consegui ler o prazo com segurança.",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 176,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O que fazer",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 178,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Prazo fatal",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 180,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Fazer até (interno)",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 181,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Opcional. Antes do fatal.",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 181,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Confirmar prazo",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 190,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escolha o caso desta intimação.",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 187,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Digite a data do prazo fatal.",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 187,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Motivo",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 194,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Por que não gera prazo",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 196,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Por que descartar",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 196,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Fica no histórico da intimação.",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 197,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Escreva o motivo com pelo menos 5 letras.",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 208,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Registrar sem prazo",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 211,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Descartar intimação",
+   "arquivo": "src/app/admin/intimacoes/[id]/triagem.tsx",
+   "linha": 211,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

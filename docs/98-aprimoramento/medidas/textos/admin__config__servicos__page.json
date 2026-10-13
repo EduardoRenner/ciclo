@@ -1,0 +1,503 @@
+{
+ "rota": "admin/config/servicos/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/servicos/page.tsx",
+  "src/app/admin/config/servicos/lista.tsx",
+  "src/app/admin/config/servicos/formulario.tsx",
+  "src/components/config/upload-de-foto.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/badge.tsx",
+  "src/components/shell/vocabulario.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/chip.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/lib/formato.ts",
+  "src/lib/utils.ts",
+  "src/components/ui/icone-anel.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/money-input.tsx",
+  "src/components/ui/select.tsx",
+  "src/components/ui/sheet.tsx",
+  "src/components/ui/textarea.tsx",
+  "src/components/ui/toast.tsx"
+ ],
+ "total": 74,
+ "textos": [
+  {
+   "texto": "Serviços",
+   "arquivo": "src/app/admin/config/servicos/page.tsx",
+   "linha": 14,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "O que você oferece, quanto dura e quanto custa. Arraste para mudar a ordem que aparece na sua página.",
+   "arquivo": "src/app/admin/config/servicos/page.tsx",
+   "linha": 38,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Não consegui salvar a nova ordem. Tente de novo.",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 75,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 81,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Nenhum serviço ainda",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 127,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Cadastre o primeiro para poder marcar horário e cobrar por ele.",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 128,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Cadastrar {vocabulario.servico}",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 129,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Ativos",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 142,
+   "tipo": "texto",
+   "tag": "Chip"
+  },
+  {
+   "texto": "Todos",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 145,
+   "tipo": "texto",
+   "tag": "Chip"
+  },
+  {
+   "texto": "Novo",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 150,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "· volta em {…}d",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 174,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "ainda sem atendimentos suficientes para calcular a margem",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 212,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "% em {margem.atendimentos}",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 218,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Arquivado",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 236,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Fora do site",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 237,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Sinal",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 238,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Subir {s.name}",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 247,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Descer {s.name}",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 256,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "{frase} Ver o que a maquininha levou no mês →",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 278,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Ficha de consumo",
+   "arquivo": "src/app/admin/config/servicos/lista.tsx",
+   "linha": 298,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Defina um preço maior que zero.",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 89,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Defina um valor da hora maior que zero.",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 93,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Defina um valor de meia diária maior que zero, ou desmarque \"Também cobra meia diária\".",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 97,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui salvar o serviço.",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 129,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Serviço atualizado",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 133,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Serviço cadastrado",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 133,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 139,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Editar serviço",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 145,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Novo serviço",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 145,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Nome",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 147,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Descrição (opcional)",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 150,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Duração (min)",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 158,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Preço por hora",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 176,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Taxa de visita",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 176,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Diária",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 176,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Preço",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 176,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Como cobra",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 185,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Muda só como o preço aparece pro cliente. O valor que entra no caixa continua ajustável na hora de fechar.",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 188,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Preço fechado",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 190,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Por hora",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 191,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Taxa de visita + hora",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 192,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Diária",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 193,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Sob orçamento",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 194,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Valor da hora (depois da visita)",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 198,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Também cobra meia diária",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 210,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Meia diária",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 212,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Preparo antes (min)",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 218,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Limpeza depois (min)",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 228,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Volta em quantos dias, em média",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 240,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "É o que o Motor de Ciclo usa enquanto não tem visitas suficientes para calcular o ritmo de cada pessoa.",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 248,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Foto do serviço",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 256,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Sinal (%)",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 261,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Quem agenda vê \"sinal de {…}\" antes de confirmar. Você combina o pagamento direto. O CICLO não cobra.",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 273,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Deixe 0 se não pede sinal. O valor aparece antes de confirmar o horário.",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 274,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Aparece no site para agendamento online",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 285,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Salvar alterações",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 295,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cadastrar serviço",
+   "arquivo": "src/app/admin/config/servicos/formulario.tsx",
+   "linha": 295,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "foto do serviço",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 41,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui subir a {rotulo}",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 56,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente outra imagem.",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 56,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Foto atualizada",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 69,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Ela já aparece na sua página.",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 69,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 71,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira sua conexão e tente de novo.",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 71,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui remover a {rotulo}",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 83,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente de novo.",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 83,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 89,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira sua conexão e tente de novo.",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 89,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Enviando…",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 116,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Trocar foto",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 116,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Adicionar foto",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 116,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Remover",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 126,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Aparece na sua página pública. Até 2MB.",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 131,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Salve primeiro para poder adicionar uma foto.",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 131,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

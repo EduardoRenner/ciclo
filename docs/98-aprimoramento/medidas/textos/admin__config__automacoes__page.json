@@ -1,0 +1,88 @@
+{
+ "rota": "admin/config/automacoes/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/automacoes/page.tsx",
+  "src/app/admin/config/automacoes/automacoes.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/card.tsx",
+  "src/components/ui/toast.tsx"
+ ],
+ "total": 11,
+ "textos": [
+  {
+   "texto": "Automações",
+   "arquivo": "src/app/admin/config/automacoes/page.tsx",
+   "linha": 14,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Automações",
+   "arquivo": "src/app/admin/config/automacoes/page.tsx",
+   "linha": 36,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Você decide o quanto cada uma pode fazer sem passar por você. Quase todas param antes de agir, e a tela diz por quê.",
+   "arquivo": "src/app/admin/config/automacoes/page.tsx",
+   "linha": 49,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Não deu para salvar agora.",
+   "arquivo": "src/app/admin/config/automacoes/automacoes.tsx",
+   "linha": 53,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Sem conexão agora. O que você mudou não foi salvo.",
+   "arquivo": "src/app/admin/config/automacoes/automacoes.tsx",
+   "linha": 57,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Ativa",
+   "arquivo": "src/app/admin/config/automacoes/automacoes.tsx",
+   "linha": 89,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Parada",
+   "arquivo": "src/app/admin/config/automacoes/automacoes.tsx",
+   "linha": 89,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Está pronta, mas ainda não roda sozinha: falta ligar o envio no WhatsApp. Enquanto isso, ela aparece para você resolver na mão.",
+   "arquivo": "src/app/admin/config/automacoes/automacoes.tsx",
+   "linha": 95,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Faz parte do produto: {a.motivoDoTeto}",
+   "arquivo": "src/app/admin/config/automacoes/automacoes.tsx",
+   "linha": 103,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Nível de {a.nome}",
+   "arquivo": "src/app/admin/config/automacoes/automacoes.tsx",
+   "linha": 107,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Não vai além daqui: {a.motivoDoTeto}",
+   "arquivo": "src/app/admin/config/automacoes/automacoes.tsx",
+   "linha": 146,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

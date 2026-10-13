@@ -1,0 +1,2798 @@
+{
+ "rota": "admin/clientes/[id]/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/clientes/[id]/page.tsx",
+  "src/app/admin/clientes/[id]/advocacia.tsx",
+  "src/app/admin/clientes/[id]/ficha.tsx",
+  "src/app/admin/pendencias/fila.tsx",
+  "src/components/advocacia/documentos.tsx",
+  "src/components/ui/avatar.tsx",
+  "src/components/ui/icon-button.tsx",
+  "src/components/ui/action-bar.tsx",
+  "src/components/ui/segmented.tsx",
+  "src/lib/preferencias.ts",
+  "src/app/admin/clientes/[id]/fidelidade.tsx",
+  "src/app/admin/clientes/[id]/direitos.tsx",
+  "src/app/admin/clientes/[id]/fotos.tsx",
+  "src/app/admin/clientes/[id]/notas.tsx",
+  "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+  "src/app/admin/clientes/[id]/saude.tsx",
+  "src/components/advocacia/atalhos-da-fila.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/badge.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/section-header.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/icone-anel.tsx",
+  "src/components/ui/sheet.tsx",
+  "src/components/ui/stat-tile.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/formato.ts",
+  "src/lib/app-url.ts",
+  "src/lib/mensagens.ts",
+  "src/components/ui/textarea.tsx",
+  "src/lib/advocacia/escrever.ts",
+  "src/components/ui/input.tsx",
+  "src/components/ui/select.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/chip.tsx",
+  "src/components/ui/money-input.tsx",
+  "src/components/shell/vocabulario.tsx"
+ ],
+ "total": 431,
+ "textos": [
+  {
+   "texto": "Cliente",
+   "arquivo": "src/app/admin/clientes/[id]/page.tsx",
+   "linha": 25,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Titular",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 22,
+   "tipo": "prop:titular"
+  },
+  {
+   "texto": "Cônjuge",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 23,
+   "tipo": "prop:conjuge"
+  },
+  {
+   "texto": "Filho ou filha",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 24,
+   "tipo": "prop:filho_filha"
+  },
+  {
+   "texto": "Pai ou mãe",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 25,
+   "tipo": "prop:pai_mae"
+  },
+  {
+   "texto": "Irmão ou irmã",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 26,
+   "tipo": "prop:irmao_irma"
+  },
+  {
+   "texto": "Neto ou neta",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 27,
+   "tipo": "prop:neto_neta"
+  },
+  {
+   "texto": "Sócio ou sócia",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 28,
+   "tipo": "prop:socio_socia"
+  },
+  {
+   "texto": "Outro vínculo",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 29,
+   "tipo": "prop:outro"
+  },
+  {
+   "texto": "Próximo passo",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 75,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Depende do cliente",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 78,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Com o escritório",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 78,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· atrasado",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 79,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Nada pendente com este cliente.",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 83,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Caso",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 102,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Estrutura da família",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 110,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Pendências",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 118,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Nenhuma pendência aberta.",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 120,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Casos",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 125,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Nenhum caso ainda.",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 129,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Abrir um caso",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 131,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Sigiloso",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 142,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Documentos",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 162,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Pessoas da família",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 169,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Nenhuma pessoa cadastrada além do cliente.",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 172,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Outro vínculo",
+   "arquivo": "src/app/admin/clientes/[id]/advocacia.tsx",
+   "linha": 177,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Em dia",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 57,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Está na hora de voltar",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 58,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Atrasada",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 59,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Em risco de perder",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 60,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Perdida",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 61,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Atendida",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 75,
+   "tipo": "prop:done"
+  },
+  {
+   "texto": "Faltou",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 76,
+   "tipo": "prop:no_show"
+  },
+  {
+   "texto": "Cancelada",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 77,
+   "tipo": "prop:canceled"
+  },
+  {
+   "texto": "Aguardando",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 78,
+   "tipo": "prop:pending"
+  },
+  {
+   "texto": "Confirmada",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 79,
+   "tipo": "confirmação"
+  },
+  {
+   "texto": "Chegou",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 80,
+   "tipo": "prop:arrived"
+  },
+  {
+   "texto": "Venceu",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 81,
+   "tipo": "prop:expired"
+  },
+  {
+   "texto": "Lembrete",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 86,
+   "tipo": "prop:reminder"
+  },
+  {
+   "texto": "Confirmação",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 87,
+   "tipo": "confirmação"
+  },
+  {
+   "texto": "Hora de voltar",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 88,
+   "tipo": "prop:cycle"
+  },
+  {
+   "texto": "Campanha",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 89,
+   "tipo": "prop:campaign"
+  },
+  {
+   "texto": "Aviso",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 90,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Pedido de avaliação",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 91,
+   "tipo": "prop:review"
+  },
+  {
+   "texto": "Indicação",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 95,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Instagram",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 96,
+   "tipo": "prop:instagram"
+  },
+  {
+   "texto": "Google",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 97,
+   "tipo": "prop:google"
+  },
+  {
+   "texto": "Passou na frente",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 98,
+   "tipo": "prop:passou_na_frente"
+  },
+  {
+   "texto": "Resumo",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 114,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Histórico",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 115,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Fidelidade",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 116,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Ficha",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 117,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Anotado",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 190,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Se marcar, a volta conta para o Motor de Ciclo.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 190,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui anotar a chamada",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 192,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "A mensagem no WhatsApp não muda. Só esta volta pode não aparecer no que o Motor trouxe.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 192,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "{{nome}}, adoro te atender! Que tal indicar alguém? A pessoa agenda o primeiro horário por aqui, sem esperar resposta: {{link}}",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 283,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Pode chamar de novo",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 307,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui gravar",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 310,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 310,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui salvar.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 345,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Ficha atualizada",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 348,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 354,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Sem telefone",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 373,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Editar ficha",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 377,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "há {ciclo.lateDays} dias",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 403,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Para {ciclo.serviceName}.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 413,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Costuma voltar",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 413,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Para {ciclo.serviceName}.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 426,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Prioridade para chamar: {…} · nota {nota.nota} · {…}",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 444,
+   "tipo": "texto",
+   "tag": "summary"
+  },
+  {
+   "texto": "{p.pontos} de {p.maximo}",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 452,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Como atender",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 465,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Nada anotado ainda. Toque para registrar as preferências de atendimento.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 473,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Observações",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 492,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Seções da ficha",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 503,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Resumo",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 508,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Valor atendido",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 518,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Sobrou",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 529,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "nenhuma comanda fechada ainda",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 533,
+   "tipo": "prop:apoio"
+  },
+  {
+   "texto": "de {…} de {metricas.visitas} visitas",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 535,
+   "tipo": "prop:apoio"
+  },
+  {
+   "texto": "de todas as visitas",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 536,
+   "tipo": "prop:apoio"
+  },
+  {
+   "texto": "Visitas",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 540,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Ticket médio",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 541,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Faltas",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 542,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Lucro por ano",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 549,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "no ritmo de hoje",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 549,
+   "tipo": "prop:apoio"
+  },
+  {
+   "texto": "Criar orçamento",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 562,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Orçamento é do plano Essencial. Veja os planos em Configurações, Meu plano.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 558,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Indicar",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 575,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cadastre um telefone válido na ficha para poder mandar o convite.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 572,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Relacionamento",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 581,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Aniversário em {…}",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 586,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Aniversário em",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 586,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Sempre atende com {…}",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 592,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Veio por indicação de",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 602,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Já trouxe {indicados.length}",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 617,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "No Equipe, isso creditaria pontos pros dois lados automaticamente.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 640,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Gerencie seu plano em {APP_HOST}.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 644,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ver planos",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 647,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Fidelidade",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 663,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Ficha",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 684,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Histórico",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 703,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Atendimentos ({historico.length})",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 705,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Ainda não veio nenhuma vez.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 708,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Mensagens enviadas",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 736,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Horário",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 758,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Mensagem",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 762,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Mensagem pronta",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 768,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Pediu para não receber mensagens. Respeite o pedido.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 772,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Foi engano: voltar a chamar",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 776,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Telefone cadastrado não parece válido. Toque no lápis para corrigir.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 780,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sem telefone cadastrado: o WhatsApp abre para você escolher o contato.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 790,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Precisa de um horário marcado",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 801,
+   "tipo": "title"
+  },
+  {
+   "texto": "Precisa de um horário marcado.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 804,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Editar meus modelos",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 829,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Indicar",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 836,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Mandar no WhatsApp",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 852,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Editar ficha",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 858,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Nome",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 861,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Telefone",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 870,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Aniversário",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 879,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Como atender",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 889,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Perfil",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 902,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "CPF (opcional)",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 905,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Gênero (opcional)",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 914,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Endereço (opcional)",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 923,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Contato de emergência (opcional)",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 931,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Nome e telefone",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 935,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Sempre atende com",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 941,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Sem preferência",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 947,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Bloquear agendamento online Continua sendo atendido normalmente, só não marca sozinho pelo site.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 965,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Continua sendo atendido normalmente, só não marca sozinho pelo site.",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 967,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Etiquetas (separadas por vírgula)",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 973,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Observações",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 982,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Salvar",
+   "arquivo": "src/app/admin/clientes/[id]/ficha.tsx",
+   "linha": 998,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Aprovar",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 20,
+   "tipo": "prop:aprovar"
+  },
+  {
+   "texto": "Recebi",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 21,
+   "tipo": "prop:receber"
+  },
+  {
+   "texto": "Conferi",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 22,
+   "tipo": "prop:concluir"
+  },
+  {
+   "texto": "Devolver",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 23,
+   "tipo": "prop:devolver"
+  },
+  {
+   "texto": "Pendência aprovada",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 27,
+   "tipo": "prop:aprovar"
+  },
+  {
+   "texto": "Marcada como recebida",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 28,
+   "tipo": "prop:receber"
+  },
+  {
+   "texto": "Pendência concluída",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 29,
+   "tipo": "prop:concluir"
+  },
+  {
+   "texto": "Devolvida ao cliente",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 30,
+   "tipo": "prop:devolver"
+  },
+  {
+   "texto": "Rascunho",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 35,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Aguardando",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 36,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Devolvida",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 37,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Recebida",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 38,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Em conferência",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 39,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "pendência",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 97,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "pendências",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 97,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· a mais antiga há {g.diasEmAberto} {…}",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 98,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· aberta hoje",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 98,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "1 atrasada",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 101,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "{g.atrasados} atrasadas",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 101,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Passou de 10 dias sem resposta: vale ligar.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 107,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Dia de avisar o que falta.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 109,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Dia de lembrar: {g.lembrete.marco} dias sem resposta.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 110,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ligar",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 120,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Liguei",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 123,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cobrar pelo WhatsApp",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 139,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "j k",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 151,
+   "tipo": "aria-keyshortcuts"
+  },
+  {
+   "texto": "· com a equipe",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 157,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· até {dataCurta(i.venceEm)}",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 158,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· {i.rodada}ª rodada",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 159,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Devolvida: {i.motivoDaDevolucao}",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 162,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Atrasada",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 165,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "O que precisa ser corrigido",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 171,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Fica no histórico da pendência e abre uma nova rodada de lembretes.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 172,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Devolver",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 187,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escreva o motivo com pelo menos 5 letras.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 183,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 190,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Salvando a ação anterior.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 203,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Ver mais",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 222,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escolha o arquivo.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 45,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Não consegui enviar. Tente de novo.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 55,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Documento recebido. Aguardando conferência.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 57,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Documento salvo",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 57,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui abrir o documento.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 71,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui salvar a conferência.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 87,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Documento aceito",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 94,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Documento recusado",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 94,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Nenhum documento ainda.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 104,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Outro",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 118,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· versão {d.versao}",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 119,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· vale até {d.validade.slice(8, 10)}/{d.validade.slice(5, 7)}",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 120,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Abrir",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 130,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Aguarde a ação anterior.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 129,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Aceitar",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 135,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Aguarde a ação anterior.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 134,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Recusar",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 138,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Por que recusar",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 145,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "O cliente vai precisar mandar de novo.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 145,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Recusar documento",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 155,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escreva o motivo com pelo menos 5 letras.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 151,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 158,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Guardar documentos faz parte de um plano acima do atual. Veja em Configurações, Meu plano.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 176,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Arquivo",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 180,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Nome do documento",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 188,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Sem nome? Usamos o do arquivo.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 188,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Categoria",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 189,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "De onde veio",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 196,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "O cliente mandou (fica a conferir)",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 197,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Feito pela equipe",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 198,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Enviar",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 207,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 210,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Adicionar documento",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 217,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Máquina",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 12,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Barba",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 13,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "navalha, máquina, não faz",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 13,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Bebida de sempre",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 14,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "cerveja, café...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 14,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 15,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "redemoinho, alergia...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 15,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Formato",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 18,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "quadrada, bailarina...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 18,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Cor favorita",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 19,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "nude, vermelho...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 19,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Alergia",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 20,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "acetona, resina...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 20,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 21,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "unha fraca, cutícula sensível...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 21,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Química",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 24,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "progressiva, coloração...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 24,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Cor/tom",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 25,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "7.1, acaju...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 25,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Alergia",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 26,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "amônia, PPD...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 26,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 27,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Curvatura",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 30,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "C, D, L...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 30,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Espessura",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 31,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Alergia",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 32,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "cola, cianoacrilato...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 32,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 33,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "olho sensível, lacrimeja...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 33,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Formato",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 36,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "reta, arqueada...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 36,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Cor da henna",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 37,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "castanho médio...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 37,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Alergia",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 38,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 39,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "falha na cauda, cicatriz...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 39,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Cera",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 42,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "quente, fria, egípcia...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 42,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Sensibilidade",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 43,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "pele muito sensível?",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 43,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Alergia",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 44,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 45,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Tipo de pele",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 48,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "oleosa, seca, mista...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 48,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Ativos em uso",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 49,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "ácido, retinol...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 49,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Alergia",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 50,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 51,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Preferência",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 56,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Alergia / restrição",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 57,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 58,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Atendimento",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 49,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Digite um número de pontos válido.",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 60,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Pontos",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 68,
+   "tipo": "prop:reason"
+  },
+  {
+   "texto": "Resgate",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 68,
+   "tipo": "prop:reason"
+  },
+  {
+   "texto": "Não consegui lançar.",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 73,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Pontos adicionados",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 80,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Pontos resgatados",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 80,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 85,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Escolha um plano.",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 94,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui assinar.",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 107,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Assinatura ativada",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 131,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 134,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui cancelar",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 147,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Assinatura cancelada",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 151,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 153,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 153,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Fidelidade",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 160,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Pontos",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 166,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Lançar",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 170,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Progresso até o próximo prêmio",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 191,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Faltam {faltam} pontos",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 199,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "para {config.rewardLabel}",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 199,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "para o próximo prêmio",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 199,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· cobra dia {assinatura.billingDay}",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 231,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· {assinatura.sessionsPerMonth}x",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 231,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· ilimitado",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 231,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Já usou {assinatura.visitasNoCiclo} de {assinatura.sessionsPerMonth} neste ciclo",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 241,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{assinatura.restantes} de {assinatura.sessionsPerMonth} restantes neste ciclo",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 242,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Cancelar assinatura",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 254,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Sem assinatura",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 262,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Assinar plano",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 270,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Assinatura e clube fazem parte do plano Avançado.",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 268,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Lançar pontos",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 278,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Quantidade",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 281,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Motivo",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 292,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Corte de hoje, resgate de brinde...",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 296,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Resgatar",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 308,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Adicionar",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 312,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Assinar plano",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 318,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Dia da cobrança",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 333,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Confirmar assinatura",
+   "arquivo": "src/app/admin/clientes/[id]/fidelidade.tsx",
+   "linha": 350,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Não consegui gerar a cópia",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 61,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Cópia gerada",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 74,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "O arquivo tem tudo que o sistema guarda sobre ela.",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 74,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 78,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 78,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui apagar",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 94,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Dados apagados",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 98,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "O histórico que a lei exige guardar ficou sem identificação.",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 98,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 103,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 103,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Direitos sobre os dados",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 110,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Ela pode pedir uma cópia de tudo que você guarda sobre ela, ou pedir para sumir da sua base. As duas coisas exigem confirmação em duas etapas.",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 113,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Antes disso, ligue a verificação em duas etapas na sua conta:",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 119,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Configurações · Segurança",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 121,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Baixar os dados",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 131,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Apagar os dados",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 137,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Apagar os dados de {nome}?",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 146,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Não dá para voltar atrás.",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 147,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "O nome, o telefone e as anotações somem. Os atendimentos e os valores continuam no histórico do negócio sem identificação: é o que a lei manda guardar, e é o que mantém seu caixa fechando.",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 151,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Apagar mesmo assim",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 155,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cancelar",
+   "arquivo": "src/app/admin/clientes/[id]/direitos.tsx",
+   "linha": 158,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Antes",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 16,
+   "tipo": "prop:before"
+  },
+  {
+   "texto": "Depois",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 16,
+   "tipo": "prop:after"
+  },
+  {
+   "texto": "Referência",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 16,
+   "tipo": "prop:reference"
+  },
+  {
+   "texto": "Autorizo o uso das minhas fotos de antes/depois para registro do atendimento e, se o negócio decidir mostrar, para divulgação (site, redes sociais). Posso retirar esta autorização a qualquer momento.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 27,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui subir a foto",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 76,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente outra imagem.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 76,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Foto adicionada",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 80,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 82,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira sua conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 82,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui registrar o consentimento",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 99,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 99,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 108,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira sua conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 108,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui revogar",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 122,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 122,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Consentimento de uso de imagem revogado",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 127,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 129,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira sua conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 129,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui abrir a foto",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 141,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 141,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 146,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira sua conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 146,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui publicar",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 158,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 158,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Foto publicada no site",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 162,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 164,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira sua conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 164,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui tirar do site",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 175,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 175,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Foto tirada do site",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 179,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 181,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira sua conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 181,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui excluir",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 192,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 192,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Foto excluída",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 197,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 199,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira sua conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 199,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Fotos de antes/depois",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 220,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Adicionar foto",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 236,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Sem autorização de uso de imagem ativa. Ao escolher uma foto, a tela pede a autorização antes de enviar.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 249,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Autorização de uso de imagem ativa · revogar",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 253,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Nenhuma foto ainda.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 258,
+   "tipo": "texto",
+   "tag": "Card"
+  },
+  {
+   "texto": "Autorizar uso de imagem",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 284,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Necessário antes da primeira foto dessa pessoa.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 285,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Autorizar e enviar foto",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 292,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cancelar",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 295,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Foto",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 304,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Publicada no site · tirar do ar",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 314,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Publicar no site",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 325,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Conceda a autorização de uso de imagem dessa pessoa antes de publicar.",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 322,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Excluir foto",
+   "arquivo": "src/app/admin/clientes/[id]/fotos.tsx",
+   "linha": 330,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escreva a anotação.",
+   "arquivo": "src/app/admin/clientes/[id]/notas.tsx",
+   "linha": 31,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui salvar.",
+   "arquivo": "src/app/admin/clientes/[id]/notas.tsx",
+   "linha": 43,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/notas.tsx",
+   "linha": 52,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Anotações",
+   "arquivo": "src/app/admin/clientes/[id]/notas.tsx",
+   "linha": 59,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "O que vale lembrar da próxima vez...",
+   "arquivo": "src/app/admin/clientes/[id]/notas.tsx",
+   "linha": 68,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Cancelar",
+   "arquivo": "src/app/admin/clientes/[id]/notas.tsx",
+   "linha": 84,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Salvar",
+   "arquivo": "src/app/admin/clientes/[id]/notas.tsx",
+   "linha": 87,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Adicionar anotação",
+   "arquivo": "src/app/admin/clientes/[id]/notas.tsx",
+   "linha": 93,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Pacotes e carteira",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 43,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Saldo na carteira",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 49,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Cliente deve",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 51,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Cliente tem",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 51,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Vence em",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 66,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Nada contratado ainda.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 72,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Um pacote de sessões pagas na frente é o jeito mais direto de garantir que ela volte.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 73,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Vender pacote",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 82,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Lançar crédito",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 85,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escolha o serviço do pacote.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 137,
+   "tipo": "erro"
+  },
+  {
+   "texto": "O pacote precisa ter de 1 a 100 sessões.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 141,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui vender o pacote.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 161,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Pacote vendido",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 165,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "As sessões já podem ser usadas na comanda.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 165,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 170,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Vender pacote",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 176,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Sessões pagas na frente, consumidas na comanda.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 176,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Quantas sessões",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 185,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Quanto ela pagou",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 186,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Já vem no preço cheio das sessões; ajuste se houver desconto.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 186,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Vence em (opcional)",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 187,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Vender pacote",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 196,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Diga o valor do crédito.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 213,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Escreva o motivo: é o que você vai ler daqui a três meses.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 217,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui lançar o crédito.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 231,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Crédito lançado",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 235,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "O saldo aparece na comanda dela.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 235,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 238,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Lançar crédito",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 247,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Sinal que virou crédito, cortesia, troco que ficou.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 248,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Valor do crédito",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 251,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Motivo",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 253,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Fica registrado no histórico da carteira.",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 257,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Lançar crédito",
+   "arquivo": "src/app/admin/clientes/[id]/pacotes-carteira.tsx",
+   "linha": 267,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Dado de saúde",
+   "arquivo": "src/app/admin/clientes/[id]/saude.tsx",
+   "linha": 19,
+   "tipo": "prop:health_data"
+  },
+  {
+   "texto": "Uso de imagem",
+   "arquivo": "src/app/admin/clientes/[id]/saude.tsx",
+   "linha": 20,
+   "tipo": "prop:image_use"
+  },
+  {
+   "texto": "Marketing",
+   "arquivo": "src/app/admin/clientes/[id]/saude.tsx",
+   "linha": 21,
+   "tipo": "prop:marketing"
+  },
+  {
+   "texto": "Termos de uso",
+   "arquivo": "src/app/admin/clientes/[id]/saude.tsx",
+   "linha": 22,
+   "tipo": "prop:terms"
+  },
+  {
+   "texto": "Sua conta precisa de verificação em duas etapas ativada para abrir dado de saúde. Ative em Configurações.",
+   "arquivo": "src/app/admin/clientes/[id]/saude.tsx",
+   "linha": 48,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui abrir o cofre agora. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/[id]/saude.tsx",
+   "linha": 57,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Saúde e LGPD",
+   "arquivo": "src/app/admin/clientes/[id]/saude.tsx",
+   "linha": 66,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Ficha de saúde",
+   "arquivo": "src/app/admin/clientes/[id]/saude.tsx",
+   "linha": 77,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Tem alerta cadastrado",
+   "arquivo": "src/app/admin/clientes/[id]/saude.tsx",
+   "linha": 79,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Toque para abrir",
+   "arquivo": "src/app/admin/clientes/[id]/saude.tsx",
+   "linha": 79,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Termos assinados",
+   "arquivo": "src/app/admin/clientes/[id]/saude.tsx",
+   "linha": 90,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ficha de saúde",
+   "arquivo": "src/app/admin/clientes/[id]/saude.tsx",
+   "linha": 103,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Abrindo...",
+   "arquivo": "src/app/admin/clientes/[id]/saude.tsx",
+   "linha": 105,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sem respostas registradas.",
+   "arquivo": "src/app/admin/clientes/[id]/saude.tsx",
+   "linha": 118,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Esta abertura foi registrada na trilha de acesso.",
+   "arquivo": "src/app/admin/clientes/[id]/saude.tsx",
+   "linha": 120,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Atalhos: j e k andam pela fila,",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 44,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Enter abre o item.",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 47,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Enter",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 47,
+   "tipo": "texto",
+   "tag": "kbd"
+  },
+  {
+   "texto": "c faz a primeira ação do item.",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 51,
+   "tipo": "texto"
+  }
+ ]
+}

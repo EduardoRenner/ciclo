@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marcar horário · protótipo</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  .area { position: absolute; inset: 0; overflow-y: auto; }
+  .aparelho[data-aparelho='celular'] .area { padding-bottom: 170px; }
+  .aparelho[data-aparelho='computador'] .area { left: 232px; }
+  .aparelho[data-aparelho='computador'] .grade { display: grid; grid-template-columns: 480px 1fr; gap: 24px; padding: 24px 32px; max-width: 1048px; }
+  .aparelho[data-aparelho='computador'] .conteudo { padding: 0; }
+  .passo { margin-top: 20px; }
+  .passo > .label { display: block; margin-bottom: 8px; font-size: 13.5px; }
+  .cliente-escolhido { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .livre { border: 1px dashed var(--acc); border-radius: 12px; padding: 8px 12px; color: var(--acc-2); font-weight: 700; font-size: 14px; }
+  .barra-acao .resumo { grid-column: 1 / -1; font-size: 13.5px; color: var(--txt-2); margin: 0; }
+  /* computador: a ação principal fica visível sem rolar (checklist item 12) */
+  .aparelho[data-aparelho='computador'] .barra-acao { position: sticky; bottom: 0; background: var(--bg); padding: 12px 0; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<p class="nota-proto"><strong>Marcar horário no painel (I-03, I-05, I-08; A-09, C-10, C-11, F-12, F-13, D-05).</strong> O <code>datetime-local</code> vira grade de horários livres (a mesma da página pública, já com "a resposta mais recente vence"). Depois de marcar, a agenda abre no dia do horário, com a linha nova destacada. No computador, a agenda do dia escolhido fica ao lado do formulário. Dados fictícios.</p>
+<div class="palco">
+<div class="aparelho">
+  <nav class="lateral" data-so="computador" aria-label="Menu">
+    <a href="#" class="destaque"><span class="ico">⟳</span> Quem sumiu</a>
+    <a href="#"><span class="ico">⌂</span> Hoje</a>
+    <a href="#" aria-current="page"><span class="ico">▦</span> Agenda</a>
+    <a href="#"><span class="ico">☺</span> Clientes</a>
+    <a href="#"><span class="ico">＋</span> Marcar</a>
+  </nav>
+
+  <div class="area">
+    <header class="topo" data-so="celular"><a href="#" class="btn btn-fantasma" style="padding:0">‹ Agenda</a><button class="btn-topo" aria-label="Perguntar ao assistente">✦ Perguntar</button></header>
+    <div class="faixa-conexao" data-estado="offline" role="status">Sem internet. Dá para marcar: o horário fica guardado neste aparelho e sai quando a conexão voltar.</div>
+
+    <div class="grade">
+      <!-- FORMULÁRIO -->
+      <div class="conteudo" data-estado="normal carregando sem-horario conflito enviando offline">
+        <h1 class="titulo">Marcar horário</h1>
+
+        <div class="passo">
+          <span class="label">1 · Quem</span>
+          <div class="card cliente-escolhido" style="padding:8px 8px 8px 16px">
+            <div><strong>Ana Souza</strong><br><span class="sec">(11) 9300-2000 · última vez: Corte, há 21 dias</span></div>
+            <button class="btn btn-fantasma" aria-label="Trocar cliente">Trocar</button>
+          </div>
+        </div>
+
+        <div class="passo">
+          <span class="label">2 · Serviço</span>
+          <div class="chips" role="group" aria-label="Serviço">
+            <button class="chip" data-grupo="serv" aria-pressed="true">Corte · R$ 45</button>
+            <button class="chip" data-grupo="serv" aria-pressed="false">Barba · R$ 35</button>
+            <button class="chip" data-grupo="serv" aria-pressed="false">Corte + barba · R$ 70</button>
+            <button class="chip" data-grupo="serv" aria-pressed="false">Todos os serviços</button>
+          </div>
+          <p class="sec" style="margin:4px 0 0">O primeiro é o último que ela fez.</p>
+        </div>
+
+        <div class="passo">
+          <span class="label">3 · Com quem</span>
+          <div class="chips" role="group" aria-label="Profissional">
+            <button class="chip" data-grupo="prof" aria-pressed="false">Quem estiver livre</button>
+            <button class="chip" data-grupo="prof" aria-pressed="true">Anderson</button>
+            <button class="chip" data-grupo="prof" aria-pressed="false">Diego</button>
+            <button class="chip" data-grupo="prof" aria-pressed="false">Felipe</button>
+          </div>
+        </div>
+
+        <div class="passo">
+          <span class="label">4 · Dia</span>
+          <div class="chips" role="group" aria-label="Dia">
+            <button class="chip dia" data-grupo="dia" aria-pressed="false">TER<b>13</b></button>
+            <button class="chip dia" data-grupo="dia" aria-pressed="false">QUA<b>14</b></button>
+            <button class="chip dia" id="dia-15" data-grupo="dia" aria-pressed="true">QUI<b>15</b></button>
+            <button class="chip dia" data-grupo="dia" aria-pressed="false">SEX<b>16</b></button>
+            <button class="chip dia" data-grupo="dia" aria-pressed="false">SÁB<b>17</b></button>
+            <button class="chip dia fechado" disabled aria-label="Domingo 18, fechado">DOM<b>18</b></button>
+            <button class="chip dia fechado" disabled aria-label="Segunda 19, fechado">SEG<b>19</b></button>
+          </div>
+        </div>
+
+        <div class="passo" aria-live="polite">
+          <span class="label">5 · Horário livre na quinta, 15/10</span>
+
+          <div data-estado="carregando">
+            <p class="sr-so">Buscando horários de quinta, 15/10</p>
+            <div class="grade-horarios"><div class="esqueleto" style="height:48px"></div><div class="esqueleto" style="height:48px"></div><div class="esqueleto" style="height:48px"></div><div class="esqueleto" style="height:48px"></div><div class="esqueleto" style="height:48px"></div><div class="esqueleto" style="height:48px"></div></div>
+          </div>
+
+          <div data-estado="normal conflito enviando offline">
+            <div class="aviso erro" data-estado="conflito" role="alert" style="margin-bottom:12px">
+              <strong>Esse horário acabou de ser ocupado.</strong> Escolha um destes, perto do que você queria:
+              <div class="linha" style="flex-wrap:wrap;gap:8px;margin-top:8px">
+                <button class="chip">13:20</button><button class="chip">14:40</button><button class="chip">15:00</button>
+              </div>
+            </div>
+            <p class="sec" style="margin:0 0 6px">Manhã</p>
+            <div class="grade-horarios">
+              <button class="chip" data-grupo="h">09:00</button><button class="chip" data-grupo="h">09:40</button><button class="chip" data-grupo="h">10:20</button><button class="chip" data-grupo="h">11:00</button>
+            </div>
+            <p class="sec" style="margin:12px 0 6px">Tarde</p>
+            <div class="grade-horarios">
+              <button class="chip" data-grupo="h">13:20</button><button class="chip" data-grupo="h" aria-pressed="true">14:00</button><button class="chip" data-grupo="h">14:40</button><button class="chip" data-grupo="h">15:00</button>
+              <button class="chip" data-grupo="h">16:20</button><button class="chip" data-grupo="h">17:00</button>
+            </div>
+            <button class="btn btn-fantasma" style="padding:0;margin-top:8px">Outro horário (encaixe)</button>
+          </div>
+
+          <div class="card vazio" data-estado="sem-horario">
+            <p style="font-weight:800;margin:0">Anderson não tem horário livre na quinta</p>
+            <p class="sec">Sexta tem 6 horários. Diego tem 3 na quinta.</p>
+            <div class="pilha"><button class="btn btn-secundario btn-cheio">Ver sexta</button><button class="btn btn-secundario btn-cheio">Ver horários do Diego</button><button class="btn btn-fantasma btn-cheio">Marcar fora da grade (encaixe)</button></div>
+          </div>
+        </div>
+
+        <details class="passo"><summary class="label" style="min-height:48px;display:flex;align-items:center;cursor:pointer">Mais opções (repetir, observação)</summary>
+          <label class="linha" style="min-height:48px"><input type="checkbox" style="width:20px;height:20px"> Repetir este horário toda semana</label>
+        </details>
+
+        <div class="barra-acao uma" data-estado="normal carregando conflito enviando offline">
+          <p class="resumo" data-estado="normal enviando offline">Ana Souza · Corte · quinta, 15/10, às 14:00 · Anderson</p>
+          <p class="resumo" data-estado="carregando conflito">Escolha um horário</p>
+          <button class="btn btn-primario btn-cheio" data-estado="normal">Marcar horário</button>
+          <button class="btn btn-primario btn-cheio" data-estado="carregando conflito" disabled>Marcar horário</button>
+          <button class="btn btn-primario btn-cheio" data-estado="enviando" aria-busy="true" disabled>Marcando…</button>
+          <button class="btn btn-primario btn-cheio" data-estado="offline">Guardar e marcar quando a internet voltar</button>
+        </div>
+      </div>
+
+      <!-- SUCESSO: a agenda já no dia do horário, linha nova destacada -->
+      <div class="conteudo" data-estado="sucesso">
+        <h1 class="titulo">Agenda</h1>
+        <div class="chips" role="group" aria-label="Dia">
+          <button class="chip dia" aria-pressed="false">QUA<b>14</b></button>
+          <button class="chip dia" aria-pressed="true">QUI<b>15</b></button>
+          <button class="chip dia" aria-pressed="false">SEX<b>16</b></button>
+        </div>
+        <div class="card" style="padding:4px 16px;margin-top:12px">
+          <a class="item-lista" href="#"><span class="hora">09:00</span><span style="flex:1">Marcos Lima<br><span class="sec">Corte · Anderson</span></span></a>
+          <a class="item-lista" href="#"><span class="hora">11:00</span><span style="flex:1">Rafael Souza<br><span class="sec">Barba · Anderson</span></span></a>
+          <a class="item-lista destaque-novo" href="#"><span class="hora">14:00</span><span style="flex:1"><strong>Ana Souza</strong><br><span class="sec">Corte · Anderson</span></span><span class="estado" style="color:var(--warn)">Falta confirmar</span></a>
+          <a class="item-lista" href="#"><span class="hora">16:20</span><span style="flex:1">Bruno Alves<br><span class="sec">Platinado · Anderson</span></span></a>
+        </div>
+        <div class="toast" role="status" style="position:sticky;margin-top:16px;bottom:auto;left:auto;right:auto">Marcado: Ana Souza, quinta 15/10, às 14:00. <button>Mandar confirmação</button></div>
+      </div>
+
+      <!-- COMPUTADOR: a agenda do dia escolhido ao lado -->
+      <aside class="coluna-direita" data-so="computador" data-estado="normal carregando sem-horario conflito enviando offline">
+        <p class="overline" style="margin-top:0">Agenda de quinta, 15/10 · Anderson</p>
+        <div class="card" style="padding:8px 16px">
+          <div class="item-lista"><span class="hora">09:00</span><span style="flex:1">Marcos Lima · Corte</span></div>
+          <div class="item-lista"><span class="livre">09:40 – 11:00 livre</span></div>
+          <div class="item-lista"><span class="hora">11:00</span><span style="flex:1">Rafael Souza · Barba</span></div>
+          <div class="item-lista"><span class="hora">12:00</span><span style="flex:1;color:var(--txt-3)">Almoço</span></div>
+          <div class="item-lista"><span class="livre" style="background:var(--acc-soft)">14:00 – 14:40 · Ana Souza (escolhido)</span></div>
+          <div class="item-lista"><span class="livre">14:40 – 16:20 livre</span></div>
+          <div class="item-lista"><span class="hora">16:20</span><span style="flex:1">Bruno Alves · Platinado</span></div>
+          <div class="item-lista"><span class="livre">17:00 – 19:00 livre</span></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <button class="assistente" aria-label="Perguntar ao assistente">✦</button>
+  <nav class="barra" data-so="celular" aria-label="Navegação">
+    <a href="#"><span class="ico">⌂</span>Hoje</a>
+    <a href="#" aria-current="page"><span class="ico">▦</span>Agenda</a>
+    <a href="#" class="central"><span class="circulo">⟳</span>Quem sumiu</a>
+    <a href="#"><span class="ico">☺</span>Clientes</a>
+    <a href="#"><span class="ico">＋</span>Marcar</a>
+  </nav>
+</div>
+</div>
+<script>
+  window.PROTO = {
+    titulo: 'Marcar horário (painel)',
+    padrao: 'normal',
+    estados: [['normal', 'Escolhendo (tudo preenchido)'], ['carregando', 'Carregando horários (dia acabou de mudar)'], ['sem-horario', 'Dia sem horário livre'], ['conflito', 'Horário ocupado ao enviar (409)'], ['enviando', 'Enviando'], ['sucesso', 'Marcado: volta ao dia, destacado'], ['offline', 'Sem conexão (fila)']],
+    comAcao: ['normal', 'carregando', 'conflito', 'enviando', 'offline'],
+  }
+  // 409: o aviso rola para a vista e recebe foco (senão fica abaixo da dobra no celular, medido na captura).
+  document.addEventListener('proto:mudou', (e) => {
+    if (e.detail.estado !== 'conflito') return
+    const aviso = document.querySelector('.aviso.erro[data-estado="conflito"]')
+    aviso.setAttribute('tabindex', '-1')
+    setTimeout(() => { aviso.scrollIntoView({ block: 'center' }); aviso.focus({ preventScroll: true }) }, 50)
+  })
+  // I-03: o chip de dia muda NO MESMO QUADRO do toque; a lista vira esqueleto até chegar a resposta DAQUELE dia.
+  document.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip.dia:not([disabled])')
+    if (!chip || document.querySelector('.aparelho').dataset.estadoAtual !== 'normal') return
+    chip.classList.add('carregando')
+    window.protoIrPara('carregando')
+    setTimeout(() => { chip.classList.remove('carregando'); window.protoIrPara('normal') }, 700)
+  })
+</script>
+<script src="base.js"></script>
+</body>
+</html>

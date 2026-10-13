@@ -1,0 +1,620 @@
+{
+ "rota": "admin/clientes/[id]/estrutura/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/clientes/[id]/estrutura/page.tsx",
+  "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+  "src/app/admin/clientes/[id]/estrutura/interativa.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/bloqueio-plano.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/lib/formato.ts",
+  "src/lib/app-url.ts",
+  "src/lib/utils.ts",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/select.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/advocacia/escrever.ts",
+  "src/components/ui/badge.tsx",
+  "src/components/ui/icone-anel.tsx"
+ ],
+ "total": 93,
+ "textos": [
+  {
+   "texto": "Estrutura da família",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/page.tsx",
+   "linha": 22,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "ver a estrutura societária da família",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/page.tsx",
+   "linha": 45,
+   "tipo": "prop:acao"
+  },
+  {
+   "texto": "Voltar ao cliente",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/page.tsx",
+   "linha": 46,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Estrutura da família",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/page.tsx",
+   "linha": 63,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Como está hoje.",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/page.tsx",
+   "linha": 64,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Como era em {fmtDiaMes(dia)}/{dia.slice(0, 4)}.",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/page.tsx",
+   "linha": 64,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Linha do tempo societária",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/page.tsx",
+   "linha": 68,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Hoje",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/page.tsx",
+   "linha": 80,
+   "tipo": "texto",
+   "tag": "Link"
+  },
+  {
+   "texto": "Nenhuma empresa cadastrada",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/page.tsx",
+   "linha": 96,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Quando a família tiver holding ou empresa, a estrutura e a participação de cada pessoa aparecem aqui.",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/page.tsx",
+   "linha": 97,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Voltar ao cliente",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/page.tsx",
+   "linha": 98,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Titular",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 17,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Cônjuge",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 18,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Filho ou filha",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 19,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Pai ou mãe",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 20,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Irmão ou irmã",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 21,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Neto ou neta",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 22,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sócio ou sócia",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 23,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Outro vínculo",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 24,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Holding patrimonial",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 28,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Holding de participações",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 29,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Holding mista",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 30,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Operacional",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 31,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Outra",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 32,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Constituição",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 36,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Alteração contratual",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 37,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Cessão de quotas",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 38,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Doação de quotas",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 39,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Entrada de sócio",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 40,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Saída de sócio",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 41,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Aumento de capital",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 42,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Redução de capital",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 43,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Transformação",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 44,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Incorporação",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 45,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Outro",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 46,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Pessoa",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 102,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Empresa",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 103,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Ato societário",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 104,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Nome completo",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 109,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Vínculo com o cliente",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 110,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Salvar pessoa",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 125,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escreva o nome.",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 122,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Pessoa cadastrada",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 123,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Razão social",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 132,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Tipo",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 133,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Salvar empresa",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 148,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escreva a razão social.",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 145,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Empresa cadastrada",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 146,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Empresa",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 155,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Ato",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 163,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Data do ato",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 170,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Quadro depois do ato (substitui o atual)",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 173,
+   "tipo": "rótulo",
+   "tag": "legend"
+  },
+  {
+   "texto": "Sócio {i + 1}",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 177,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Escolha",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 182,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Tirar a linha {i + 1} do quadro",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 199,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Sócio",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 210,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Soma:",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 213,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "(diferente de 100%: dá para salvar, e a estrutura vai avisar)",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 213,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Registrar ato",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 235,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escolha quem participa em cada linha e o percentual.",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 221,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Ato registrado",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/cadastro.tsx",
+   "linha": 231,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Holding patrimonial",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 22,
+   "tipo": "prop:holding_patrimonial"
+  },
+  {
+   "texto": "Holding de participações",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 23,
+   "tipo": "prop:holding_participacoes"
+  },
+  {
+   "texto": "Holding mista",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 24,
+   "tipo": "prop:holding_mista"
+  },
+  {
+   "texto": "Operacional",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 25,
+   "tipo": "prop:operacional"
+  },
+  {
+   "texto": "Empresa",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 26,
+   "tipo": "prop:outra"
+  },
+  {
+   "texto": "a soma das participações desta empresa passa de 100% ({formatarPercentual(e.total)}).",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 52,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "a soma das participações desta empresa não chega a 100% ({formatarPercentual(e.total)}).",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 53,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Há uma empresa que é dona de si mesma por algum caminho. A participação efetiva não pode ser calculada.",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 56,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Como ver a estrutura",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 61,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Lista",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 64,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Grafo",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 65,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Participação efetiva",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 88,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Empresas e quem é dono de cada uma",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 124,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Empresa",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 131,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Soma",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 135,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Nenhuma participação lançada.",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 140,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· usufruto de {d.usufruto}",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 147,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Estrutura da família. {descricao}",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 206,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "E se",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 277,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Empresa",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 281,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Tirar de",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 295,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Escolha",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 296,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Passar para",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 303,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Escolha",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 304,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Quantos %",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 311,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Nada muda na participação efetiva.",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 318,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Participação efetiva antes e depois",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 321,
+   "tipo": "texto",
+   "tag": "caption"
+  },
+  {
+   "texto": "Pessoa",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 324,
+   "tipo": "texto",
+   "tag": "th"
+  },
+  {
+   "texto": "Empresa",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 325,
+   "tipo": "texto",
+   "tag": "th"
+  },
+  {
+   "texto": "Antes",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 326,
+   "tipo": "texto",
+   "tag": "th"
+  },
+  {
+   "texto": "Depois",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 327,
+   "tipo": "texto",
+   "tag": "th"
+  },
+  {
+   "texto": "Simulação sem efeito jurídico ou tributário. Revisão da advocacia necessária.",
+   "arquivo": "src/app/admin/clientes/[id]/estrutura/interativa.tsx",
+   "linha": 344,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

@@ -1,0 +1,84 @@
+// Agente F — conta vazia → 1º serviço, 1º profissional, 1º cliente, 1º agendamento (celular 4×CPU/4G lenta),
+// + conflito de horário e horário fora do expediente. Banco local, sessão fora do repositório.
+// Uso: node F-primeiros-cadastros.mjs <rotulo> <nomeServico> <nomeProfissional>
+import { writeFileSync } from 'node:fs'
+import { abrir, BASE, CAPTURAS, MEDIDAS } from './F-lib.mjs'
+
+const [rotulo, nomeServico, nomeProf] = process.argv.slice(2)
+const { browser, page, consoleErros } = await abrir('celular', { storageState: `C:/temp/ciclo-medicao/estado-F-${rotulo}.json` })
+const out = { rotulo, passos: [] }
+const texto = () => page.evaluate(() => (document.querySelector('main') ?? document.body).innerText.replace(/\n{2,}/g, '\n').trim())
+const avisos = () => page.evaluate(() => [...document.querySelectorAll('[role=alert], [role=status], [data-sonner-toast], li[role=status]')].map((e) => e.innerText.trim()).filter(Boolean))
+async function medir(nome, rota, fn) {
+  const t = Date.now()
+  await page.goto(`${BASE}${rota}`)
+  await page.locator('h1').first().waitFor()
+  const msTela = Date.now() - t
+  const r = { passo: nome, msAteTela: msTela, toques: 0, campos: 0 }
+  const t2 = Date.now()
+  try { await fn(r) } catch (e) { r.erroDoScript = String(e).slice(0, 300) }
+  r.msPreencherEEnviar = Date.now() - t2
+  await page.waitForTimeout(600)
+  r.avisos = await avisos()
+  r.urlFinal = page.url()
+  r.textoFinal = (await texto()).slice(0, 700)
+  await page.screenshot({ path: `${CAPTURAS}/F-primeiro-${nome}-${rotulo}.png`, fullPage: true })
+  out.passos.push(r)
+  console.log(JSON.stringify({ ...r, textoFinal: r.textoFinal.slice(0, 250) }))
+}
+const tocar = async (r, loc) => { await loc.click(); r.toques++ }
+const digitar = async (r, loc, v) => { await loc.click(); r.toques++; await loc.fill(v); r.campos++ }
+
+await medir('servico', '/admin/config/servicos', async (r) => {
+  await tocar(r, page.getByRole('button', { name: /^Novo$/ }))
+  await digitar(r, page.getByLabel('Nome', { exact: true }), nomeServico)
+  await digitar(r, page.getByLabel('Duração (min)'), '45')
+  await digitar(r, page.getByLabel('Preço'), '50,00')
+  await tocar(r, page.getByRole('button', { name: /Cadastrar serviço/ }))
+  await page.getByText(nomeServico).first().waitFor()
+})
+await medir('profissional', '/admin/config/profissionais', async (r) => {
+  await tocar(r, page.getByRole('button', { name: /^Cadastrar$/ }))
+  await digitar(r, page.getByLabel('Nome', { exact: true }), nomeProf)
+  await tocar(r, page.getByRole('button', { name: /Cadastrar profissional/ }))
+  await page.getByText(nomeProf).first().waitFor()
+})
+await medir('cliente', '/admin/clientes/nova', async (r) => {
+  await digitar(r, page.getByLabel('Nome', { exact: true }), 'Cliente Primeira Agente F')
+  await digitar(r, page.getByLabel('Telefone'), '11977771234')
+  await tocar(r, page.getByRole('button', { name: /Cadastrar cliente/ }))
+  await page.waitForURL((u) => !u.pathname.endsWith('/nova'), { timeout: 30000 }).catch(() => {})
+})
+
+// amanhã 10:00 local (formato do datetime-local)
+const amanha = new Date(Date.now() + 86400000)
+const dt = (h) => `${amanha.getFullYear()}-${String(amanha.getMonth() + 1).padStart(2, '0')}-${String(amanha.getDate()).padStart(2, '0')}T${h}`
+async function agendar(nome, hora, r) {
+  const campos = await page.evaluate(() => [...document.querySelectorAll('main select, main input')].map((e) => `${e.labels?.[0]?.innerText?.trim()}:${e.type}`))
+  r.camposDaTela = campos
+  const sel = page.getByLabel('Serviço')
+  await sel.selectOption({ label: new RegExp(nomeServico).test('') ? '' : undefined }).catch(() => {})
+  const opcoes = await sel.locator('option').allInnerTexts()
+  const alvo = opcoes.find((o) => o.startsWith(nomeServico)) ?? opcoes[0]
+  await sel.selectOption({ label: alvo }); r.toques += 2
+  await digitar(r, page.getByLabel('Cliente'), nome)
+  await page.waitForTimeout(800)
+  r.sugestoesDeCliente = await page.evaluate(() => [...document.querySelectorAll('[role=option], [role=listbox] *')].map((e) => e.innerText.trim()).filter(Boolean).slice(0, 5))
+  const prof = page.getByLabel(/Profissional|Quem atende/)
+  r.temSeletorDeProfissional = (await prof.count()) > 0
+  if (await page.getByLabel('Telefone').count()) await digitar(r, page.getByLabel('Telefone'), '11977771234')
+  await page.getByLabel('Data e horário').fill(dt(hora)); r.toques += 3; r.campos++ // no celular: abrir seletor, escolher dia, escolher hora
+  await tocar(r, page.getByRole('button', { name: /Confirmar agendamento/ }))
+  await page.waitForURL((u) => !u.pathname.endsWith('/novo'), { timeout: 15000 }).catch(() => {})
+}
+await medir('agendamento', '/admin/agenda/novo', (r) => agendar('Cliente Primeira Agente F', '10:00', r))
+await medir('agendamento-conflito', '/admin/agenda/novo', (r) => agendar('Outra Pessoa Agente F', '10:00', r))
+// domingo é "Fechado" no expediente padrão: o painel deixa marcar?
+const dom = new Date(); dom.setDate(dom.getDate() + ((7 - dom.getDay()) % 7 || 7))
+await medir('agendamento-domingo', '/admin/agenda/novo', async (r) => {
+  amanha.setTime(dom.getTime())
+  await agendar('Domingo Agente F', '10:00', r)
+})
+out.consoleErros = consoleErros
+writeFileSync(`${MEDIDAS}/F/primeiros-cadastros-${rotulo}.json`, JSON.stringify(out, null, 2))
+await browser.close()

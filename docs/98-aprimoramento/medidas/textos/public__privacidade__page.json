@@ -1,0 +1,543 @@
+{
+ "rota": "(public)/privacidade/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(public)/privacidade/page.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/lib/contato.ts",
+  "src/lib/mensagens.ts"
+ ],
+ "total": 76,
+ "textos": [
+  {
+   "texto": "Política de Privacidade",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 41,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Que dados o CICLO guarda, por quê, por quanto tempo, e o que você pode pedir a qualquer momento.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 42,
+   "tipo": "metadata/description"
+  },
+  {
+   "texto": "CICLO, início",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 59,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Entrar",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 67,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Política de Privacidade",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 71,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Atualizado em {ATUALIZADO_EM}",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 72,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Em uma frase",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 76,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "A gente guarda o que precisa para o sistema funcionar para você, cada salão só enxerga o próprio dado, dado de saúde fica cifrado, e você pode levar tudo embora ou apagar quando quiser.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 78,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "1. Quem é responsável pelo quê",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 85,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Existem duas relações diferentes aqui, e vale separar:",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 87,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sobre você, profissional: quem decide o que guardar é o CICLO. Somos o controlador dos seus dados de cadastro.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 91,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Sobre você, profissional:",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 91,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Sobre os seus clientes: quem decide o que guardar é você. Você é o controlador, e o CICLO é apenas o operador: a gente só processa o que você mandou guardar, do jeito que você mandou.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 95,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Sobre os seus clientes:",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 95,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Na prática isso significa que a autorização das pessoas que você cadastra é sua responsabilidade, e a segurança de como isso é guardado é nossa.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 101,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "2. O que a gente guarda",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 107,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Do seu negócio: nome, e-mail, telefone, nome do estabelecimento, serviços, preços, horário de funcionamento e profissionais.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 110,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Do seu negócio:",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 110,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Dos seus clientes: o que você cadastrar: em geral nome, telefone, aniversário, histórico de atendimento, preferências e observações.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 115,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Dos seus clientes:",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 115,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Dado de saúde, quando você usa a ficha de anamnese: alergia, condição de saúde e o que mais você anotar ali. É dado sensível pela LGPD e recebe tratamento diferente, e o item 4 explica como.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 120,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Dado de saúde, quando você usa a ficha de anamnese:",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 120,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "De uso: registros técnicos de acesso e erro, para manter o sistema no ar e investigar problema.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 125,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "De uso:",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 125,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "De onde você chegou: se você abriu o CICLO por um link de indicação, pelo selo na página de outro negócio ou por uma divulgação nossa, um cookie do próprio CICLO guarda por até 60 dias o nome desse caminho e de quem indicou, e nada mais. Se você criar uma conta, isso vai junto, para a gente saber qual caminho traz quem usa. Não identifica você nem seu aparelho, e não tem cookie de propaganda nem rastreador de outra empresa.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 129,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "De onde você chegou:",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 129,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "A gente não pede nem guarda dado de cartão de crédito.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 138,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "não",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 138,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "3. Por que a gente guarda",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 144,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Para executar o contrato que você fez com a gente: manter sua agenda, calcular o ciclo de retorno de cada cliente, montar sua página pública de agendamento, fechar seu caixa e dar suporte quando algo dá errado. Também guardamos o mínimo necessário para cumprir obrigação legal e para defender direitos, se for preciso.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 146,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "A gente não vende sua base, não usa seus dados nem os dos seus clientes para anunciar nada a ninguém, e não cede pra terceiro fora do que é estritamente necessário pra operar o serviço que você contratou. Isso inclui, hoje:",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 152,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Mercado Pago, pra processar a assinatura do seu plano. A gente nunca vê nem guarda número de cartão.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 158,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Mercado Pago",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 158,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "WhatsApp Business Platform (Meta), pra entregar lembrete e mensagem de recuperação de cliente.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 162,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "WhatsApp Business Platform (Meta)",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 162,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Resend, pra entregar e-mail transacional (confirmação, recuperação de senha).",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 166,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Resend",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 166,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Supabase, que hospeda o banco de dados, com o mesmo isolamento por conta descrito na seção 4.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 170,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Supabase",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 170,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "4. Como a gente protege",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 177,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Cada conta só enxerga o próprio dado. O isolamento é feito no banco, não só na tela, e existe um teste automático que impede o sistema de subir se alguma tabela nova ficar de fora.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 180,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Cada conta só enxerga o próprio dado.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 180,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Dado de saúde fica cifrado, com a chave guardada separada do banco. Só quem tem permissão abre, e todo acesso fica registrado, e dá para saber quem abriu a ficha de quem, e quando.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 185,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Dado de saúde fica cifrado",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 185,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "todo acesso fica registrado",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 187,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Telefone de cliente é guardado também de forma embaralhada, para que a busca funcione sem espalhar o número.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 191,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Telefone de cliente é guardado também de forma embaralhada",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 191,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Tudo trafega por conexão cifrada, e os servidores ficam no Brasil.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 194,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Dado de saúde nunca vai para registro de erro nem para ferramenta de análise.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 195,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "5. Com quem a gente compartilha",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 200,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Só com quem é necessário para o serviço existir, e cada um vê apenas o que precisa: a empresa que hospeda o sistema, a que hospeda o banco de dados e, quando você usa envio de mensagem ou e-mail, o serviço que entrega essa mensagem.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 202,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Podemos compartilhar também se a lei ou uma ordem judicial exigir. Fora isso, ninguém mais.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 207,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "6. Por quanto tempo",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 213,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Enquanto sua conta existir. Quando você apaga um cliente, os dados pessoais dele são eliminados, inclusive de dentro dos registros internos de auditoria, e não só da ficha visível.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 215,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "inclusive de dentro dos registros internos",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 217,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Alguns registros de movimentação (agendamento, caixa, estoque) não são apagados, porque são o histórico do seu negócio, mas passam a não identificar mais a pessoa.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 221,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "7. Seus direitos, e onde clicar",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 227,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Pela LGPD você pode, a qualquer momento:",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 228,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "saber quais dados a gente tem;",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 230,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "corrigir o que estiver errado;",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 231,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "pedir uma cópia: cada ficha de cliente tem exportação dentro do sistema;",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 232,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "pedir a eliminação: cada ficha tem o botão de apagar, e ele apaga de verdade;",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 233,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "revogar uma autorização que tenha dado;",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 234,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "saber com quem a gente compartilhou.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 235,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "E você, profissional que usa o CICLO: sua própria conta também pode ser excluída a qualquer momento, direto de dentro do sistema, em Configurações → Excluir minha conta (exige login e verificação em duas etapas, por ser irreversível). Excluir a conta apaga seu login para sempre; o histórico do negócio continua existindo, como acontece quando qualquer pessoa sai de uma equipe.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 238,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Configurações → Excluir minha conta",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 240,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Para os seus próprios dados de cadastro, ou para qualquer pedido que a tela não resolva,",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 253,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": ". A gente responde e cumpre.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 262,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "fale com a gente por aqui",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 257,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "responda o e-mail que você recebeu ao criar a conta",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 260,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "8. Se algo vazar",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 267,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Se acontecer um incidente que possa trazer risco para você ou para seus clientes, a gente avisa você e a Autoridade Nacional de Proteção de Dados, dizendo o que aconteceu, o que foi afetado e o que estamos fazendo.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 269,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "9. Mudanças",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 276,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Se esta política mudar, a data no topo muda junto e a gente avisa dentro do sistema.",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 278,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Termos de uso",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 285,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Preços",
+   "arquivo": "src/app/(public)/privacidade/page.tsx",
+   "linha": 291,
+   "tipo": "link",
+   "tag": "Link"
+  }
+ ]
+}

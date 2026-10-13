@@ -1,0 +1,475 @@
+{
+ "rota": "admin/config/profissionais/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/profissionais/page.tsx",
+  "src/app/admin/config/profissionais/lista.tsx",
+  "src/app/admin/config/profissionais/formulario.tsx",
+  "src/components/config/upload-de-foto.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/badge.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/chip.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/sheet.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/icone-anel.tsx"
+ ],
+ "total": 70,
+ "textos": [
+  {
+   "texto": "Time",
+   "arquivo": "src/app/admin/config/profissionais/page.tsx",
+   "linha": 11,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Time",
+   "arquivo": "src/app/admin/config/profissionais/page.tsx",
+   "linha": 23,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Quem atende, expediente e quem você já convidou.",
+   "arquivo": "src/app/admin/config/profissionais/page.tsx",
+   "linha": 23,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Não consegui completar a ação.",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 80,
+   "tipo": "erro"
+  },
+  {
+   "texto": "desativação recusada pelo servidor",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 178,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui desativar",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 184,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente de novo em instantes.",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 184,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Convite criado",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 250,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Link copiado. É só colar e mandar.",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 250,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Convite criado",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 266,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui copiar sozinho. O link está aí na tela para você copiar.",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 268,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui convidar",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 274,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Ativos",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 294,
+   "tipo": "texto",
+   "tag": "Chip"
+  },
+  {
+   "texto": "Todos",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 300,
+   "tipo": "texto",
+   "tag": "Chip"
+  },
+  {
+   "texto": "Cadastrar",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 312,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Convidar",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 320,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Ninguém no time ainda",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 338,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Convide alguém ou cadastre um profissional que não usa o app.",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 340,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Convidar",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 348,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Inativo",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 380,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Sem login",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 382,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Desativar",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 392,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Convites pendentes",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 416,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "· vence em",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 436,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Convidar para o time",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 468,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Link do convite",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 500,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Copie e mande por onde preferir. Ele some desta tela quando você fechar.",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 520,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "E-mail",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 560,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Papel",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 580,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Nome (se for profissional)",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 614,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Gerar link de convite",
+   "arquivo": "src/app/admin/config/profissionais/lista.tsx",
+   "linha": 630,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Rosa",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 36,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Âmbar",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 37,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Verde",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 38,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Azul",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 39,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Coral",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 40,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Amarelo",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 41,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Não consegui salvar.",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 83,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Profissional atualizado",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 87,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Profissional cadastrado",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 87,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 93,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Editar profissional",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 99,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Novo profissional",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 99,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Foto",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 106,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Nome",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 115,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Bio (opcional)",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 124,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Cor (opcional)",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 133,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "2px solid var(--txt)",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 151,
+   "tipo": "prop:outline"
+  },
+  {
+   "texto": "Remover cor",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 162,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Aceita agendamento pelo site",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 175,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Digite o nome do profissional para poder salvar.",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 190,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Salvar alterações",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 192,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cadastrar profissional",
+   "arquivo": "src/app/admin/config/profissionais/formulario.tsx",
+   "linha": 192,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "foto do serviço",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 41,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui subir a {rotulo}",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 56,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente outra imagem.",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 56,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Foto atualizada",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 69,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Ela já aparece na sua página.",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 69,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 71,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira sua conexão e tente de novo.",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 71,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui remover a {rotulo}",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 83,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente de novo.",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 83,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 89,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira sua conexão e tente de novo.",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 89,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Enviando…",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 116,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Trocar foto",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 116,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Adicionar foto",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 116,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Remover",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 126,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Aparece na sua página pública. Até 2MB.",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 131,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Salve primeiro para poder adicionar uma foto.",
+   "arquivo": "src/components/config/upload-de-foto.tsx",
+   "linha": 131,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

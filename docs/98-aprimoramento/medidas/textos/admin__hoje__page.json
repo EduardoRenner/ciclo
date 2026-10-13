@@ -1,0 +1,878 @@
+{
+ "rota": "admin/hoje/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/hoje/page.tsx",
+  "src/app/admin/hoje/advocacia.tsx",
+  "src/app/admin/hoje/central-de-acoes.tsx",
+  "src/app/admin/hoje/compartilhar.tsx",
+  "src/app/admin/hoje/hoje.tsx",
+  "src/components/advocacia/atalhos-da-fila.tsx",
+  "src/components/ui/appointment-row.tsx",
+  "src/lib/atualizar-depois.ts",
+  "src/app/admin/agenda/detalhe.tsx",
+  "src/app/admin/hoje/prestacao-teaser.tsx",
+  "src/lib/haptics.ts"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/badge.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/icone-anel.tsx",
+  "src/components/ui/section-header.tsx",
+  "src/lib/app-url.ts",
+  "src/components/ui/button.tsx",
+  "src/components/ui/toast.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/sheet.tsx",
+  "src/components/ui/stat-tile.tsx",
+  "src/lib/formato.ts",
+  "src/lib/mensagens.ts",
+  "src/components/ui/input.tsx"
+ ],
+ "total": 130,
+ "textos": [
+  {
+   "texto": "Bom dia",
+   "arquivo": "src/app/admin/hoje/page.tsx",
+   "linha": 28,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Boa tarde",
+   "arquivo": "src/app/admin/hoje/page.tsx",
+   "linha": 29,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Boa noite",
+   "arquivo": "src/app/admin/hoje/page.tsx",
+   "linha": 30,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Hoje",
+   "arquivo": "src/app/admin/hoje/page.tsx",
+   "linha": 33,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Ver meu site",
+   "arquivo": "src/app/admin/hoje/page.tsx",
+   "linha": 170,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Exige direção",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 17,
+   "tipo": "prop:direcao"
+  },
+  {
+   "texto": "Meus",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 17,
+   "tipo": "prop:meus"
+  },
+  {
+   "texto": "Equipe",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 17,
+   "tipo": "prop:equipe"
+  },
+  {
+   "texto": "Abrir",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 24,
+   "tipo": "prop:deadline"
+  },
+  {
+   "texto": "Triar",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 24,
+   "tipo": "prop:intimation"
+  },
+  {
+   "texto": "Cobrar",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 24,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Hoje",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 88,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "O que precisa de você agora, na ordem em que deve ser feito.",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 88,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Confira em comunica.pje.jus.br.",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 94,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Captura de intimações parada desde {fmtDiaMes(ultima.dia)}.",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 94,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "A captura de intimações ainda não rodou.",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 94,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Simulação: nos últimos 90 dias este painel teria capturado {retroteste.intimacoes}",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 102,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "e antecipado {retroteste.prazos}",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 103,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "com um dia interno antes do fatal. Números contados nos dados fictícios deste escritório.",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 104,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Simulação:",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 102,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "intimação",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 103,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "intimações",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 103,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Filtrar a fila",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 109,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Tudo em dia.",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 119,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Próximo prazo: {…}{…}.",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 122,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Nenhum prazo aberto.",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 123,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Comece por um caso",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 127,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Sugestão a confirmar",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 182,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Fatal",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 185,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Abrir",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 188,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "j k",
+   "arquivo": "src/app/admin/hoje/advocacia.tsx",
+   "linha": 198,
+   "tipo": "aria-keyshortcuts"
+  },
+  {
+   "texto": "Gerencie seu plano em {APP_HOST}.",
+   "arquivo": "src/app/admin/hoje/central-de-acoes.tsx",
+   "linha": 80,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ver mais {escondidos}",
+   "arquivo": "src/app/admin/hoje/central-de-acoes.tsx",
+   "linha": 101,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Agende seu horário na {nome}: {url}",
+   "arquivo": "src/app/admin/hoje/compartilhar.tsx",
+   "linha": 36,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Link copiado",
+   "arquivo": "src/app/admin/hoje/compartilhar.tsx",
+   "linha": 56,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Cole na bio do Instagram ou mande no WhatsApp.",
+   "arquivo": "src/app/admin/hoje/compartilhar.tsx",
+   "linha": 56,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui copiar",
+   "arquivo": "src/app/admin/hoje/compartilhar.tsx",
+   "linha": 58,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Seu link é {url}",
+   "arquivo": "src/app/admin/hoje/compartilhar.tsx",
+   "linha": 58,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Compartilhar meu link de agendamento",
+   "arquivo": "src/app/admin/hoje/compartilhar.tsx",
+   "linha": 75,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Igual ao costume nesse dia da semana",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 39,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{abs}% {…} do costume nesse dia da semana",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 41,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Oi {{nome}}! Tudo certo pro seu horário hoje às {{hora}}?",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 49,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Forma do dia",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 83,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Atendido hoje",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 119,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Estoque",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 230,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Vencido: uso bloqueado",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 242,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Perto de vencer",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 244,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{a.stockQty} em estoque, hora de recomprar",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 246,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O Motor de Ciclo trouxe este mês",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 283,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Ver quem voltou",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 289,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Dá para recuperar",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 306,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Ver quem sumiu",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 312,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Nada mais marcado para hoje",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 337,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Falta 1 atendimento hoje",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 339,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Faltam {faltam} atendimentos hoje",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 340,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Ver o caixa",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 342,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Conhece alguém do ramo que também perde cliente sem saber?",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 362,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Mandar o CICLO",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 371,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Suas clientes trouxeram {resumo.indicacoesEsteMes} {…} este mês. Quem vem por indicação costuma voltar mais.",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 388,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "pessoa nova",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 390,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "pessoas novas",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 390,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "A seguir",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 401,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Cliente",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 416,
+   "tipo": "prop:clienteNome"
+  },
+  {
+   "texto": "Serviço",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 417,
+   "tipo": "prop:servicoNome"
+  },
+  {
+   "texto": "Chamar {…} no WhatsApp",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 427,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Nada mais para hoje",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 446,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "A agenda de hoje está livre a partir de agora.",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 447,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Novo agendamento",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 457,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Compartilhar meu link",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 458,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Novo agendamento",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 461,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Precisa confirmar",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 472,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Cliente",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 480,
+   "tipo": "prop:clienteNome"
+  },
+  {
+   "texto": "Serviço",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 481,
+   "tipo": "prop:servicoNome"
+  },
+  {
+   "texto": "Resto do dia",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 507,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Sem mais nada agendado.",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 509,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Cliente",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 517,
+   "tipo": "prop:clienteNome"
+  },
+  {
+   "texto": "Serviço",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 518,
+   "tipo": "prop:servicoNome"
+  },
+  {
+   "texto": "Agendamento",
+   "arquivo": "src/app/admin/hoje/hoje.tsx",
+   "linha": 531,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Atalhos: j e k andam pela fila,",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 44,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Enter abre o item.",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 47,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Enter",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 47,
+   "tipo": "texto",
+   "tag": "kbd"
+  },
+  {
+   "texto": "c faz a primeira ação do item.",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 51,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Aguardando",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 36,
+   "tipo": "prop:pending"
+  },
+  {
+   "texto": "Confirmado",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 37,
+   "tipo": "confirmação"
+  },
+  {
+   "texto": "Chegou",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 38,
+   "tipo": "prop:arrived"
+  },
+  {
+   "texto": "Concluído",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 39,
+   "tipo": "prop:done"
+  },
+  {
+   "texto": "Faltou",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 40,
+   "tipo": "prop:no_show"
+  },
+  {
+   "texto": "Cancelado",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 41,
+   "tipo": "prop:canceled"
+  },
+  {
+   "texto": "Vencido",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 42,
+   "tipo": "prop:expired"
+  },
+  {
+   "texto": "Risco alto de falta",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 109,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Risco alto de falta",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 107,
+   "tipo": "title"
+  },
+  {
+   "texto": "Atenção na ficha de saúde",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 115,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Atenção na ficha de saúde",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 113,
+   "tipo": "title"
+  },
+  {
+   "texto": "Tem observação",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 121,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Tem observação",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 119,
+   "tipo": "title"
+  },
+  {
+   "texto": "Confirmar",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 20,
+   "tipo": "confirmação"
+  },
+  {
+   "texto": "Chegou",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 21,
+   "tipo": "prop:arrived"
+  },
+  {
+   "texto": "Concluir",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 22,
+   "tipo": "prop:done"
+  },
+  {
+   "texto": "Marcar falta",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 23,
+   "tipo": "prop:no_show"
+  },
+  {
+   "texto": "Agendamento confirmado",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 35,
+   "tipo": "confirmação"
+  },
+  {
+   "texto": "Chegada registrada",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 36,
+   "tipo": "prop:arrived"
+  },
+  {
+   "texto": "Atendimento concluído",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 37,
+   "tipo": "prop:done"
+  },
+  {
+   "texto": "Falta registrada",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 38,
+   "tipo": "prop:no_show"
+  },
+  {
+   "texto": "Não consegui completar a ação.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 44,
+   "tipo": "erro"
+  },
+  {
+   "texto": "{d.getFullYear()}-{pad(d.getMonth() + 1)}-{pad(d.getDate())}T{pad(d.getHours())}:{pad(d.getMinutes())}",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 51,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Feito",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 102,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui cancelar.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 121,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Agendamento cancelado",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 127,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 132,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui remarcar.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 150,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Agendamento remarcado",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 153,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 156,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Sinal de {…}",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 189,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": ". Quem marcou viu esse valor ao agendar.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 190,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": ". Ainda não avisamos quem marcou.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 190,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Remarcar",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 246,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cancelar",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 251,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Ver comanda",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 259,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Pedir avaliação",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 271,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Esse agendamento não tem mais ação disponível.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 275,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Novo horário",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 283,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Confirmar novo horário",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 290,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 293,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cancelar esse agendamento?",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 300,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Motivo (opcional)",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 302,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Fica no histórico de quem ia ser atendido.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 305,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Sim, cancelar",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 308,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 311,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Fechar",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 317,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "O Motor acertou {percentual}% dos retornos previstos",
+   "arquivo": "src/app/admin/hoje/prestacao-teaser.tsx",
+   "linha": 29,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

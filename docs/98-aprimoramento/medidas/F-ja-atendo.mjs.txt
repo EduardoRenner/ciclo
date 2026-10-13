@@ -1,0 +1,33 @@
+// Agente F — "Quem você já atende": colar 10 nomes de memória (celular 4×CPU/4G lenta, banco local).
+// Uso: node F-ja-atendo.mjs <rotulo>
+import { writeFileSync } from 'node:fs'
+import { abrir, BASE, CAPTURAS, MEDIDAS } from './F-lib.mjs'
+
+const rotulo = process.argv[2]
+const { browser, page } = await abrir('celular', { storageState: `C:/temp/ciclo-medicao/estado-F-${rotulo}.json` })
+await page.goto(`${BASE}/admin/clientes/ja-atendo`)
+await page.locator('h1').waitFor()
+let toques = 0
+const t = Date.now()
+await page.getByRole('button', { name: 'Colar uma lista' }).click(); toques++
+const area = page.getByLabel('Cole a lista, um nome por linha')
+await area.click(); toques++
+await area.fill(['Seu Jorge', 'Dona Alzira', 'Marcos - 11 99999-0001', 'Rafael', 'Tânia', 'Zé do Gás', 'Patrícia Lima', 'Luís Otávio', 'Bia', 'Carla Souza'].join('\n'))
+const periodo = page.getByLabel('Quando essas pessoas vieram, mais ou menos?')
+const opcoes = await periodo.locator('option').allInnerTexts()
+await periodo.selectOption({ index: Math.min(2, opcoes.length - 1) }); toques += 2
+await page.screenshot({ path: 'C:/temp/ciclo-medicao/ja-atendo-debug.png', fullPage: true }); await page.locator('button', { hasText: /na lista/ }).first().click(); toques++
+await page.waitForTimeout(500)
+console.log(await page.evaluate(() => [...document.querySelectorAll('main button')].map((b) => b.innerText.trim().replace(/\s+/g, ' ')).filter(Boolean).join(' || ')))
+const botao = page.locator('main button', { hasText: /^(Trazer|Salvar|Guardar|Adicionar \d+|Pôr|Cadastrar|Incluir)/ }).last()
+const rotuloBotao = (await botao.innerText()).trim()
+await botao.click(); toques++
+await page.locator('text=/passaram|passou|voltar|Adicionar mais gente|trouxe|na sua base/i').first().waitFor({ timeout: 30000 }).catch(() => {})
+await page.waitForTimeout(800)
+const ms = Date.now() - t
+const resultado = await page.evaluate(() => (document.querySelector('main') ?? document.body).innerText.replace(/\n{2,}/g, '\n'))
+await page.screenshot({ path: `${CAPTURAS}/F-migracao-ja-atendo-depois-${rotulo}.png`, fullPage: true })
+const r = { rotulo, pessoas: 10, toques, ms, opcoesDePeriodo: opcoes, rotuloBotaoFinal: rotuloBotao, resultado: resultado.slice(0, 1200) }
+writeFileSync(`${MEDIDAS}/F/ja-atendo-${rotulo}.json`, JSON.stringify(r, null, 2))
+console.log(JSON.stringify(r, null, 1))
+await browser.close()

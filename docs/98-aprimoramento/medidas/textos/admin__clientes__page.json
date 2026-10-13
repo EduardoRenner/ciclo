@@ -1,0 +1,374 @@
+{
+ "rota": "admin/clientes/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/clientes/page.tsx",
+  "src/app/admin/clientes/advocacia.tsx",
+  "src/app/admin/clientes/lista.tsx",
+  "src/components/ui/avatar.tsx",
+  "src/components/ui/filter-row.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/alert-banner.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/stat-tile.tsx",
+  "src/lib/formato.ts",
+  "src/lib/app-url.ts",
+  "src/components/ui/icone-anel.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/badge.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/shell/vocabulario.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/chip.tsx",
+  "src/components/ui/skeleton.tsx"
+ ],
+ "total": 53,
+ "textos": [
+  {
+   "texto": "Clientes",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 27,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "{painel.total} na carteira{…}",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 66,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Cadastrar {…}",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 76,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Baixar todos em planilha",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 93,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Ticket médio",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 99,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Voltam de novo",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 101,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "{…} do plano",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 118,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "{painel.total} de {limiteClientes.limite}",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 119,
+   "tipo": "prop:valor"
+  },
+  {
+   "texto": "Ver planos",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 141,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Você tem {painel.total} clientes, acima dos {limiteClientes.limite} do plano atual. Nada foi bloqueado: cadastrar continua funcionando e nenhuma ficha some.",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 145,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nada foi bloqueado",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 146,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "{painel.total} de {limiteClientes.limite} clientes do plano atual.",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 151,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Gerencie seu plano em {APP_HOST}.",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 155,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Recuperar",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 174,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "cliente está sumindo",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 176,
+   "tipo": "texto",
+   "tag": "AlertBanner"
+  },
+  {
+   "texto": "clientes estão sumindo",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 176,
+   "tipo": "texto",
+   "tag": "AlertBanner"
+  },
+  {
+   "texto": "esse mês",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 185,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "faz aniversário",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 185,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "fazem aniversário",
+   "arquivo": "src/app/admin/clientes/page.tsx",
+   "linha": 185,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Clientes",
+   "arquivo": "src/app/admin/clientes/advocacia.tsx",
+   "linha": 45,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Cliente",
+   "arquivo": "src/app/admin/clientes/advocacia.tsx",
+   "linha": 50,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Filtrar clientes",
+   "arquivo": "src/app/admin/clientes/advocacia.tsx",
+   "linha": 54,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Todos",
+   "arquivo": "src/app/admin/clientes/advocacia.tsx",
+   "linha": 56,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Com caso aberto",
+   "arquivo": "src/app/admin/clientes/advocacia.tsx",
+   "linha": 59,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Nenhum cliente ainda",
+   "arquivo": "src/app/admin/clientes/advocacia.tsx",
+   "linha": 66,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Cadastre o cliente ou traga a planilha que o escritório já usa.",
+   "arquivo": "src/app/admin/clientes/advocacia.tsx",
+   "linha": 67,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Importar planilha",
+   "arquivo": "src/app/admin/clientes/advocacia.tsx",
+   "linha": 68,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Tem holding",
+   "arquivo": "src/app/admin/clientes/advocacia.tsx",
+   "linha": 79,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Tem caso sigiloso",
+   "arquivo": "src/app/admin/clientes/advocacia.tsx",
+   "linha": 80,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "· atrasado",
+   "arquivo": "src/app/admin/clientes/advocacia.tsx",
+   "linha": 89,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "🎂 Aniversariante",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 31,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Primeira visita sem volta",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 32,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Ticket alto",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 33,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Buscar {vocabulario.cliente} por nome ou telefone",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 148,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Nome ou telefone",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 156,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Filtrar por grupo",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 168,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Buscando.",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 190,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Não consegui buscar. A lista abaixo é a anterior.",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 192,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{clientes.length} {…} na lista.{…}",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 193,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Não consegui buscar agora. Confira a conexão e tente de novo. A lista abaixo é a de antes.",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 198,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ninguém nesse grupo agora",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 218,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Nenhum resultado",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 220,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Sem {plural(vocabulario.cliente)} ainda",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 221,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Esse filtro atualiza todo dia, volte mais tarde.",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 225,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Confira a grafia do nome ou o telefone digitado.",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 227,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "A primeira ficha é o que faz o Motor de Ciclo ter de quem cuidar.",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 228,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Cadastrar {vocabulario.cliente}",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 230,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Já atende gente, mas não tem planilha?",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 253,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Traga quem você já atende",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 255,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Já tem uma lista pronta?",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 259,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Importe uma planilha",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 261,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Carregando…",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 321,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Carregar mais",
+   "arquivo": "src/app/admin/clientes/lista.tsx",
+   "linha": 321,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

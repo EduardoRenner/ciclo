@@ -1,0 +1,136 @@
+{
+ "rota": "admin/config/notificacoes/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/notificacoes/page.tsx",
+  "src/app/admin/config/notificacoes/ativar.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/skeleton.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 18,
+ "textos": [
+  {
+   "texto": "Notificações",
+   "arquivo": "src/app/admin/config/notificacoes/page.tsx",
+   "linha": 14,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Notificações",
+   "arquivo": "src/app/admin/config/notificacoes/page.tsx",
+   "linha": 19,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Web Push: funciona com o app instalado, mesmo em segundo plano.",
+   "arquivo": "src/app/admin/config/notificacoes/page.tsx",
+   "linha": 19,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Notificação push ainda não está configurada neste ambiente.",
+   "arquivo": "src/app/admin/config/notificacoes/ativar.tsx",
+   "linha": 49,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não conseguimos salvar a inscrição no servidor.",
+   "arquivo": "src/app/admin/config/notificacoes/ativar.tsx",
+   "linha": 68,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não foi possível ativar as notificações.",
+   "arquivo": "src/app/admin/config/notificacoes/ativar.tsx",
+   "linha": 72,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não conseguimos desativar no servidor. Tente de novo.",
+   "arquivo": "src/app/admin/config/notificacoes/ativar.tsx",
+   "linha": 96,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não foi possível desativar as notificações.",
+   "arquivo": "src/app/admin/config/notificacoes/ativar.tsx",
+   "linha": 101,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Adicione o CICLO à tela de início para receber notificações",
+   "arquivo": "src/app/admin/config/notificacoes/ativar.tsx",
+   "linha": 130,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Toque no ícone de compartilhar do Safari (o quadrado com a seta para cima)",
+   "arquivo": "src/app/admin/config/notificacoes/ativar.tsx",
+   "linha": 132,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Escolha &quot;Adicionar à Tela de Início&quot;",
+   "arquivo": "src/app/admin/config/notificacoes/ativar.tsx",
+   "linha": 133,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Abra o CICLO pelo ícone que aparecer lá, não mais pelo Safari",
+   "arquivo": "src/app/admin/config/notificacoes/ativar.tsx",
+   "linha": 134,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Seu navegador não aceita notificações push.",
+   "arquivo": "src/app/admin/config/notificacoes/ativar.tsx",
+   "linha": 141,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Notificação bloqueada nas permissões do navegador. Libere no navegador para ativar.",
+   "arquivo": "src/app/admin/config/notificacoes/ativar.tsx",
+   "linha": 145,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Lembretes e alertas no aparelho",
+   "arquivo": "src/app/admin/config/notificacoes/ativar.tsx",
+   "linha": 150,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Receba avisos mesmo com o app fechado.",
+   "arquivo": "src/app/admin/config/notificacoes/ativar.tsx",
+   "linha": 151,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Desativar notificações",
+   "arquivo": "src/app/admin/config/notificacoes/ativar.tsx",
+   "linha": 155,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Ativar notificações",
+   "arquivo": "src/app/admin/config/notificacoes/ativar.tsx",
+   "linha": 159,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

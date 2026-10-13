@@ -1,0 +1,11 @@
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs'
+const b = await chromium.launch({ channel: 'chrome' })
+const ctx = await b.newContext({ storageState: 'C:/temp/ciclo-medicao/estado-A-dono.json', timezoneId: 'America/Sao_Paulo' })
+for (const base of ['http://localhost:3200', 'http://localhost:3201']) {
+  for (const rota of ['/admin/agenda?date=2026-10-14', '/admin/hoje']) {
+    const html = await (await ctx.request.get(base + rota)).text()
+    const textos = [...html.matchAll(/>(\s*(?:[01]\d|2[0-3]):[0-5]\d\s*)</g)].map((m) => m[1].trim())
+    console.log(base, rota, 'horas no HTML:', JSON.stringify(textos))
+  }
+}
+await b.close()

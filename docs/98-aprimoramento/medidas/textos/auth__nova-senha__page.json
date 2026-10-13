@@ -1,0 +1,76 @@
+{
+ "rota": "(auth)/nova-senha/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(auth)/nova-senha/page.tsx",
+  "src/app/(auth)/nova-senha/formulario.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/shell/selo.tsx",
+  "src/components/shell/tela-publica.tsx",
+  "src/components/ui/toast.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/input.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 9,
+ "textos": [
+  {
+   "texto": "Nova senha",
+   "arquivo": "src/app/(auth)/nova-senha/page.tsx",
+   "linha": 9,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Criar senha nova",
+   "arquivo": "src/app/(auth)/nova-senha/page.tsx",
+   "linha": 26,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Escolha uma senha que você use só aqui. Os outros aparelhos conectados vão cair.",
+   "arquivo": "src/app/(auth)/nova-senha/page.tsx",
+   "linha": 28,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "As duas senhas estão diferentes.",
+   "arquivo": "src/app/(auth)/nova-senha/formulario.tsx",
+   "linha": 17,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui trocar a senha.",
+   "arquivo": "src/app/(auth)/nova-senha/formulario.tsx",
+   "linha": 32,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Tente de novo.",
+   "arquivo": "src/app/(auth)/nova-senha/formulario.tsx",
+   "linha": 38,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Senha nova",
+   "arquivo": "src/app/(auth)/nova-senha/formulario.tsx",
+   "linha": 66,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Repita a senha",
+   "arquivo": "src/app/(auth)/nova-senha/formulario.tsx",
+   "linha": 67,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Salvar senha nova",
+   "arquivo": "src/app/(auth)/nova-senha/formulario.tsx",
+   "linha": 74,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

@@ -1,0 +1,238 @@
+{
+ "rota": "(public)/calculadora/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(public)/calculadora/page.tsx",
+  "src/app/(public)/calculadora/calculadora.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/chip.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/money-input.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 34,
+ "textos": [
+  {
+   "texto": "Quanto você perde com cliente que parou de voltar",
+   "arquivo": "src/app/(public)/calculadora/page.tsx",
+   "linha": 24,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Calculadora grátis para salão e barbearia: quanto deixou de entrar com os clientes que pararam de vir, pelo ritmo de retorno do seu negócio. Sem cadastro.",
+   "arquivo": "src/app/(public)/calculadora/page.tsx",
+   "linha": 26,
+   "tipo": "metadata/description"
+  },
+  {
+   "texto": "Quanto você perde com cliente que parou de voltar · CICLO",
+   "arquivo": "src/app/(public)/calculadora/page.tsx",
+   "linha": 29,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Três números que você sabe de cabeça e a conta aparece. Grátis, sem cadastro.",
+   "arquivo": "src/app/(public)/calculadora/page.tsx",
+   "linha": 30,
+   "tipo": "metadata/description"
+  },
+  {
+   "texto": "Entrar",
+   "arquivo": "src/app/(public)/calculadora/page.tsx",
+   "linha": 51,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Quanto deixou de entrar com quem parou de voltar?",
+   "arquivo": "src/app/(public)/calculadora/page.tsx",
+   "linha": 57,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Três números que você sabe de cabeça. Sem cadastro, sem porcentagem de pesquisa: a conta é com o ritmo do seu negócio, e aparece inteira embaixo do resultado.",
+   "arquivo": "src/app/(public)/calculadora/page.tsx",
+   "linha": 60,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Pense em pelo menos um cliente que sumiu.",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 47,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Até {LIMITES.clientesSumidos.max}. Esta conta é de quem você lembra de cabeça.",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 49,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Digite quanto um cliente gasta por visita.",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 53,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Até {…} por visita.",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 55,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Use um número entre {LIMITES.retornoDias.min} e {LIMITES.retornoDias.max} dias.",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 59,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Corrija o campo marcado para ver a conta.",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 64,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Preencha os três números para ver a conta.",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 64,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…} por mês, {…} por ano.",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 66,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Quantos clientes que vinham sempre pararam de vir? Conte quem você lembra.",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 73,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Pense em nomes, não em porcentagem. Exemplo: 8.",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 74,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Quanto rendia cada visita?",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 84,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "O ticket médio. Exemplo: R$ 35,00.",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 85,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "De quanto em quanto tempo a clientela fiel volta?",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 93,
+   "tipo": "rótulo",
+   "tag": "legend"
+  },
+  {
+   "texto": "{dias} dias",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 98,
+   "tipo": "texto",
+   "tag": "Chip"
+  },
+  {
+   "texto": "Ou digite em dias",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 103,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Deixou de entrar, só com essas pessoas:",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 116,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Com os números de exemplo acima. Troque pelos seus:",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 116,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "por mês",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 125,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "por ano",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 128,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "A conta: quem volta a cada {retorno} dias vem",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 132,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "vezes por ano. A",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 133,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "por visita, cada cliente nesse ritmo vale",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 134,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "por ano. Vezes {clientes}.",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 135,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "A conta:",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 132,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "E essa conta é só de quem você lembrou. Quem sumiu sem você notar não entra nela.",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 143,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O CICLO usa o intervalo entre as visitas de cada cliente e mostra, pelo nome, quem passou da hora de voltar. Com uma mensagem pronta para mandar pelo seu WhatsApp. É grátis, sem cartão.",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 146,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ver quem sumiu, pelo nome",
+   "arquivo": "src/app/(public)/calculadora/calculadora.tsx",
+   "linha": 157,
+   "tipo": "link",
+   "tag": "Link"
+  }
+ ]
+}

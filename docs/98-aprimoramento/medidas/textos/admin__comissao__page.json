@@ -1,0 +1,132 @@
+{
+ "rota": "admin/comissao/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/comissao/page.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/card.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/lib/formato.ts",
+  "src/lib/utils.ts"
+ ],
+ "total": 18,
+ "textos": [
+  {
+   "texto": "Minha comissão",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 16,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Minha comissão",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 35,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Você não tem acesso a esta tela",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 39,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Só quem atende ou cuida do financeiro vê a comissão. Peça ao dono se precisar.",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 40,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Voltar para Hoje",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 41,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Comissão",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 57,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "O extrato item a item de cada profissional.",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 57,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "O total de comissão por profissional já está no",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 60,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": ". O extrato item a item de um profissional específico chega aqui em breve.",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 64,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Caixa",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 62,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Minha comissão",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 77,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Sua conta ainda não está ligada a um cadastro de profissional",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 81,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Peça ao dono para te vincular na tela de Time.",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 82,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Voltar para Hoje",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 83,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Minha comissão",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 100,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Este mês, item a item: o valor de cada linha é o que foi congelado no fechamento daquela comanda.",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 100,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Total do mês",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 103,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Nenhum atendimento seu fechou comissão este mês ainda.",
+   "arquivo": "src/app/admin/comissao/page.tsx",
+   "linha": 108,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

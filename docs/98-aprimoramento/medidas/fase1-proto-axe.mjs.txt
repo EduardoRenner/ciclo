@@ -1,0 +1,12 @@
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs'
+import AxeBuilder from 'file:///C:/temp/ciclo-medicao/node_modules/@axe-core/playwright/dist/index.mjs'
+const base = 'file:///C:/Users/Usuario/.claude/code/ciclo-aprimoramento/docs/98-aprimoramento/prototipos/'
+const b = await chromium.launch({ channel: 'chrome' })
+const ctx = await b.newContext({ viewport: { width: 1400, height: 1000 } }); const p = await ctx.newPage()
+const casos = [['hoje','normal'],['agendar-painel','normal'],['agendar-painel','conflito'],['recuperar','normal'],['recuperar','filtro'],['ficha-e-comanda','ficha'],['ficha-e-comanda','comanda-desconto'],['publico','escolher'],['publico','confirmar']]
+for (const [arq, est] of casos) for (const tema of ['claro','escuro']) {
+  await p.goto(`${base}${arq}.html#aparelho=celular&largura=390&tema=${tema}&estado=${est}`); await p.reload(); await p.waitForTimeout(150)
+  const r = await new AxeBuilder({ page: p }).include('.aparelho').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze()
+  console.log(arq, est, tema, r.violations.map(v => `${v.id}(${v.nodes.length})`).join(' ') || '0 violações')
+}
+await b.close()

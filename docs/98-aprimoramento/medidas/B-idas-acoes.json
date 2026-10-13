@@ -1,0 +1,701 @@
+[
+  {
+    "nome": "criar agendamento (POST /appointments)",
+    "method": "POST",
+    "path": "/api/v1/appointments",
+    "status": 200,
+    "ttfbMs": 1384,
+    "totalMs": 1388,
+    "idasRest": 12,
+    "idasAuth": 1,
+    "idasTotal": 13,
+    "ondasMedidas": 13,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:tenants"
+      ],
+      [
+        "insert:idempotency_keys[service_role]"
+      ],
+      [
+        "select:professionals"
+      ],
+      [
+        "select:services"
+      ],
+      [
+        "select:clients"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "select:client_subscriptions"
+      ],
+      [
+        "insert:appointments"
+      ],
+      [
+        "insert:audit_log[service_role]"
+      ],
+      [
+        "update:idempotency_keys[service_role]"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 2,
+    "depoisDaResposta": [],
+    "dbMsTotal": 85.8
+  },
+  {
+    "nome": "criar agendamento 2",
+    "method": "POST",
+    "path": "/api/v1/appointments",
+    "status": 200,
+    "ttfbMs": 1113,
+    "totalMs": 1114,
+    "idasRest": 12,
+    "idasAuth": 1,
+    "idasTotal": 13,
+    "ondasMedidas": 13,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:tenants"
+      ],
+      [
+        "insert:idempotency_keys[service_role]"
+      ],
+      [
+        "select:services"
+      ],
+      [
+        "select:professionals"
+      ],
+      [
+        "select:clients"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "select:client_subscriptions"
+      ],
+      [
+        "insert:appointments"
+      ],
+      [
+        "insert:audit_log[service_role]"
+      ],
+      [
+        "update:idempotency_keys[service_role]"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 98.1
+  },
+  {
+    "nome": "confirmar (POST /confirm)",
+    "method": "POST",
+    "path": "/api/v1/appointments/acf0a230-3a9b-419d-bafc-881ceed00f14/confirm",
+    "status": 200,
+    "ttfbMs": 322,
+    "totalMs": 322,
+    "idasRest": 6,
+    "idasAuth": 1,
+    "idasTotal": 7,
+    "ondasMedidas": 7,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "insert:idempotency_keys[service_role]"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "update:appointments"
+      ],
+      [
+        "insert:audit_log[service_role]"
+      ],
+      [
+        "update:idempotency_keys[service_role]"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 35.1
+  },
+  {
+    "nome": "chegou (POST /arrive)",
+    "method": "POST",
+    "path": "/api/v1/appointments/acf0a230-3a9b-419d-bafc-881ceed00f14/arrive",
+    "status": 200,
+    "ttfbMs": 501,
+    "totalMs": 502,
+    "idasRest": 6,
+    "idasAuth": 1,
+    "idasTotal": 7,
+    "ondasMedidas": 7,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "insert:idempotency_keys[service_role]"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "update:appointments"
+      ],
+      [
+        "insert:audit_log[service_role]"
+      ],
+      [
+        "update:idempotency_keys[service_role]"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 81.6
+  },
+  {
+    "nome": "concluir/abrir comanda (POST /complete)",
+    "method": "POST",
+    "path": "/api/v1/appointments/acf0a230-3a9b-419d-bafc-881ceed00f14/complete",
+    "status": 200,
+    "ttfbMs": 739,
+    "totalMs": 741,
+    "idasRest": 23,
+    "idasAuth": 1,
+    "idasTotal": 24,
+    "ondasMedidas": 18,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "insert:idempotency_keys[service_role]"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "update:appointments"
+      ],
+      [
+        "select:tickets"
+      ],
+      [
+        "select:tenants"
+      ],
+      [
+        "select:appointments",
+        "select:client_subscriptions",
+        "select:packages",
+        "select:services",
+        "select:appointments"
+      ],
+      [
+        "select:professionals",
+        "select:service_products+products",
+        "select:professional_services"
+      ],
+      [
+        "insert:client_cycles"
+      ],
+      [
+        "select:tenants+professions"
+      ],
+      [
+        "select:tenant_modules"
+      ],
+      [
+        "select:tenants"
+      ],
+      [
+        "select:clients"
+      ],
+      [
+        "insert:loyalty_entries"
+      ],
+      [
+        "insert:tickets"
+      ],
+      [
+        "insert:audit_log[service_role]"
+      ],
+      [
+        "update:idempotency_keys[service_role]"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 81.3
+  },
+  {
+    "nome": "abrir comanda (GET /admin/comanda/[id])",
+    "method": "GET",
+    "path": "/admin/comanda/d549578a-64fe-40de-9f5e-8e1419817e55",
+    "status": 200,
+    "ttfbMs": 209,
+    "totalMs": 251,
+    "idasRest": 7,
+    "idasAuth": 2,
+    "idasTotal": 9,
+    "ondasMedidas": 5,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:ticket_items",
+        "select:tickets",
+        "select:tenants+professions",
+        "select:products",
+        "select:services"
+      ],
+      [
+        "select:tenant_modules"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 8.6
+  },
+  {
+    "nome": "adicionar item (POST /tickets/[id]/items)",
+    "method": "POST",
+    "path": "/api/v1/tickets/d549578a-64fe-40de-9f5e-8e1419817e55/items",
+    "status": 200,
+    "ttfbMs": 706,
+    "totalMs": 707,
+    "idasRest": 13,
+    "idasAuth": 1,
+    "idasTotal": 14,
+    "ondasMedidas": 12,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:tenants+professions"
+      ],
+      [
+        "select:tenant_modules"
+      ],
+      [
+        "insert:idempotency_keys[service_role]"
+      ],
+      [
+        "select:tickets"
+      ],
+      [
+        "select:services",
+        "select:service_products+products"
+      ],
+      [
+        "insert:ticket_items"
+      ],
+      [
+        "select:tickets",
+        "select:ticket_items"
+      ],
+      [
+        "update:tickets"
+      ],
+      [
+        "insert:audit_log[service_role]"
+      ],
+      [
+        "update:idempotency_keys[service_role]"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 48
+  },
+  {
+    "nome": "receber (POST /tickets/[id]/close)",
+    "method": "POST",
+    "path": "/api/v1/tickets/d549578a-64fe-40de-9f5e-8e1419817e55/close",
+    "status": 200,
+    "ttfbMs": 907,
+    "totalMs": 908,
+    "idasRest": 21,
+    "idasAuth": 1,
+    "idasTotal": 22,
+    "ondasMedidas": 19,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "insert:idempotency_keys[service_role]"
+      ],
+      [
+        "select:ticket_items",
+        "select:tickets"
+      ],
+      [
+        "select:tenants"
+      ],
+      [
+        "select:professional_services"
+      ],
+      [
+        "select:professionals"
+      ],
+      [
+        "update:ticket_items"
+      ],
+      [
+        "select:services"
+      ],
+      [
+        "update:tickets"
+      ],
+      [
+        "select:ticket_items"
+      ],
+      [
+        "select:service_products"
+      ],
+      [
+        "select:monthly_profit"
+      ],
+      [
+        "select:tickets",
+        "select:tickets",
+        "select:tickets"
+      ],
+      [
+        "insert:monthly_profit"
+      ],
+      [
+        "insert:monthly_profit"
+      ],
+      [
+        "insert:monthly_profit"
+      ],
+      [
+        "insert:audit_log[service_role]"
+      ],
+      [
+        "update:idempotency_keys[service_role]"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 84.4
+  },
+  {
+    "nome": "confirmar 2 (antes do faltou)",
+    "method": "POST",
+    "path": "/api/v1/appointments/74402cb3-b183-4ca0-bdfb-0e5f241158cf/confirm",
+    "status": 200,
+    "ttfbMs": 1446,
+    "totalMs": 1447,
+    "idasRest": 6,
+    "idasAuth": 1,
+    "idasTotal": 7,
+    "ondasMedidas": 7,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "insert:idempotency_keys[service_role]"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "update:appointments"
+      ],
+      [
+        "insert:audit_log[service_role]"
+      ],
+      [
+        "update:idempotency_keys[service_role]"
+      ]
+    ],
+    "restIndefinidas": [
+      "service_role:select:tenants+professions",
+      "service_role:select:business_hours",
+      "service_role:select:professionals",
+      "service_role:select:client_reviews",
+      "service_role:select:client_reviews",
+      "service_role:select:portfolio_photos",
+      "service_role:select:services+products"
+    ],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 244.5
+  },
+  {
+    "nome": "faltou (POST /no-show)",
+    "method": "POST",
+    "path": "/api/v1/appointments/74402cb3-b183-4ca0-bdfb-0e5f241158cf/no-show",
+    "status": 200,
+    "ttfbMs": 1626,
+    "totalMs": 1626,
+    "idasRest": 6,
+    "idasAuth": 1,
+    "idasTotal": 7,
+    "ondasMedidas": 7,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "insert:idempotency_keys[service_role]"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "update:appointments"
+      ],
+      [
+        "insert:audit_log[service_role]"
+      ],
+      [
+        "update:idempotency_keys[service_role]"
+      ]
+    ],
+    "restIndefinidas": [
+      "service_role:select:services",
+      "service_role:select:professionals",
+      "service_role:select:clients",
+      "service_role:insert:clients",
+      "service_role:select:appointments",
+      "service_role:select:appointments",
+      "service_role:select:client_subscriptions",
+      "service_role:insert:appointments",
+      "service_role:select:push_subscriptions"
+    ],
+    "restDeOutroUsuario": 3,
+    "depoisDaResposta": [],
+    "dbMsTotal": 173.6
+  },
+  {
+    "nome": "chamar cliente (POST /cycle/recover/manual)",
+    "method": "POST",
+    "path": "/api/v1/cycle/recover/manual",
+    "status": 200,
+    "ttfbMs": 379,
+    "totalMs": 380,
+    "idasRest": 6,
+    "idasAuth": 1,
+    "idasTotal": 7,
+    "ondasMedidas": 6,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "insert:idempotency_keys[service_role]"
+      ],
+      [
+        "select:client_cycles",
+        "select:clients"
+      ],
+      [
+        "insert:audit_log[service_role]"
+      ],
+      [
+        "update:idempotency_keys[service_role]"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 8.7
+  },
+  {
+    "nome": "agendar público (POST /public/[slug]/book)",
+    "method": "POST",
+    "path": "/api/v1/public/demo-salao-encanto/book",
+    "status": 200,
+    "ttfbMs": 294,
+    "totalMs": 295,
+    "idasRest": 9,
+    "idasAuth": 0,
+    "idasTotal": 9,
+    "ondasMedidas": 9,
+    "porOnda": [
+      [
+        "select:tenants+professions[service_role]"
+      ],
+      [
+        "select:services[service_role]"
+      ],
+      [
+        "select:professionals[service_role]"
+      ],
+      [
+        "select:clients[service_role]"
+      ],
+      [
+        "select:appointments[service_role]"
+      ],
+      [
+        "select:appointments[service_role]"
+      ],
+      [
+        "select:client_subscriptions[service_role]"
+      ],
+      [
+        "insert:appointments[service_role]"
+      ],
+      [
+        "select:push_subscriptions[service_role]"
+      ]
+    ],
+    "restIndefinidas": [
+      "service_role:rpc:consumir_rate_limit",
+      "service_role:rpc:consumir_rate_limit",
+      "service_role:rpc:consumir_rate_limit"
+    ],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 11.5
+  },
+  {
+    "nome": "abrir link de confirmação (GET /confirmar/[token])",
+    "method": "GET",
+    "path": "/confirmar/<token>",
+    "status": 200,
+    "ttfbMs": 24,
+    "totalMs": 38,
+    "idasRest": 0,
+    "idasAuth": 0,
+    "idasTotal": 0,
+    "ondasMedidas": 0,
+    "porOnda": [],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 0
+  },
+  {
+    "nome": "confirmar por link (POST /public/appointments/confirm/[token])",
+    "method": "POST",
+    "path": "/api/v1/public/appointments/confirm/<token>",
+    "status": 200,
+    "ttfbMs": 72,
+    "totalMs": 73,
+    "idasRest": 3,
+    "idasAuth": 0,
+    "idasTotal": 3,
+    "ondasMedidas": 3,
+    "porOnda": [
+      [
+        "select:appointments[service_role]"
+      ],
+      [
+        "select:appointments[service_role]"
+      ],
+      [
+        "update:appointments[service_role]"
+      ]
+    ],
+    "restIndefinidas": [
+      "service_role:rpc:consumir_rate_limit"
+    ],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 3.6
+  },
+  {
+    "nome": "entrar (POST /auth/login)",
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "status": 200,
+    "ttfbMs": 305,
+    "totalMs": 305,
+    "idasRest": 3,
+    "idasAuth": 1,
+    "idasTotal": 4,
+    "ondasMedidas": 4,
+    "porOnda": [
+      [
+        "rpc:consumir_rate_limit[service_role]"
+      ],
+      [
+        "rpc:consumir_rate_limit[service_role]"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 12.4
+  }
+]

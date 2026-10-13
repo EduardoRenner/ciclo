@@ -1,0 +1,23 @@
+// Exploração do fluxo de agendar (sem throttle), para descobrir os passos antes de medir.
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs'
+const BASE = 'http://localhost:3200'
+const slug = process.argv[2] ?? 'demo-espaco-vitoria'
+const browser = await chromium.launch({ channel: 'chrome' })
+const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, locale: 'pt-BR' })
+const page = await ctx.newPage()
+await page.goto(`${BASE}/${slug}/agendar`, { waitUntil: 'networkidle' })
+const dump = async (rotulo) => {
+  const t = await page.evaluate(() => document.body.innerText.replace(/\n{2,}/g, '\n'))
+  const campos = await page.evaluate(() => [...document.querySelectorAll('input, textarea, select')].filter((e) => e.getBoundingClientRect().height > 0).map((e) => `${e.tagName}[${e.type}] name=${e.name} label=${e.labels?.[0]?.innerText?.trim()} req=${e.required}`))
+  console.log(`\n### ${rotulo}\n${t.slice(-1800)}\nCAMPOS: ${JSON.stringify(campos, null, 1)}`)
+}
+await page.getByRole('button', { name: /Manicure simples/ }).click()
+await page.waitForTimeout(800)
+await dump('apos servico')
+await page.getByRole('button', { name: /^Tanto faz/ }).click().catch(() => {})
+await page.waitForTimeout(800)
+await page.locator('button', { hasText: /^\d\d:\d\d$/ }).first().click()
+await page.waitForTimeout(800)
+await dump('apos horario')
+await page.screenshot({ path: 'C:/Users/Usuario/AppData/Local/Temp/claude/C--Users-Usuario--claude-code/e8b292ff-31ba-449f-a161-f42677840433/scratchpad/agendar-form.png', fullPage: true })
+await browser.close()

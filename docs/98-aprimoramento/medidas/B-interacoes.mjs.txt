@@ -1,0 +1,342 @@
+// Agente B · interação: do toque até a 1ª mudança visual, INP (Event Timing) e até o estado final;
+// e DUPLO TOQUE em toda ação que grava (conta POSTs que saíram e linhas gravadas no banco LOCAL).
+// Sessão do dono demo-salao-encanto (tenant próprio do agente B). Build de produção local :3200.
+// Uso: node B-interacoes.mjs <saida.json> [celular|computador] [reps=5] [so-duplo]
+import { randomUUID } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
+
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs';
+
+import { cookieHeader, psql } from './B-lib-log.mjs';
+
+const BASE = 'http://localhost:3200';
+const ESTADO = 'C:/temp/ciclo-medicao/estado-B-dono.json';
+const TENANT = '320d83de-611f-48e1-9761-570863fbb10b';
+const SERVICO = '083649fa-03b0-4ed3-86c1-77f39b978aee';
+const PROFS = ['b242a39c-3edd-4976-bb54-bf8ae6137390', 'ce860c4b-e3e0-4b32-b509-fb706f5a77b7', 'd5047e62-6b51-434c-b4a2-457904a69e15'];
+const CLIENTES = ['b5a85dd1-6bb6-4393-b416-0c39f4ecc224', '17a6b782-839c-40a7-9681-06d60e7d4e62', '3a27a6d8-c442-4674-a9b4-2e952342a228'];
+const [, , arqSaida, perfilNome = 'celular', repsArg = '5', modo = ''] = process.argv;
+const REPS = Number(repsArg);
+const PERFIS = {
+  celular: { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3, cpu: 4, rede: { latency: 150, downloadThroughput: (1.6e6 / 8) | 0, uploadThroughput: (0.75e6 / 8) | 0 } },
+  computador: { viewport: { width: 1280, height: 800 }, hasTouch: false, isMobile: false, deviceScaleFactor: 1, cpu: 1, rede: null },
+};
+const perfil = PERFIS[perfilNome];
+const cookie = cookieHeader();
+
+// ---------- preparação de dados pela API (não medida) ----------
+async function api(method, path, body) {
+  const r = await fetch(BASE + path, { method, headers: { cookie, 'content-type': 'application/json', origin: BASE, 'idempotency-key': randomUUID() }, body: body ? JSON.stringify(body) : undefined });
+  const t = await r.text();
+  try {
+    return { status: r.status, json: JSON.parse(t) };
+  } catch {
+    return { status: r.status, json: null };
+  }
+}
+let slot = 0;
+async function criarPendente(dia = '2026-10-16') {
+  for (let tent = 0; tent < 40; tent++) {
+    const i = slot++;
+    const prof = PROFS[i % 3];
+    const hora = 9 + (Math.floor(i / 3) % 10);
+    const r = await api('POST', '/api/v1/appointments', { clientId: CLIENTES[i % 3], serviceId: SERVICO, professionalId: prof, startsAt: `${dia}T${String(hora).padStart(2, '0')}:00:00-03:00` });
+    if (r.status === 200) return r.json.data.appointment.id;
+  }
+  throw new Error('não achei horário livre para preparar');
+}
+async function abrirComanda() {
+  const id = await criarPendente('2026-10-13');
+  await api('POST', `/api/v1/appointments/${id}/confirm`);
+  await api('POST', `/api/v1/appointments/${id}/arrive`);
+  const c = await api('POST', `/api/v1/appointments/${id}/complete`);
+  return c.json.data.ticket.id;
+}
+
+// ---------- instrumentação na página ----------
+function instalar() {
+  if (window.__i) return;
+  window.__i = { armado: false, mut: null, ev: [], alvoMudou: null };
+  try {
+    new PerformanceObserver((l) => {
+      for (const e of l.getEntries()) if (window.__i.armado) window.__i.ev.push({ n: e.name, s: e.startTime, d: e.duration, id: e.interactionId });
+    }).observe({ type: 'event', durationThreshold: 16, buffered: false });
+  } catch {}
+  new MutationObserver(() => {
+    const i = window.__i;
+    if (!i.armado) return;
+    const t = performance.now();
+    if (i.mut == null) i.mut = t;
+    const alvo = document.querySelector('[data-b-alvo]');
+    if (i.alvoMudou == null && (!alvo || alvo.disabled || alvo.getAttribute('aria-busy') === 'true' || alvo.getAttribute('aria-disabled') === 'true')) i.alvoMudou = t;
+  }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, characterData: true });
+}
+function armar() {
+  const i = window.__i;
+  i.mut = null;
+  i.ev = [];
+  i.alvoMudou = null;
+  i.t0 = performance.now();
+  i.armado = true;
+}
+function ler() {
+  const i = window.__i;
+  i.armado = false;
+  return { t0: i.t0, mut: i.mut, ev: i.ev, alvoMudou: i.alvoMudou };
+}
+function predicado(spec) {
+  const re = spec.re ? new RegExp(spec.re, 'i') : null;
+  let ok = false;
+  if (spec.tipo === 'texto') ok = re.test((document.querySelector('main') || document.body).innerText || '');
+  else if (spec.tipo === 'body') ok = re.test(document.body.innerText || '');
+  else if (spec.tipo === 'sel') ok = !!document.querySelector(spec.sel);
+  else if (spec.tipo === 'url') ok = re.test(location.pathname + location.search);
+  return ok ? performance.now() : false;
+}
+async function esperar(page, spec, ms = 60000) {
+  const fim = Date.now() + ms;
+  while (Date.now() < fim) {
+    const v = await page.evaluate(predicado, spec).catch(() => false);
+    if (v) return v;
+    await new Promise((r) => setTimeout(r, 20));
+  }
+  return null;
+}
+
+async function novaPagina(ctx) {
+  const page = await ctx.newPage();
+  const cdp = await ctx.newCDPSession(page);
+  if (perfil.cpu > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: perfil.cpu });
+  if (perfil.rede) {
+    await cdp.send('Network.enable');
+    await cdp.send('Network.emulateNetworkConditions', { offline: false, ...perfil.rede });
+  }
+  page.__posts = [];
+  page.on('request', (r) => {
+    if (r.method() !== 'GET' && r.url().includes('/api/')) page.__posts.push({ url: new URL(r.url()).pathname.replace(/[0-9a-f-]{36}/g, ':id'), t: Date.now() });
+  });
+  return page;
+}
+
+async function tocar(page, loc) {
+  if (perfil.hasTouch) await loc.tap();
+  else await loc.click();
+}
+async function tocarDuasVezes(page, loc) {
+  const box = await loc.boundingBox();
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  // Entrada crua, sem esperar o botão ficar habilitado: é o que o dedo faz.
+  if (perfil.hasTouch) {
+    await page.touchscreen.tap(x, y);
+    await page.touchscreen.tap(x, y);
+  } else {
+    await page.mouse.click(x, y);
+    await page.mouse.click(x, y);
+  }
+}
+
+/** Mede uma interação: prepara(page) → localizador do alvo → toque → espera estado final. */
+async function medir(page, { nome, alvo, final, duplo = false }) {
+  const loc = typeof alvo === 'function' ? alvo(page) : page.locator(alvo).first();
+  await loc.waitFor({ state: 'visible', timeout: 60000 });
+  await loc.evaluate((el) => el.setAttribute('data-b-alvo', '1'));
+  await page.evaluate(instalar);
+  await page.waitForTimeout(150);
+  await page.evaluate(armar);
+  const postsAntes = page.__posts.length;
+  if (duplo) await tocarDuasVezes(page, loc);
+  else await tocar(page, loc);
+  const tFinal = await esperar(page, final);
+  await page.waitForTimeout(duplo ? 3000 : 400);
+  const r = await page.evaluate(ler).catch(() => null);
+  if (!r) return { nome, erro: 'página trocou antes da leitura (navegação)', posts: page.__posts.slice(postsAntes).map((p) => p.url) };
+  const inicio = r.ev.length ? Math.min(...r.ev.map((e) => e.s)) : r.t0;
+  const inp = r.ev.length ? Math.round(Math.max(...r.ev.map((e) => e.d))) : '<16';
+  return {
+    nome,
+    // `inicio` = 1º evento que o Event Timing registrou (só registra eventos > 16 ms; se o pointerdown foi
+    // rápido, o 1º registrado pode ser o click, e a mudança aparece "antes" dele: negativo = imediato).
+    primeiraMudancaMs: r.mut != null ? Math.round(r.mut - inicio) : null,
+    primeiraMudancaDesdeArmarMs: r.mut != null ? Math.round(r.mut - r.t0) : null,
+    alvoReagiuMs: r.alvoMudou != null ? Math.round(r.alvoMudou - inicio) : null,
+    inpMs: inp,
+    finalMs: tFinal != null ? Math.round(tFinal - inicio) : null,
+    posts: page.__posts.slice(postsAntes).map((p) => p.url),
+    alertas: (await page.locator('[role=alert]').allInnerTexts().catch(() => [])).join(' | ').slice(0, 200) || undefined,
+  };
+}
+
+const mediana = (v) => {
+  const a = v.filter((x) => typeof x === 'number').sort((x, y) => x - y);
+  if (!a.length) return null;
+  const m = Math.floor(a.length / 2);
+  return a.length % 2 ? a[m] : Math.round((a[m - 1] + a[m]) / 2);
+};
+const pior = (v) => {
+  const a = v.filter((x) => typeof x === 'number');
+  return a.length ? Math.max(...a) : null;
+};
+
+const browser = await chromium.launch({ channel: 'chrome' });
+const ctx = await browser.newContext({ storageState: ESTADO, viewport: perfil.viewport, hasTouch: perfil.hasTouch, isMobile: perfil.isMobile, deviceScaleFactor: perfil.deviceScaleFactor, locale: 'pt-BR', timezoneId: 'America/Sao_Paulo' });
+const anon = await browser.newContext({ viewport: perfil.viewport, hasTouch: perfil.hasTouch, isMobile: perfil.isMobile, deviceScaleFactor: perfil.deviceScaleFactor, locale: 'pt-BR', timezoneId: 'America/Sao_Paulo' });
+const saida = { perfil: perfilNome, quando: new Date().toISOString(), interacoes: {}, duploToque: [] };
+const reg = (nome, r) => {
+  (saida.interacoes[nome] ??= []).push(r);
+  console.log(JSON.stringify(r));
+};
+
+try {
+  const page = await novaPagina(ctx);
+  if (modo !== 'so-duplo') {
+    for (let k = 0; k < REPS; k++) {
+      // I1 Hoje: tocar no 1º agendamento → abre o detalhe (sheet)
+      await page.goto(BASE + '/admin/hoje');
+      reg('Hoje: abrir agendamento', await medir(page, { nome: 'Hoje: abrir agendamento', alvo: (p) => p.locator('main button').filter({ hasText: /\d{2}:\d{2}/ }).first(), final: { tipo: 'sel', sel: '[role=dialog]' } }));
+      // I2 Nav inferior Hoje → Agenda (troca de tela suave)
+      await page.goto(BASE + '/admin/hoje');
+      reg('Trocar de tela: Hoje → Agenda', await medir(page, { nome: 'Trocar de tela: Hoje → Agenda', alvo: 'nav[aria-label="Navegação principal"] a[href="/admin/agenda"]', final: { tipo: 'texto', re: 'ocupação do dia' } }));
+      // I3 Agenda: tocar outro dia (quinta 15)
+      reg('Agenda: trocar de dia', await medir(page, { nome: 'Agenda: trocar de dia', alvo: (p) => p.locator('main button').filter({ hasText: /Qui\s*15/ }).first(), final: { tipo: 'texto', re: 'quinta-feira, 15 de outubro' } }));
+      // I4 Agenda: confirmar (otimista) um agendamento pendente do dia 16
+      const ap = await criarPendente();
+      await page.goto(BASE + '/admin/agenda?date=2026-10-16');
+      await page.locator('main button').filter({ hasText: /Aguardando/ }).first().waitFor({ timeout: 60000 });
+      await tocar(page, page.locator('main button').filter({ hasText: /Aguardando/ }).first());
+      reg('Agenda: Confirmar agendamento', await medir(page, { nome: 'Agenda: Confirmar agendamento', alvo: (p) => p.locator('[role=dialog] button', { hasText: /^Confirmar$/ }), final: { tipo: 'body', re: 'Agendamento confirmado' } }));
+      void ap;
+      // I5 Clientes: digitar na busca
+      await page.goto(BASE + '/admin/clientes');
+      const busca = page.locator('input[type=search]:visible').first();
+      await busca.waitFor();
+      await busca.evaluate((el) => el.setAttribute('data-b-alvo', '1'));
+      await page.evaluate(instalar);
+      await page.evaluate(armar);
+      await busca.pressSequentially('Isa', { delay: 80 });
+      const tb = await esperar(page, { tipo: 'texto', re: 'Isadora' });
+      const rb = await page.evaluate(ler);
+      reg('Clientes: buscar "Isa"', { nome: 'Clientes: buscar "Isa"', inpMs: rb.ev.length ? Math.round(Math.max(...rb.ev.map((e) => e.d))) : '<16', primeiraMudancaMs: rb.mut ? Math.round(rb.mut - rb.t0) : null, finalMs: tb ? Math.round(tb - rb.t0) : null, obs: 'medido do início da digitação (3 teclas, 80 ms entre elas)' });
+      // I6 Recuperar: filtro
+      await page.goto(BASE + '/admin/recuperar');
+      reg('Recuperar: filtro "Atrasadas"', await medir(page, { nome: 'Recuperar: filtro "Atrasadas"', alvo: (p) => p.locator('main button', { hasText: /^Atrasadas$/ }), final: { tipo: 'sel', sel: 'main button[aria-pressed="true"]' } }));
+      // I7/I8 Comanda: adicionar item e receber
+      const ticket = await abrirComanda();
+      await page.goto(BASE + `/admin/comanda/${ticket}`);
+      reg('Comanda: Adicionar item', await medir(page, { nome: 'Comanda: Adicionar item', alvo: (p) => p.locator('main button', { hasText: /^Adicionar$/ }), final: { tipo: 'sel', sel: 'main [aria-label^="Remover "]' } }));
+      await tocar(page, page.locator('main button', { hasText: /^Pix$/ }));
+      reg('Comanda: Fechar comanda (receber)', await medir(page, { nome: 'Comanda: Fechar comanda (receber)', alvo: (p) => p.locator('main button', { hasText: /^Fechar comanda$/ }), final: { tipo: 'texto', re: 'Comanda fechada' } }));
+      // I9 Público: escolher serviço → horários
+      const pp = await novaPagina(anon);
+      await pp.goto(BASE + '/demo-salao-encanto/agendar');
+      reg('Público: escolher serviço', await medir(pp, { nome: 'Público: escolher serviço', alvo: (p) => p.locator('button', { hasText: /Corte feminino/ }).first(), final: { tipo: 'body', re: 'horários? livres?|Sem horários|não abre' } }));
+      await pp.close();
+      // I10 Novo agendamento: Confirmar → volta para a agenda
+      await page.goto(BASE + `/admin/agenda/novo?cliente=${CLIENTES[k % 3]}`);
+      const ok = await prepararNovo(page, k);
+      if (ok) reg('Novo agendamento: Confirmar', await medir(page, { nome: 'Novo agendamento: Confirmar', alvo: (p) => p.locator('main button', { hasText: /^Confirmar agendamento$/ }), final: { tipo: 'url', re: '^/admin/agenda(\\?|$)' } }));
+    }
+  }
+
+  // ---------- duplo toque ----------
+  const contar = (sql) => Number(psql(sql));
+  // D1 Confirmar (agenda)
+  {
+    const ap = await criarPendente();
+    await page.goto(BASE + '/admin/agenda?date=2026-10-16');
+    const linha = page.locator('main button').filter({ hasText: /Aguardando/ }).first();
+    await linha.waitFor({ timeout: 60000 });
+    await tocar(page, linha);
+    const antes = contar(`select count(*) from audit_log where tenant_id='${TENANT}' and action='appointment.confirm'`);
+    const r = await medir(page, { nome: 'duplo: Confirmar', alvo: (p) => p.locator('[role=dialog] button', { hasText: /^Confirmar$/ }), final: { tipo: 'body', re: 'Agendamento confirmado' }, duplo: true });
+    const depois = contar(`select count(*) from audit_log where tenant_id='${TENANT}' and action='appointment.confirm'`);
+    saida.duploToque.push({ ...r, gravacoes: depois - antes, tela: (await page.locator('[role=alert], [role=status]').allInnerTexts().catch(() => [])).join(' | ').slice(0, 200) });
+    void ap;
+  }
+  // D2 Adicionar item + D3 Fechar comanda
+  {
+    const ticket = await abrirComanda();
+    await page.goto(BASE + `/admin/comanda/${ticket}`);
+    const a1 = contar(`select count(*) from ticket_items where ticket_id='${ticket}'`);
+    const r = await medir(page, { nome: 'duplo: Adicionar item', alvo: (p) => p.locator('main button', { hasText: /^Adicionar$/ }), final: { tipo: 'sel', sel: 'main [aria-label^="Remover "]' }, duplo: true });
+    saida.duploToque.push({ ...r, gravacoes: contar(`select count(*) from ticket_items where ticket_id='${ticket}'`) - a1 });
+    await tocar(page, page.locator('main button', { hasText: /^Pix$/ }));
+    const c1 = contar(`select count(*) from audit_log where entity_id='${ticket}' and action='ticket.close'`);
+    const r2 = await medir(page, { nome: 'duplo: Fechar comanda (receber)', alvo: (p) => p.locator('main button', { hasText: /^Fechar comanda$/ }), final: { tipo: 'texto', re: 'Comanda fechada' }, duplo: true });
+    saida.duploToque.push({ ...r2, gravacoes: contar(`select count(*) from audit_log where entity_id='${ticket}' and action='ticket.close'`) - c1, pagamentos: psql(`select count(*) from payments where ticket_id='${ticket}'`) });
+  }
+  // D4 Novo agendamento
+  {
+    await page.goto(BASE + `/admin/agenda/novo?cliente=${CLIENTES[0]}`);
+    const quando = await prepararNovo(page, 9);
+    const a1 = contar(`select count(*) from appointments where tenant_id='${TENANT}'`);
+    const r = await medir(page, { nome: 'duplo: Novo agendamento', alvo: (p) => p.locator('main button', { hasText: /^Confirmar agendamento$/ }), final: { tipo: 'url', re: '^/admin/agenda(\\?|$)' }, duplo: true });
+    saida.duploToque.push({ ...r, gravacoes: contar(`select count(*) from appointments where tenant_id='${TENANT}'`) - a1, quando, telaAoFim: (await page.locator('[role=alert]').allInnerTexts().catch(() => [])).join(' | ').slice(0, 200) });
+  }
+  // D5 Público: confirmar agendamento (barra fixa)
+  {
+    const pp = await novaPagina(anon);
+    await pp.goto(BASE + '/demo-salao-encanto/agendar');
+    await tocar(pp, pp.locator('button', { hasText: /Corte feminino/ }).first());
+    await esperar(pp, { tipo: 'body', re: 'horários? livres?' });
+    const slotBtn = pp.locator('button').filter({ hasText: /^\s*\d{2}:\d{2}\s*$/ }).first();
+    await slotBtn.waitFor({ timeout: 60000 });
+    await tocar(pp, slotBtn);
+    const tel = `1197${String(Date.now()).slice(-7)}`;
+    await pp.getByLabel('Seu nome').fill('Duplo Toque B');
+    await pp.getByLabel('Seu telefone (WhatsApp)').fill(tel);
+    const a1 = contar(`select count(*) from appointments where tenant_id='${TENANT}' and origin='public_page'`);
+    const r = await medir(pp, { nome: 'duplo: Agendar (público)', alvo: (p) => p.locator('button', { hasText: /^Confirmar agendamento$/ }).last(), final: { tipo: 'body', re: 'agendad|Pronto|confirmad' }, duplo: true });
+    saida.duploToque.push({ ...r, gravacoes: contar(`select count(*) from appointments where tenant_id='${TENANT}' and origin='public_page'`) - a1 });
+    await pp.close();
+  }
+  // D6 Recuperar/fila: "Chamar" → POST manual (fire-and-forget)
+  {
+    await page.goto(BASE + '/admin/recuperar');
+    const chamar = page.locator('main a, main button').filter({ hasText: /^Chamar/ }).first();
+    if (await chamar.count()) {
+      const m1 = contar(`select count(*) from messages where tenant_id='${TENANT}'`);
+      const r = await medir(page, { nome: 'duplo: Chamar (Recuperar)', alvo: () => chamar, final: { tipo: 'body', re: '.' }, duplo: true });
+      saida.duploToque.push({ ...r, gravacoes: contar(`select count(*) from messages where tenant_id='${TENANT}'`) - m1 });
+    } else saida.duploToque.push({ nome: 'duplo: Chamar (Recuperar)', erro: 'sem cliente em atraso no tenant demo: botão não existe na tela (lista vazia)' });
+  }
+} finally {
+  // resumo
+  saida.resumo = Object.fromEntries(
+    Object.entries(saida.interacoes).map(([k, v]) => [
+      k,
+      {
+        n: v.length,
+        primeiraMudanca: { mediana: mediana(v.map((x) => x.primeiraMudancaMs)), pior: pior(v.map((x) => x.primeiraMudancaMs)) },
+        alvoReagiu: { mediana: mediana(v.map((x) => x.alvoReagiuMs)), pior: pior(v.map((x) => x.alvoReagiuMs)) },
+        inp: { mediana: mediana(v.map((x) => x.inpMs)), pior: pior(v.map((x) => x.inpMs)), abaixoDe16: v.filter((x) => x.inpMs === '<16').length },
+        final: { mediana: mediana(v.map((x) => x.finalMs)), pior: pior(v.map((x) => x.finalMs)) },
+      },
+    ]),
+  );
+  writeFileSync(arqSaida, JSON.stringify(saida, null, 2));
+  await browser.close();
+}
+
+async function prepararNovo(page, k) {
+  try {
+    const sels = page.locator('main select');
+    await sels.first().waitFor({ timeout: 60000 });
+    await sels.nth(0).selectOption(SERVICO);
+    await sels.nth(1).selectOption(PROFS[k % 3]).catch(() => {});
+    const hora = String(9 + (k % 10)).padStart(2, '0');
+    const quando = `2026-10-17T${hora}:${k % 2 ? '30' : '00'}`;
+    await page.locator('input[type="datetime-local"]').fill(quando);
+    // ?cliente= é pré-preenchido por um GET no cliente (useEffect); sem esperar, o formulário recusa.
+    for (let t = 0; t < 600; t++) {
+      const ok = await page.evaluate(() => [...document.querySelectorAll('main input[type=text]')].some((i) => i.value.length > 1)).catch(() => false);
+      if (ok) break;
+      await page.waitForTimeout(100);
+    }
+    await page.waitForTimeout(400);
+    return quando;
+  } catch (e) {
+    console.log('prepararNovo falhou', String(e).slice(0, 200));
+    return null;
+  }
+}

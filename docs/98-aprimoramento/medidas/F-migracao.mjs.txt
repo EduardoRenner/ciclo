@@ -1,0 +1,105 @@
+// Agente F — migração: vindo-de-outro-sistema, importar planilha FICTÍCIA de 300 clientes (Excel BR:
+// ";" + latin1 + dd/mm/aaaa), conferir no banco local, ver Recuperar/Hoje depois, e "já atendo" colando 10 nomes.
+// Uso: node F-migracao.mjs <rotulo-da-conta> <slug>
+import { execFileSync } from 'node:child_process'
+import { writeFileSync } from 'node:fs'
+import { abrir, BASE, CAPTURAS, MEDIDAS, alvosPequenos } from './F-lib.mjs'
+
+const [rotulo, slug] = process.argv.slice(2)
+const sql = (q) => execFileSync('docker', ['exec', 'supabase_db_ciclo', 'psql', '-U', 'postgres', '-At', '-F', '|', '-c', q], { encoding: 'utf8' }).trim()
+const tenantId = sql(`select id from tenants where slug='${slug}'`)
+const { browser, page, consoleErros } = await abrir('celular', { storageState: `C:/temp/ciclo-medicao/estado-F-${rotulo}.json` })
+const texto = () => page.evaluate(() => (document.querySelector('main') ?? document.body).innerText.replace(/\n{2,}/g, '\n').trim())
+const out = { rotulo, slug, passos: [] }
+const passo = (p) => { out.passos.push(p); console.log(JSON.stringify(p).slice(0, 600)) }
+
+// 1. Vindo de outro sistema
+await page.goto(`${BASE}/admin/clientes/vindo-de-outro-sistema`)
+await page.locator('h1').first().waitFor()
+await page.screenshot({ path: `${CAPTURAS}/F-migracao-vindo-de-outro-sistema-${rotulo}.png`, fullPage: true })
+passo({ tela: 'vindo-de-outro-sistema', texto: (await texto()).slice(0, 2500), links: await page.evaluate(() => [...document.querySelectorAll('main a')].map((a) => `${a.innerText.trim().slice(0, 60)} -> ${a.getAttribute('href')}`)), alvosPequenos: await alvosPequenos(page) })
+
+// 2. Planilha do Excel (.xlsx) — o caso mais provável de quem exporta de outro sistema
+await page.goto(`${BASE}/admin/clientes/importar`)
+await page.locator('input[type=file]').waitFor({ state: 'attached' })
+await page.screenshot({ path: `${CAPTURAS}/F-migracao-importar-vazio-${rotulo}.png`, fullPage: true })
+const textoImportarVazio = await texto()
+await page.locator('input[type=file]').setInputFiles({ name: 'clientes.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.concat([Buffer.from('PK\u0003\u0004'), Buffer.alloc(200)]) })
+await page.locator('[role=alert]:not(:empty)').first().waitFor({ timeout: 30000 }).catch(() => {})
+passo({ tela: 'importar .xlsx', textoInicial: textoImportarVazio.slice(0, 1200), alerta: await page.locator('[role=alert]').allInnerTexts() })
+await page.screenshot({ path: `${CAPTURAS}/F-migracao-importar-xlsx-${rotulo}.png`, fullPage: true })
+
+// 3. CSV de 300 (+5 duplicadas)
+await page.reload()
+await page.locator('input[type=file]').waitFor({ state: 'attached' })
+let t = Date.now()
+await page.locator('input[type=file]').setInputFiles('C:/temp/ciclo-medicao/F-clientes-300.csv')
+await page.getByText('Qual coluna é qual').waitFor({ timeout: 60000 })
+const msPrevia = Date.now() - t
+const mapa = await page.evaluate(() => [...document.querySelectorAll('main select')].map((s) => `${s.closest('label')?.querySelector('span')?.innerText}: ${s.options[s.selectedIndex]?.text}`))
+const avisoDatas = await page.locator('[role=status]').allInnerTexts()
+const amostra = await page.evaluate(() => [...document.querySelectorAll('main table tbody tr')].slice(0, 3).map((tr) => tr.innerText.replace(/\t/g, ' | ')))
+await page.screenshot({ path: `${CAPTURAS}/F-migracao-importar-mapeamento-${rotulo}.png`, fullPage: true })
+t = Date.now()
+await page.getByRole('button', { name: 'Importar' }).click()
+await page.locator('text=/clientes? importad/').first().waitFor({ timeout: 120000 }).catch(() => {})
+const msImportar = Date.now() - t
+await page.waitForTimeout(800)
+const resultado = await texto()
+await page.screenshot({ path: `${CAPTURAS}/F-migracao-importar-resultado-${rotulo}.png`, fullPage: true })
+passo({ tela: 'importar CSV 300', msAtePrevia: msPrevia, msImportar, toques: 2, mapeamentoAutomatico: mapa, avisoDatas, amostraPrevia: amostra, resultado: resultado.slice(-1500) })
+
+// 4. Conferência no banco local
+passo({
+  banco: {
+    clientes: sql(`select count(*) from clients where tenant_id='${tenantId}'`),
+    comAcentoCerto: sql(`select count(*) from clients where tenant_id='${tenantId}' and (name like '%ção%' or name like '%ões%' or name like '%ã%')`),
+    comCaractereQuebrado: sql(`select count(*) from clients where tenant_id='${tenantId}' and name like '%' || chr(65533) || '%'`),
+    comUltimaVisita: sql(`select count(*) from clients where tenant_id='${tenantId}' and last_visit_at is not null`),
+    ciclos: sql(`select count(*) from client_cycles where tenant_id='${tenantId}'`),
+    nomesRepetidos: sql(`select count(*) from (select name from clients where tenant_id='${tenantId}' group by name having count(*) > 1) x`),
+    exemploNomes: sql(`select string_agg(name, ' ; ') from (select name from clients where tenant_id='${tenantId}' order by created_at limit 4) x`),
+  },
+})
+
+// 5. O que a pessoa vê logo depois
+for (const [nome, rota] of [['recuperar', '/admin/recuperar'], ['hoje', '/admin/hoje'], ['clientes', '/admin/clientes']]) {
+  t = Date.now()
+  await page.goto(`${BASE}${rota}`)
+  await page.locator('h1').first().waitFor().catch(() => {})
+  await page.waitForLoadState('load').catch(() => {})
+  await page.screenshot({ path: `${CAPTURAS}/F-migracao-depois-${nome}-${rotulo}.png`, fullPage: false })
+  passo({ tela: `depois: ${nome}`, ms: Date.now() - t, texto: (await texto()).slice(0, 1500) })
+}
+
+// 6. "Quem você já atende" — colar 10 nomes de memória
+await page.goto(`${BASE}/admin/clientes/ja-atendo`)
+await page.locator('h1').first().waitFor()
+await page.screenshot({ path: `${CAPTURAS}/F-migracao-ja-atendo-${rotulo}.png`, fullPage: true })
+const textoJa = await texto()
+let toques = 0
+t = Date.now()
+const colar = page.getByRole('button', { name: /Colar|colar/ }).first()
+if (await colar.count()) { await colar.click(); toques++ }
+const area = page.getByLabel('Cole a lista, um nome por linha')
+let resJa = null
+if (await area.count()) {
+  await area.click(); toques++
+  await area.fill(['Seu Jorge', 'Dona Alzira', 'Marcos - 11 99999-0001', 'Rafael', 'Tânia', 'Zé do Gás', 'Patrícia', 'Luís Otávio', 'Bia', 'Carla'].join('\n'))
+  // período: primeiro botão/opção do grupo "Quando essas pessoas vieram"
+  const periodo = page.locator('text=Quando essas pessoas vieram').locator('xpath=..').locator('button, [role=radio], option').first()
+  if (await periodo.count()) { await periodo.click(); toques++ }
+  const confirmarColar = page.getByRole('button', { name: /Colocar|Adicionar|Usar|Pronto|Colar/ }).last()
+  await confirmarColar.click(); toques++
+  await page.waitForTimeout(800)
+  const salvar = page.getByRole('button', { name: /Salvar|Guardar|Trazer|Adicionar \d+|Pronto/ }).last()
+  if (await salvar.count()) { await salvar.click(); toques++ }
+  await page.waitForTimeout(4000)
+  resJa = (await texto()).slice(0, 1500)
+}
+await page.screenshot({ path: `${CAPTURAS}/F-migracao-ja-atendo-depois-${rotulo}.png`, fullPage: true })
+passo({ tela: 'ja-atendo colar 10', ms: Date.now() - t, toques, textoInicial: textoJa.slice(0, 1500), resultado: resJa })
+
+out.consoleErros = consoleErros
+writeFileSync(`${MEDIDAS}/F/migracao-${rotulo}.json`, JSON.stringify(out, null, 2))
+await browser.close()

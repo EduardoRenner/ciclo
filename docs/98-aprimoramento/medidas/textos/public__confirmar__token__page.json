@@ -1,0 +1,142 @@
+{
+ "rota": "(public)/confirmar/[token]/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(public)/confirmar/[token]/page.tsx",
+  "src/app/(public)/confirmar/[token]/confirmar.tsx",
+  "src/components/ui/erro-publico.tsx",
+  "src/components/ui/titulo-de-estado.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/button.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 19,
+ "textos": [
+  {
+   "texto": "Confirmar agendamento",
+   "arquivo": "src/app/(public)/confirmar/[token]/page.tsx",
+   "linha": 3,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Não consegui confirmar esse agendamento.",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 51,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui falar com o servidor.",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 56,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui desmarcar esse agendamento.",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 65,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui falar com o servidor.",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 71,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Confirma seu horário?",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 77,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Toque numa opção abaixo.",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 78,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Vou sim",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 92,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Aguarde: estamos desmarcando seu horário.",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 89,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Preciso desmarcar",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 102,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Aguarde: estamos confirmando seu horário.",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 99,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Prontinho!",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 113,
+   "tipo": "texto",
+   "tag": "TituloDeEstado"
+  },
+  {
+   "texto": "Seu horário está confirmado. Até lá!",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 114,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Desmarcado",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 123,
+   "tipo": "texto",
+   "tag": "TituloDeEstado"
+  },
+  {
+   "texto": "Sentimos falta! Quando quiser, é só marcar de novo.",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 124,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Marcar outro horário",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 130,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Não deu certo",
+   "arquivo": "src/app/(public)/confirmar/[token]/confirmar.tsx",
+   "linha": 139,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Tentar de novo",
+   "arquivo": "src/components/ui/erro-publico.tsx",
+   "linha": 69,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Chame quem vai te atender pelo WhatsApp: por lá dá para resolver na hora.",
+   "arquivo": "src/components/ui/erro-publico.tsx",
+   "linha": 73,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

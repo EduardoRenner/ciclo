@@ -1,0 +1,324 @@
+
+### /admin/hoje | interativos na dobra=14 | primarios dobra=2 | iconeSemRotulo=4 | altura=1386
+botão |  | 16px | 0,324 | 48x48 | "Menu" | 
+texto |  | 11px | 73,18 | 205x26 | "terça-feira, 13 de outubro" | 
+título h1 |  | 26px | 103,18 | 205x30 | "Bom dia" | 
+texto |  | 13.5px | 139,18 | 205x19 | "Barbearia Dom Estilo" | 
+link |  | 12px | 73,235 | 85x48 | "Ver meu site" | /demo-dom-estilo
+botão |  | 16px | 73,324 | 48x48 | "Compartilhar meu link de agendamento" | 
+link |  | 16px | 178,18 | 354x133 | "ATENDIDO HOJE R$ 0,00 100% abaixo do costume nesse dia da se" | /admin/caixa
+título h2 |  | 11px | 335,18 | 354x14 | "Vale a pena hoje" | 
+link |  | 16px | 361,18 | 354x158 | "Diga quando cada pessoa veio pela última vez Suas fichas ain" | /admin/clientes/ja-atendo
+link |  | 16px | 527,18 | 354x97 | "2 aniversariantes este mês Uma mensagem de parabéns com um m" | /admin/campanhas/nova
+link |  | 16px | 632,18 | 354x158 | "Você ainda não disse quanto a maquininha cobra Sem isso o \"S" | /admin/config/taxas
+botão |  | 12px | 798,18 | 354x40 | "Ver mais 2" | 
+link |  | 16px | 781,0 | 78x64 | "Hoje" | /admin/hoje
+link |  | 16px | 781,78 | 78x64 | "Agenda" | /admin/agenda
+link | PRIM | 16px | 769,167 | 56x56 | "Recuperar receita" | /admin/recuperar
+link |  | 16px | 781,234 | 78x64 | "Clientes" | /admin/clientes
+link |  | 16px | 781,312 | 78x64 | "Marcar" | /admin/agenda/novo
+botão | PRIM | 16px | 708,318 | 56x56 | "Abrir assistente (arraste para mudar de lugar)" | 
+
+### /admin/agenda | interativos na dobra=19 | primarios dobra=3 | iconeSemRotulo=3 | altura=844
+botão |  | 16px | 0,324 | 48x48 | "Menu" | 
+título h1 |  | 26px | 73,18 | 354x30 | "Agenda" | 
+botão |  | 12px | 123,18 | 47x64 | "DOM 11" | 
+botão |  | 12px | 123,69 | 47x64 | "SEG 12" | 
+botão | PRIM | 12px | 123,120 | 47x64 | "TER 13" | 
+botão |  | 12px | 123,171 | 47x64 | "QUA 14" | 
+botão |  | 12px | 123,223 | 47x64 | "QUI 15" | 
+botão |  | 12px | 123,274 | 47x64 | "SEX 16" | 
+botão |  | 12px | 123,325 | 47x64 | "SÁB 17" | 
+botão |  | 12px | 207,0 | 68x40 | "Todos" | 
+botão |  | 12px | 207,76 | 127x40 | "Anderson Rocha" | 
+botão |  | 12px | 207,211 | 111x40 | "Diego Martins" | 
+botão |  | 12px | 207,330 | 109x40 | "Felipe Ramos" | 
+texto |  | 11px | 284,35 | 137x13 | "Ocupação do dia" | 
+texto |  | 21px | 303,35 | 137x25 | "0%" | 
+texto |  | 11px | 284,218 | 137x13 | "Previsto" | 
+texto |  | 21px | 303,218 | 137x25 | "R$ 0,00" | 
+texto |  | 16px | 378,17 | 1x1 | "terça-feira, 13 de outubro. Nada marcado. Ocupação 0%." | 
+texto |  | 16px | 508,105 | 181x23 | "Nada marcado nesse dia" | 
+texto |  | 13.5px | 535,64 | 263x38 | "Toque no botão + para criar o primeiro agendamento." | 
+link |  | 16px | 593,103 | 184x48 | "Novo agendamento" | /admin/agenda/novo
+link |  | 16px | 781,0 | 78x64 | "Hoje" | /admin/hoje
+link |  | 16px | 781,78 | 78x64 | "Agenda" | /admin/agenda
+link | PRIM | 16px | 769,167 | 56x56 | "Recuperar receita" | /admin/recuperar
+link |  | 16px | 781,234 | 78x64 | "Clientes" | /admin/clientes
+link |  | 16px | 781,312 | 78x64 | "Marcar" | /admin/agenda/novo
+botão | PRIM | 16px | 708,318 | 56x56 | "Abrir assistente (arraste para mudar de lugar)" | 
+
+### /admin/agenda/novo | interativos na dobra=14 | primarios dobra=3 | iconeSemRotulo=2 | altura=844
+link |  | 16px | 0,10 | 96x48 | "Agenda" | /admin/agenda
+título h1 |  | 26px | 73,18 | 354x30 | "Novo agendamento" | 
+texto |  | 12px | 123,18 | 354x16 | "Serviço" | 
+select |  | 16px | 145,18 | 354x48 | "Barba · R$ 35,00 Corte · R$ 45,00 Corte + barba · R$ 70,00 C" | 
+texto |  | 12px | 209,18 | 354x16 | "Profissional" | 
+select |  | 16px | 231,18 | 354x48 | "Anderson Rocha Diego Martins Felipe Ramos" | 
+texto |  | 12px | 295,18 | 354x16 | "Cliente" | 
+input |  | 16px | 317,18 | 354x48 | "Nome" | 
+texto |  | 12px | 381,18 | 354x16 | "Telefone" | 
+input |  | 16px | 404,18 | 354x48 | "(11) 98765-4321" | 
+texto |  | 12px | 468,18 | 354x16 | "Data e horário" | 
+input |  | 16px | 490,18 | 354x48 | "" | 
+input |  | 16px | 568,18 | 20x20 | "" | 
+texto |  | 16px | 566,50 | 139x23 | "Repetir este horário" | 
+botão | PRIM | 16px | 618,18 | 354x48 | "Confirmar agendamento" | 
+link |  | 16px | 781,0 | 78x64 | "Hoje" | /admin/hoje
+link |  | 16px | 781,78 | 78x64 | "Agenda" | /admin/agenda
+link | PRIM | 16px | 769,167 | 56x56 | "Recuperar receita" | /admin/recuperar
+link |  | 16px | 781,234 | 78x64 | "Clientes" | /admin/clientes
+link |  | 16px | 781,312 | 78x64 | "Marcar" | /admin/agenda/novo
+botão | PRIM | 16px | 708,318 | 56x56 | "Abrir assistente (arraste para mudar de lugar)" | 
+
+### /admin/caixa | interativos na dobra=10 | primarios dobra=2 | iconeSemRotulo=3 | altura=918
+link |  | 16px | 0,10 | 72x48 | "Hoje" | /admin/hoje
+texto |  | 11px | 73,18 | 354x13 | "Hoje" | 
+título h1 |  | 26px | 90,18 | 354x30 | "Caixa" | 
+texto |  | 13.5px | 126,18 | 354x19 | "terça-feira, 13 de outubro" | 
+link |  | 16px | 165,18 | 48x48 | "Dia anterior" | /admin/caixa?dia=2026-10-12
+texto |  | 12px | 181,89 | 35x16 | "Ir para" | 
+input |  | 16px | 177,132 | 169x23 | "Escolher o dia do caixa" | 
+texto |  | 16px | 362,55 | 279x23 | "Nenhuma comanda fechada nesse dia" | 
+texto |  | 13.5px | 389,64 | 263x57 | "O caixa soma o que foi cobrado nas comandas. Feche a comanda" | 
+link |  | 16px | 466,128 | 135x48 | "Ver a agenda" | /admin/agenda
+título h2 |  | 11px | 587,18 | 354x13 | "outubro de 2026" | 
+texto |  | 16px | 631,35 | 103x23 | "Entrou no mês" | 
+texto |  | 21px | 629,282 | 73x25 | "R$ 0,00" | 
+texto |  | 16px | 666,35 | 108x23 | "Sobrou no mês" | 
+texto |  | 16px | 666,299 | 56x23 | "R$ 0,00" | 
+texto |  | 16px | 701,35 | 78x23 | "Comandas" | 
+texto |  | 16px | 701,346 | 9x23 | "0" | 
+link |  | 16px | 781,0 | 78x64 | "Hoje" | /admin/hoje
+link |  | 16px | 781,78 | 78x64 | "Agenda" | /admin/agenda
+link | PRIM | 16px | 769,167 | 56x56 | "Recuperar receita" | /admin/recuperar
+link |  | 16px | 781,234 | 78x64 | "Clientes" | /admin/clientes
+link |  | 16px | 781,312 | 78x64 | "Marcar" | /admin/agenda/novo
+botão | PRIM | 16px | 708,318 | 56x56 | "Abrir assistente (arraste para mudar de lugar)" | 
+
+### /admin/campanhas | interativos na dobra=10 | primarios dobra=3 | iconeSemRotulo=2 | altura=919
+link |  | 16px | 0,10 | 147x48 | "Configurações" | /admin/config
+título h1 |  | 26px | 73,18 | 354x30 | "Campanhas" | 
+texto |  | 13.5px | 109,18 | 354x38 | "Quem voltou depois de receber mensagem, e quanto isso trouxe" | 
+texto |  | 11px | 184,35 | 137x26 | "Voltaram este mês" | 
+texto |  | 21px | 216,35 | 137x25 | "R$ 0,00" | 
+texto |  | 11px | 184,218 | 137x13 | "Atendimentos" | 
+texto |  | 21px | 203,218 | 137x25 | "0" | 
+texto |  | 13.5px | 233,218 | 121x34 | "de 0 mensagens enviadas no período" | 
+link |  | 16px | 303,18 | 354x48 | "Nova campanha" | /admin/campanhas/nova
+título h2 |  | 11px | 379,18 | 354x14 | "Resultados" | 
+texto |  | 16px | 534,97 | 196x23 | "Nenhuma campanha ainda" | 
+texto |  | 13.5px | 561,64 | 263x57 | "Escolha um grupo de clientes, mande a mesma mensagem para to" | 
+link |  | 16px | 638,119 | 152x48 | "Criar a primeira" | /admin/campanhas/nova
+link |  | 16px | 781,0 | 78x64 | "Hoje" | /admin/hoje
+link |  | 16px | 781,78 | 78x64 | "Agenda" | /admin/agenda
+link | PRIM | 16px | 769,167 | 56x56 | "Recuperar receita" | /admin/recuperar
+link |  | 16px | 781,234 | 78x64 | "Clientes" | /admin/clientes
+link |  | 16px | 781,312 | 78x64 | "Marcar" | /admin/agenda/novo
+botão | PRIM | 16px | 708,318 | 56x56 | "Abrir assistente (arraste para mudar de lugar)" | 
+
+### /admin/clientes | interativos na dobra=17 | primarios dobra=2 | iconeSemRotulo=4 | altura=2901
+botão |  | 16px | 0,324 | 48x48 | "Menu" | 
+título h1 |  | 26px | 73,18 | 294x30 | "Clientes" | 
+texto |  | 13.5px | 109,18 | 294x19 | "22 na carteira" | 
+link |  | 16px | 73,324 | 48x48 | "Cadastrar cliente" | /admin/clientes/nova
+link |  | 12px | 148,237 | 135x48 | "Baixar todos em planilha" | /admin/clientes/exportar
+texto |  | 11px | 229,35 | 137x13 | "Ticket médio" | 
+texto |  | 21px | 248,35 | 137x25 | "R$ 66,35" | 
+texto |  | 11px | 229,218 | 137x13 | "Voltam de novo" | 
+texto |  | 21px | 248,218 | 137x25 | "100%" | 
+texto |  | 16px | 341,67 | 288x23 | "fazem aniversário esse mês" | 
+texto |  | 16px | 344,67 | 9x17 | "2" | 
+texto |  | 16px | 400,17 | 1x1 | "Buscar cliente por nome ou telefone" | 
+input |  | 16px | 401,18 | 354x48 | "Nome ou telefone" | 
+botão |  | 12px | 465,0 | 134x40 | "🎂 Aniversariante" | 
+botão |  | 12px | 465,142 | 167x40 | "Primeira visita sem volta" | 
+botão |  | 12px | 465,317 | 91x40 | "Ticket alto" | 
+texto |  | 16px | 524,17 | 1x1 | "22 clientes na lista." | 
+link |  | 16px | 525,18 | 354x78 | "FC Fábio Correia (11) 9300-2005 R$ 300,00 5 visitas" | /admin/clientes/fe4ad012-78a1-43c9-9b13-8ed119ac6c29
+link |  | 16px | 611,18 | 354x106 | "JS João Vitor Silva (11) 9300-2009 R$ 200,00 5 visitas fiel" | /admin/clientes/ea83ba99-874e-44c8-915f-26657a0eaad7
+link |  | 16px | 726,18 | 354x78 | "RP Rafael Pontes (11) 9300-2017 R$ 300,00 5 visitas" | /admin/clientes/e3b77b65-672b-4ef1-9462-eac92e4e5270
+link |  | 16px | 812,18 | 354x106 | "AS Ana Souza (11) 9300-2000 R$ 225,00 5 visitas sumido" | /admin/clientes/cf3e5831-4a82-4fe0-8398-0f060d41ec95
+link |  | 16px | 781,0 | 78x64 | "Hoje" | /admin/hoje
+link |  | 16px | 781,78 | 78x64 | "Agenda" | /admin/agenda
+link | PRIM | 16px | 769,167 | 56x56 | "Recuperar receita" | /admin/recuperar
+link |  | 16px | 781,234 | 78x64 | "Clientes" | /admin/clientes
+link |  | 16px | 781,312 | 78x64 | "Marcar" | /admin/agenda/novo
+botão | PRIM | 16px | 708,318 | 56x56 | "Abrir assistente (arraste para mudar de lugar)" | 
+
+### /admin/clientes/cf3e5831-4a82-4fe0-8398-0f060d41ec95 | interativos na dobra=18 | primarios dobra=3 | iconeSemRotulo=3 | altura=1210
+link |  | 16px | 0,10 | 99x48 | "Clientes" | /admin/clientes
+título h1 |  | 26px | 77,94 | 218x30 | "Ana Souza" | 
+texto |  | 13.5px | 107,94 | 218x19 | "(11) 9300-2000 · Instagram" | 
+botão |  | 16px | 77,324 | 48x48 | "Editar ficha" | 
+texto |  | 12px | 153,18 | 71x32 | "sumido" | 
+texto |  | 13.5px | 201,18 | 354x38 | "Costuma vir às terças (5 de 5 visitas). Sempre com Anderson " | 
+título h2 |  | 11px | 255,18 | 354x14 | "Como atender" | 
+botão |  | 13.5px | 298,35 | 320x48 | "Nada anotado ainda. Toque para registrar as preferências de " | 
+botão |  | 12px | 391,18 | 80x40 | "Resumo" | 
+botão |  | 12px | 391,104 | 84x40 | "Histórico" | 
+botão |  | 12px | 391,195 | 92x40 | "Fidelidade" | 
+botão |  | 12px | 391,292 | 65x40 | "Ficha" | 
+texto |  | 11px | 468,35 | 137x13 | "Valor atendido" | 
+texto |  | 21px | 487,35 | 137x25 | "R$ 225,00" | 
+texto |  | 11px | 468,218 | 137x13 | "Sobrou" | 
+texto |  | 21px | 487,218 | 137x25 | "R$ 0,00" | 
+texto |  | 13.5px | 516,218 | 137x38 | "nenhuma comanda fechada ainda" | 
+texto |  | 11px | 600,35 | 137x13 | "Visitas" | 
+texto |  | 21px | 619,35 | 137x25 | "5" | 
+texto |  | 11px | 600,218 | 137x13 | "Ticket médio" | 
+texto |  | 21px | 619,218 | 137x25 | "R$ 45,00" | 
+texto |  | 11px | 690,35 | 137x13 | "Faltas" | 
+texto |  | 21px | 710,35 | 137x25 | "0" | 
+botão |  | 16px | 764,18 | 354x48 | "Criar orçamento" | 
+botão |  | 16px | 820,18 | 354x48 | "Indicar" | 
+botão |  | 16px | 709,29 | 162x48 | "Horário" | 
+botão | PRIM | 16px | 709,199 | 162x48 | "Mensagem" | 
+link |  | 16px | 781,0 | 78x64 | "Hoje" | /admin/hoje
+link |  | 16px | 781,78 | 78x64 | "Agenda" | /admin/agenda
+link | PRIM | 16px | 769,167 | 56x56 | "Recuperar receita" | /admin/recuperar
+link |  | 16px | 781,234 | 78x64 | "Clientes" | /admin/clientes
+link |  | 16px | 781,312 | 78x64 | "Marcar" | /admin/agenda/novo
+botão | PRIM | 16px | 708,318 | 56x56 | "Abrir assistente (arraste para mudar de lugar)" | 
+
+### /admin/comanda/agendamento/07bce881-65e9-4597-bb44-98c4c4a0796f | interativos na dobra=8 | primarios dobra=2 | iconeSemRotulo=2 | altura=844
+link |  | 16px | 0,10 | 96x48 | "Agenda" | /admin/agenda
+título h1 |  | 26px | 73,18 | 354x30 | "Comanda" | 
+texto |  | 16px | 252,62 | 267x23 | "Esse atendimento não tem comanda" | 
+texto |  | 13.5px | 279,64 | 263x57 | "A comanda é aberta na hora de concluir o atendimento. Este a" | 
+link |  | 16px | 356,100 | 189x48 | "Voltar para a agenda" | /admin/agenda
+link |  | 16px | 781,0 | 78x64 | "Hoje" | /admin/hoje
+link |  | 16px | 781,78 | 78x64 | "Agenda" | /admin/agenda
+link | PRIM | 16px | 769,167 | 56x56 | "Recuperar receita" | /admin/recuperar
+link |  | 16px | 781,234 | 78x64 | "Clientes" | /admin/clientes
+link |  | 16px | 781,312 | 78x64 | "Marcar" | /admin/agenda/novo
+botão | PRIM | 16px | 708,318 | 56x56 | "Abrir assistente (arraste para mudar de lugar)" | 
+
+### /admin/mes | interativos na dobra=9 | primarios dobra=2 | iconeSemRotulo=3 | altura=844
+botão |  | 16px | 0,324 | 48x48 | "Menu" | 
+título h1 |  | 26px | 73,18 | 354x30 | "O mês" | 
+texto |  | 13.5px | 109,18 | 354x38 | "O que entrou, o que sobrou, de quem depende, o que está para" | 
+link |  | 16px | 167,18 | 354x95 | "Testar antes de decidir Mude uma coisa por alguns dias e com" | /admin/experimentos
+texto |  | 16px | 286,18 | 354x70 | "Nenhuma comanda fechada este mês ainda. Assim que a primeira" | 
+link |  | 16px | 335,131 | 95x17 | "Ver a agenda" | /admin/agenda
+link |  | 16px | 781,0 | 78x64 | "Hoje" | /admin/hoje
+link |  | 16px | 781,78 | 78x64 | "Agenda" | /admin/agenda
+link | PRIM | 16px | 769,167 | 56x56 | "Recuperar receita" | /admin/recuperar
+link |  | 16px | 781,234 | 78x64 | "Clientes" | /admin/clientes
+link |  | 16px | 781,312 | 78x64 | "Marcar" | /admin/agenda/novo
+botão | PRIM | 16px | 708,318 | 56x56 | "Abrir assistente (arraste para mudar de lugar)" | 
+
+### /admin/orcamentos | interativos na dobra=8 | primarios dobra=2 | iconeSemRotulo=2 | altura=844
+link |  | 16px | 0,10 | 147x48 | "Configurações" | /admin/config
+título h1 |  | 26px | 73,18 | 354x30 | "Orçamentos" | 
+texto |  | 13.5px | 109,18 | 354x19 | "0 orçamentos" | 
+texto |  | 16px | 276,100 | 189x23 | "Nenhum orçamento ainda" | 
+texto |  | 13.5px | 303,64 | 263x38 | "Monte um orçamento, mande o link e acompanhe a resposta por " | 
+link |  | 16px | 361,116 | 158x48 | "Criar orçamento" | /admin/orcamentos/novo
+link |  | 16px | 781,0 | 78x64 | "Hoje" | /admin/hoje
+link |  | 16px | 781,78 | 78x64 | "Agenda" | /admin/agenda
+link | PRIM | 16px | 769,167 | 56x56 | "Recuperar receita" | /admin/recuperar
+link |  | 16px | 781,234 | 78x64 | "Clientes" | /admin/clientes
+link |  | 16px | 781,312 | 78x64 | "Marcar" | /admin/agenda/novo
+botão | PRIM | 16px | 708,318 | 56x56 | "Abrir assistente (arraste para mudar de lugar)" | 
+
+### /admin/recuperar | interativos na dobra=25 | primarios dobra=2 | iconeSemRotulo=3 | altura=1190
+botão |  | 16px | 0,324 | 48x48 | "Menu" | 
+título h1 |  | 26px | 73,18 | 255x30 | "Recuperar receita" | 
+texto |  | 13.5px | 109,18 | 255x38 | "Quem o Motor de Ciclo identificou em atraso para voltar." | 
+link |  | 12px | 73,285 | 87x48 | "Campanhas" | /admin/campanhas
+texto |  | 11px | 184,35 | 137x26 | "Dá para recuperar" | 
+texto |  | 21px | 216,35 | 137x25 | "R$ 0,00" | 
+texto |  | 13.5px | 245,35 | 137x19 | "R$ 0,00 de lucro" | 
+texto |  | 11px | 184,218 | 137x13 | "Clientes" | 
+texto |  | 21px | 203,218 | 137x25 | "0" | 
+texto |  | 13.5px | 352,18 | 354x102 | "O preço do serviço de cada pessoa, multiplicado pela chance " | 
+texto |  | 13.5px | 364,18 | 354x38 | "6 serviços estão sem o custo do material, então a ordem da l" | 
+link |  | 13.5px | 384,156 | 113x15 | "Completar o custo" | /admin/config/servicos
+botão |  | 12px | 422,0 | 68x40 | "Todas" | 
+botão |  | 12px | 422,76 | 127x40 | "Na hora de voltar" | 
+botão |  | 12px | 422,211 | 91x40 | "Atrasadas" | 
+botão |  | 12px | 422,309 | 82x40 | "Em risco" | 
+botão |  | 12px | 422,400 | 83x40 | "Perdidas" | 
+texto |  | 13.5px | 482,18 | 233x48 | "Ordenar por" | 
+select |  | 16px | 482,98 | 153x48 | "Prioridade Lucro Nota do cliente Mais atrasado Nome" | 
+botão |  | 12px | 546,18 | 62x40 | "Ouro" | 
+botão |  | 12px | 546,88 | 63x40 | "Prata" | 
+botão |  | 12px | 546,159 | 73x40 | "Bronze" | 
+botão |  | 12px | 606,0 | 54x40 | "Fiel" | 
+botão |  | 12px | 606,62 | 77x40 | "Regular" | 
+botão |  | 12px | 606,147 | 63x40 | "Novo" | 
+botão |  | 12px | 606,219 | 85x40 | "Atrasado" | 
+botão |  | 12px | 606,312 | 115x40 | "Costuma faltar" | 
+botão |  | 12px | 606,434 | 77x40 | "Sumido" | 
+texto |  | 16px | 665,17 | 1x1 | "0 clientes, R$ 0,00 para recuperar." | 
+texto |  | 16px | 795,43 | 304x46 | "O Motor ainda não processou seus atendimentos" | 
+link |  | 16px | 781,0 | 78x64 | "Hoje" | /admin/hoje
+link |  | 16px | 781,78 | 78x64 | "Agenda" | /admin/agenda
+link | PRIM | 16px | 769,167 | 56x56 | "Recuperar receita" | /admin/recuperar
+link |  | 16px | 781,234 | 78x64 | "Clientes" | /admin/clientes
+link |  | 16px | 781,312 | 78x64 | "Marcar" | /admin/agenda/novo
+botão | PRIM | 16px | 708,318 | 56x56 | "Abrir assistente (arraste para mudar de lugar)" | 
+
+### /admin/config | interativos na dobra=14 | primarios dobra=2 | iconeSemRotulo=2 | altura=2874
+link |  | 16px | 0,10 | 72x48 | "Hoje" | /admin/hoje
+título h1 |  | 26px | 73,18 | 354x30 | "Configurações" | 
+título h2 |  | 11px | 123,18 | 354x13 | "Sua conta" | 
+texto |  | 16px | 166,35 | 40x40 | "D" | 
+texto |  | 16px | 165,87 | 268x23 | "dono-demo-dom-estilo@ciclo.app" | 
+texto |  | 13.5px | 188,87 | 268x19 | "Dono em Barbearia Dom Estilo" | 
+texto |  | 16px | 249,35 | 320x23 | "Sair da conta" | 
+texto |  | 13.5px | 272,35 | 320x57 | "Encerra a sessão neste e nos outros aparelhos, e limpa o que" | 
+botão |  | 16px | 341,35 | 320x48 | "Sair da conta" | 
+título h2 |  | 11px | 430,18 | 354x13 | "Aparência" | 
+texto |  | 16px | 472,35 | 320x23 | "Tema" | 
+texto |  | 13.5px | 495,35 | 320x57 | "O padrão é claro. No automático, segue o aparelho: claro se " | 
+botão |  | 12px | 564,35 | 120x40 | "Automático" | 
+botão |  | 12px | 564,161 | 86x40 | "Claro" | 
+botão |  | 12px | 564,253 | 96x40 | "Escuro" | 
+título h2 |  | 11px | 649,18 | 354x13 | "Seu negócio" | 
+link |  | 16px | 674,18 | 354x76 | "Negócio Nome, contato, sobre e link do seu site" | /admin/config/negocio
+link |  | 16px | 758,18 | 354x76 | "Serviços Preço, duração e o que aparece no site" | /admin/config/servicos
+link |  | 16px | 842,18 | 354x76 | "Time Quem atende, expediente e convites" | /admin/config/profissionais
+link |  | 16px | 781,0 | 78x64 | "Hoje" | /admin/hoje
+link |  | 16px | 781,78 | 78x64 | "Agenda" | /admin/agenda
+link | PRIM | 16px | 769,167 | 56x56 | "Recuperar receita" | /admin/recuperar
+link |  | 16px | 781,234 | 78x64 | "Clientes" | /admin/clientes
+link |  | 16px | 781,312 | 78x64 | "Marcar" | /admin/agenda/novo
+botão | PRIM | 16px | 708,318 | 56x56 | "Abrir assistente (arraste para mudar de lugar)" | 
+
+### /demo-dom-estilo | interativos na dobra=7 | primarios dobra=1 | iconeSemRotulo=0 | altura=1517
+texto |  | 13.5px | 16,18 | 354x83 | "Ele não existe e nenhum horário marcado aqui será atendido. " | 
+texto |  | 13.5px | 30,35 | 131x15 | "Negócio de exemplo." | 
+título h1 |  | 34px | 147,31 | 328x36 | "Barbearia Dom Estilo" | 
+texto |  | 12px | 198,125 | 140x24 | "Abre hoje às 09:00" | 
+link | PRIM | 16px | 239,104 | 183x48 | "Agendar horário" | /demo-dom-estilo/agendar
+título h2 |  | 11px | 343,18 | 354x13 | "Serviços" | 
+link |  | 16px | 368,18 | 354x80 | "Corte 40min R$ 45,00" | /demo-dom-estilo/agendar?servico=e5ee748d-24b7-4bba-8387-8ffecc1277fb
+link |  | 16px | 456,18 | 354x80 | "Corte + barba 1h R$ 70,00" | /demo-dom-estilo/agendar?servico=1f179071-ec75-4865-9fe3-749f8e146e33
+link |  | 16px | 544,18 | 354x80 | "Barba 30min R$ 35,00" | /demo-dom-estilo/agendar?servico=d3df68a3-2742-49e5-ab10-4aa93fa84245
+link |  | 16px | 632,18 | 354x80 | "Corte infantil 30min R$ 40,00" | /demo-dom-estilo/agendar?servico=3ab5fcf3-9b0c-4295-bd7d-2e0ecc3d5823
+link |  | 16px | 720,18 | 354x80 | "Platinado 2h30 R$ 180,00" | /demo-dom-estilo/agendar?servico=f21de5d0-d2a0-4f85-824b-dc9e8eef317e
+link |  | 16px | 808,18 | 354x80 | "Pigmentação 45min R$ 60,00" | /demo-dom-estilo/agendar?servico=6c22ea86-e4a4-408f-8c79-11787412b4c4
+
+### /demo-dom-estilo/agendar | interativos na dobra=10 | primarios dobra=1 | iconeSemRotulo=0 | altura=1469
+título h1 |  | 26px | 32,18 | 354x60 | "Agendar em Barbearia Dom Estilo" | 
+texto |  | 13.5px | 116,18 | 354x83 | "Ele não existe: dá para percorrer o agendamento inteiro, mas" | 
+texto |  | 13.5px | 130,35 | 131x15 | "Negócio de exemplo." | 
+botão |  | 13.5px | 226,22 | 169x48 | "Visão de quem agenda" | 
+botão |  | 13.5px | 226,199 | 169x48 | "Visão de quem atende" | 
+título h2 |  | 11px | 298,18 | 354x20 | "Serviço" | 
+texto |  | 12px | 298,18 | 20x20 | "1" | 
+botão |  | 16px | 330,18 | 354x76 | "Corte 40min R$ 45,00" | 
+botão |  | 16px | 415,18 | 354x76 | "Corte + barba 1h R$ 70,00" | 
+botão |  | 16px | 499,18 | 354x76 | "Barba 30min R$ 35,00" | 
+botão |  | 16px | 583,18 | 354x76 | "Corte infantil 30min R$ 40,00" | 
+botão |  | 16px | 667,18 | 354x76 | "Platinado 2h30 R$ 180,00" | 
+botão |  | 16px | 751,18 | 354x76 | "Pigmentação 45min R$ 60,00" | 
+texto |  | 16px | 297,17 | 1x1 | "38 horários livres em terça-feira, 13 de outubro." | 
+
+### /confirmar/token-de-medicao-inexistente | interativos na dobra=2 | primarios dobra=1 | iconeSemRotulo=0 | altura=844
+título h1 |  | 26px | 326,63 | 264x30 | "Confirma seu horário?" | 
+texto |  | 16px | 364,100 | 191x23 | "Toque numa opção abaixo." | 
+botão | PRIM | 16px | 412,18 | 354x48 | "Vou sim" | 
+botão |  | 16px | 470,18 | 354x48 | "Preciso desmarcar" | 

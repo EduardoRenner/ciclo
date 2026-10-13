@@ -1,0 +1,86 @@
+{
+  "perfil": "celular",
+  "slug": "demo-espaco-vitoria",
+  "modo": "offline",
+  "telefone": "•••••••0004",
+  "totalMs": 8390,
+  "pausaFotoMs": 416,
+  "toques": 7,
+  "camposDigitados": 2,
+  "pedidosBook": 2,
+  "ok": false,
+  "horaEscolhida": "09:45",
+  "passos": [
+    {
+      "passo": "servicos visiveis (conteudo util)",
+      "msDesdeInicio": 3320
+    },
+    {
+      "passo": "load",
+      "msDesdeInicio": 4871
+    },
+    {
+      "passo": "toca servico",
+      "msDesdeInicio": 5601,
+      "respostaMs": 534
+    },
+    {
+      "passo": "toca Tanto faz",
+      "msDesdeInicio": 5778,
+      "respostaMs": null
+    },
+    {
+      "passo": "toca dia +6",
+      "msDesdeInicio": 5948,
+      "respostaMs": null
+    },
+    {
+      "passo": "horarios do dia visiveis",
+      "msDesdeInicio": 6361,
+      "esperaMs": 413
+    },
+    {
+      "passo": "toca horario 09:45",
+      "msDesdeInicio": 6861,
+      "respostaMs": 486
+    },
+    {
+      "passo": "toca campo nome",
+      "msDesdeInicio": 7327,
+      "respostaMs": null
+    },
+    {
+      "passo": "toca campo telefone",
+      "msDesdeInicio": 7473,
+      "respostaMs": null
+    },
+    {
+      "passo": "formulario preenchido",
+      "msDesdeInicio": 8117
+    },
+    {
+      "passo": "toca Confirmar (2x em 80 ms)",
+      "msDesdeInicio": 8969,
+      "estadoBotaoApos80ms": {
+        "disabled": false,
+        "ariaBusy": null,
+        "ariaDisabled": null,
+        "texto": "Confirmar agendamento"
+      }
+    },
+    {
+      "passo": "ERRO/sem sucesso",
+      "msDesdeInicio": 9007,
+      "msDoToqueAteResultado": 268
+    }
+  ],
+  "alertas": [
+    "Não consegui falar com o servidor. Confira a conexão e tente de novo. Se o horário já tiver sido marcado, ele aparece ao escolher o dia outra vez."
+  ],
+  "textoFinalTrecho": "Agendar em Espaço Vitória\nNegócio de exemplo. Ele não existe: dá para percorrer o agendamento inteiro, mas nenhum horário marcado será atendido.\nVisão de quem agenda\nVisão de quem atende\n1\nSERVIÇO\nManicure simples · 45min\nTrocar\n2\nPROFISSIONAL\nTanto faz\nTrocar\n3\nDIA\nTER\n13\nQUA\n14\nQUI\n15\nSEX\n16\nSÁB\n17\nDOM\n18\nSEG\n19\nTER\n20\nQUA\n21\nQUI\n22\nSEX\n23\nSÁB\n24\nDOM\n25\nSEG\n26\nNão consegui falar com o servidor. Confira a conexão e tente de novo. Se o horário já tiver sido marcado, ele aparece ao escolher o dia outra vez.\nNesse dia o atendimento não abre. Escolha outra data no trilho acima.\nManicure simples\nsegunda-feira, 19 de outubro às 09:45 · 45min\nSeu nome\nSeu telefone (WhatsApp)\nÉ por aqui que quem vai te atender fala com você.\nE-mail (opcional)\nOnde vai ser (opcional)\nSó preencha se não for no nosso endereço.\nNão preencha este campo\nConfirmar agendamento",
+  "rolagemLateral": 0,
+  "consoleErros": [
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED"
+  ]
+}

@@ -1,0 +1,32 @@
+// Agente F — planilha FICTÍCIA de 300 clientes no formato que o Excel em português salva
+// (separador ";", Windows-1252/latin1, data dd/mm/aaaa). Gravada FORA do repositório.
+import { writeFileSync } from 'node:fs'
+
+const nomes = ['Ana', 'Bruna', 'Cláudia', 'Débora', 'Érica', 'Fábio', 'Gisele', 'Hélio', 'Íris', 'João', 'Káthia', 'Luís', 'Márcia', 'Néia', 'Otávio', 'Patrícia', 'Quésia', 'Rúbia', 'Sônia', 'Tânia', 'Úrsula', 'Vânia', 'Wélington', 'Xênia', 'Yasmin', 'Zélia']
+const sobrenomes = ['Conceição', 'Gonçalves', 'Araújo', 'Simões', 'Assunção', 'Magalhães', 'Brandão', 'Falcão', 'Leão', 'Romão', 'Peçanha', 'Guimarães']
+let seed = 42
+const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31)
+const pick = (xs) => xs[Math.floor(rnd() * xs.length)]
+const pad = (n) => String(n).padStart(2, '0')
+const hoje = new Date('2026-10-13T12:00:00Z')
+
+const linhas = ['Nome;Telefone;E-mail;Última visita;Observação']
+const stats = { total: 0, semTelefone: 0, telefoneInvalido: 0, semData: 0, dataAmericana: 0, duplicadas: 0 }
+for (let i = 0; i < 300; i++) {
+  const nome = `${pick(nomes)} ${pick(sobrenomes)} ${i + 1}`
+  let tel = `(${pick(['11', '21', '31', '41', '51'])}) 9${Math.floor(1000 + rnd() * 8999)}-${Math.floor(1000 + rnd() * 8999)}`
+  if (i % 25 === 0) { tel = ''; stats.semTelefone++ }
+  else if (i % 41 === 0) { tel = '1234'; stats.telefoneInvalido++ }
+  const dias = Math.floor(5 + rnd() * 200)
+  const d = new Date(hoje.getTime() - dias * 86400000)
+  let data = `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`
+  if (i % 17 === 0) { data = ''; stats.semData++ }
+  else if (i % 53 === 0) { data = `${d.getUTCMonth() + 1}/${d.getUTCDate()}/${String(d.getUTCFullYear()).slice(2)}`; stats.dataAmericana++ }
+  const email = i % 3 === 0 ? `cliente${i + 1}@exemplo.com.br` : ''
+  linhas.push(`${nome};${tel};${email};${data};${i % 7 === 0 ? 'prefere sábado' : ''}`)
+  stats.total++
+}
+// 5 duplicadas (mesmo telefone) no fim, como acontece quando a planilha é juntada de dois cadernos
+for (let j = 1; j <= 5; j++) { linhas.push(linhas[j * 10 + 1]); stats.duplicadas++ }
+writeFileSync('C:/temp/ciclo-medicao/F-clientes-300.csv', Buffer.from(linhas.join('\r\n') + '\r\n', 'latin1'))
+console.log(stats)

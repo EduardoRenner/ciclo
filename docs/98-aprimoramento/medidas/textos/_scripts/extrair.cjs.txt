@@ -1,0 +1,338 @@
+// Extrai texto visível do CICLO a partir do código (AST TypeScript). Somente leitura do repo.
+// Uso: node extrair.cjs <raiz-do-worktree> <pasta-de-saida>
+const fs = require('fs')
+const path = require('path')
+const ROOT = process.argv[2]
+const OUT = process.argv[3]
+const ts = require(path.join(ROOT, 'node_modules', 'typescript'))
+const SRC = path.join(ROOT, 'src')
+const rel = (f) => path.relative(ROOT, f).split(path.sep).join('/')
+
+// ---------- resolução de import ----------
+function resolver(de, spec) {
+  let base
+  if (spec.startsWith('@/')) base = path.join(SRC, spec.slice(2))
+  else if (spec.startsWith('.')) base = path.resolve(path.dirname(de), spec)
+  else return null
+  for (const s of ['', '.ts', '.tsx', '/index.ts', '/index.tsx']) {
+    const f = base + s
+    if (fs.existsSync(f) && fs.statSync(f).isFile()) return f
+  }
+  return null
+}
+
+// ---------- heurística de "é texto para gente" ----------
+const ATRIBUTOS_TEXTO = new Set(['aria-label', 'aria-description', 'aria-valuetext', 'aria-roledescription', 'placeholder', 'title', 'alt', 'label', 'rotulo', 'titulo', 'descricao', 'description', 'subtitulo', 'texto', 'mensagem', 'acao', 'textoBotao', 'cta', 'legenda', 'dica', 'ajuda', 'vazio', 'erro', 'confirmar', 'cancelar', 'pergunta', 'resumo', 'detalhe', 'nome', 'heading', 'hint', 'helper', 'emptyText'])
+const ATRIBUTOS_FORA = new Set(['className', 'key', 'id', 'href', 'src', 'type', 'name', 'role', 'htmlFor', 'method', 'rel', 'target', 'variant', 'size', 'as', 'autoComplete', 'inputMode', 'pattern', 'fill', 'stroke', 'd', 'viewBox', 'xmlns', 'strokeWidth', 'strokeLinecap', 'strokeLinejoin', 'tom', 'cor', 'icone', 'icon', 'lang', 'dir', 'enterKeyHint', 'accept', 'capture', 'sizes', 'loading', 'decoding', 'fetchPriority', 'prefetch', 'scroll', 'action', 'encType', 'form', 'list', 'step', 'min', 'max', 'value', 'defaultValue', 'style', 'tabIndex', 'aria-hidden', 'aria-live', 'aria-current', 'aria-controls', 'aria-describedby', 'aria-labelledby', 'aria-expanded', 'aria-haspopup', 'aria-pressed', 'aria-selected', 'aria-invalid', 'aria-busy', 'aria-atomic', 'aria-relevant', 'aria-modal', 'aria-orientation', 'spellCheck', 'autoCapitalize', 'download', 'media', 'colSpan', 'width', 'height', 'priority', 'quality', 'unoptimized', 'crossOrigin', 'referrerPolicy', 'sandbox', 'allow', 'datetime', 'dateTime', 'hrefLang', 'charSet', 'content', 'property', 'httpEquiv', 'nonce', 'integrity', 'strategy', 'layout', 'objectFit', 'translate', 'inert'])
+const CHAMADAS_FORA = /^(cn|clsx|cva|twMerge|console\.\w+|fetch|apiFetch|require|import|.*\.select|.*\.eq|.*\.neq|.*\.from|.*\.order|.*\.in|.*\.is|.*\.not|.*\.or|.*\.filter|.*\.match|.*\.rpc|.*\.ilike|.*\.like|.*\.gte|.*\.lte|.*\.gt|.*\.lt|.*\.contains|.*\.upsert|.*\.update|.*\.insert|.*\.delete|.*\.single|.*\.range|.*\.limit|.*\.channel|.*\.on|router\.\w+|redirect|permanentRedirect|notFound|.*\.get|.*\.set|.*\.has|.*\.append|.*\.getAll|.*\.searchParams\.\w+|.*\.headers\.\w+|cookies|headers|new URL|URL|URLSearchParams|.*\.addEventListener|.*\.removeEventListener|.*\.querySelector|.*\.querySelectorAll|.*\.getElementById|.*\.setAttribute|.*\.getAttribute|.*\.matchMedia|.*\.getItem|.*\.setItem|.*\.removeItem|.*\.startsWith|.*\.endsWith|.*\.includes|.*\.split|.*\.join|.*\.replace|.*\.replaceAll|.*\.indexOf|.*\.padStart|.*\.toLocale\w+|Intl\.\w+|new Intl\.\w+|.*\.createElement|.*\.dispatchEvent|.*\.postMessage|.*\.registerRoute|.*\.revalidatePath|revalidatePath|revalidateTag|.*\.storage\.from|.*\.download|.*\.upload|.*\.createSignedUrl|.*\.log|.*\.info|.*\.warn|.*\.error|.*\.debug|logger\.\w+|registrar\w*|track\w*|capturar\w*|Sentry\.\w+|.*\.captureException|.*\.captureMessage|z\.enum|.*\.enum|.*\.literal|z\.literal|.*\.toString|Symbol|.*\.localeCompare|.*\.at|.*\.normalize|.*\.test|.*\.exec|RegExp|new RegExp|Number|parseInt|.*\.toFixed|.*\.parse|.*\.safeParse|.*\.cookies\.\w+|.*\.vibrate|crypto\.\w+|.*\.digest|.*\.importKey|.*\.createHash|.*\.update|setTimeout|.*\.json|NextResponse\.redirect)$/
+const CHAMADAS_ERRO_ESTADO = /^(set\w*(Erro|Error|Mensagem|Message|Aviso|Status|Feedback|Anuncio|Anúncio|Resultado|Sucesso|Falha|Alerta|Info|Texto|Toast)\w*|toast(\.\w+)?|mostrar\w*|avisar\w*|anunciar\w*|notificar\w*)$/i
+
+function textoValido(s) {
+  const t = s.replace(/\s+/g, ' ').trim()
+  if (!t) return null
+  const semChaves = t.replace(/\{[^{}]*\}/g, ' ')
+  if (!/[A-Za-zÀ-ÿ]/.test(semChaves)) return null
+  {
+    const toks = semChaves.split(/\s+/).filter(Boolean)
+    const PREF = /^[!-]?([a-z0-9-]+:)*[!-]?(m|p|mx|my|mt|mb|ml|mr|ms|me|px|py|pt|pb|pl|pr|ps|pe|w|h|min-w|max-w|min-h|max-h|size|text|bg|from|via|to|border|rounded|gap|gap-x|gap-y|space-x|space-y|items|justify|self|place|font|leading|tracking|z|top|left|right|bottom|inset|inset-x|inset-y|opacity|shadow|ring|ring-offset|outline|outline-offset|col|row|grid-cols|grid-rows|col-span|row-span|flex|basis|order|overflow|overflow-x|overflow-y|whitespace|break|line-clamp|aspect|object|cursor|duration|ease|delay|transition|translate-x|translate-y|scale|rotate|fill|stroke|divide|divide-x|divide-y|content|decoration|underline-offset|toque|animate|sr|snap|scroll|touch|accent|caret|list|indent|align|backdrop|blur|brightness|will|appearance|select|pointer-events|tabular|shrink|grow|origin|columns|hyphens|contain|motion-safe|motion-reduce)(-[\w\[\]\/.%#:(),'=-]+)?(\/\d+)?$/
+    const tw = toks.filter((tok) => PREF.test(tok) || /^([a-z0-9-]+:)+\S+$/.test(tok) || /^(flex|grid|block|hidden|inline|relative|absolute|fixed|sticky|uppercase|lowercase|capitalize|truncate|underline|italic|border|rounded|shadow|grow|shrink|contents|transition|sr-only|static|isolate|tabular-nums|antialiased|outline|ring|resize|invisible|visible|peer|group|container|prose|select-none|pointer-events-none)$/.test(tok))
+    if (toks.length && tw.length / toks.length >= 0.6) return null
+  }
+  if (/^(https?:|mailto:|tel:|wa\.me|\/|\.\/|@\/|data:|blob:)/i.test(t)) return null
+  if (/^#/.test(t) && !/\s/.test(t)) return null
+  if (!/\s/.test(t)) {
+    // palavra solta: só vale se parecer palavra de gente (maiúscula inicial + minúsculas, ou acento)
+    if (/^[a-z0-9_.\-\/:#?=&%{}\[\]@+*|$<>!,;()'"]+$/.test(t)) return null
+    if (/^[A-Z0-9_]{2,}$/.test(t) && t.length <= 5) return null
+    if (/^[A-Z][a-zA-Z]+[A-Z]/.test(t)) return null // CamelCase de identificador
+    if (/[{}()=;<>]/.test(t)) return null
+  }
+  if (/^[\w-]+(\s+[\w:\-\/\[\].%#!]+)*$/.test(t) && /\b(flex|grid|px-|py-|mt-|mb-|text-|bg-|border|rounded|gap-|w-|h-|items-|justify-|font-|hidden|block|inline)\b/.test(t)) return null
+  if (/^(select|insert|update|delete|with)\b/i.test(t) && /\b(from|into|set|where)\b/i.test(t)) return null
+  if (/^[a-z_]+(,\s*[a-z_]+(\([^)]*\))?)+$/.test(t)) return null // lista de colunas
+  if (/^[a-z_]+\([^)]*\)/.test(t)) return null
+  if (/^(application|text|image|multipart)\/[\w.+-]+/.test(t)) return null
+  if (/^[\w.-]+=[\w.-]*(;|$)/.test(t)) return null
+  return t
+}
+
+function nomeDaChamada(node) {
+  let e = node.expression
+  if (ts.isNewExpression(node)) return 'new ' + (e ? e.getText() : '')
+  return e ? e.getText().replace(/\s+/g, '') : ''
+}
+
+function nomeDaTag(el) {
+  const open = ts.isJsxElement(el) ? el.openingElement : ts.isJsxSelfClosingElement(el) ? el : null
+  return open ? open.tagName.getText() : ''
+}
+
+function tagEhBotao(tag) {
+  return /^(button|Button|Botao\w*|\w*Botao|\w*Button|SubmitButton|BotaoPrincipal)$/.test(tag)
+}
+
+function extrairDoArquivo(file) {
+  const fonte = fs.readFileSync(file, 'utf8')
+  const sf = ts.createSourceFile(file, fonte, ts.ScriptTarget.Latest, true, file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS)
+  const imports = new Set()
+  const textos = []
+  const linha = (n) => sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1
+  const consumidos = new Set()
+  const vistos = new Set()
+
+  function push(texto, node, tipo, extra) {
+    const t = textoValido(texto)
+    if (!t) return
+    const k = linha(node) + ':' + t
+    if (vistos.has(k)) return
+    vistos.add(k)
+    textos.push({ texto: t, arquivo: rel(file), linha: linha(node), tipo, ...(extra || {}) })
+  }
+
+  function contexto(node) {
+    // sobe a árvore para decidir tipo ou exclusão
+    let filho = node
+    let p = node.parent
+    let tipo = 'texto'
+    while (p) {
+      if (ts.isImportDeclaration(p) || ts.isExportDeclaration(p) || ts.isImportTypeNode?.(p)) return { fora: true }
+      if (ts.isTypeNode(p) && !ts.isTypeQueryNode(p)) return { fora: true }
+      if (ts.isLiteralTypeNode?.(p)) return { fora: true }
+      if (ts.isExpressionStatement(p) && filho === p.expression && ts.isStringLiteral(filho)) return { fora: true } // diretiva
+      if (ts.isPropertyAssignment(p) && p.name === filho) return { fora: true }
+      if (ts.isElementAccessExpression(p) && p.argumentExpression === filho) return { fora: true }
+      if (ts.isCaseClause(p) && p.expression === filho) return { fora: true }
+      if (ts.isBinaryExpression(p) && /^(===|!==|==|!=|in|instanceof)$/.test(p.operatorToken.getText())) return { fora: true }
+      if (ts.isJsxAttribute(p)) {
+        const nome = p.name.getText()
+        if (ATRIBUTOS_FORA.has(nome) || nome.startsWith('data-') || nome.startsWith('on')) return { fora: true }
+        if (nome.startsWith('aria-')) return { tipo: nome }
+        if (nome === 'placeholder' || nome === 'title' || nome === 'alt') return { tipo: nome }
+        return { tipo: 'prop:' + nome }
+      }
+      if (ts.isCallExpression(p) || ts.isNewExpression(p)) {
+        const nome = nomeDaChamada(p)
+        if (CHAMADAS_FORA.test(nome)) return { fora: true }
+        if (/^(window\.)?confirm$/.test(nome)) return { tipo: 'confirmação' }
+        if (/^(window\.)?alert$/.test(nome)) return { tipo: 'alerta' }
+        if (CHAMADAS_ERRO_ESTADO.test(nome)) return { tipo: /erro|error|falha/i.test(nome) ? 'erro' : 'estado/aviso' }
+        if (/(^|\.)(min|max|length|regex|email|url|refine|superRefine|nonempty|positive|int|nonnegative|startsWith|uuid|optional|trim)$/.test(nome) && p.arguments.indexOf(filho) > 0) return { tipo: 'validação' }
+        if (/(^|\.)(min|max|length|regex|refine|nonempty)$/.test(nome)) return { tipo: 'validação' }
+        if (/new (\w+)?Error$/.test(nome) || /Erro\w*$/.test(nome) || /erro\w*$/i.test(nome) || /^(problema|falha|responder\w*|json\w*|resposta\w*)$/i.test(nome)) return { tipo: 'erro' }
+        if (/^(z\.\w+|\w+\.(describe))$/.test(nome)) return { tipo: 'validação' }
+        // chamada genérica: mantém subindo para pegar propriedade/atributo ao redor
+      }
+      if (ts.isThrowStatement(p)) return { tipo: 'erro-lançado' }
+      if (ts.isPropertyAssignment(p) && p.initializer === filho) {
+        const k = p.name.getText().replace(/['"]/g, '')
+        if (/^(className|key|id|href|slug|path|rota|route|url|icon|icone|tom|cor|variant|variante|tipo|type|kind|status|chave|campo|value|valor|modulo|module|tabela|table|column|coluna|evento|event|origem|canal|channel|method|metodo|matcher|source|destination|code|codigo|plano|plan|role|papel|categoria|grupo|unit|unidade|formato|format|locale|timeZone|currency|style|ordem|order|sort|filtro|filter|cache|revalidate|runtime|dynamic|regions|maxDuration|preferredRegion|scope|start_url|display|theme_color|background_color|orientation|lang|dir|purpose|mime|accept|ref|target|rel|testId|nivel|level|kindOf|chaveDeVocabulario|segment|parametro|param)$/i.test(k)) return { fora: true }
+        if (/^(title|titulo|description|descricao|siteName|applicationName|absolute|default|template|keywords|alt)$/i.test(k)) tipo = 'metadata/' + k
+        else if (/^(label|rotulo|nome|name)$/i.test(k)) tipo = 'rótulo'
+        else if (/(erro|error|falha|problema)/i.test(k)) tipo = 'erro'
+        else if (/(vazio|empty)/i.test(k)) tipo = 'vazio'
+        else if (/(sucesso|ok|feito|pronto)/i.test(k)) tipo = 'sucesso'
+        else if (/(confirm)/i.test(k)) tipo = 'confirmação'
+        else if (/(placeholder)/i.test(k)) tipo = 'placeholder'
+        else if (/(cta|botao|acao|action|button)/i.test(k)) tipo = 'botão'
+        else if (/(body|corpo|mensagem|message|texto|text|template|modelo)/i.test(k)) tipo = 'mensagem/' + k
+        else tipo = 'prop:' + k
+        return { tipo }
+      }
+      if (ts.isJsxExpression(p)) {
+        const pai = p.parent
+        if (pai && (ts.isJsxElement(pai) || ts.isJsxFragment(pai))) {
+          const tag = ts.isJsxElement(pai) ? nomeDaTag(pai) : ''
+          return { tipo: tagEhBotao(tag) ? 'botão' : /^h[1-6]$/.test(tag) ? 'título-' + tag : 'texto', tag }
+        }
+      }
+      if (ts.isReturnStatement(p) || ts.isArrowFunction(p)) return { tipo }
+      if (ts.isVariableDeclaration(p)) {
+        const n = p.name.getText()
+        if (/^(className|classes|cls|base|estilo|style|href|url|rota|path|query|select|sql|campos|colunas|chave|key|id|regex|padrao|pattern|tipo|status|evento|canal)$/i.test(n)) return { fora: true }
+        if (/(erro|error)/i.test(n)) return { tipo: 'erro' }
+        return { tipo }
+      }
+      filho = p
+      p = p.parent
+    }
+    return { tipo }
+  }
+
+  function textoDeTemplate(node) {
+    if (ts.isNoSubstitutionTemplateLiteral(node)) return node.text
+    let s = node.head.text
+    for (const span of node.templateSpans) {
+      const e = span.expression.getText(sf)
+      s += '{' + (e.length > 28 ? '…' : e) + '}' + span.literal.text
+    }
+    return s
+  }
+
+  function juntarFilhosJsx(el) {
+    // junta texto corrido + expressões curtas, para virar a frase que a pessoa lê
+    const tag = ts.isJsxElement(el) ? nomeDaTag(el) : ''
+    const partes = []
+    let atual = null
+    const fechar = () => { if (atual && atual.temTexto) partes.push(atual); atual = null }
+    for (const c of el.children) {
+      if (ts.isJsxText(c)) {
+        if (!atual) atual = { s: '', node: c, temTexto: false }
+        atual.s += c.text
+        if (/[A-Za-zÀ-ÿ]/.test(c.text)) atual.temTexto = true
+        consumidos.add(c)
+      } else if (ts.isJsxExpression(c) && c.expression && !ts.isJsxElement(c.expression) && !ts.isJsxSelfClosingElement(c.expression) && !ts.isJsxFragment(c.expression) && !ts.isConditionalExpression(c.expression) && !ts.isBinaryExpression(c.expression) && !ts.isCallExpression(c.expression) ) {
+        if (ts.isStringLiteral(c.expression) || ts.isNoSubstitutionTemplateLiteral(c.expression)) {
+          if (!atual) atual = { s: '', node: c, temTexto: false }
+          atual.s += c.expression.text
+          atual.temTexto = true
+          consumidos.add(c.expression)
+        } else {
+          if (!atual) atual = { s: '', node: c, temTexto: false }
+          const e = c.expression.getText(sf)
+          atual.s += '{' + (e.length > 28 ? '…' : e) + '}'
+        }
+      } else if (ts.isJsxExpression(c) && !c.expression) {
+        // comentário {/* */}
+      } else {
+        // elemento inline (<strong>, <br/>) quebra: mas <strong>x</strong> no meio de frase continua frase
+        const t = ts.isJsxElement(c) ? nomeDaTag(c) : ts.isJsxSelfClosingElement(c) ? nomeDaTag(c) : ''
+        if (/^(strong|em|b|i|span|abbr|small|mark|code|kbd|time|u|s)$/.test(t) && ts.isJsxElement(c) && c.children.every((x) => ts.isJsxText(x) || (ts.isJsxExpression(x) && x.expression && !ts.isJsxElement(x.expression)))) {
+          if (!atual) atual = { s: '', node: c, temTexto: false }
+          for (const x of c.children) {
+            if (ts.isJsxText(x)) { atual.s += x.text; consumidos.add(x); if (/[A-Za-zÀ-ÿ]/.test(x.text)) atual.temTexto = true }
+            else if (ts.isStringLiteral(x.expression)) { atual.s += x.expression.text; consumidos.add(x.expression); atual.temTexto = true }
+            else { const e = x.expression.getText(sf); atual.s += '{' + (e.length > 28 ? '…' : e) + '}' }
+          }
+        } else if (t === 'br') {
+          if (atual) atual.s += ' '
+        } else fechar()
+      }
+    }
+    fechar()
+    const tipo = tagEhBotao(tag) ? 'botão' : /^h[1-6]$/.test(tag) ? 'título-' + tag : tag === 'label' || tag === 'Label' ? 'rótulo' : tag === 'option' ? 'opção' : tag === 'legend' ? 'rótulo' : tag === 'title' ? 'metadata/title' : /^(Link|a)$/.test(tag) ? 'link' : /Vazio|Empty/.test(tag) ? 'vazio' : 'texto'
+    for (const p of partes) push(p.s, p.node, tipo, tag ? { tag } : undefined)
+  }
+
+  function visitar(node) {
+    if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
+      const r = resolver(file, node.moduleSpecifier.text)
+      if (r) imports.add(r)
+      return
+    }
+    if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword && node.arguments[0] && ts.isStringLiteral(node.arguments[0])) {
+      const r = resolver(file, node.arguments[0].text)
+      if (r) imports.add(r)
+    }
+    if (ts.isJsxElement(node) || ts.isJsxFragment(node)) juntarFilhosJsx(node)
+    if (ts.isJsxText(node) && !consumidos.has(node)) {
+      if (/[A-Za-zÀ-ÿ]/.test(node.text)) push(node.text, node, 'texto')
+    }
+    if ((ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateExpression(node)) && !consumidos.has(node)) {
+      const ctx = contexto(node)
+      if (!ctx.fora) {
+        const t = ts.isStringLiteral(node) ? node.text : textoDeTemplate(node)
+        push(t, node, ctx.tipo, ctx.tag ? { tag: ctx.tag } : undefined)
+      }
+      if (ts.isTemplateExpression(node)) return // não desce nos pedaços
+    }
+    ts.forEachChild(node, visitar)
+  }
+  visitar(sf)
+  return { imports: [...imports], textos }
+}
+
+const cache = new Map()
+function info(file) {
+  if (!cache.has(file)) cache.set(file, extrairDoArquivo(file))
+  return cache.get(file)
+}
+
+// ---------- rotas ----------
+function listar(dir, filtro, acc = []) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name)
+    if (e.isDirectory()) listar(p, filtro, acc)
+    else if (filtro(p)) acc.push(p)
+  }
+  return acc
+}
+const APP = path.join(SRC, 'app')
+const entradas = listar(APP, (p) => !p.includes(path.sep + 'api' + path.sep) && /(page|layout|error|global-error|not-found|loading|opengraph-image|template)\.tsx$/.test(p))
+  .concat(listar(APP, (p) => /llms\.txt[\\/]route\.ts$/.test(p) || /(sitemap|robots|manifest)\.ts$/.test(p)))
+
+function rotaDe(f) {
+  const r = path.relative(APP, f).split(path.sep).join('/')
+  return r
+}
+function nomeArquivoJson(r) {
+  return r.replace(/\.(tsx|ts)$/, '').replace(/[\[\]()]/g, '').replace(/\//g, '__').replace(/[^\w.\-]/g, '_') || 'raiz'
+}
+const DENTRO = (f) => /[\\/]src[\\/](app|components|lib)[\\/]/.test(f) && !/[\\/]src[\\/]app[\\/]api[\\/]/.test(f)
+
+function alcance(entrada) {
+  const visto = new Set([entrada])
+  const fila = [entrada]
+  while (fila.length) {
+    const f = fila.shift()
+    for (const i of info(f).imports) {
+      if (!visto.has(i) && DENTRO(i)) { visto.add(i); fila.push(i) }
+    }
+  }
+  return [...visto]
+}
+
+const porEntrada = {}
+const contagemArquivo = new Map()
+for (const e of entradas) {
+  const arqs = alcance(e)
+  porEntrada[rotaDe(e)] = arqs
+  for (const a of arqs) contagemArquivo.set(a, (contagemArquivo.get(a) || 0) + 1)
+}
+const LIMIAR_COMPARTILHADO = 6
+const compartilhados = [...contagemArquivo.entries()].filter(([f, n]) => n >= LIMIAR_COMPARTILHADO && !/[\\/](page|layout|error|not-found|loading)\.tsx$/.test(f)).map(([f]) => f)
+const setCompart = new Set(compartilhados)
+
+fs.mkdirSync(OUT, { recursive: true })
+const resumo = []
+const todosTextos = new Map() // chave arquivo:linha:texto -> registro
+for (const [rota, arqs] of Object.entries(porEntrada)) {
+  const proprios = arqs.filter((a) => !setCompart.has(a))
+  const textos = proprios.flatMap((a) => info(a).textos)
+  const saida = {
+    rota,
+    gerado: 'extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13',
+    arquivos_proprios: proprios.map(rel),
+    componentes_compartilhados_usados: arqs.filter((a) => setCompart.has(a)).map(rel),
+    total: textos.length,
+    textos,
+  }
+  fs.writeFileSync(path.join(OUT, nomeArquivoJson(rota) + '.json'), JSON.stringify(saida, null, 1))
+  resumo.push({ rota, arquivos: proprios.length, textos: textos.length, compartilhados: saida.componentes_compartilhados_usados.length })
+  for (const t of textos) todosTextos.set(`${t.arquivo}:${t.linha}:${t.texto}`, { ...t, rotas: [] })
+}
+const textosCompart = compartilhados.flatMap((a) => info(a).textos)
+fs.writeFileSync(path.join(OUT, '_compartilhado.json'), JSON.stringify({ descricao: `arquivos alcançados por >= ${LIMIAR_COMPARTILHADO} entradas de rota`, arquivos: compartilhados.map(rel).map((f) => ({ arquivo: f, rotas: contagemArquivo.get(path.join(ROOT, f)) })), total: textosCompart.length, textos: textosCompart }, null, 1))
+for (const t of textosCompart) todosTextos.set(`${t.arquivo}:${t.linha}:${t.texto}`, { ...t })
+
+// ---------- textos fora de tela: core, server, lib, api, emails, edge functions ----------
+const FORA_DIRS = [path.join(SRC, 'core'), path.join(SRC, 'server'), path.join(SRC, 'app', 'api'), path.join(SRC, 'lib'), path.join(ROOT, 'supabase', 'functions')].filter((d) => fs.existsSync(d))
+const foraArqs = FORA_DIRS.flatMap((d) => listar(d, (p) => /\.(ts|tsx)$/.test(p) && !/\.test\.|\.d\.ts$|types\.gen\.ts$/.test(p)))
+const porGrupo = {}
+for (const f of foraArqs) {
+  let r
+  try { r = info(f) } catch (e) { continue }
+  if (!r.textos.length) continue
+  const relf = rel(f)
+  const grupo = relf.startsWith('src/app/api') ? 'api' : relf.startsWith('src/server') ? 'server' : relf.startsWith('src/core') ? 'core' : relf.startsWith('src/lib') ? 'lib' : 'edge-functions'
+  ;(porGrupo[grupo] ||= []).push(...r.textos)
+  for (const t of r.textos) if (!todosTextos.has(`${t.arquivo}:${t.linha}:${t.texto}`)) todosTextos.set(`${t.arquivo}:${t.linha}:${t.texto}`, { ...t })
+}
+for (const [g, textos] of Object.entries(porGrupo)) {
+  fs.writeFileSync(path.join(OUT, `_fora-de-tela__${g}.json`), JSON.stringify({ grupo: g, total: textos.length, textos }, null, 1))
+}
+
+// ---------- índice único ----------
+const unicos = [...todosTextos.values()]
+fs.writeFileSync(path.join(OUT, '_indice.json'), JSON.stringify({ entradas_de_rota: resumo.length, resumo, compartilhados: compartilhados.length, fora_de_tela: Object.fromEntries(Object.entries(porGrupo).map(([g, t]) => [g, t.length])), total_unico: unicos.length }, null, 1))
+fs.writeFileSync(path.join(__dirname, 'todos-textos-unicos.json'), JSON.stringify(unicos))
+console.log('entradas', resumo.length, 'compartilhados', compartilhados.length, 'unicos', unicos.length, Object.fromEntries(Object.entries(porGrupo).map(([g, t]) => [g, t.length])))

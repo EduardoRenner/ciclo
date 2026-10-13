@@ -1,0 +1,445 @@
+{
+ "rota": "admin/estoque/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/estoque/page.tsx",
+  "src/app/admin/estoque/lista.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/card.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/badge.tsx",
+  "src/components/ui/bloqueio-plano.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/money-input.tsx",
+  "src/components/ui/section-header.tsx",
+  "src/components/ui/sheet.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/formato.ts",
+  "src/components/ui/icone-anel.tsx",
+  "src/lib/app-url.ts"
+ ],
+ "total": 66,
+ "textos": [
+  {
+   "texto": "Estoque",
+   "arquivo": "src/app/admin/estoque/page.tsx",
+   "linha": 19,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Estoque",
+   "arquivo": "src/app/admin/estoque/page.tsx",
+   "linha": 37,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Você não tem acesso ao estoque",
+   "arquivo": "src/app/admin/estoque/page.tsx",
+   "linha": 41,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Quem cuida das compras do negócio vê esta tela. Peça ao dono se precisar.",
+   "arquivo": "src/app/admin/estoque/page.tsx",
+   "linha": 42,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Voltar para Hoje",
+   "arquivo": "src/app/admin/estoque/page.tsx",
+   "linha": 43,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Estoque",
+   "arquivo": "src/app/admin/estoque/page.tsx",
+   "linha": 77,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Quanto tem de cada produto e o custo médio",
+   "arquivo": "src/app/admin/estoque/page.tsx",
+   "linha": 81,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Produto cadastrado",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 81,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Produto atualizado",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 81,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Novo produto",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 93,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cadastrar produto é do plano Avançado",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 89,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Nenhum produto cadastrado",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 105,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Os produtos vêm do pacote da sua profissão e do que você usa nos serviços. Ou cadastre um agora, pra vender ou só controlar o estoque.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 106,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Ver serviços",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 107,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Para revenda",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 131,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Uso interno",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 140,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "registrar compra e manter o estoque em dia",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 163,
+   "tipo": "prop:acao"
+  },
+  {
+   "texto": "produtos abaixo do ponto de recompra",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 164,
+   "tipo": "prop:substantivo"
+  },
+  {
+   "texto": "Entrada registrada",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 178,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "O estoque e o custo médio já estão atualizados.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 178,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Vencido",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 215,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Vence em {dias}d",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 217,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Repor",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 219,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "· repor com {quantidade(p.pontoDePedido)}",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 224,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· {…} custo",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 225,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· vende por {…}",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 226,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Vendendo abaixo do custo ({…})",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 238,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Margem: {…}{…}",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 239,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Editar {p.nome}",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 244,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Entrada",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 260,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Registrar compra é do plano Avançado",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 257,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Diga quantas unidades entraram.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 292,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui registrar a entrada. Tente de novo.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 321,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 329,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Entrada de {produto.nome}",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 338,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Registre a compra: o estoque sobe e o custo médio é recalculado.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 339,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Quantidade ({produto.unidade})",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 343,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Tem {quantidade(produto.estoque)} {produto.unidade} agora.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 348,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Quanto custou cada uma",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 351,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "É este valor que faz o custo do atendimento sair do zero.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 354,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Me avise quando sobrar menos que (opcional)",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 366,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Hoje o aviso é em {…} {produto.unidade}.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 372,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Sem isso, o aviso só chega quando o produto acaba.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 373,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Observação (opcional)",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 376,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "O aviso precisa ser um número de {produto.unidade}. Deixe em branco para não mudar.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 380,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Registrar entrada",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 398,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Corrija o aviso de estoque baixo.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 394,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Preencha a quantidade que entrou.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 394,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Dê um nome ao produto.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 433,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Defina um preço de venda maior que zero, ou desmarque \"Vende para cliente\".",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 443,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui salvar o produto.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 481,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 500,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Editar produto",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 506,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Novo produto",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 506,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Nome",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 508,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Unidade",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 509,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "un, ml, g...",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 509,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Custo (opcional)",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 510,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Pode deixar em zero e ajustar na próxima compra.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 510,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Vende para cliente (revenda)",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 519,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Revenda: quem é atendido leva pra casa (xampu, óleo de barba). Precisa de preço.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 523,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Insumo de uso interno (água oxigenada, luva): o serviço consome, sem preço próprio.",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 524,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Preço de venda",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 527,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Me avise quando sobrar menos que (opcional)",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 530,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Salvar",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 543,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cadastrar produto",
+   "arquivo": "src/app/admin/estoque/lista.tsx",
+   "linha": 543,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

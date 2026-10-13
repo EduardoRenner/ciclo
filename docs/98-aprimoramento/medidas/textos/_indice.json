@@ -1,0 +1,805 @@
+{
+ "entradas_de_rota": 132,
+ "resumo": [
+  {
+   "rota": "(auth)/cadastro/page.tsx",
+   "arquivos": 3,
+   "textos": 34,
+   "compartilhados": 8
+  },
+  {
+   "rota": "(auth)/entrar/page.tsx",
+   "arquivos": 3,
+   "textos": 18,
+   "compartilhados": 6
+  },
+  {
+   "rota": "(auth)/nova-senha/page.tsx",
+   "arquivos": 2,
+   "textos": 9,
+   "compartilhados": 6
+  },
+  {
+   "rota": "(auth)/recuperar-senha/page.tsx",
+   "arquivos": 2,
+   "textos": 12,
+   "compartilhados": 6
+  },
+  {
+   "rota": "(auth)/verificar/page.tsx",
+   "arquivos": 2,
+   "textos": 8,
+   "compartilhados": 6
+  },
+  {
+   "rota": "(public)/avaliar/layout.tsx",
+   "arquivos": 2,
+   "textos": 0,
+   "compartilhados": 0
+  },
+  {
+   "rota": "(public)/avaliar/[token]/page.tsx",
+   "arquivos": 4,
+   "textos": 25,
+   "compartilhados": 4
+  },
+  {
+   "rota": "(public)/calculadora/page.tsx",
+   "arquivos": 2,
+   "textos": 34,
+   "compartilhados": 4
+  },
+  {
+   "rota": "(public)/confirmar/layout.tsx",
+   "arquivos": 2,
+   "textos": 0,
+   "compartilhados": 0
+  },
+  {
+   "rota": "(public)/confirmar/[token]/page.tsx",
+   "arquivos": 4,
+   "textos": 19,
+   "compartilhados": 2
+  },
+  {
+   "rota": "(public)/links/page.tsx",
+   "arquivos": 1,
+   "textos": 10,
+   "compartilhados": 2
+  },
+  {
+   "rota": "(public)/lista-espera/layout.tsx",
+   "arquivos": 2,
+   "textos": 0,
+   "compartilhados": 0
+  },
+  {
+   "rota": "(public)/lista-espera/[token]/page.tsx",
+   "arquivos": 4,
+   "textos": 9,
+   "compartilhados": 2
+  },
+  {
+   "rota": "(public)/orcamento/layout.tsx",
+   "arquivos": 2,
+   "textos": 0,
+   "compartilhados": 0
+  },
+  {
+   "rota": "(public)/orcamento/[token]/page.tsx",
+   "arquivos": 4,
+   "textos": 26,
+   "compartilhados": 5
+  },
+  {
+   "rota": "(public)/precos/page.tsx",
+   "arquivos": 2,
+   "textos": 68,
+   "compartilhados": 2
+  },
+  {
+   "rota": "(public)/privacidade/page.tsx",
+   "arquivos": 1,
+   "textos": 76,
+   "compartilhados": 2
+  },
+  {
+   "rota": "(public)/termos/page.tsx",
+   "arquivos": 1,
+   "textos": 77,
+   "compartilhados": 2
+  },
+  {
+   "rota": "(public)/[slug]/agendar/page.tsx",
+   "arquivos": 6,
+   "textos": 78,
+   "compartilhados": 8
+  },
+  {
+   "rota": "(public)/[slug]/layout.tsx",
+   "arquivos": 1,
+   "textos": 4,
+   "compartilhados": 0
+  },
+  {
+   "rota": "(public)/[slug]/orcamento/page.tsx",
+   "arquivos": 2,
+   "textos": 21,
+   "compartilhados": 8
+  },
+  {
+   "rota": "(public)/[slug]/page.tsx",
+   "arquivos": 2,
+   "textos": 39,
+   "compartilhados": 6
+  },
+  {
+   "rota": "admin/agenda/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/agenda/novo/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/agenda/novo/page.tsx",
+   "arquivos": 4,
+   "textos": 47,
+   "compartilhados": 10
+  },
+  {
+   "rota": "admin/agenda/page.tsx",
+   "arquivos": 7,
+   "textos": 67,
+   "compartilhados": 12
+  },
+  {
+   "rota": "admin/caixa/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/caixa/page.tsx",
+   "arquivos": 3,
+   "textos": 42,
+   "compartilhados": 9
+  },
+  {
+   "rota": "admin/campanhas/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/campanhas/nova/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/campanhas/nova/page.tsx",
+   "arquivos": 2,
+   "textos": 26,
+   "compartilhados": 10
+  },
+  {
+   "rota": "admin/campanhas/page.tsx",
+   "arquivos": 1,
+   "textos": 21,
+   "compartilhados": 10
+  },
+  {
+   "rota": "admin/casos/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/casos/novo/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/casos/novo/page.tsx",
+   "arquivos": 2,
+   "textos": 25,
+   "compartilhados": 9
+  },
+  {
+   "rota": "admin/casos/page.tsx",
+   "arquivos": 1,
+   "textos": 26,
+   "compartilhados": 9
+  },
+  {
+   "rota": "admin/casos/[id]/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/casos/[id]/page.tsx",
+   "arquivos": 6,
+   "textos": 147,
+   "compartilhados": 11
+  },
+  {
+   "rota": "admin/clientes/exportar/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/clientes/exportar/page.tsx",
+   "arquivos": 2,
+   "textos": 13,
+   "compartilhados": 5
+  },
+  {
+   "rota": "admin/clientes/importar/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/clientes/importar/page.tsx",
+   "arquivos": 2,
+   "textos": 52,
+   "compartilhados": 5
+  },
+  {
+   "rota": "admin/clientes/ja-atendo/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/clientes/ja-atendo/page.tsx",
+   "arquivos": 2,
+   "textos": 57,
+   "compartilhados": 7
+  },
+  {
+   "rota": "admin/clientes/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/clientes/nova/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/clientes/nova/page.tsx",
+   "arquivos": 3,
+   "textos": 65,
+   "compartilhados": 9
+  },
+  {
+   "rota": "admin/clientes/page.tsx",
+   "arquivos": 5,
+   "textos": 53,
+   "compartilhados": 14
+  },
+  {
+   "rota": "admin/clientes/vindo-de-outro-sistema/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "arquivos": 1,
+   "textos": 18,
+   "compartilhados": 6
+  },
+  {
+   "rota": "admin/clientes/[id]/estrutura/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/clientes/[id]/estrutura/page.tsx",
+   "arquivos": 3,
+   "textos": 93,
+   "compartilhados": 14
+  },
+  {
+   "rota": "admin/clientes/[id]/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/clientes/[id]/page.tsx",
+   "arquivos": 17,
+   "textos": 431,
+   "compartilhados": 19
+  },
+  {
+   "rota": "admin/comanda/agendamento/[appointmentId]/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/comanda/agendamento/[appointmentId]/page.tsx",
+   "arquivos": 1,
+   "textos": 5,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/comanda/[id]/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/comanda/[id]/page.tsx",
+   "arquivos": 2,
+   "textos": 41,
+   "compartilhados": 7
+  },
+  {
+   "rota": "admin/comissao/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/comissao/page.tsx",
+   "arquivos": 1,
+   "textos": 18,
+   "compartilhados": 5
+  },
+  {
+   "rota": "admin/config/advocacia/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/config/advocacia/page.tsx",
+   "arquivos": 2,
+   "textos": 30,
+   "compartilhados": 9
+  },
+  {
+   "rota": "admin/config/automacoes/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/automacoes/page.tsx",
+   "arquivos": 2,
+   "textos": 11,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/cofre/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/cofre/page.tsx",
+   "arquivos": 2,
+   "textos": 11,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/custo-fixo/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/custo-fixo/page.tsx",
+   "arquivos": 2,
+   "textos": 20,
+   "compartilhados": 7
+  },
+  {
+   "rota": "admin/config/excluir-conta/page.tsx",
+   "arquivos": 4,
+   "textos": 24,
+   "compartilhados": 8
+  },
+  {
+   "rota": "admin/config/horarios/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/horarios/page.tsx",
+   "arquivos": 2,
+   "textos": 34,
+   "compartilhados": 5
+  },
+  {
+   "rota": "admin/config/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/config/mensagens/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/mensagens/page.tsx",
+   "arquivos": 3,
+   "textos": 31,
+   "compartilhados": 8
+  },
+  {
+   "rota": "admin/config/meu-plano/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/meu-plano/page.tsx",
+   "arquivos": 5,
+   "textos": 58,
+   "compartilhados": 8
+  },
+  {
+   "rota": "admin/config/modulos/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/modulos/page.tsx",
+   "arquivos": 2,
+   "textos": 10,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/negocio/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/negocio/page.tsx",
+   "arquivos": 3,
+   "textos": 46,
+   "compartilhados": 6
+  },
+  {
+   "rota": "admin/config/notificacoes/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/notificacoes/page.tsx",
+   "arquivos": 2,
+   "textos": 18,
+   "compartilhados": 5
+  },
+  {
+   "rota": "admin/config/page.tsx",
+   "arquivos": 6,
+   "textos": 85,
+   "compartilhados": 5
+  },
+  {
+   "rota": "admin/config/planos/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/planos/page.tsx",
+   "arquivos": 6,
+   "textos": 61,
+   "compartilhados": 16
+  },
+  {
+   "rota": "admin/config/profissionais/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/profissionais/page.tsx",
+   "arquivos": 4,
+   "textos": 70,
+   "compartilhados": 10
+  },
+  {
+   "rota": "admin/config/profissionais/[id]/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/profissionais/[id]/page.tsx",
+   "arquivos": 2,
+   "textos": 35,
+   "compartilhados": 8
+  },
+  {
+   "rota": "admin/config/seguranca/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/seguranca/page.tsx",
+   "arquivos": 2,
+   "textos": 23,
+   "compartilhados": 6
+  },
+  {
+   "rota": "admin/config/servicos/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/servicos/page.tsx",
+   "arquivos": 4,
+   "textos": 74,
+   "compartilhados": 16
+  },
+  {
+   "rota": "admin/config/servicos/[id]/ficha/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/servicos/[id]/ficha/page.tsx",
+   "arquivos": 3,
+   "textos": 37,
+   "compartilhados": 10
+  },
+  {
+   "rota": "admin/config/taxas/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/config/taxas/page.tsx",
+   "arquivos": 2,
+   "textos": 12,
+   "compartilhados": 7
+  },
+  {
+   "rota": "admin/error.tsx",
+   "arquivos": 1,
+   "textos": 4,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/estoque/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/estoque/page.tsx",
+   "arquivos": 2,
+   "textos": 66,
+   "compartilhados": 15
+  },
+  {
+   "rota": "admin/experimentos/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/experimentos/page.tsx",
+   "arquivos": 2,
+   "textos": 42,
+   "compartilhados": 9
+  },
+  {
+   "rota": "admin/hoje/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/hoje/page.tsx",
+   "arquivos": 11,
+   "textos": 130,
+   "compartilhados": 15
+  },
+  {
+   "rota": "admin/intimacoes/[id]/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/intimacoes/[id]/page.tsx",
+   "arquivos": 2,
+   "textos": 50,
+   "compartilhados": 11
+  },
+  {
+   "rota": "admin/layout.tsx",
+   "arquivos": 12,
+   "textos": 90,
+   "compartilhados": 8
+  },
+  {
+   "rota": "admin/mes/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/mes/page.tsx",
+   "arquivos": 3,
+   "textos": 39,
+   "compartilhados": 6
+  },
+  {
+   "rota": "admin/orcamentos/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/orcamentos/novo/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 4
+  },
+  {
+   "rota": "admin/orcamentos/novo/page.tsx",
+   "arquivos": 2,
+   "textos": 29,
+   "compartilhados": 11
+  },
+  {
+   "rota": "admin/orcamentos/page.tsx",
+   "arquivos": 2,
+   "textos": 20,
+   "compartilhados": 10
+  },
+  {
+   "rota": "admin/page.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 0
+  },
+  {
+   "rota": "admin/pendencias/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/pendencias/page.tsx",
+   "arquivos": 3,
+   "textos": 51,
+   "compartilhados": 13
+  },
+  {
+   "rota": "admin/recuperar/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/recuperar/page.tsx",
+   "arquivos": 5,
+   "textos": 87,
+   "compartilhados": 15
+  },
+  {
+   "rota": "admin/series/loading.tsx",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 3
+  },
+  {
+   "rota": "admin/series/page.tsx",
+   "arquivos": 2,
+   "textos": 17,
+   "compartilhados": 8
+  },
+  {
+   "rota": "dev/ui/page.tsx",
+   "arquivos": 8,
+   "textos": 115,
+   "compartilhados": 20
+  },
+  {
+   "rota": "error.tsx",
+   "arquivos": 1,
+   "textos": 7,
+   "compartilhados": 5
+  },
+  {
+   "rota": "global-error.tsx",
+   "arquivos": 1,
+   "textos": 7,
+   "compartilhados": 0
+  },
+  {
+   "rota": "layout.tsx",
+   "arquivos": 4,
+   "textos": 2,
+   "compartilhados": 1
+  },
+  {
+   "rota": "not-found.tsx",
+   "arquivos": 1,
+   "textos": 4,
+   "compartilhados": 4
+  },
+  {
+   "rota": "onboarding/page.tsx",
+   "arquivos": 2,
+   "textos": 18,
+   "compartilhados": 7
+  },
+  {
+   "rota": "onboarding/perfil/page.tsx",
+   "arquivos": 2,
+   "textos": 32,
+   "compartilhados": 4
+  },
+  {
+   "rota": "opengraph-image.tsx",
+   "arquivos": 1,
+   "textos": 4,
+   "compartilhados": 0
+  },
+  {
+   "rota": "page.tsx",
+   "arquivos": 1,
+   "textos": 64,
+   "compartilhados": 1
+  },
+  {
+   "rota": "llms.txt/route.ts",
+   "arquivos": 1,
+   "textos": 2,
+   "compartilhados": 1
+  },
+  {
+   "rota": "robots.ts",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 1
+  },
+  {
+   "rota": "sitemap.ts",
+   "arquivos": 1,
+   "textos": 0,
+   "compartilhados": 1
+  }
+ ],
+ "compartilhados": 29,
+ "fora_de_tela": {
+  "core": 1024,
+  "server": 602,
+  "api": 108,
+  "lib": 96
+ },
+ "total_unico": 4839
+}

@@ -1,0 +1,133 @@
+{
+ "rota": "admin/series/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/series/page.tsx",
+  "src/app/admin/series/lista.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/badge.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/icone-anel.tsx"
+ ],
+ "total": 17,
+ "textos": [
+  {
+   "texto": "Séries de recorrência",
+   "arquivo": "src/app/admin/series/page.tsx",
+   "linha": 10,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Séries de recorrência",
+   "arquivo": "src/app/admin/series/page.tsx",
+   "linha": 20,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Ativa",
+   "arquivo": "src/app/admin/series/lista.tsx",
+   "linha": 39,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Cancelada",
+   "arquivo": "src/app/admin/series/lista.tsx",
+   "linha": 39,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "ocorrência gerada",
+   "arquivo": "src/app/admin/series/lista.tsx",
+   "linha": 46,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "ocorrências geradas",
+   "arquivo": "src/app/admin/series/lista.tsx",
+   "linha": 46,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "de {serie.maxOcorrencias}",
+   "arquivo": "src/app/admin/series/lista.tsx",
+   "linha": 47,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Cancela a série e as ocorrências futuras ainda não atendidas.",
+   "arquivo": "src/app/admin/series/lista.tsx",
+   "linha": 53,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sim, cancelar",
+   "arquivo": "src/app/admin/series/lista.tsx",
+   "linha": 56,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/app/admin/series/lista.tsx",
+   "linha": 59,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cancelar série",
+   "arquivo": "src/app/admin/series/lista.tsx",
+   "linha": 65,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Não consegui cancelar",
+   "arquivo": "src/app/admin/series/lista.tsx",
+   "linha": 84,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Série cancelada",
+   "arquivo": "src/app/admin/series/lista.tsx",
+   "linha": 90,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "{…} ocorrência(s) futura(s) cancelada(s) junto.",
+   "arquivo": "src/app/admin/series/lista.tsx",
+   "linha": 91,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Nenhuma série ainda",
+   "arquivo": "src/app/admin/series/lista.tsx",
+   "linha": 99,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Ative \"Repetir este horário\" ao marcar um agendamento pra criar uma série.",
+   "arquivo": "src/app/admin/series/lista.tsx",
+   "linha": 100,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Novo agendamento",
+   "arquivo": "src/app/admin/series/lista.tsx",
+   "linha": 101,
+   "tipo": "link",
+   "tag": "Link"
+  }
+ ]
+}

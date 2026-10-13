@@ -1,0 +1,168 @@
+{
+ "rota": "admin/config/seguranca/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/seguranca/page.tsx",
+  "src/app/admin/config/seguranca/formulario.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 23,
+ "textos": [
+  {
+   "texto": "Segurança",
+   "arquivo": "src/app/admin/config/seguranca/page.tsx",
+   "linha": 10,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Segurança",
+   "arquivo": "src/app/admin/config/seguranca/page.tsx",
+   "linha": 24,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Autenticação em duas etapas para a sua conta.",
+   "arquivo": "src/app/admin/config/seguranca/page.tsx",
+   "linha": 24,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Este escritório exige segundo fator. Saia e entre de novo para confirmar o código do seu app autenticador.",
+   "arquivo": "src/app/admin/config/seguranca/page.tsx",
+   "linha": 28,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Este escritório exige segundo fator. Ative para continuar.",
+   "arquivo": "src/app/admin/config/seguranca/page.tsx",
+   "linha": 29,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Não consegui gerar o QR code.",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 37,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Código incorreto.",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 60,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Autenticação em duas etapas ativada",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 66,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Saia e entre de novo confirmando o código do app pra poder remover.",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 83,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui remover.",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 84,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Autenticação em duas etapas desativada",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 89,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Escaneie com o app autenticador (Google Authenticator, Authy…)",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 98,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "QR code para configurar o autenticador",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 100,
+   "tipo": "alt"
+  },
+  {
+   "texto": "Não consegue escanear? Digite manualmente: {cadastro.secret}",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 102,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Código de 6 dígitos",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 106,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Confirmar e ativar",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 126,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Digite os 6 dígitos que o aplicativo mostra para confirmar.",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 124,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Cancelar",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 129,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Autenticação em duas etapas ativada",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 144,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sua conta pede o código do app a cada novo login.",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 145,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Desativar",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 154,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Sem a autenticação em duas etapas, exportar dados, apagar cliente e abrir o cofre de saúde continuam bloqueados por segurança; ative pra liberar esses recursos.",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 163,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ativar autenticação em duas etapas",
+   "arquivo": "src/app/admin/config/seguranca/formulario.tsx",
+   "linha": 172,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

@@ -1,0 +1,15 @@
+{
+ "rota": "admin/mes/loading.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/mes/loading.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/card.tsx",
+  "src/components/ui/skeleton.tsx",
+  "src/components/ui/esqueleto-tela.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 0,
+ "textos": []
+}

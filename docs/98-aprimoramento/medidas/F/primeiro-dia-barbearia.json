@@ -1,0 +1,159 @@
+{
+  "rotulo": "barbearia",
+  "email": "dono-barbearia@agente-f.test",
+  "slug": "barbearia-do-agente-f",
+  "etapas": [
+    {
+      "etapa": "cadastro: tela pronta",
+      "ms": 654,
+      "toques": 0,
+      "campos": 0,
+      "url": "http://localhost:3200/cadastro"
+    },
+    {
+      "etapa": "cadastro: preencher e enviar",
+      "ms": 7705,
+      "toques": 5,
+      "campos": 4,
+      "url": "http://localhost:3200/cadastro",
+      "textoDepois": "Criar sua conta\nLeva menos de um minuto. Você começa com tudo liberado, sem cartão. Sem prazo por enquanto.\nNome completo\nE-mail\nTelefone com DDD\nSenha\nCriar conta\nAo criar a conta você aceita:\nTermos de uso\n·\nPolítica de Privacidade\nJá tem conta?\nEntrar",
+      "axeTela": []
+    },
+    {
+      "etapa": "e-mail de confirmacao (Mailpit)",
+      "ms": 112,
+      "toques": 0,
+      "campos": 0,
+      "url": "http://localhost:3200/cadastro",
+      "mensagensRecebidas": 0,
+      "assuntos": []
+    },
+    {
+      "etapa": "onboarding: tela pronta",
+      "ms": 6889,
+      "toques": 3,
+      "campos": 2,
+      "url": "http://localhost:3200/onboarding",
+      "precisouEntrar": true
+    },
+    {
+      "etapa": "onboarding: 3 respostas",
+      "ms": 5890,
+      "toques": 4,
+      "campos": 2,
+      "url": "http://localhost:3200/onboarding/perfil",
+      "slugSugerido": "barbearia-do-agente-f",
+      "axeTela": [],
+      "alvosPequenos": [],
+      "erro": [
+        "Do seu jeito · CICLO"
+      ]
+    },
+    {
+      "etapa": "perfil: perguntas",
+      "ms": 2439,
+      "toques": 4,
+      "campos": 0,
+      "url": "http://localhost:3200/admin/clientes/vindo-de-outro-sistema",
+      "respostas": "Em outro sistema|AppBarber|Eu e mais gente|Cliente que some e eu nem percebo",
+      "destino": "http://localhost:3200/admin/clientes/vindo-de-outro-sistema",
+      "alvosPequenos": [
+        {
+          "texto": "Pular tudo e ir pro painel",
+          "w": 132,
+          "h": 16,
+          "hEfetiva": 16
+        },
+        {
+          "texto": "Pular esta pergunta",
+          "w": 103,
+          "h": 16,
+          "hEfetiva": 16
+        }
+      ]
+    }
+  ],
+  "painel": [
+    {
+      "tela": "destino-do-perfil",
+      "url": "http://localhost:3200/admin/clientes/vindo-de-outro-sistema",
+      "msAteTitulo": null,
+      "texto": "Clientes\nVindo de outro sistema\nSem chamado, sem esperar dias úteis. Você decide como trazer sua base, e o Motor de Ciclo já mostra quem passou do tempo de voltar assim que ela chegar.\nNão sabe onde pedir a exportação?\nCopie e mande esta mensagem para o suporte do seu sistema atual:\n“Olá! Quero receber a lista dos meus clientes numa planilha (Excel ou CSV), com nome, telefone e a data do último atendimento de cada um. Pode me enviar por e-mail?”\nCOMO VOCÊ QUER TRAZER SUA BASE\nTraga agora\nSem chamado, sem esperar. Assim que terminar, o Motor de Ciclo já mostra quem passou do tempo de voltar e quanto isso vale.\nJá tenho a planilha: importar agora\nAinda não tenho planilha: trazer de memória\nUse o CICLO junto com seu sistema atual, por enquanto\nNão precisa trocar hoje. Continue marcando horário do jeito que já faz: o CICLO fica só de olho em quem está sumindo, para você chamar de volta pelo seu WhatsApp. Quando alguém voltar, marque “alguém que você já atende voltou” para o Motor continuar certo.\nVer quem já atendo\nO QUE MUDA POR AQUI\nSeu cliente marca pelo seu link, sem baixar app nenhum.\nVocê não escolhe prazo de retorno: o CICLO calcula o ritmo de cada cliente pelas visitas.\nComanda, pacote e fidelidade funcionam do jeito que você já conhece.\nHoje\nAgenda\nClientes\nMarcar",
+      "rolagemLateral": 0,
+      "alvosPequenos": []
+    },
+    {
+      "tela": "hoje",
+      "url": "http://localhost:3200/admin/hoje",
+      "msAteTitulo": 1724,
+      "texto": "TERÇA-FEIRA, 13 DE OUTUBRO\nBom dia\nBarbearia do Agente F\nVer meu site\nATENDIDO HOJE\nR$ 0,00\nNada mais marcado para hoje\nVer o caixa\nPRIMEIROS PASSOS\nTraga quem você já atende\nEscreva os nomes e diga mais ou menos quando cada pessoa veio pela última vez, sem precisar ser exato. É o que faz a lista de quem sumiu nascer cheia hoje, em vez de esperar cada cliente voltar duas ou três vezes.\nConfira seus serviços e preços\nO catálogo da sua profissão já veio preenchido. Ajuste preço e duração para o que você cobra de verdade.\nMarque o primeiro horário\nCada atendimento concluído entra no histórico, e é dele que o Motor tira de quanto em quanto tempo aquela pessoa volta.\nNada mais para hoje\nA agenda de hoje está livre a partir de agora.\nNovo agendamento\nCompartilhar meu link\nHoje\nAgenda\nClientes\nMarcar",
+      "rolagemLateral": 0,
+      "alvosPequenos": []
+    },
+    {
+      "tela": "servicos",
+      "url": "http://localhost:3200/admin/config/servicos",
+      "msAteTitulo": 1363,
+      "texto": "Configurações\nServiços\nO que você oferece, quanto dura e quanto custa. Arraste para mudar a ordem que aparece na sua página.\nAtivos\nTodos\nNovo\nBarba\n30min · R$ 35,00 · volta em 14d\nainda sem atendimentos suficientes para calcular a margem\nFicha de consumo\nCorte\n40min · R$ 45,00 · volta em 21d\nainda sem atendimentos suficientes para calcular a margem\nFicha de consumo\nCorte + barba\n1h · R$ 70,00 · volta em 21d\nainda sem atendimentos suficientes para calcular a margem\nFicha de consumo\nCorte infantil\n30min · R$ 40,00 · volta em 25d\nainda sem atendimentos suficientes para calcular a margem\nFicha de consumo\nPigmentação\n45min · R$ 60,00 · volta em 30d\nainda sem atendimentos suficientes para calcular a margem\nFicha de consumo\nPlatinado\n2h30 · R$ 180,00 · volta em 40d\nainda sem atendimentos suficientes para calcular a margem\nSinal 30%\nFicha de consumo\nHoje\nAgenda\nClientes\nMarcar",
+      "rolagemLateral": 0,
+      "alvosPequenos": []
+    },
+    {
+      "tela": "profissionais",
+      "url": "http://localhost:3200/admin/config/profissionais",
+      "msAteTitulo": 2467,
+      "texto": "Configurações\nTime\nQuem atende, expediente e quem você já convidou.\nAtivos\nTodos\nCadastrar\nConvidar\nDono barbearia Agente F\nDesativar\nHoje\nAgenda\nClientes\nMarcar",
+      "rolagemLateral": 0,
+      "alvosPequenos": []
+    },
+    {
+      "tela": "clientes",
+      "url": "http://localhost:3200/admin/clientes",
+      "msAteTitulo": 2211,
+      "texto": "Clientes\n0 na carteira\nBaixar todos em planilha\nTICKET MÉDIO\nR$ 0,00\nVOLTAM DE NOVO\n0%\nBuscar cliente por nome ou telefone\n🎂 Aniversariante\nPrimeira visita sem volta\nTicket alto\n0 clientes na lista.\nSem clientes ainda\nA primeira ficha é o que faz o Motor de Ciclo ter de quem cuidar.\nCadastrar cliente\nJá atende gente, mas não tem planilha? Traga quem você já atende\nJá tem uma lista pronta? Importe uma planilha\nHoje\nAgenda\nClientes\nMarcar",
+      "rolagemLateral": 0,
+      "alvosPequenos": [
+        {
+          "texto": "Traga quem você já atende",
+          "w": 201,
+          "h": 34,
+          "hEfetiva": 34
+        },
+        {
+          "texto": "Importe uma planilha",
+          "w": 130,
+          "h": 15,
+          "hEfetiva": 15
+        }
+      ]
+    },
+    {
+      "tela": "agenda",
+      "url": "http://localhost:3200/admin/agenda",
+      "msAteTitulo": 2419,
+      "texto": "Agenda\nDOM\n11\nSEG\n12\nTER\n13\nQUA\n14\nQUI\n15\nSEX\n16\nSÁB\n17\nOCUPAÇÃO DO DIA\n0%\nPREVISTO\nR$ 0,00\nterça-feira, 13 de outubro. Nada marcado. Ocupação 0%.\nNada marcado nesse dia\nToque no botão + para criar o primeiro agendamento.\nNovo agendamento\nHoje\nAgenda\nClientes\nMarcar",
+      "rolagemLateral": 0,
+      "alvosPequenos": []
+    },
+    {
+      "tela": "horarios",
+      "url": "http://localhost:3200/admin/config/horarios",
+      "msAteTitulo": 1761,
+      "texto": "Configurações\nHorário de funcionamento\nO padrão do negócio. Vale para quem não tem horário próprio cadastrado.\nEXPEDIENTE\nDomingo\nFechado\nSegunda\naté\nTerça\naté\nQuarta\naté\nQuinta\naté\nSexta\naté\nSábado\naté\nFECHAMENTOS (FERIADOS, FÉRIAS COLETIVAS)\nInício\nFim\nMotivo (opcional)\nAdicionar\nHoje\nAgenda\nClientes\nMarcar",
+      "rolagemLateral": 0,
+      "alvosPequenos": []
+    },
+    {
+      "tela": "recuperar",
+      "url": "http://localhost:3200/admin/recuperar",
+      "msAteTitulo": 1615,
+      "texto": "Recuperar receita\nQuem o Motor de Ciclo identificou em atraso para voltar.\nCampanhas\nDÁ PARA RECUPERAR\nR$ 0,00\nR$ 0,00 de lucro\nCLIENTES\n0\nEstimativa, não promessa: como a conta é feita\n6 serviços estão sem o custo do material, então a ordem da lista pode estar errada. Completar o custo\nTodas\nNa hora de voltar\nAtrasadas\nEm risco\nPerdidas\nOrdenar por\nPrioridade\nLucro\nNota do cliente\nMais atrasado\nNome\nOuro\nPrata\nBronze\nFiel\nRegular\nNovo\nAtrasado\nCostuma faltar\nSumido\n0 clientes, R$ 0,00 para recuperar.\nCadastre suas clientes para o Motor começar\nEle usa o intervalo entre as visitas de cada pessoa para saber quando ela costuma voltar. Sem ficha, não há o que acompanhar.\nCadastrar cliente\nHoje\nAgenda\nClientes\nMarcar",
+      "rolagemLateral": 0,
+      "alvosPequenos": []
+    }
+  ],
+  "consoleErros": [],
+  "totalMsAtePainel": 23689,
+  "toquesAtePainel": 16,
+  "camposAtePainel": 8
+}

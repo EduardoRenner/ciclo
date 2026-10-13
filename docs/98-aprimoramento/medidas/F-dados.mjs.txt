@@ -1,0 +1,68 @@
+// Agente F — cria dados SÓ no banco local (docker supabase_db_ciclo) e gera tokens públicos válidos e
+// vencidos com a mesma fórmula de src/server/services/token-assinado.ts. O segredo é lido do
+// .env.local em memória; tokens vão para C:\temp\ciclo-medicao\F-tokens.json (fora do repositório).
+// Uso: node F-dados.mjs [appointmentIdPendente]
+import { execFileSync } from 'node:child_process'
+import { createHmac } from 'node:crypto'
+import { readFileSync, writeFileSync } from 'node:fs'
+
+const ENV = readFileSync('C:/Users/Usuario/.claude/code/ciclo-aprimoramento/.env.local', 'utf8')
+const segredo = (ENV.match(/^PUBLIC_LINK_SIGNING_KEY=(.+)$/m) ?? ENV.match(/^CRON_SECRET=(.+)$/m))[1].trim().replace(/^"|"$/g, '')
+
+function token(escopo, id, validadeHoras) {
+  const exp = Date.now() + validadeHoras * 3_600_000
+  const payload = `${escopo}.${id}.${exp}`
+  const ass = createHmac('sha256', segredo).update(payload, 'utf8').digest('hex')
+  return Buffer.from(`${payload}.${ass}`, 'utf8').toString('base64url')
+}
+
+function sql(q) {
+  return execFileSync('docker', ['exec', 'supabase_db_ciclo', 'psql', '-U', 'postgres', '-At', '-F', '|', '-c', q], { encoding: 'utf8' }).trim()
+}
+
+const SLUG = 'demo-espaco-vitoria'
+const tenantId = sql(`select id from tenants where slug='${SLUG}'`)
+const tz = sql(`select timezone from tenants where id='${tenantId}'`)
+const [doneAppt, doneClient] = sql(`select id, client_id from appointments where tenant_id='${tenantId}' and status='done' and client_id is not null and not exists (select 1 from client_reviews r where r.appointment_id=appointments.id) order by starts_at desc limit 1`).split('|')
+const [profId] = sql(`select id from professionals where tenant_id='${tenantId}' order by created_at limit 1`).split('|')
+const [svcId, svcNome] = sql(`select id, name from services where tenant_id='${tenantId}' and name='Manicure simples' limit 1`).split('|')
+
+// Orçamentos: um válido (7 dias) e um vencido (ontem). Marcados na mensagem para achar e limpar depois.
+function criarOrcamento(validade, rotulo) {
+  const id = sql(`insert into quotes (tenant_id, client_id, professional_id, status, total_cents, valid_until, message, sent_at)
+    values ('${tenantId}', '${doneClient}', '${profId}', 'sent', 23000, (current_date + ${validade}), '[agente-F] ${rotulo}: alongamento + manutenção', now()) returning id`).split('\n')[0]
+  sql(`insert into quote_items (tenant_id, quote_id, description, qty, unit_price_cents, total_cents) values
+    ('${tenantId}', '${id}', 'Alongamento em fibra', 1, 18000, 18000),
+    ('${tenantId}', '${id}', 'Esmaltação em gel (2 cores)', 1, 5000, 5000)`)
+  return id
+}
+const orcValido = criarOrcamento(7, 'valido')
+const orcVencido = criarOrcamento(-1, 'vencido')
+
+// Lista de espera: entrada + oferta para amanhã 10:00 local, com o 1º profissional.
+const amanha = sql(`select to_char((now() at time zone '${tz}')::date + 1, 'YYYY-MM-DD')`)
+const startsAt = sql(`select to_char(('${amanha} 10:00'::timestamp at time zone '${tz}') at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.000"Z"')`)
+const waitlistId = sql(`insert into waitlist (tenant_id, client_id, service_id, professional_id, notified_at) values ('${tenantId}', '${doneClient}', '${svcId}', '${profId}', now()) returning id`).split('\n')[0]
+const oferta = Buffer.from(JSON.stringify({ waitlistId, tenantId, serviceId: svcId, professionalId: profId, startsAt, timezone: tz }), 'utf8').toString('base64url')
+
+const pend = process.argv[2] ?? null
+const saida = {
+  criadoEm: new Date().toISOString(),
+  tenant: SLUG,
+  ids: { doneAppt, orcValido, orcVencido, waitlistId, servico: svcNome, ofertaStartsAt: startsAt, pendente: pend },
+  tokens: {
+    avaliarValido: token('avaliacao_atendimento', doneAppt, 24 * 30),
+    avaliarVencido: token('avaliacao_atendimento', doneAppt, -1),
+    orcamentoValido: token('orcamento', orcValido, 24 * 180),
+    orcamentoDataVencida: token('orcamento', orcVencido, 24 * 180),
+    orcamentoTokenVencido: token('orcamento', orcValido, -1),
+    listaEsperaValido: token('lista_espera', oferta, 20 / 60),
+    listaEsperaVencido: token('lista_espera', oferta, -1),
+    confirmarValido: pend ? token('confirmacao_agendamento', pend, 72) : null,
+    confirmarVencido: pend ? token('confirmacao_agendamento', pend, -1) : null,
+    // escopo trocado: token de avaliação usado no link de confirmação
+    confirmarEscopoErrado: token('avaliacao_atendimento', doneAppt, 24),
+  },
+}
+writeFileSync('C:/temp/ciclo-medicao/F-tokens.json', JSON.stringify(saida, null, 2))
+console.log(JSON.stringify(saida.ids, null, 2))

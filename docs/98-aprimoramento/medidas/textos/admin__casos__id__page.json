@@ -1,0 +1,988 @@
+{
+ "rota": "admin/casos/[id]/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/casos/[id]/page.tsx",
+  "src/app/admin/pendencias/fila.tsx",
+  "src/components/advocacia/documentos.tsx",
+  "src/components/advocacia/mudar-caso.tsx",
+  "src/components/advocacia/prazos.tsx",
+  "src/components/advocacia/atalhos-da-fila.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/badge.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/section-header.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/textarea.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/advocacia/escrever.ts",
+  "src/components/ui/input.tsx",
+  "src/components/ui/select.tsx",
+  "src/components/ui/icone-anel.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 147,
+ "textos": [
+  {
+   "texto": "Caso",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 26,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Responsável",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 28,
+   "tipo": "prop:responsavel"
+  },
+  {
+   "texto": "Equipe",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 28,
+   "tipo": "prop:equipe"
+  },
+  {
+   "texto": "Casos",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 64,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "O cliente lê: “{caso.paraCliente}”",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 82,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Estrutura da família",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 87,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Caso sigiloso: só a equipe do caso vê.",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 95,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Esta abertura ficou registrada na trilha do caso.",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 96,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Próximo passo",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 103,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Depende do cliente",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 106,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Com o escritório",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 106,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· atrasado",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 107,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Prazos",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 114,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Pendências do caso",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 121,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Nenhuma pendência aberta neste caso.",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 123,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Documentos",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 128,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Equipe do caso",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 135,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Ninguém atribuído ainda.",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 138,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Equipe",
+   "arquivo": "src/app/admin/casos/[id]/page.tsx",
+   "linha": 143,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Aprovar",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 20,
+   "tipo": "prop:aprovar"
+  },
+  {
+   "texto": "Recebi",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 21,
+   "tipo": "prop:receber"
+  },
+  {
+   "texto": "Conferi",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 22,
+   "tipo": "prop:concluir"
+  },
+  {
+   "texto": "Devolver",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 23,
+   "tipo": "prop:devolver"
+  },
+  {
+   "texto": "Pendência aprovada",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 27,
+   "tipo": "prop:aprovar"
+  },
+  {
+   "texto": "Marcada como recebida",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 28,
+   "tipo": "prop:receber"
+  },
+  {
+   "texto": "Pendência concluída",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 29,
+   "tipo": "prop:concluir"
+  },
+  {
+   "texto": "Devolvida ao cliente",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 30,
+   "tipo": "prop:devolver"
+  },
+  {
+   "texto": "Rascunho",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 35,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Aguardando",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 36,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Devolvida",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 37,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Recebida",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 38,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Em conferência",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 39,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "pendência",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 97,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "pendências",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 97,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· a mais antiga há {g.diasEmAberto} {…}",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 98,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· aberta hoje",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 98,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "1 atrasada",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 101,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "{g.atrasados} atrasadas",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 101,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Passou de 10 dias sem resposta: vale ligar.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 107,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Dia de avisar o que falta.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 109,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Dia de lembrar: {g.lembrete.marco} dias sem resposta.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 110,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ligar",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 120,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Liguei",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 123,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cobrar pelo WhatsApp",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 139,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "j k",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 151,
+   "tipo": "aria-keyshortcuts"
+  },
+  {
+   "texto": "· com a equipe",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 157,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· até {dataCurta(i.venceEm)}",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 158,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· {i.rodada}ª rodada",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 159,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Devolvida: {i.motivoDaDevolucao}",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 162,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Atrasada",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 165,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "O que precisa ser corrigido",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 171,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Fica no histórico da pendência e abre uma nova rodada de lembretes.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 172,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Devolver",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 187,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escreva o motivo com pelo menos 5 letras.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 183,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 190,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Salvando a ação anterior.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 203,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Ver mais",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 222,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escolha o arquivo.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 45,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Não consegui enviar. Tente de novo.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 55,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Documento recebido. Aguardando conferência.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 57,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Documento salvo",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 57,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui abrir o documento.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 71,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui salvar a conferência.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 87,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Documento aceito",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 94,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Documento recusado",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 94,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Nenhum documento ainda.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 104,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Outro",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 118,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· versão {d.versao}",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 119,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· vale até {d.validade.slice(8, 10)}/{d.validade.slice(5, 7)}",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 120,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Abrir",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 130,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Aguarde a ação anterior.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 129,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Aceitar",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 135,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Aguarde a ação anterior.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 134,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Recusar",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 138,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Por que recusar",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 145,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "O cliente vai precisar mandar de novo.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 145,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Recusar documento",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 155,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escreva o motivo com pelo menos 5 letras.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 151,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 158,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Guardar documentos faz parte de um plano acima do atual. Veja em Configurações, Meu plano.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 176,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Arquivo",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 180,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Nome do documento",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 188,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Sem nome? Usamos o do arquivo.",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 188,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Categoria",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 189,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "De onde veio",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 196,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "O cliente mandou (fica a conferir)",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 197,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Feito pela equipe",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 198,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Enviar",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 207,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 210,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Adicionar documento",
+   "arquivo": "src/components/advocacia/documentos.tsx",
+   "linha": 217,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Caso atualizado",
+   "arquivo": "src/components/advocacia/mudar-caso.tsx",
+   "linha": 46,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Mudar estado ou avisar o cliente",
+   "arquivo": "src/components/advocacia/mudar-caso.tsx",
+   "linha": 59,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Estado do caso",
+   "arquivo": "src/components/advocacia/mudar-caso.tsx",
+   "linha": 66,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Quer avisar o cliente? Frase que vai na mensagem",
+   "arquivo": "src/components/advocacia/mudar-caso.tsx",
+   "linha": 74,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Última frase: “{notaAtual}”",
+   "arquivo": "src/components/advocacia/mudar-caso.tsx",
+   "linha": 75,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Sem número de processo, valor ou nome de outra parte. Opcional.",
+   "arquivo": "src/components/advocacia/mudar-caso.tsx",
+   "linha": 75,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Abrir no WhatsApp",
+   "arquivo": "src/components/advocacia/mudar-caso.tsx",
+   "linha": 94,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Salvar",
+   "arquivo": "src/components/advocacia/mudar-caso.tsx",
+   "linha": 105,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escolha outro estado ou escreva a frase ao cliente.",
+   "arquivo": "src/components/advocacia/mudar-caso.tsx",
+   "linha": 102,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Fechar",
+   "arquivo": "src/components/advocacia/mudar-caso.tsx",
+   "linha": 108,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Prazo fatal",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 27,
+   "tipo": "prop:fatal"
+  },
+  {
+   "texto": "Prazo interno",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 27,
+   "tipo": "prop:interno"
+  },
+  {
+   "texto": "Audiência",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 27,
+   "tipo": "prop:audiencia"
+  },
+  {
+   "texto": "Prazo contratual",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 27,
+   "tipo": "prop:contratual"
+  },
+  {
+   "texto": "Prazo criado",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 94,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nenhum prazo aberto neste caso.",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 100,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Fazer até {data(p.internoEm)} · fatal {data(p.venceEm)}",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 111,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "às {…}",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 112,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sugestão a confirmar",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 114,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Prazo",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 117,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Protocolo ou nota (obrigatório no prazo fatal)",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 124,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Nota (opcional)",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 124,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Registrar como cumprido",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 132,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Prazo cumprido",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 131,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 135,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Data certa",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 141,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Essa já é a data do prazo: escolha a data certa.",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 142,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Motivo da correção",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 143,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Fica no histórico do prazo.",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 143,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Corrigir",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 152,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Essa já é a data do prazo: escolha a data certa.",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 149,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Escolha a data e escreva o motivo (pelo menos 5 letras).",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 149,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Data corrigida",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 150,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 155,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cumpri",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 162,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Corrigir data",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 165,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Confirmar",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 169,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Prazo confirmado",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 168,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Tipo",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 187,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Prazo interno",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 188,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Prazo fatal",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 189,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Audiência",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 190,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Prazo contratual",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 191,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "O que fazer",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 193,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Dia",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 195,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Vence em",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 195,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Hora",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 197,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Fazer até (interno)",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 199,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Opcional.",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 199,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Criar prazo",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 215,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escreva o que fazer e escolha a data.",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 212,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 218,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Prazo",
+   "arquivo": "src/components/advocacia/prazos.tsx",
+   "linha": 225,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Atalhos: j e k andam pela fila,",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 44,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Enter abre o item.",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 47,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Enter",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 47,
+   "tipo": "texto",
+   "tag": "kbd"
+  },
+  {
+   "texto": "c faz a primeira ação do item.",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 51,
+   "tipo": "texto"
+  }
+ ]
+}

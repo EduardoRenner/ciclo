@@ -1,0 +1,24 @@
+// Agente B · quanto custa 1 `auth.getUser()` (GET /auth/v1/user no GoTrue LOCAL) e 1 consulta PostgREST simples,
+// para separar "custo de ida" de "custo de trabalho". 20 chamadas em série, mediana e pior. Nada é impresso além de tempos.
+// Uso: CICLO_DEMO_SENHA=... node B-gotrue.mjs
+import { readFileSync } from 'node:fs';
+const env = readFileSync('C:/Users/Usuario/.claude/code/ciclo-aprimoramento/.env.local', 'utf8');
+const anon = /^NEXT_PUBLIC_SUPABASE_ANON_KEY=(.*)$/m.exec(env)[1].trim().replace(/^"|"$/g, '');
+const url = /^NEXT_PUBLIC_SUPABASE_URL=(.*)$/m.exec(env)[1].trim().replace(/^"|"$/g, '');
+if (!/127\.0\.0\.1|localhost/.test(url)) throw new Error('só local');
+const tok = await (await fetch(`${url}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { apikey: anon, 'content-type': 'application/json' }, body: JSON.stringify({ email: 'dono-demo-salao-encanto@ciclo.app', password: process.env.CICLO_DEMO_SENHA }) })).json();
+const h = { apikey: anon, authorization: `Bearer ${tok.access_token}` };
+async function serie(nome, fn, n = 20) {
+  const t = [];
+  for (let i = 0; i < n; i++) {
+    const t0 = performance.now();
+    const r = await fn();
+    await r.text();
+    t.push(performance.now() - t0);
+  }
+  t.sort((a, b) => a - b);
+  console.log(`${nome}: mediana ${t[n >> 1].toFixed(1)} ms · pior ${t[n - 1].toFixed(1)} ms · melhor ${t[0].toFixed(1)} ms`);
+}
+await serie('GoTrue GET /auth/v1/user (= auth.getUser)', () => fetch(`${url}/auth/v1/user`, { headers: h }));
+await serie('PostgREST memberships (= vinculosAtivos)', () => fetch(`${url}/rest/v1/memberships?select=tenant_id,role&user_id=eq.6dbcfc89-aca4-4a6e-adcd-29f9d590400a&active=eq.true`, { headers: h }));
+await serie('PostgREST appointments count do tenant (RLS por linha)', () => fetch(`${url}/rest/v1/appointments?select=id&tenant_id=eq.320d83de-611f-48e1-9761-570863fbb10b`, { headers: { ...h, prefer: 'count=exact', range: '0-0' } }));

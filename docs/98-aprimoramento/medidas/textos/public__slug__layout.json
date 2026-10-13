@@ -1,0 +1,37 @@
+{
+ "rota": "(public)/[slug]/layout.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(public)/[slug]/layout.tsx"
+ ],
+ "componentes_compartilhados_usados": [],
+ "total": 4,
+ "textos": [
+  {
+   "texto": "Este negócio",
+   "arquivo": "src/app/(public)/[slug]/layout.tsx",
+   "linha": 49,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "O agendamento online deste negócio não está disponível agora. Fale direto com o negócio para marcar seu horário.",
+   "arquivo": "src/app/(public)/[slug]/layout.tsx",
+   "linha": 61,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ligar para o negócio",
+   "arquivo": "src/app/(public)/[slug]/layout.tsx",
+   "linha": 67,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "color-mix(in srgb, {acento.acc} 16%, transparent)",
+   "arquivo": "src/app/(public)/[slug]/layout.tsx",
+   "linha": 90,
+   "tipo": "prop:--acc-soft"
+  }
+ ]
+}

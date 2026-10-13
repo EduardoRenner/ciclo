@@ -1,0 +1,80 @@
+{
+  "perfil": "computador",
+  "slug": "limpeza-brilho-da-lu",
+  "modo": "normal",
+  "telefone": "•••••••0021",
+  "totalMs": 1901,
+  "pausaFotoMs": 94,
+  "toques": 6,
+  "camposDigitados": 2,
+  "pedidosBook": 1,
+  "ok": true,
+  "horaEscolhida": "09:00",
+  "passos": [
+    {
+      "passo": "servicos visiveis (conteudo util)",
+      "msDesdeInicio": 207
+    },
+    {
+      "passo": "load",
+      "msDesdeInicio": 222
+    },
+    {
+      "passo": "toca servico",
+      "msDesdeInicio": 347,
+      "respostaMs": 113
+    },
+    {
+      "passo": "toca dia +2 (quinta-feira, dia 15)",
+      "msDesdeInicio": 869,
+      "respostaMs": null
+    },
+    {
+      "passo": "horarios do dia visiveis",
+      "msDesdeInicio": 974,
+      "esperaMs": 105
+    },
+    {
+      "passo": "toca horario 09:00",
+      "msDesdeInicio": 1033,
+      "respostaMs": 57
+    },
+    {
+      "passo": "toca campo nome",
+      "msDesdeInicio": 1088,
+      "respostaMs": null
+    },
+    {
+      "passo": "toca campo telefone",
+      "msDesdeInicio": 1233,
+      "respostaMs": null
+    },
+    {
+      "passo": "formulario preenchido",
+      "msDesdeInicio": 1642
+    },
+    {
+      "passo": "toca Confirmar (2x em 80 ms)",
+      "msDesdeInicio": 1905,
+      "estadoBotaoApos80ms": {
+        "disabled": true,
+        "ariaBusy": "true",
+        "ariaDisabled": null,
+        "texto": "Confirmar agendamento"
+      }
+    },
+    {
+      "passo": "SUCESSO visivel",
+      "msDesdeInicio": 1998,
+      "msDoToqueAteResultado": 259
+    }
+  ],
+  "alertas": [],
+  "textoFinalTrecho": "Agendar em Limpeza Brilho da Lu\nAgendamento enviado!\nFaxina padrão — meia diária\nquinta-feira, 15 de outubro às 09:00\ncom Dono faxina Agente F\nSeu pedido chegou e já apareceu para a equipe. A confirmação vem de quem vai te atender, e pode não ser na hora. Se não tiver retorno em algumas horas, é só chamar por telefone.\nAdicionar à minha agenda\nVoltar para Limpeza Brilho da Lu",
+  "rolagemLateral": 0,
+  "alvosPequenos": [],
+  "axeFinal": [],
+  "consoleErros": [
+    "pageerror: EvalError: Evaluating a string as JavaScript violates the following Content Security Policy directive because 'unsafe-eval' is not an allowed source of script: script-src 'self' 'nonce-YjY3ZGYyZWMtZDY2Yy00ZjIxLTgzMTMtYzU1OWZlNWQwNmM1' 'strict-dynamic' 'unsafe-inline'\".\n"
+  ]
+}

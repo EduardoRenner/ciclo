@@ -1,0 +1,64 @@
+// Aplica as regras da Fase 5 (docs/97) a cada texto extraído e conta. Saída: classificacao.json (scratchpad) e resumo no console.
+const fs = require('fs')
+const path = require('path')
+const u = require('./todos-textos-unicos.json')
+
+// arquivos cujo texto NÃO é lido por gente (NLU, descrição de ferramenta para o modelo, prompt, webhook)
+const INTERNO = [
+  /src\/core\/inteligencia\/entender\.ts$/,
+  /src\/server\/assistente\/ferramentas\.ts$/,
+  /src\/server\/services\/assistente\.ts$/,
+  /src\/server\/providers\/ai\//,
+  /src\/app\/api\/v1\/webhooks\//,
+  /src\/app\/dev\//,
+  /src\/core\/advocacia\/prazo-calculo\.ts$/, // feriados
+]
+const interno = (t) => INTERNO.some((r) => r.test(t.arquivo)) || t.tipo === 'erro-lançado' || /^prop:(data|cliente|consulta|pergunta_do_dono|q|descricao_ferramenta)$/.test(t.tipo) && /src\/server\/assistente/.test(t.arquivo)
+
+const R = {
+  jargao: /\b(CRM|churn|LTV|ticket m[ée]dio|no-?show|leads?|funil|dashboard|upgrade|downgrade|checkout|templates?|slug|token|tenant|webhook|cron|insights?|KPI|ROI|NPS|follow-?up|setup|sync|backup|login|logout|onboarding|feedback|status|engajamento|reten[çc][ãa]o|recorr[êe]ncia|cohort|coorte|SaaS|deploy|bug|push|offline|on-?line|analytics|performance|ranking|score|pipeline|lifetime|opt-?out|opt-?in|trial|paywall|billing|CSV|PWA|API|UUID|ID\b|LGPD|CNAE|MEI|bps|basis points|Motor de Ciclo|atribui[çc][ãa]o|convers[ãa]o|taxa de retorno|cancelamento autom[áa]tico)\b/i,
+  genero: /(\bobrigad[oa]\b(?!\(a\))|\bbem-?vind[oa]s?\b|\b(a|uma|sua|da|à|pela|nova|cada|essa|esta|aquela|toda|minha)\s+(cliente|clientes)\b|\b(o|um|seu|do|ao|pelo|novo|esse|este|aquele|todo|meu)\s+cliente\b|\b(suas|das|as|novas|essas|estas|todas)\s+clientes\b|\b(os|seus|dos|novos|esses|estes)\s+clientes\b|\bsumid[ao]s?\b|\bcadastrad[ao]s?\b(?=.*\b(cliente|pessoa|ela|ele)\b)|\b(ela|ele|elas|eles)\b|\bamigas?\b|\bquerid[ao]\b|\batendid[ao]s?\b|\bconvidad[ao]s?\b|\bsozinh[ao]\b|\bpronto\b(?=.*voc)|\bpronta\b(?=.*voc)|\bremovid[ao]\b|\binativ[ao]s?\b|\bnovat[ao]s?\b|\bfi[ée]is\b|\bfiel\b|\bassinantes?\b)/i,
+  canal: /(vai receber|receber[áa]|receber[ãa]o|enviaremos|vamos enviar|vamos (te )?avisar|avisaremos|te avisamos|a gente avisa|lembrete autom|enviad[ao] autom|mandamos|por WhatsApp|pelo WhatsApp|no WhatsApp|por e-?mail|SMS|notifica[çc][ãa]o|push|chega (no|pelo)|voc[êe] (vai )?ser avisad)/i,
+  beleza: /\b(sal[ãa]o|sal[õo]es|cabelo|corte|barba|unhas?|manicure|cadeira|escova|barbeir[ao]s?|cabeleireir[ao]s?|beleza|est[ée]tica|maquiagem|sobrancelha|c[íi]lios)\b/i,
+  parentese: /\w\((s|es|is|a|as|o|os|ns|ões)\)/i,
+  emoji: /\p{Extended_Pictographic}/u,
+  travessao: /\S\s*—\s*\S/,
+  ingles: /\b(the|and|error|invalid|not found|unauthorized|forbidden|loading|settings|submit|required|failed|success|missing|unknown|bad request|internal|method not allowed|too many)\b/i,
+  erroGenerico: /(algo deu errado|ocorreu um erro|erro desconhecido|erro inesperado|tente novamente mais tarde|^erro\.?$|^falhou\.?$|n[ãa]o foi poss[íi]vel\.?$)/i,
+  acao: /\b(tente|tentar|confira|conferir|verifique|toque|recarregue|entre|entrar|chame|fale|volte|voltar|use|usar|escolha|escolher|preencha|digite|abra|aguarde|espere|peça|atualize|cadastre|crie|adicione|mande|envie|marque|selecione|corrija|complete|informe|revise|ajuste|libere|ligue|ative|desative|apague|troque|mude|veja|ver|clique|siga|baixe|feche|copie|cole|contrate|assine|renove|pague|deixe|coloque|passe)\b/i,
+  erroish: /(n[ãa]o (consegui|conseguimos|deu|foi poss[íi]vel|encontr|existe|est[áa] mais|pode)|inv[áa]lid|erro|falh|expirou|venceu|negad|sem permiss|bloquead|indispon)/i,
+  vazioish: /^(nenhum|nenhuma|sem |nada |ainda n[ãa]o h[áa]|ainda sem|vazio|lista vazia|n[ãa]o h[áa])/i,
+  formatoData: /\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/,
+}
+const BOTOES_GENERICOS = /^(ok|enviar|salvar|confirmar|continuar|cancelar|fechar|sim|n[ãa]o|pronto|aplicar|ver|mais|abrir|editar|excluir|apagar|remover|voltar|avan[çc]ar|pr[óo]ximo|concluir|feito|entendi|limpar|buscar|filtrar|adicionar|criar|novo|nova|copiar|baixar|enviar agora|tentar de novo|tentar novamente|sair|ir|guardar|registrar|marcar|desfazer|descartar)\.?$/i
+
+const out = []
+const cont = { total: 0, visivel: 0, interno: 0, porTipo: {}, flags: {} }
+for (const t of u) {
+  cont.total++
+  const isInt = interno(t)
+  if (isInt) { cont.interno++; continue }
+  cont.visivel++
+  const tp = t.tipo.split('/')[0].split(':')[0]
+  cont.porTipo[tp] = (cont.porTipo[tp] || 0) + 1
+  const f = []
+  const s = t.texto
+  if (R.jargao.test(s)) f.push('jargao:' + s.match(R.jargao)[0])
+  if (R.genero.test(s)) f.push('genero:' + s.match(R.genero)[0])
+  if (R.canal.test(s)) f.push('canal:' + s.match(R.canal)[0])
+  if (R.beleza.test(s)) f.push('beleza:' + s.match(R.beleza)[0])
+  if (R.parentese.test(s)) f.push('parentese')
+  if (R.emoji.test(s)) f.push('emoji')
+  if (R.travessao.test(s)) f.push('travessao')
+  if (R.ingles.test(s)) f.push('ingles:' + s.match(R.ingles)[0])
+  if (R.erroGenerico.test(s)) f.push('erroGenerico')
+  const ehErro = /^(erro|validação)/.test(tp) || (/^(mensagem|prop|metadata)$/.test(tp) && R.erroish.test(s) && /(erro|error|message|mensagem|titulo|descricao)/i.test(t.tipo)) || (tp === 'texto' && R.erroish.test(s) && /^n[ãa]o (consegui|deu)/i.test(s))
+  if (ehErro && !R.acao.test(s) && s.length > 3) f.push('erroSemAcao')
+  if ((R.vazioish.test(s) || tp === 'vazio') && s.length < 70 && !R.acao.test(s)) f.push('vazioSemPasso')
+  if ((tp === 'botão') && BOTOES_GENERICOS.test(s)) f.push('botaoGenerico')
+  if (R.formatoData.test(s)) f.push('dataFixa')
+  for (const x of f) { const k = x.split(':')[0]; cont.flags[k] = (cont.flags[k] || 0) + 1 }
+  out.push({ ...t, flags: f })
+}
+fs.writeFileSync(path.join(__dirname, 'classificacao.json'), JSON.stringify(out, null, 1))
+console.log(JSON.stringify(cont, null, 1))

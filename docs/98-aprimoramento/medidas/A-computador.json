@@ -1,0 +1,2126 @@
+{
+ "/admin @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1206,
+  "telas": 1.5,
+  "h1": "Bom dia",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/hoje @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1206,
+  "telas": 1.5,
+  "h1": "Bom dia",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/agenda @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 523,
+  "esq": 494,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Agenda",
+  "primarios": 1,
+  "primario": {
+   "texto": "TER\n13",
+   "topo": 123,
+   "semRolar": true
+  }
+ },
+ "/admin/agenda/novo @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Novo agendamento",
+  "primarios": 1,
+  "primario": {
+   "texto": "Confirmar agendamento",
+   "topo": 618,
+   "semRolar": true
+  }
+ },
+ "/admin/caixa @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 854,
+  "telas": 1.1,
+  "h1": "Caixa",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/campanhas @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 836,
+  "telas": 1,
+  "h1": "Campanhas",
+  "primarios": 1,
+  "primario": {
+   "texto": "Nova campanha",
+   "topo": 284,
+   "semRolar": true
+  }
+ },
+ "/admin/campanhas/nova @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Nova campanha",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/casos @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 274,
+  "esq": 503,
+  "dir": 777,
+  "vazioPct": 79,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 458,
+   "semRolar": true
+  }
+ },
+ "/admin/casos/novo @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 274,
+  "esq": 503,
+  "dir": 777,
+  "vazioPct": 79,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 458,
+   "semRolar": true
+  }
+ },
+ "/admin/casos/36bebc78-4cd6-479c-93cf-c912d5754d3a @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 274,
+  "esq": 503,
+  "dir": 777,
+  "vazioPct": 79,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 458,
+   "semRolar": true
+  }
+ },
+ "/admin/clientes @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 523,
+  "esq": 494,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 2837,
+  "telas": 3.5,
+  "h1": "Clientes",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/clientes/cf3e5831-4a82-4fe0-8398-0f060d41ec95 @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 639,
+  "esq": 378,
+  "dir": 1017,
+  "vazioPct": 39,
+  "altura": 1127,
+  "telas": 1.4,
+  "h1": "Ana Souza",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/clientes/cf3e5831-4a82-4fe0-8398-0f060d41ec95/estrutura @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 274,
+  "esq": 503,
+  "dir": 777,
+  "vazioPct": 79,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 458,
+   "semRolar": true
+  }
+ },
+ "/admin/clientes/exportar @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Baixar meus clientes",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/clientes/importar @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Importar clientes",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/clientes/ja-atendo @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1284,
+  "telas": 1.6,
+  "h1": "Quem você já atende",
+  "primarios": 1,
+  "primario": {
+   "texto": "Adicione pelo menos uma pessoa\nEscreva u",
+   "topo": 1105,
+   "semRolar": false
+  }
+ },
+ "/admin/clientes/nova @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 530,
+  "esq": 487,
+  "dir": 1017,
+  "vazioPct": 49,
+  "altura": 818,
+  "telas": 1,
+  "h1": "Cliente novo",
+  "primarios": 1,
+  "primario": {
+   "texto": "Cadastrar cliente\nDigite o nome do clien",
+   "topo": 650,
+   "semRolar": true
+  }
+ },
+ "/admin/clientes/vindo-de-outro-sistema @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1103,
+  "telas": 1.4,
+  "h1": "Vindo de outro sistema",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/comanda/00000000-0000-4000-8000-000000000000 @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": null,
+  "primarios": 1,
+  "primario": {
+   "texto": "Tentar de novo",
+   "topo": 215,
+   "semRolar": true
+  }
+ },
+ "/admin/comanda/agendamento/07bce881-65e9-4597-bb44-98c4c4a0796f @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Comanda",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/comissao @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Comissão",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/estoque @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 808,
+  "telas": 1,
+  "h1": "Estoque",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/experimentos @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1133,
+  "telas": 1.4,
+  "h1": "Testes",
+  "primarios": 1,
+  "primario": {
+   "texto": "Começar o teste",
+   "topo": 601,
+   "semRolar": true
+  }
+ },
+ "/admin/intimacoes/a59f285a-ac6c-483c-b254-bd5a28bdbbbc @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 274,
+  "esq": 503,
+  "dir": 777,
+  "vazioPct": 79,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 458,
+   "semRolar": true
+  }
+ },
+ "/admin/mes @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "O mês",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/orcamentos @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Orçamentos",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/orcamentos/novo @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1130,
+  "telas": 1.4,
+  "h1": "Novo orçamento",
+  "primarios": 1,
+  "primario": {
+   "texto": "Criar orçamento",
+   "topo": 994,
+   "semRolar": false
+  }
+ },
+ "/admin/pendencias @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 274,
+  "esq": 503,
+  "dir": 777,
+  "vazioPct": 79,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 458,
+   "semRolar": true
+  }
+ },
+ "/admin/recuperar @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 523,
+  "esq": 494,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1070,
+  "telas": 1.3,
+  "h1": "Recuperar receita",
+  "primarios": 1,
+  "primario": {
+   "texto": "Recalcular agora",
+   "topo": 885,
+   "semRolar": false
+  }
+ },
+ "/admin/series @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Séries de recorrência",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 2772,
+  "telas": 3.5,
+  "h1": "Configurações",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/advocacia @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 274,
+  "esq": 503,
+  "dir": 777,
+  "vazioPct": 79,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 458,
+   "semRolar": true
+  }
+ },
+ "/admin/config/automacoes @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1782,
+  "telas": 2.2,
+  "h1": "Automações",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/cofre @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Trilha do cofre",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/custo-fixo @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Aluguel e contas",
+  "primarios": 1,
+  "primario": {
+   "texto": "Salvar",
+   "topo": 593,
+   "semRolar": true
+  }
+ },
+ "/admin/config/excluir-conta @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Excluir minha conta",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/horarios @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1581,
+  "telas": 2,
+  "h1": "Horário de funcionamento",
+  "primarios": 1,
+  "primario": {
+   "texto": "Adicionar",
+   "topo": 1428,
+   "semRolar": false
+  }
+ },
+ "/admin/config/mensagens @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1469,
+  "telas": 1.8,
+  "h1": "Mensagens prontas",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/meu-plano @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 881,
+  "telas": 1.1,
+  "h1": "Meu plano",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/modulos @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1510,
+  "telas": 1.9,
+  "h1": "Módulos",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/negocio @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1617,
+  "telas": 2,
+  "h1": "Negócio",
+  "primarios": 1,
+  "primario": {
+   "texto": "Salvar",
+   "topo": 1481,
+   "semRolar": false
+  }
+ },
+ "/admin/config/notificacoes @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Notificações",
+  "primarios": 1,
+  "primario": {
+   "texto": "Ativar notificações",
+   "topo": 223,
+   "semRolar": true
+  }
+ },
+ "/admin/config/planos @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1173,
+  "telas": 1.5,
+  "h1": "Fidelidade e assinatura",
+  "primarios": 2,
+  "primario": {
+   "texto": "Salvar",
+   "topo": 441,
+   "semRolar": true
+  }
+ },
+ "/admin/config/profissionais @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Time",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/profissionais/e5cdc8c3-ac6e-4842-ac0b-24538498a0ba @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1581,
+  "telas": 2,
+  "h1": "Anderson Rocha",
+  "primarios": 1,
+  "primario": {
+   "texto": "Adicionar",
+   "topo": 1428,
+   "semRolar": false
+  }
+ },
+ "/admin/config/seguranca @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Segurança",
+  "primarios": 1,
+  "primario": {
+   "texto": "Ativar autenticação em duas etapas",
+   "topo": 246,
+   "semRolar": true
+  }
+ },
+ "/admin/config/servicos @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1475,
+  "telas": 1.8,
+  "h1": "Serviços",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/servicos/d3df68a3-2742-49e5-ab10-4aa93fa84245/ficha @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 530,
+  "esq": 495,
+  "dir": 1025,
+  "vazioPct": 49,
+  "altura": 1040,
+  "telas": 1.3,
+  "h1": "Ficha de consumo",
+  "primarios": 1,
+  "primario": {
+   "texto": "Salvar ficha",
+   "topo": 550,
+   "semRolar": true
+  }
+ },
+ "/admin/config/taxas @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 835,
+  "telas": 1,
+  "h1": "Taxa da maquininha",
+  "primarios": 1,
+  "primario": {
+   "texto": "Salvar",
+   "topo": 682,
+   "semRolar": true
+  }
+ },
+ "/onboarding @1280": {
+  "lateral": 232,
+  "util": 1048,
+  "conteudo": 522,
+  "esq": 495,
+  "dir": 1017,
+  "vazioPct": 50,
+  "altura": 1206,
+  "telas": 1.5,
+  "h1": "Bom dia",
+  "primarios": 0,
+  "primario": null
+ },
+ "/onboarding/perfil @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 384,
+  "esq": 448,
+  "dir": 832,
+  "vazioPct": 70,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Pra deixar o CICLO do seu jeito",
+  "primarios": 0,
+  "primario": null
+ },
+ "/dev/ui @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": null,
+  "esq": null,
+  "dir": null,
+  "vazioPct": null,
+  "altura": 800,
+  "telas": 1,
+  "h1": null,
+  "primarios": 0,
+  "primario": null
+ },
+ "/ @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 684,
+  "esq": 298,
+  "dir": 982,
+  "vazioPct": 47,
+  "altura": 2558,
+  "telas": 3.2,
+  "h1": "Quantos clientes pararam de voltar sem v",
+  "primarios": 2,
+  "primario": {
+   "texto": "Criar minha conta grátis",
+   "topo": 358,
+   "semRolar": true
+  }
+ },
+ "/demo-dom-estilo @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 524,
+  "esq": 378,
+  "dir": 902,
+  "vazioPct": 59,
+  "altura": 1499,
+  "telas": 1.9,
+  "h1": "Barbearia Dom Estilo",
+  "primarios": 1,
+  "primario": {
+   "texto": "Agendar horário",
+   "topo": 220,
+   "semRolar": true
+  }
+ },
+ "/demo-dom-estilo/agendar @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 888,
+  "esq": 360,
+  "dir": 1248,
+  "vazioPct": 31,
+  "altura": 1324,
+  "telas": 1.7,
+  "h1": "Agendar em Barbearia Dom Estilo",
+  "primarios": 1,
+  "primario": {
+   "texto": "TER\n13",
+   "topo": 926,
+   "semRolar": false
+  }
+ },
+ "/demo-dom-estilo/orcamento @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 274,
+  "esq": 503,
+  "dir": 777,
+  "vazioPct": 79,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 458,
+   "semRolar": true
+  }
+ },
+ "/avaliar/token-de-medicao-inexistente @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 444,
+  "esq": 418,
+  "dir": 862,
+  "vazioPct": 65,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Não consegui abrir",
+  "primarios": 0,
+  "primario": null
+ },
+ "/calculadora @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 684,
+  "esq": 298,
+  "dir": 982,
+  "vazioPct": 47,
+  "altura": 1201,
+  "telas": 1.5,
+  "h1": "Quanto deixou de entrar com quem parou d",
+  "primarios": 1,
+  "primario": {
+   "texto": "Ver quem sumiu, pelo nome",
+   "topo": 1068,
+   "semRolar": false
+  }
+ },
+ "/confirmar/token-de-medicao-inexistente @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 444,
+  "esq": 418,
+  "dir": 862,
+  "vazioPct": 65,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Confirma seu horário?",
+  "primarios": 1,
+  "primario": {
+   "texto": "Vou sim",
+   "topo": 390,
+   "semRolar": true
+  }
+ },
+ "/links @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 444,
+  "esq": 418,
+  "dir": 862,
+  "vazioPct": 65,
+  "altura": 827,
+  "telas": 1,
+  "h1": "Seu sistema de retenção de clientes",
+  "primarios": 1,
+  "primario": {
+   "texto": "Criar minha conta\nÉ grátis pra começar, ",
+   "topo": 456,
+   "semRolar": true
+  }
+ },
+ "/lista-espera/token-de-medicao-inexistente @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 444,
+  "esq": 418,
+  "dir": 862,
+  "vazioPct": 65,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Não consegui reservar",
+  "primarios": 0,
+  "primario": null
+ },
+ "/orcamento/token-de-medicao-inexistente @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 444,
+  "esq": 418,
+  "dir": 862,
+  "vazioPct": 65,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Não deu certo",
+  "primarios": 0,
+  "primario": null
+ },
+ "/precos @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 685,
+  "esq": 297,
+  "dir": 982,
+  "vazioPct": 46,
+  "altura": 3098,
+  "telas": 3.9,
+  "h1": "Tudo liberado, sem cartão. Sem prazo por",
+  "primarios": 1,
+  "primario": {
+   "texto": "Começar sem cartão",
+   "topo": 1247,
+   "semRolar": false
+  }
+ },
+ "/privacidade @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 684,
+  "esq": 298,
+  "dir": 982,
+  "vazioPct": 47,
+  "altura": 2802,
+  "telas": 3.5,
+  "h1": "Política de Privacidade",
+  "primarios": 0,
+  "primario": null
+ },
+ "/termos @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 684,
+  "esq": 298,
+  "dir": 982,
+  "vazioPct": 47,
+  "altura": 3482,
+  "telas": 4.4,
+  "h1": "Termos de uso",
+  "primarios": 0,
+  "primario": null
+ },
+ "/cadastro @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 585,
+  "esq": 348,
+  "dir": 932,
+  "vazioPct": 54,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Criar sua conta",
+  "primarios": 1,
+  "primario": {
+   "texto": "Criar conta",
+   "topo": 568,
+   "semRolar": true
+  }
+ },
+ "/entrar @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 384,
+  "esq": 448,
+  "dir": 832,
+  "vazioPct": 70,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Que bom te ver de novo",
+  "primarios": 1,
+  "primario": {
+   "texto": "Entrar",
+   "topo": 481,
+   "semRolar": true
+  }
+ },
+ "/nova-senha @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 384,
+  "esq": 448,
+  "dir": 832,
+  "vazioPct": 70,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Esqueceu a senha?",
+  "primarios": 1,
+  "primario": {
+   "texto": "Mandar link",
+   "topo": 510,
+   "semRolar": true
+  }
+ },
+ "/recuperar-senha @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 384,
+  "esq": 448,
+  "dir": 832,
+  "vazioPct": 70,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Esqueceu a senha?",
+  "primarios": 1,
+  "primario": {
+   "texto": "Mandar link",
+   "topo": 479,
+   "semRolar": true
+  }
+ },
+ "/verificar @1280": {
+  "lateral": 0,
+  "util": 1280,
+  "conteudo": 384,
+  "esq": 448,
+  "dir": 832,
+  "vazioPct": 70,
+  "altura": 800,
+  "telas": 1,
+  "h1": "Que bom te ver de novo",
+  "primarios": 1,
+  "primario": {
+   "texto": "Entrar",
+   "topo": 481,
+   "semRolar": true
+  }
+ },
+ "/admin @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1206,
+  "telas": 1.3,
+  "h1": "Bom dia",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/hoje @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1206,
+  "telas": 1.3,
+  "h1": "Bom dia",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/agenda @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 523,
+  "esq": 574,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Agenda",
+  "primarios": 1,
+  "primario": {
+   "texto": "TER\n13",
+   "topo": 123,
+   "semRolar": true
+  }
+ },
+ "/admin/agenda/novo @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Novo agendamento",
+  "primarios": 1,
+  "primario": {
+   "texto": "Confirmar agendamento",
+   "topo": 618,
+   "semRolar": true
+  }
+ },
+ "/admin/caixa @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Caixa",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/campanhas @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Campanhas",
+  "primarios": 1,
+  "primario": {
+   "texto": "Nova campanha",
+   "topo": 284,
+   "semRolar": true
+  }
+ },
+ "/admin/campanhas/nova @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Nova campanha",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/casos @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 274,
+  "esq": 583,
+  "dir": 857,
+  "vazioPct": 81,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 508,
+   "semRolar": true
+  }
+ },
+ "/admin/casos/novo @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 274,
+  "esq": 583,
+  "dir": 857,
+  "vazioPct": 81,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 508,
+   "semRolar": true
+  }
+ },
+ "/admin/casos/36bebc78-4cd6-479c-93cf-c912d5754d3a @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 274,
+  "esq": 583,
+  "dir": 857,
+  "vazioPct": 81,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 508,
+   "semRolar": true
+  }
+ },
+ "/admin/clientes @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 523,
+  "esq": 574,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 2837,
+  "telas": 3.2,
+  "h1": "Clientes",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/clientes/cf3e5831-4a82-4fe0-8398-0f060d41ec95 @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 639,
+  "esq": 458,
+  "dir": 1097,
+  "vazioPct": 47,
+  "altura": 1127,
+  "telas": 1.3,
+  "h1": "Ana Souza",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/clientes/cf3e5831-4a82-4fe0-8398-0f060d41ec95/estrutura @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 274,
+  "esq": 583,
+  "dir": 857,
+  "vazioPct": 81,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 508,
+   "semRolar": true
+  }
+ },
+ "/admin/clientes/exportar @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Baixar meus clientes",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/clientes/importar @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Importar clientes",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/clientes/ja-atendo @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1284,
+  "telas": 1.4,
+  "h1": "Quem você já atende",
+  "primarios": 1,
+  "primario": {
+   "texto": "Adicione pelo menos uma pessoa\nEscreva u",
+   "topo": 1105,
+   "semRolar": false
+  }
+ },
+ "/admin/clientes/nova @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 530,
+  "esq": 567,
+  "dir": 1097,
+  "vazioPct": 56,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Cliente novo",
+  "primarios": 1,
+  "primario": {
+   "texto": "Cadastrar cliente\nDigite o nome do clien",
+   "topo": 650,
+   "semRolar": true
+  }
+ },
+ "/admin/clientes/vindo-de-outro-sistema @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1103,
+  "telas": 1.2,
+  "h1": "Vindo de outro sistema",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/comanda/00000000-0000-4000-8000-000000000000 @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": null,
+  "primarios": 1,
+  "primario": {
+   "texto": "Tentar de novo",
+   "topo": 215,
+   "semRolar": true
+  }
+ },
+ "/admin/comanda/agendamento/07bce881-65e9-4597-bb44-98c4c4a0796f @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Comanda",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/comissao @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Comissão",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/estoque @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Estoque",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/experimentos @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1133,
+  "telas": 1.3,
+  "h1": "Testes",
+  "primarios": 1,
+  "primario": {
+   "texto": "Começar o teste",
+   "topo": 601,
+   "semRolar": true
+  }
+ },
+ "/admin/intimacoes/a59f285a-ac6c-483c-b254-bd5a28bdbbbc @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 274,
+  "esq": 583,
+  "dir": 857,
+  "vazioPct": 81,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 508,
+   "semRolar": true
+  }
+ },
+ "/admin/mes @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "O mês",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/orcamentos @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Orçamentos",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/orcamentos/novo @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1130,
+  "telas": 1.3,
+  "h1": "Novo orçamento",
+  "primarios": 1,
+  "primario": {
+   "texto": "Criar orçamento",
+   "topo": 994,
+   "semRolar": false
+  }
+ },
+ "/admin/pendencias @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 274,
+  "esq": 583,
+  "dir": 857,
+  "vazioPct": 81,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 508,
+   "semRolar": true
+  }
+ },
+ "/admin/recuperar @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 523,
+  "esq": 574,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1070,
+  "telas": 1.2,
+  "h1": "Recuperar receita",
+  "primarios": 1,
+  "primario": {
+   "texto": "Recalcular agora",
+   "topo": 885,
+   "semRolar": false
+  }
+ },
+ "/admin/series @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Séries de recorrência",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 2772,
+  "telas": 3.1,
+  "h1": "Configurações",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/advocacia @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 274,
+  "esq": 583,
+  "dir": 857,
+  "vazioPct": 81,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 508,
+   "semRolar": true
+  }
+ },
+ "/admin/config/automacoes @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1782,
+  "telas": 2,
+  "h1": "Automações",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/cofre @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Trilha do cofre",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/custo-fixo @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Aluguel e contas",
+  "primarios": 1,
+  "primario": {
+   "texto": "Salvar",
+   "topo": 593,
+   "semRolar": true
+  }
+ },
+ "/admin/config/excluir-conta @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Excluir minha conta",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/horarios @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1581,
+  "telas": 1.8,
+  "h1": "Horário de funcionamento",
+  "primarios": 1,
+  "primario": {
+   "texto": "Adicionar",
+   "topo": 1428,
+   "semRolar": false
+  }
+ },
+ "/admin/config/mensagens @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1469,
+  "telas": 1.6,
+  "h1": "Mensagens prontas",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/meu-plano @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Meu plano",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/modulos @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1510,
+  "telas": 1.7,
+  "h1": "Módulos",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/negocio @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1617,
+  "telas": 1.8,
+  "h1": "Negócio",
+  "primarios": 1,
+  "primario": {
+   "texto": "Salvar",
+   "topo": 1481,
+   "semRolar": false
+  }
+ },
+ "/admin/config/notificacoes @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Notificações",
+  "primarios": 1,
+  "primario": {
+   "texto": "Ativar notificações",
+   "topo": 223,
+   "semRolar": true
+  }
+ },
+ "/admin/config/planos @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1173,
+  "telas": 1.3,
+  "h1": "Fidelidade e assinatura",
+  "primarios": 2,
+  "primario": {
+   "texto": "Salvar",
+   "topo": 441,
+   "semRolar": true
+  }
+ },
+ "/admin/config/profissionais @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Time",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/profissionais/e5cdc8c3-ac6e-4842-ac0b-24538498a0ba @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1581,
+  "telas": 1.8,
+  "h1": "Anderson Rocha",
+  "primarios": 1,
+  "primario": {
+   "texto": "Adicionar",
+   "topo": 1428,
+   "semRolar": false
+  }
+ },
+ "/admin/config/seguranca @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Segurança",
+  "primarios": 1,
+  "primario": {
+   "texto": "Ativar autenticação em duas etapas",
+   "topo": 246,
+   "semRolar": true
+  }
+ },
+ "/admin/config/servicos @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1475,
+  "telas": 1.6,
+  "h1": "Serviços",
+  "primarios": 0,
+  "primario": null
+ },
+ "/admin/config/servicos/d3df68a3-2742-49e5-ab10-4aa93fa84245/ficha @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 530,
+  "esq": 575,
+  "dir": 1105,
+  "vazioPct": 56,
+  "altura": 1040,
+  "telas": 1.2,
+  "h1": "Ficha de consumo",
+  "primarios": 1,
+  "primario": {
+   "texto": "Salvar ficha",
+   "topo": 550,
+   "semRolar": true
+  }
+ },
+ "/admin/config/taxas @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Taxa da maquininha",
+  "primarios": 1,
+  "primario": {
+   "texto": "Salvar",
+   "topo": 682,
+   "semRolar": true
+  }
+ },
+ "/onboarding @1440": {
+  "lateral": 232,
+  "util": 1208,
+  "conteudo": 522,
+  "esq": 575,
+  "dir": 1097,
+  "vazioPct": 57,
+  "altura": 1206,
+  "telas": 1.3,
+  "h1": "Bom dia",
+  "primarios": 0,
+  "primario": null
+ },
+ "/onboarding/perfil @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 384,
+  "esq": 528,
+  "dir": 912,
+  "vazioPct": 73,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Pra deixar o CICLO do seu jeito",
+  "primarios": 0,
+  "primario": null
+ },
+ "/dev/ui @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": null,
+  "esq": null,
+  "dir": null,
+  "vazioPct": null,
+  "altura": 900,
+  "telas": 1,
+  "h1": null,
+  "primarios": 0,
+  "primario": null
+ },
+ "/ @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 684,
+  "esq": 378,
+  "dir": 1062,
+  "vazioPct": 53,
+  "altura": 2558,
+  "telas": 2.8,
+  "h1": "Quantos clientes pararam de voltar sem v",
+  "primarios": 2,
+  "primario": {
+   "texto": "Criar minha conta grátis",
+   "topo": 358,
+   "semRolar": true
+  }
+ },
+ "/demo-dom-estilo @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 524,
+  "esq": 458,
+  "dir": 982,
+  "vazioPct": 64,
+  "altura": 1499,
+  "telas": 1.7,
+  "h1": "Barbearia Dom Estilo",
+  "primarios": 1,
+  "primario": {
+   "texto": "Agendar horário",
+   "topo": 220,
+   "semRolar": true
+  }
+ },
+ "/demo-dom-estilo/agendar @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 888,
+  "esq": 440,
+  "dir": 1328,
+  "vazioPct": 38,
+  "altura": 1324,
+  "telas": 1.5,
+  "h1": "Agendar em Barbearia Dom Estilo",
+  "primarios": 1,
+  "primario": {
+   "texto": "TER\n13",
+   "topo": 926,
+   "semRolar": false
+  }
+ },
+ "/demo-dom-estilo/orcamento @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 274,
+  "esq": 583,
+  "dir": 857,
+  "vazioPct": 81,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Página não encontrada",
+  "primarios": 1,
+  "primario": {
+   "texto": "Voltar ao início",
+   "topo": 508,
+   "semRolar": true
+  }
+ },
+ "/avaliar/token-de-medicao-inexistente @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 444,
+  "esq": 498,
+  "dir": 942,
+  "vazioPct": 69,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Não consegui abrir",
+  "primarios": 0,
+  "primario": null
+ },
+ "/calculadora @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 684,
+  "esq": 378,
+  "dir": 1062,
+  "vazioPct": 53,
+  "altura": 1201,
+  "telas": 1.3,
+  "h1": "Quanto deixou de entrar com quem parou d",
+  "primarios": 1,
+  "primario": {
+   "texto": "Ver quem sumiu, pelo nome",
+   "topo": 1068,
+   "semRolar": false
+  }
+ },
+ "/confirmar/token-de-medicao-inexistente @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 444,
+  "esq": 498,
+  "dir": 942,
+  "vazioPct": 69,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Confirma seu horário?",
+  "primarios": 1,
+  "primario": {
+   "texto": "Vou sim",
+   "topo": 440,
+   "semRolar": true
+  }
+ },
+ "/links @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 444,
+  "esq": 498,
+  "dir": 942,
+  "vazioPct": 69,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Seu sistema de retenção de clientes",
+  "primarios": 1,
+  "primario": {
+   "texto": "Criar minha conta\nÉ grátis pra começar, ",
+   "topo": 456,
+   "semRolar": true
+  }
+ },
+ "/lista-espera/token-de-medicao-inexistente @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 444,
+  "esq": 498,
+  "dir": 942,
+  "vazioPct": 69,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Não consegui reservar",
+  "primarios": 0,
+  "primario": null
+ },
+ "/orcamento/token-de-medicao-inexistente @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 444,
+  "esq": 498,
+  "dir": 942,
+  "vazioPct": 69,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Não deu certo",
+  "primarios": 0,
+  "primario": null
+ },
+ "/precos @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 685,
+  "esq": 377,
+  "dir": 1062,
+  "vazioPct": 52,
+  "altura": 3098,
+  "telas": 3.4,
+  "h1": "Tudo liberado, sem cartão. Sem prazo por",
+  "primarios": 1,
+  "primario": {
+   "texto": "Começar sem cartão",
+   "topo": 1247,
+   "semRolar": false
+  }
+ },
+ "/privacidade @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 684,
+  "esq": 378,
+  "dir": 1062,
+  "vazioPct": 53,
+  "altura": 2802,
+  "telas": 3.1,
+  "h1": "Política de Privacidade",
+  "primarios": 0,
+  "primario": null
+ },
+ "/termos @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 684,
+  "esq": 378,
+  "dir": 1062,
+  "vazioPct": 53,
+  "altura": 3482,
+  "telas": 3.9,
+  "h1": "Termos de uso",
+  "primarios": 0,
+  "primario": null
+ },
+ "/cadastro @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 585,
+  "esq": 428,
+  "dir": 1012,
+  "vazioPct": 59,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Criar sua conta",
+  "primarios": 1,
+  "primario": {
+   "texto": "Criar conta",
+   "topo": 618,
+   "semRolar": true
+  }
+ },
+ "/entrar @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 384,
+  "esq": 528,
+  "dir": 912,
+  "vazioPct": 73,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Que bom te ver de novo",
+  "primarios": 1,
+  "primario": {
+   "texto": "Entrar",
+   "topo": 531,
+   "semRolar": true
+  }
+ },
+ "/nova-senha @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 384,
+  "esq": 528,
+  "dir": 912,
+  "vazioPct": 73,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Esqueceu a senha?",
+  "primarios": 1,
+  "primario": {
+   "texto": "Mandar link",
+   "topo": 560,
+   "semRolar": true
+  }
+ },
+ "/recuperar-senha @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 384,
+  "esq": 528,
+  "dir": 912,
+  "vazioPct": 73,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Esqueceu a senha?",
+  "primarios": 1,
+  "primario": {
+   "texto": "Mandar link",
+   "topo": 529,
+   "semRolar": true
+  }
+ },
+ "/verificar @1440": {
+  "lateral": 0,
+  "util": 1440,
+  "conteudo": 384,
+  "esq": 528,
+  "dir": 912,
+  "vazioPct": 73,
+  "altura": 900,
+  "telas": 1,
+  "h1": "Que bom te ver de novo",
+  "primarios": 1,
+  "primario": {
+   "texto": "Entrar",
+   "topo": 531,
+   "semRolar": true
+  }
+ }
+}

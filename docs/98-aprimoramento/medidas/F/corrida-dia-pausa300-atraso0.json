@@ -1,0 +1,78 @@
+{
+  "divergencias": 2,
+  "de": 6,
+  "resultados": [
+    {
+      "i": 0,
+      "pausaMs": 300,
+      "atrasoForcadoMs": 0,
+      "diaTocado": "quinta-feira, dia 15",
+      "horaTocada": "09:45",
+      "resumoNaTela": "quinta-feira, 15 de outubro às 09:45 · 45min",
+      "anuncioLeitorDeTela": "38 horários livres em quinta-feira, 15 de outubro.",
+      "startsAtEnviado": "2026-10-13T12:45:00Z",
+      "diaEnviado": "terça-feira, 13 de outubro",
+      "divergiu": true
+    },
+    {
+      "i": 1,
+      "pausaMs": 300,
+      "atrasoForcadoMs": 0,
+      "diaTocado": "quinta-feira, dia 15",
+      "horaTocada": "09:45",
+      "resumoNaTela": "quinta-feira, 15 de outubro às 09:00 · 45min",
+      "anuncioLeitorDeTela": "38 horários livres em quinta-feira, 15 de outubro.",
+      "startsAtEnviado": "2026-10-15T12:00:00Z",
+      "diaEnviado": "quinta-feira, 15 de outubro",
+      "divergiu": false
+    },
+    {
+      "i": 2,
+      "pausaMs": 300,
+      "atrasoForcadoMs": 0,
+      "diaTocado": "quinta-feira, dia 15",
+      "horaTocada": "09:00",
+      "resumoNaTela": "quinta-feira, 15 de outubro às 09:00 · 45min",
+      "anuncioLeitorDeTela": "38 horários livres em quinta-feira, 15 de outubro.",
+      "startsAtEnviado": "2026-10-15T12:00:00Z",
+      "diaEnviado": "quinta-feira, 15 de outubro",
+      "divergiu": false
+    },
+    {
+      "i": 3,
+      "pausaMs": 300,
+      "atrasoForcadoMs": 0,
+      "diaTocado": "quinta-feira, dia 15",
+      "horaTocada": "09:00",
+      "resumoNaTela": "quinta-feira, 15 de outubro às 09:00 · 45min",
+      "anuncioLeitorDeTela": "38 horários livres em quinta-feira, 15 de outubro.",
+      "startsAtEnviado": "2026-10-15T12:00:00Z",
+      "diaEnviado": "quinta-feira, 15 de outubro",
+      "divergiu": false
+    },
+    {
+      "i": 4,
+      "pausaMs": 300,
+      "atrasoForcadoMs": 0,
+      "diaTocado": "quinta-feira, dia 15",
+      "horaTocada": "09:45",
+      "resumoNaTela": "quinta-feira, 15 de outubro às 09:45 · 45min",
+      "anuncioLeitorDeTela": "38 horários livres em quinta-feira, 15 de outubro.",
+      "startsAtEnviado": "2026-10-13T12:45:00Z",
+      "diaEnviado": "terça-feira, 13 de outubro",
+      "divergiu": true
+    },
+    {
+      "i": 5,
+      "pausaMs": 300,
+      "atrasoForcadoMs": 0,
+      "diaTocado": "quinta-feira, dia 15",
+      "horaTocada": "09:00",
+      "resumoNaTela": "quinta-feira, 15 de outubro às 09:00 · 45min",
+      "anuncioLeitorDeTela": "38 horários livres em quinta-feira, 15 de outubro.",
+      "startsAtEnviado": "2026-10-15T12:00:00Z",
+      "diaEnviado": "quinta-feira, 15 de outubro",
+      "divergiu": false
+    }
+  ]
+}

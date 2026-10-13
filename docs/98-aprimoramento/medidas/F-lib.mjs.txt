@@ -1,0 +1,136 @@
+﻿// Agente F (público e primeiro dia) - utilidades de medição. Playwright vem de C:\temp\ciclo-medicao (Chrome do sistema: o Chromium baixado não abre nesta máquina, "spawn UNKNOWN").
+// Nada aqui grava cookie/token em docs/: storageState vai para C:\temp\ciclo-medicao\.
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs'
+import AxeBuilderMod from 'file:///C:/temp/ciclo-medicao/node_modules/@axe-core/playwright/dist/index.mjs'
+
+export const AxeBuilder = AxeBuilderMod.default ?? AxeBuilderMod
+export const BASE = 'http://localhost:3200'
+export const CAPTURAS = 'C:/Users/Usuario/.claude/code/ciclo-aprimoramento/docs/98-aprimoramento/capturas'
+export const MEDIDAS = 'C:/Users/Usuario/.claude/code/ciclo-aprimoramento/docs/98-aprimoramento/medidas'
+
+export const PERFIS = {
+  // A6.3: celular 390x844, CPU 4x, "4G lenta" 1,6 Mb/s e 150 ms
+  celular: { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2, cpu: 4, rede: { latency: 150, downloadThroughput: (1.6 * 1024 * 1024) / 8, uploadThroughput: (0.75 * 1024 * 1024) / 8 } },
+  computador: { viewport: { width: 1280, height: 800 }, hasTouch: false, isMobile: false, deviceScaleFactor: 1, cpu: 1, rede: null },
+}
+
+export async function abrir(perfilNome, opcoes = {}) {
+  const perfil = PERFIS[perfilNome]
+  const browser = opcoes.browser ?? (await chromium.launch({ channel: 'chrome' }))
+  const context = await browser.newContext({
+    viewport: perfil.viewport,
+    hasTouch: perfil.hasTouch,
+    isMobile: perfil.isMobile,
+    deviceScaleFactor: perfil.deviceScaleFactor,
+    locale: 'pt-BR',
+    timezoneId: 'America/Sao_Paulo',
+    ...(opcoes.storageState ? { storageState: opcoes.storageState } : {}),
+  })
+  const page = await context.newPage()
+  page.setDefaultTimeout(45000)
+  const cdp = await context.newCDPSession(page)
+  if (perfil.cpu > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: perfil.cpu })
+  if (perfil.rede) {
+    await cdp.send('Network.enable')
+    await cdp.send('Network.emulateNetworkConditions', { offline: false, ...perfil.rede })
+  }
+  const consoleErros = []
+  page.on('console', (m) => { if (m.type() === 'error') consoleErros.push(m.text().slice(0, 300)) })
+  page.on('pageerror', (e) => consoleErros.push('pageerror: ' + String(e).slice(0, 300)))
+  // Observadores de LCP/CLS instalados antes de qualquer script da pÃ¡gina
+  await page.addInitScript(() => {
+    window.__lcp = 0; window.__cls = 0
+    try {
+      new PerformanceObserver((l) => { for (const e of l.getEntries()) window.__lcp = e.startTime }).observe({ type: 'largest-contentful-paint', buffered: true })
+      new PerformanceObserver((l) => { for (const e of l.getEntries()) if (!e.hadRecentInput) window.__cls += e.value }).observe({ type: 'layout-shift', buffered: true })
+    } catch {}
+  })
+  return { browser, context, page, cdp, perfil, consoleErros }
+}
+
+export async function offline(cdp, ligado) {
+  await cdp.send('Network.enable')
+  await cdp.send('Network.emulateNetworkConditions', { offline: ligado, latency: 0, downloadThroughput: -1, uploadThroughput: -1 })
+}
+
+/** Navega e mede: TTFB, FCP, tempo atÃ© `seletorUtil` visÃ­vel (do inÃ­cio da navegaÃ§Ã£o), LCP, CLS. */
+export async function medirCarga(page, url, seletorUtil, { timeout = 60000 } = {}) {
+  const t0 = Date.now()
+  const resp = await page.goto(url, { waitUntil: 'commit', timeout })
+  let util = null
+  try {
+    await page.locator(seletorUtil).first().waitFor({ state: 'visible', timeout })
+    util = Date.now() - t0
+  } catch { util = null }
+  await page.waitForLoadState('load', { timeout }).catch(() => {})
+  await page.waitForTimeout(500)
+  const nav = await page.evaluate(() => {
+    const n = performance.getEntriesByType('navigation')[0]
+    const fcp = performance.getEntriesByName('first-contentful-paint')[0]
+    const recursos = performance.getEntriesByType('resource')
+    const js = recursos.filter((r) => r.initiatorType === 'script' || r.name.endsWith('.js'))
+    return {
+      ttfb: n ? Math.round(n.responseStart) : null,
+      fcp: fcp ? Math.round(fcp.startTime) : null,
+      load: n ? Math.round(n.loadEventEnd) : null,
+      lcp: Math.round(window.__lcp || 0),
+      cls: Number((window.__cls || 0).toFixed(4)),
+      requisicoes: recursos.length + 1,
+      jsKB: Math.round(js.reduce((s, r) => s + (r.transferSize || 0), 0) / 1024),
+      totalKB: Math.round((recursos.reduce((s, r) => s + (r.transferSize || 0), 0) + (n?.transferSize || 0)) / 1024),
+    }
+  })
+  return { url, status: resp?.status() ?? null, utilMs: util, ...nav }
+}
+
+export async function seo(page) {
+  return page.evaluate(() => {
+    const m = (sel, attr = 'content') => document.querySelector(sel)?.getAttribute(attr) ?? null
+    return {
+      title: document.title,
+      description: m('meta[name="description"]'),
+      ogTitle: m('meta[property="og:title"]'),
+      ogDescription: m('meta[property="og:description"]'),
+      ogImage: m('meta[property="og:image"]'),
+      canonical: m('link[rel="canonical"]', 'href'),
+      robots: m('meta[name="robots"]'),
+      h1: [...document.querySelectorAll('h1')].map((h) => h.innerText.trim()).slice(0, 3),
+      lang: document.documentElement.lang,
+    }
+  })
+}
+
+export async function axe(page) {
+  try {
+    const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
+    return r.violations.map((v) => ({ id: v.id, impacto: v.impact, n: v.nodes.length, alvo: v.nodes.slice(0, 3).map((n) => n.target.join(' ')), resumo: v.help }))
+  } catch (e) { return [{ id: 'axe-falhou', resumo: String(e).slice(0, 200) }] }
+}
+
+/** Alvos de toque < 48 px entre os interativos visÃ­veis (medido por getBoundingClientRect). */
+export async function alvosPequenos(page) {
+  return page.evaluate(() => {
+    const out = []
+    for (const el of document.querySelectorAll('a[href], button, input, select, textarea, [role="button"], [role="radio"], [role="tab"]')) {
+      const r = el.getBoundingClientRect()
+      if (r.width === 0 || r.height === 0) continue
+      const st = getComputedStyle(el)
+      if (st.visibility === 'hidden' || st.display === 'none') continue
+      // `toque-48` amplia por ::after; mede o pseudo tambÃ©m
+      const after = getComputedStyle(el, '::after')
+      const extra = after && after.content !== 'none' && after.position === 'absolute' ? Math.max(0, parseFloat(after.height) || 0) : 0
+      const h = Math.max(r.height, extra)
+      if (h < 48 || r.width < 24) out.push({ texto: (el.innerText || el.getAttribute('aria-label') || el.getAttribute('name') || el.tagName).trim().slice(0, 50), w: Math.round(r.width), h: Math.round(r.height), hEfetiva: Math.round(h) })
+    }
+    return out
+  })
+}
+
+export async function rolagemLateral(page) {
+  return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+}
+
+export async function textoVisivel(page, max = 4000) {
+  return (await page.evaluate(() => document.body.innerText)).slice(0, max)
+}
+

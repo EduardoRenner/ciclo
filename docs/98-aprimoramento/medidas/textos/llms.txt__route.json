@@ -1,0 +1,25 @@
+{
+ "rota": "llms.txt/route.ts",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/llms.txt/route.ts"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/lib/app-url.ts"
+ ],
+ "total": 2,
+ "textos": [
+  {
+   "texto": "# CICLO > Sistema de gestão para quem atende com hora marcada: agenda, página de agendamento própria, > ficha de cliente, comanda e caixa. Feito para celular, em português do Brasil. O diferencial é o Motor de Ciclo: a partir do intervalo entre as visitas de cada cliente, o CICLO calcula de quanto em quanto tempo essa pessoa costuma voltar, avisa quando alguém passou do ponto e entrega a mensagem pronta para chamar de volta. ## Para quem é Barbearia, unhas, cílios, sobrancelha, depilação, estética, tatuagem e cabelo. Também serve para quem atende com hora marcada fora da beleza — personal trainer, eletricista, faxineira. ## O que faz {modulos} ## Planos {planos} {…}{oferta.chamada.slice(1)}. {…} O preço fica na tela, sem \"fale com vendas\". ## Páginas - [Início]({base}/): o que é o produto e para quem - [Preços]({base}/precos): valor de cada plano e o que muda entre eles - [Calculadora]({base}/calculadora): quanto deixou de entrar com clientes que pararam de voltar, pelo ritmo de retorno do negócio (grátis, sem cadastro) - [Termos de uso]({base}/termos) - [Privacidade]({base}/privacidade): que dados o CICLO guarda e por quanto tempo (LGPD) ## Como funciona a página do salão Cada estabelecimento tem um endereço público próprio ({base}/nome-do-salao) onde dá para marcar direto, sem baixar aplicativo e sem criar conta. ## O que o CICLO NÃO faz - Não envia mensagem para quem é atendido sem o profissional confirmar. - Não é marketplace: o CICLO não fica entre o salão e quem ele atende, e não cobra comissão por agendamento. - Não dá orientação de saúde. A ficha de anamnese é um registro do profissional, não um parecer.",
+   "arquivo": "src/app/llms.txt/route.ts",
+   "linha": 38,
+   "tipo": "texto"
+  },
+  {
+   "texto": "public, max-age=3600, s-maxage=3600",
+   "arquivo": "src/app/llms.txt/route.ts",
+   "linha": 86,
+   "tipo": "prop:cache-control"
+  }
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "rota": "robots.ts",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/robots.ts"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/lib/app-url.ts"
+ ],
+ "total": 0,
+ "textos": []
+}

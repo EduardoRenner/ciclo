@@ -1,0 +1,771 @@
+[
+  {
+    "nome": "aquecer /admin/hoje",
+    "method": "GET",
+    "path": "/admin/hoje",
+    "status": 200,
+    "ttfbMs": 1423,
+    "totalMs": 1939,
+    "bytes": 53424,
+    "idasRest": 26,
+    "idasAuth": 2,
+    "idasTotal": 28,
+    "ondasMedidas": 4,
+    "restIndefinidas": 0,
+    "restDeOutroUsuario": 22,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:appointments",
+        "select:services",
+        "select:tenants",
+        "select:tenants+professions",
+        "select:products",
+        "select:stock_moves",
+        "select:clients",
+        "select:appointments+clients+health_records",
+        "select:appointments+clients",
+        "select:client_cycles",
+        "select:tenants",
+        "select:loyalty_entries",
+        "select:client_subscriptions",
+        "select:messages",
+        "select:cycle_predictions",
+        "select:packages",
+        "rpc:resumo_central_de_acoes",
+        "select:client_cycles",
+        "select:client_cycles",
+        "select:service_products+products",
+        "select:v_recover_revenue",
+        "select:clients",
+        "select:stock_moves",
+        "select:tenant_modules",
+        "select:quotes+clients"
+      ]
+    ],
+    "indefinidas": [],
+    "dbMsTotal": 836.5
+  },
+  {
+    "nome": "/admin/hoje",
+    "method": "GET",
+    "path": "/admin/hoje",
+    "status": 200,
+    "ttfbMs": 250,
+    "totalMs": 345,
+    "bytes": 53424,
+    "idasRest": 26,
+    "idasAuth": 2,
+    "idasTotal": 28,
+    "ondasMedidas": 4,
+    "restIndefinidas": 0,
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:stock_moves",
+        "select:tenants",
+        "select:appointments+clients+health_records",
+        "select:appointments",
+        "select:loyalty_entries",
+        "select:clients",
+        "select:services",
+        "select:tenants+professions",
+        "select:client_cycles",
+        "select:client_cycles",
+        "select:client_subscriptions",
+        "select:products",
+        "select:clients",
+        "select:cycle_predictions",
+        "select:appointments+clients",
+        "select:tenants",
+        "select:packages",
+        "select:messages",
+        "select:v_recover_revenue",
+        "select:client_cycles",
+        "rpc:resumo_central_de_acoes",
+        "select:service_products+products",
+        "select:quotes+clients",
+        "select:stock_moves",
+        "select:tenant_modules"
+      ]
+    ],
+    "indefinidas": [],
+    "dbMsTotal": 145.4
+  },
+  {
+    "nome": "/admin/agenda",
+    "method": "GET",
+    "path": "/admin/agenda",
+    "status": 200,
+    "ttfbMs": 943,
+    "totalMs": 1101,
+    "bytes": 53894,
+    "idasRest": 4,
+    "idasAuth": 2,
+    "idasTotal": 6,
+    "ondasMedidas": 4,
+    "restIndefinidas": 0,
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:professionals",
+        "select:business_hours",
+        "select:appointments+clients+services"
+      ]
+    ],
+    "indefinidas": [],
+    "dbMsTotal": 41.2
+  },
+  {
+    "nome": "/admin/agenda/novo",
+    "method": "GET",
+    "path": "/admin/agenda/novo",
+    "status": 200,
+    "ttfbMs": 3172,
+    "totalMs": 3624,
+    "bytes": 59449,
+    "idasRest": 5,
+    "idasAuth": 2,
+    "idasTotal": 7,
+    "ondasMedidas": 7,
+    "restIndefinidas": 20,
+    "restDeOutroUsuario": 4,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:tenants+professions"
+      ],
+      [
+        "select:professionals"
+      ],
+      [
+        "select:services"
+      ],
+      [
+        "select:tenant_modules"
+      ]
+    ],
+    "indefinidas": [
+      "?:select:tenants+professions",
+      "?:select:business_hours",
+      "?:select:client_reviews",
+      "?:select:portfolio_photos",
+      "?:select:services+products",
+      "?:select:professionals",
+      "?:select:client_reviews",
+      "?:rpc:consumir_rate_limit",
+      "?:select:tenants+professions",
+      "?:select:professionals",
+      "?:select:services",
+      "?:select:time_off",
+      "?:select:appointments",
+      "?:select:time_off",
+      "?:select:business_hours",
+      "?:select:business_hours",
+      "?:select:time_off",
+      "?:select:business_hours",
+      "?:select:appointments",
+      "?:select:appointments"
+    ],
+    "dbMsTotal": 15.8
+  },
+  {
+    "nome": "/admin/caixa",
+    "method": "GET",
+    "path": "/admin/caixa",
+    "status": 200,
+    "ttfbMs": 1807,
+    "totalMs": 2309,
+    "bytes": 49665,
+    "idasRest": 12,
+    "idasAuth": 2,
+    "idasTotal": 14,
+    "ondasMedidas": 4,
+    "restIndefinidas": 0,
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:tickets",
+        "select:professionals",
+        "select:tickets",
+        "select:services",
+        "select:appointments",
+        "select:tenants",
+        "select:tickets",
+        "select:service_products+products",
+        "select:ticket_items+tickets",
+        "select:ticket_items+tickets",
+        "select:ticket_items+tickets"
+      ]
+    ],
+    "indefinidas": [],
+    "dbMsTotal": 59.4
+  },
+  {
+    "nome": "/admin/mes",
+    "method": "GET",
+    "path": "/admin/mes",
+    "status": 200,
+    "ttfbMs": 1839,
+    "totalMs": 2205,
+    "bytes": 49164,
+    "idasRest": 24,
+    "idasAuth": 2,
+    "idasTotal": 26,
+    "ondasMedidas": 8,
+    "restIndefinidas": 0,
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:client_cycles",
+        "select:v_recover_revenue",
+        "select:tickets"
+      ],
+      [
+        "select:tickets",
+        "select:clients"
+      ],
+      [
+        "select:monthly_profit",
+        "select:cycle_predictions",
+        "select:appointments",
+        "select:business_hours",
+        "select:tickets",
+        "select:tickets",
+        "select:client_subscriptions+clients+subscription_plans",
+        "select:services",
+        "select:product_events",
+        "select:tenants",
+        "select:tickets",
+        "select:tickets",
+        "select:services",
+        "select:tickets"
+      ],
+      [
+        "select:tickets",
+        "select:service_products+products"
+      ],
+      [
+        "select:tickets",
+        "select:tickets"
+      ]
+    ],
+    "indefinidas": [],
+    "dbMsTotal": 73.1
+  },
+  {
+    "nome": "/admin/clientes",
+    "method": "GET",
+    "path": "/admin/clientes",
+    "status": 200,
+    "ttfbMs": 1073,
+    "totalMs": 1166,
+    "bytes": 104985,
+    "idasRest": 7,
+    "idasAuth": 2,
+    "idasTotal": 9,
+    "ondasMedidas": 6,
+    "restIndefinidas": 0,
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:clients"
+      ],
+      [
+        "select:v_clientes_a_recuperar",
+        "select:v_carteira_resumo",
+        "select:v_client_segments",
+        "select:tenants+professions"
+      ],
+      [
+        "select:tenant_modules"
+      ]
+    ],
+    "indefinidas": [],
+    "dbMsTotal": 17.3
+  },
+  {
+    "nome": "/admin/clientes/[id] (ficha)",
+    "method": "GET",
+    "path": "/admin/clientes/b5a85dd1-6bb6-4393-b416-0c39f4ecc224",
+    "status": 200,
+    "ttfbMs": 1773,
+    "totalMs": 2047,
+    "bytes": 70116,
+    "idasRest": 30,
+    "idasAuth": 2,
+    "idasTotal": 32,
+    "ondasMedidas": 5,
+    "restIndefinidas": 0,
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:clients+professionals",
+        "select:message_templates",
+        "select:tenants",
+        "select:tenants+professions",
+        "select:professionals",
+        "select:subscription_plans",
+        "select:services",
+        "select:client_scores",
+        "rpc:message_templates",
+        "select:appointments+services+professionals",
+        "select:appointments+professionals",
+        "select:tickets",
+        "select:loyalty_entries",
+        "select:client_notes+profiles",
+        "select:packages",
+        "select:loyalty_entries",
+        "select:media+portfolio_photos[?]",
+        "select:client_subscriptions+subscription_plans",
+        "select:health_records",
+        "select:tenant_modules",
+        "select:consents",
+        "select:health_records[?]",
+        "select:client_cycles+services",
+        "select:services",
+        "select:wallet_entries",
+        "select:messages",
+        "select:clients",
+        "select:professionals"
+      ],
+      [
+        "select:message_templates"
+      ]
+    ],
+    "indefinidas": [],
+    "dbMsTotal": 159.9
+  },
+  {
+    "nome": "/admin/recuperar",
+    "method": "GET",
+    "path": "/admin/recuperar",
+    "status": 200,
+    "ttfbMs": 521,
+    "totalMs": 727,
+    "bytes": 57597,
+    "idasRest": 15,
+    "idasAuth": 2,
+    "idasTotal": 17,
+    "ondasMedidas": 4,
+    "restIndefinidas": 0,
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:appointments+clients",
+        "select:client_cycles",
+        "select:v_recover_revenue",
+        "select:clients",
+        "select:clients",
+        "select:services",
+        "select:appointments",
+        "select:client_subscriptions",
+        "select:client_cycles",
+        "select:client_cycles",
+        "select:cycle_predictions",
+        "select:packages",
+        "select:messages",
+        "select:service_products+products"
+      ]
+    ],
+    "indefinidas": [],
+    "dbMsTotal": 217.3
+  },
+  {
+    "nome": "/admin/campanhas",
+    "method": "GET",
+    "path": "/admin/campanhas",
+    "status": 200,
+    "ttfbMs": 455,
+    "totalMs": 982,
+    "bytes": 47523,
+    "idasRest": 10,
+    "idasAuth": 2,
+    "idasTotal": 12,
+    "ondasMedidas": 9,
+    "restIndefinidas": 0,
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:campaigns"
+      ],
+      [
+        "select:client_subscriptions"
+      ],
+      [
+        "select:packages",
+        "select:messages",
+        "select:appointments+clients"
+      ],
+      [
+        "select:messages",
+        "select:appointments"
+      ],
+      [
+        "select:tenants+professions"
+      ],
+      [
+        "select:tenant_modules"
+      ]
+    ],
+    "indefinidas": [],
+    "dbMsTotal": 215.8
+  },
+  {
+    "nome": "/admin/config/servicos",
+    "method": "GET",
+    "path": "/admin/config/servicos",
+    "status": 200,
+    "ttfbMs": 615,
+    "totalMs": 674,
+    "bytes": 84875,
+    "idasRest": 3,
+    "idasAuth": 2,
+    "idasTotal": 5,
+    "ondasMedidas": 4,
+    "restIndefinidas": 0,
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:tickets",
+        "select:services"
+      ]
+    ],
+    "indefinidas": [],
+    "dbMsTotal": 2.9
+  },
+  {
+    "nome": "/admin/comanda/agendamento/[id]",
+    "method": "GET",
+    "path": "/admin/comanda/agendamento/25dd6398-53df-4a40-8207-41ec368561be",
+    "status": 200,
+    "ttfbMs": 1595,
+    "totalMs": 1693,
+    "bytes": 34323,
+    "idasRest": 2,
+    "idasAuth": 2,
+    "idasTotal": 4,
+    "ondasMedidas": 4,
+    "restIndefinidas": 24,
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:tickets"
+      ]
+    ],
+    "indefinidas": [
+      "?:select:tenants+professions",
+      "?:select:business_hours",
+      "?:select:professionals",
+      "?:select:services+products",
+      "?:select:client_reviews",
+      "?:select:client_reviews",
+      "?:select:portfolio_photos",
+      "?:rpc:consumir_rate_limit",
+      "?:select:tenants+professions",
+      "?:select:professionals",
+      "?:select:services",
+      "?:rpc:consumir_rate_limit",
+      "?:select:time_off",
+      "?:select:appointments",
+      "?:select:appointments",
+      "?:select:business_hours",
+      "?:select:time_off",
+      "?:select:business_hours",
+      "?:select:time_off",
+      "?:select:business_hours",
+      "?:select:appointments",
+      "?:select:tenants+professions",
+      "?:select:services",
+      "?:select:professionals"
+    ],
+    "dbMsTotal": 1.8
+  },
+  {
+    "nome": "/demo-salao-encanto (público)",
+    "method": "GET",
+    "path": "/demo-salao-encanto",
+    "status": 200,
+    "ttfbMs": 148,
+    "totalMs": 203,
+    "bytes": 49425,
+    "idasRest": 7,
+    "idasAuth": 0,
+    "idasTotal": 7,
+    "ondasMedidas": 2,
+    "restIndefinidas": 0,
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [
+      [
+        "select:tenants+professions[?]"
+      ],
+      [
+        "select:business_hours[?]",
+        "select:client_reviews[?]",
+        "select:services+products[?]",
+        "select:professionals[?]",
+        "select:portfolio_photos[?]",
+        "select:client_reviews[?]"
+      ]
+    ],
+    "indefinidas": [],
+    "dbMsTotal": 15
+  },
+  {
+    "nome": "/demo-salao-encanto/agendar",
+    "method": "GET",
+    "path": "/demo-salao-encanto/agendar",
+    "status": 200,
+    "ttfbMs": 130,
+    "totalMs": 142,
+    "bytes": 41752,
+    "idasRest": 7,
+    "idasAuth": 0,
+    "idasTotal": 7,
+    "ondasMedidas": 2,
+    "restIndefinidas": 0,
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [
+      [
+        "select:tenants+professions[?]"
+      ],
+      [
+        "select:business_hours[?]",
+        "select:professionals[?]",
+        "select:client_reviews[?]",
+        "select:services+products[?]",
+        "select:portfolio_photos[?]",
+        "select:client_reviews[?]"
+      ]
+    ],
+    "indefinidas": [],
+    "dbMsTotal": 3.1
+  },
+  {
+    "nome": "GET availability (público)",
+    "method": "GET",
+    "path": "/api/v1/public/demo-salao-encanto/availability?serviceId=083649fa-03b0-4ed3-86c1-77f39b978aee&date=2026-10-15",
+    "status": 200,
+    "ttfbMs": 157,
+    "totalMs": 157,
+    "bytes": 13844,
+    "idasRest": 12,
+    "idasAuth": 0,
+    "idasTotal": 12,
+    "ondasMedidas": 3,
+    "restIndefinidas": 1,
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [
+      [
+        "select:tenants+professions[?]"
+      ],
+      [
+        "select:professionals[?]",
+        "select:services[?]"
+      ],
+      [
+        "select:business_hours[?]",
+        "select:appointments[?]",
+        "select:appointments[?]",
+        "select:time_off[?]",
+        "select:business_hours[?]",
+        "select:time_off[?]",
+        "select:business_hours[?]",
+        "select:time_off[?]",
+        "select:appointments[?]"
+      ]
+    ],
+    "indefinidas": [
+      "?:rpc:consumir_rate_limit"
+    ],
+    "dbMsTotal": 5.8
+  },
+  {
+    "nome": "/entrar",
+    "method": "GET",
+    "path": "/entrar",
+    "status": 200,
+    "ttfbMs": 31,
+    "totalMs": 47,
+    "bytes": 28923,
+    "idasRest": 0,
+    "idasAuth": 0,
+    "idasTotal": 0,
+    "ondasMedidas": 0,
+    "restIndefinidas": 0,
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": {
+      "rest": [],
+      "auth": 0
+    },
+    "porOnda": [],
+    "indefinidas": [],
+    "dbMsTotal": 0
+  }
+]

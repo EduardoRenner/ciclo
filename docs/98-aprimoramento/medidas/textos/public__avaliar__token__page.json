@@ -1,0 +1,183 @@
+{
+ "rota": "(public)/avaliar/[token]/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(public)/avaliar/[token]/page.tsx",
+  "src/app/(public)/avaliar/[token]/avaliar.tsx",
+  "src/components/ui/erro-publico.tsx",
+  "src/components/ui/titulo-de-estado.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/lib/mensagens.ts",
+  "src/lib/utils.ts"
+ ],
+ "total": 25,
+ "textos": [
+  {
+   "texto": "Avaliar atendimento",
+   "arquivo": "src/app/(public)/avaliar/[token]/page.tsx",
+   "linha": 11,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Esse link de avaliação não é mais válido.",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 40,
+   "tipo": "estado/aviso"
+  },
+  {
+   "texto": "Não consegui falar com o servidor.",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 50,
+   "tipo": "estado/aviso"
+  },
+  {
+   "texto": "Não consegui registrar sua avaliação.",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 71,
+   "tipo": "estado/aviso"
+  },
+  {
+   "texto": "Não consegui falar com o servidor.",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 80,
+   "tipo": "estado/aviso"
+  },
+  {
+   "texto": "Carregando…",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 97,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Não consegui abrir",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 103,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Oi! Super recomendo a {dados.negocioNome}. Marca seu primeiro horário por aqui: {linkIndicacao}",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 121,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Oi! Super recomendo esse lugar. Marca seu primeiro horário por aqui: {linkIndicacao}",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 122,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Pronto, avaliação enviada!",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 127,
+   "tipo": "texto",
+   "tag": "TituloDeEstado"
+  },
+  {
+   "texto": "A equipe da {dados.negocioNome} agradece.",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 129,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sua opinião ajuda o negócio a melhorar.",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 129,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Indique alguém",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 137,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ela agenda o primeiro horário sem esperar resposta, e",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 139,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "fica sabendo que foi você.",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 139,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "o salão",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 139,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Mandar no WhatsApp",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 151,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Como foi seu",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 161,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Nota de 1 a 5 estrelas",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 164,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Quer contar mais alguma coisa?",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 200,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Opcional",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 205,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Enviar avaliação",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 226,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escolha de 1 a 5 estrelas para poder enviar.",
+   "arquivo": "src/app/(public)/avaliar/[token]/avaliar.tsx",
+   "linha": 224,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Tentar de novo",
+   "arquivo": "src/components/ui/erro-publico.tsx",
+   "linha": 69,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Chame quem vai te atender pelo WhatsApp: por lá dá para resolver na hora.",
+   "arquivo": "src/components/ui/erro-publico.tsx",
+   "linha": 73,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

@@ -1,0 +1,550 @@
+{
+ "rota": "admin/config/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/page.tsx",
+  "src/components/shell/seletor-de-tema.tsx",
+  "src/app/admin/config/sair.tsx",
+  "src/components/ui/segmented.tsx",
+  "src/lib/offline/api-client.ts",
+  "src/lib/offline/db.ts"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/card.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/section-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/button.tsx"
+ ],
+ "total": 85,
+ "textos": [
+  {
+   "texto": "Seu negócio",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 29,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Negócio",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 31,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Nome, contato, sobre e link do seu site",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 31,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Serviços",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 32,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Preço, duração e o que aparece no site",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 32,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Time",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 33,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Quem atende, expediente e convites",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 33,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Escritório",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 35,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "OAB da equipe, regras de prazo e captura de intimações",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 35,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Horário de funcionamento",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 36,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Expediente padrão do negócio",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 36,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Falar com quem você atende",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 40,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Mensagens prontas",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 42,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Textos que você manda com um toque",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 42,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Automações",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 43,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "O que o CICLO faz sozinho, e quanta rédea você dá",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 43,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Campanhas",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 44,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Mandar em lote e ver quanto voltou em receita",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 44,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Notificações",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 45,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Ativar lembretes no aparelho",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 45,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Dinheiro",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 49,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Caixa",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 51,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Fechamento do dia, do mês e a comissão de cada um",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 51,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Minha comissão",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 57,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "O que você já ganhou este mês, item a item",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 57,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "O mês",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 58,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Os cinco números do mês numa página só, para mostrar a alguém",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 58,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Estoque",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 59,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Quanto tem de cada produto e registrar compra",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 59,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Taxa da maquininha",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 60,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Quanto a máquina fica de cada forma de pagamento",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 60,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Aluguel e contas",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 61,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "O que sai todo mês, para o Sobrou virar lucro de verdade",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 61,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Receita recorrente",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 65,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Fidelidade e assinatura",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 67,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Pontos por atendimento e planos mensais",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 67,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Orçamentos",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 68,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Acompanhar quem aprovou, recusou ou ainda não respondeu",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 68,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Séries de recorrência",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 69,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Ver quem repete e cancelar quando precisar",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 69,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Sua conta no CICLO",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 79,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Meu plano",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 81,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "O que você usa, o que cada plano libera",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 81,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Módulos",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 82,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Ligue só o que você usa na interface",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 82,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Privacidade",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 86,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Trilha do cofre",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 88,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Quem acessou a ficha de saúde de cada cliente",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 88,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Segurança",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 89,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Autenticação em duas etapas da sua conta",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 89,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Excluir minha conta",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 93,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Apaga seu login para sempre",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 93,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Configurações",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 98,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Configurações",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 144,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Sua conta",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 164,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "em {ctx.tenant.name}",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 173,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Aparência",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 182,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Recurso do plano {NOME_DO_PLANO[falta]}",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 215,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Recurso do plano",
+   "arquivo": "src/app/admin/config/page.tsx",
+   "linha": 215,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Automático",
+   "arquivo": "src/components/shell/seletor-de-tema.tsx",
+   "linha": 28,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Claro",
+   "arquivo": "src/components/shell/seletor-de-tema.tsx",
+   "linha": 29,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Escuro",
+   "arquivo": "src/components/shell/seletor-de-tema.tsx",
+   "linha": 30,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "ciclo-tema={escolha}; path=/; max-age={UM_ANO}; samesite=lax",
+   "arquivo": "src/components/shell/seletor-de-tema.tsx",
+   "linha": 50,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Tema",
+   "arquivo": "src/components/shell/seletor-de-tema.tsx",
+   "linha": 72,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O padrão é claro. No automático, segue o aparelho: claro se o sistema estiver no claro, escuro se estiver no escuro.",
+   "arquivo": "src/components/shell/seletor-de-tema.tsx",
+   "linha": 74,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Tema do aplicativo",
+   "arquivo": "src/components/shell/seletor-de-tema.tsx",
+   "linha": 77,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "logout falhou",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 80,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui sair agora. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 101,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Sair da conta",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 108,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Encerra a sessão neste e nos outros aparelhos, e limpa o que estiver guardado aqui. O que ainda não tiver subido é enviado antes, se houver internet.",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 110,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Saindo…",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 118,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Sair da conta",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 118,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "{…} Elas ficaram guardadas neste aparelho e não podem ser enviadas em nome de quem entrar depois de você. Se sair agora,",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 125,
+   "tipo": "texto"
+  },
+  {
+   "texto": ". Para não perder, conecte à internet e tente de novo.",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 129,
+   "tipo": "texto"
+  },
+  {
+   "texto": "1 alteração ainda não subiu.",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 126,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "{aviso.quantidade} alterações ainda não subiram.",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 126,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "ela será descartada",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 129,
+   "tipo": "texto"
+  },
+  {
+   "texto": "elas serão descartadas",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 129,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui verificar se há alterações não enviadas. Este aparelho não deixou ler o que está guardado aqui. Se houver algo que não subiu, sair agora descarta. Para não arriscar, conecte à internet e tente de novo.",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 139,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui verificar se há alterações não enviadas.",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 139,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Saindo…",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 148,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Sair e descartar {…}",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 150,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Sair mesmo assim",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 151,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Continuar na conta",
+   "arquivo": "src/app/admin/config/sair.tsx",
+   "linha": 154,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "escrita jurídica não entra na fila offline: {url}",
+   "arquivo": "src/lib/offline/api-client.ts",
+   "linha": 139,
+   "tipo": "erro"
+  }
+ ]
+}

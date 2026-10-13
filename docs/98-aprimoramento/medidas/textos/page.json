@@ -1,0 +1,418 @@
+{
+ "rota": "page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/page.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/icone-anel.tsx"
+ ],
+ "total": 64,
+ "textos": [
+  {
+   "texto": "CICLO · a agenda que avisa quem parou de voltar",
+   "arquivo": "src/app/page.tsx",
+   "linha": 90,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Agenda e site de agendamento para quem atende com hora marcada. O CICLO calcula de quanto em quanto tempo cada cliente volta, mostra quem atrasou e te dá a mensagem pronta para chamar.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 92,
+   "tipo": "metadata/description"
+  },
+  {
+   "texto": "CICLO · a agenda que avisa quem parou de voltar",
+   "arquivo": "src/app/page.tsx",
+   "linha": 94,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Para qualquer trabalho que dependa de cliente que volta. O CICLO mostra quem sumiu, há quanto tempo, e quanto vale chamar de volta.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 95,
+   "tipo": "metadata/description"
+  },
+  {
+   "texto": "Quem sumiu tem nome",
+   "arquivo": "src/app/page.tsx",
+   "linha": 122,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "O ritmo é de cada pessoa, não uma média do salão. A lista chama primeiro quem vale mais chamar, com o texto pronto pro WhatsApp.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 124,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Sua página, sua clientela",
+   "arquivo": "src/app/page.tsx",
+   "linha": 128,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Um link para colar na bio. Quem for marcar abre no navegador, sem baixar aplicativo e sem esbarrar em nenhum concorrente pelo caminho.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 130,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "O dia fechado sem calculadora",
+   "arquivo": "src/app/page.tsx",
+   "linha": 134,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Quanto entrou e quanto sobrou, com o extrato de cada profissional. Por dia e por mês.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 135,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Crie a conta e diga o que você faz",
+   "arquivo": "src/app/page.tsx",
+   "linha": 148,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "O catálogo da sua profissão já vem pronto: serviços, duração e preço sugerido. Você ajusta o que quiser.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 149,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Traga quem você já atende",
+   "arquivo": "src/app/page.tsx",
+   "linha": 152,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Cole a lista ou escreva os nomes, com mais ou menos quando cada pessoa veio pela última vez. Quem já passou do tempo de voltar aparece na lista no mesmo dia.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 154,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Compartilhe seu link",
+   "arquivo": "src/app/page.tsx",
+   "linha": 157,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Sua página fica no ar na hora. Cada atendimento concluído afina o ritmo de cada pessoa, e a lista fica mais certeira.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 158,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Barbearia",
+   "arquivo": "src/app/page.tsx",
+   "linha": 179,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Cabelo",
+   "arquivo": "src/app/page.tsx",
+   "linha": 179,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Unhas",
+   "arquivo": "src/app/page.tsx",
+   "linha": 179,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Cílios",
+   "arquivo": "src/app/page.tsx",
+   "linha": 179,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Sobrancelhas",
+   "arquivo": "src/app/page.tsx",
+   "linha": 179,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Depilação",
+   "arquivo": "src/app/page.tsx",
+   "linha": 179,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Estética",
+   "arquivo": "src/app/page.tsx",
+   "linha": 179,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Tatuagem",
+   "arquivo": "src/app/page.tsx",
+   "linha": 179,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Faxina e diarista",
+   "arquivo": "src/app/page.tsx",
+   "linha": 180,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Eletricista",
+   "arquivo": "src/app/page.tsx",
+   "linha": 180,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Encanamento",
+   "arquivo": "src/app/page.tsx",
+   "linha": 180,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Jardinagem",
+   "arquivo": "src/app/page.tsx",
+   "linha": 180,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Psicologia",
+   "arquivo": "src/app/page.tsx",
+   "linha": 181,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Aula particular",
+   "arquivo": "src/app/page.tsx",
+   "linha": 181,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Personal trainer",
+   "arquivo": "src/app/page.tsx",
+   "linha": 181,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Banho e tosa",
+   "arquivo": "src/app/page.tsx",
+   "linha": 182,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Fotografia",
+   "arquivo": "src/app/page.tsx",
+   "linha": 182,
+   "tipo": "prop:itens"
+  },
+  {
+   "texto": "Funciona para quem trabalha por conta?",
+   "arquivo": "src/app/page.tsx",
+   "linha": 206,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Funciona, e é para quem trabalha por conta que ele mais serve: você não tem alguém olhando a agenda por você para lembrar de quem sumiu.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 208,
+   "tipo": "prop:resposta"
+  },
+  {
+   "texto": "Eu já tenho minha lista de clientes. Dá para trazer?",
+   "arquivo": "src/app/page.tsx",
+   "linha": 222,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Dá, e não precisa de planilha. Cole a lista (do bloco de notas ou de uma conversa) ou escreva os nomes, com mais ou menos quando cada pessoa veio pela última vez. Vale de memória, não precisa ser exato. No Android, dá para escolher direto dos contatos. Tem planilha? Importe o arquivo, com a coluna da última visita. É essa data que faz a lista de quem sumiu nascer cheia no primeiro dia.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 224,
+   "tipo": "prop:resposta"
+  },
+  {
+   "texto": "Em quanto tempo a lista de quem sumiu fica útil?",
+   "arquivo": "src/app/page.tsx",
+   "linha": 227,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "No mesmo dia, se você disser quando cada pessoa veio pela última vez. Sem essa data, o CICLO precisa ver cada pessoa voltar duas ou três vezes para saber o ritmo dela, e a lista começa vazia e vai enchendo conforme você atende.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 229,
+   "tipo": "prop:resposta"
+  },
+  {
+   "texto": "Quem vai marcar precisa baixar app ou criar conta?",
+   "arquivo": "src/app/page.tsx",
+   "linha": 240,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Não. A pessoa abre seu link, escolhe o serviço e o horário, e o agendamento entra na sua agenda esperando você confirmar. E a página é do seu negócio e só dele: ninguém vai parar numa lista com os seus concorrentes no caminho de marcar com você.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 242,
+   "tipo": "prop:resposta"
+  },
+  {
+   "texto": "Preciso instalar alguma coisa?",
+   "arquivo": "src/app/page.tsx",
+   "linha": 246,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Não. Abre no navegador do celular e funciona, sem treinamento e sem manual. Se quiser, dá para adicionar à tela de início e ele passa a abrir como aplicativo, em tela cheia.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 248,
+   "tipo": "prop:resposta"
+  },
+  {
+   "texto": "Entrar",
+   "arquivo": "src/app/page.tsx",
+   "linha": 318,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Quantos clientes pararam de voltar sem você notar?",
+   "arquivo": "src/app/page.tsx",
+   "linha": 345,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Para qualquer trabalho que dependa de cliente que volta. Quem for marcar abre no navegador: sem baixar app e sem ver seus concorrentes.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 381,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Criar minha conta grátis",
+   "arquivo": "src/app/page.tsx",
+   "linha": 395,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Ver funcionando, sem cadastro",
+   "arquivo": "src/app/page.tsx",
+   "linha": 434,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Ainda não quer criar conta? Veja quanto os clientes que sumiram custam por mês",
+   "arquivo": "src/app/page.tsx",
+   "linha": 447,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Veja quanto os clientes que sumiram custam por mês",
+   "arquivo": "src/app/page.tsx",
+   "linha": 448,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "O que muda no seu dia",
+   "arquivo": "src/app/page.tsx",
+   "linha": 472,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Como começa",
+   "arquivo": "src/app/page.tsx",
+   "linha": 490,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Feito para",
+   "arquivo": "src/app/page.tsx",
+   "linha": 510,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Perguntas",
+   "arquivo": "src/app/page.tsx",
+   "linha": 538,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Comece sem cartão",
+   "arquivo": "src/app/page.tsx",
+   "linha": 571,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "A base é sua: se um dia você parar de pagar, nada some.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 574,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sem prazo por enquanto.",
+   "arquivo": "src/app/page.tsx",
+   "linha": 574,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Criar minha conta",
+   "arquivo": "src/app/page.tsx",
+   "linha": 578,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Já tenho conta",
+   "arquivo": "src/app/page.tsx",
+   "linha": 581,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Preços",
+   "arquivo": "src/app/page.tsx",
+   "linha": 593,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Calculadora",
+   "arquivo": "src/app/page.tsx",
+   "linha": 598,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Termos",
+   "arquivo": "src/app/page.tsx",
+   "linha": 602,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Privacidade",
+   "arquivo": "src/app/page.tsx",
+   "linha": 606,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "· CICLO · para quem atende com hora marcada",
+   "arquivo": "src/app/page.tsx",
+   "linha": 609,
+   "tipo": "texto",
+   "tag": "span"
+  }
+ ]
+}

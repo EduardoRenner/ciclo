@@ -1,0 +1,63 @@
+{
+ "rota": "error.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/error.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/button.tsx",
+  "src/components/shell/selo.tsx",
+  "src/components/shell/tela-publica.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/toast.tsx"
+ ],
+ "total": 7,
+ "textos": [
+  {
+   "texto": "Ir para Hoje",
+   "arquivo": "src/app/error.tsx",
+   "linha": 45,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Voltar para a página do estabelecimento",
+   "arquivo": "src/app/error.tsx",
+   "linha": 45,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ir para o início",
+   "arquivo": "src/app/error.tsx",
+   "linha": 45,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Algo saiu do lugar",
+   "arquivo": "src/app/error.tsx",
+   "linha": 51,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Não consegui carregar esta tela. Foi só a exibição que falhou, seus dados estão salvos.",
+   "arquivo": "src/app/error.tsx",
+   "linha": 54,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Não consegui carregar esta tela. Nada foi marcado ainda, dá para tentar de novo.",
+   "arquivo": "src/app/error.tsx",
+   "linha": 55,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Tentar de novo",
+   "arquivo": "src/app/error.tsx",
+   "linha": 61,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

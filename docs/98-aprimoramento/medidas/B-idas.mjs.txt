@@ -1,0 +1,92 @@
+// Agente B · conta idas ao banco por requisição (Postgres LOCAL, log_min_duration_statement=0 só durante a medição).
+// Uso: node B-idas.mjs <arquivo-de-cenarios.json> <saida.json>
+// Cada cenário: { nome, method, path, body?, headers?, extras?: [ids que aparecem nos parâmetros], anon?: true }
+// Para cada cenário: MARCA-ini → 1 requisição → MARCA-resp (resposta recebida) → espera 2,5 s → MARCA-fim.
+// Idas entre ini e resp = caminho crítico; entre resp e fim = depois da resposta (after()/fire-and-forget).
+import { randomUUID } from 'node:crypto';
+import { readFileSync, writeFileSync } from 'node:fs';
+
+import { BASE, cookieHeader, execucoesEntre, idas, logsDesde, marca, ondas, parse, psql, sleep } from './B-lib-log.mjs';
+
+const IDS = { userId: '6dbcfc89-aca4-4a6e-adcd-29f9d590400a', tenantId: '320d83de-611f-48e1-9761-570863fbb10b' };
+
+const [, , arqCenarios, arqSaida] = process.argv;
+const cenarios = JSON.parse(readFileSync(arqCenarios, 'utf8'));
+const cookie = cookieHeader();
+
+function ligarLog() {
+  psql('alter system set log_min_duration_statement = 0', 'supabase_admin');
+  psql('select pg_reload_conf()', 'supabase_admin');
+}
+function desligarLog() {
+  psql('alter system reset log_min_duration_statement', 'supabase_admin');
+  psql('select pg_reload_conf()', 'supabase_admin');
+}
+
+const desde = new Date(Date.now() - 3000).toISOString();
+ligarLog();
+await sleep(1500);
+const brutos = [];
+try {
+  let n = 0;
+  for (const c of cenarios) {
+    n++;
+    const tag = `B${n}`;
+    const headers = { ...(c.anon ? {} : { cookie }), ...(c.headers || {}) };
+    if (c.method && c.method !== 'GET') {
+      headers['content-type'] ??= 'application/json';
+      headers.origin ??= BASE;
+      if (!c.semIdempotencia) headers['idempotency-key'] ??= randomUUID();
+    }
+    marca(`${tag}-INI`);
+    const t0 = performance.now();
+    const r = await fetch(BASE + c.path, { method: c.method || 'GET', headers, body: c.body ? JSON.stringify(c.body) : undefined, redirect: 'manual' });
+    const tHead = performance.now() - t0;
+    const corpo = await r.text();
+    const tTotal = performance.now() - t0;
+    marca(`${tag}-RESP`);
+    await sleep(2500);
+    marca(`${tag}-FIM`);
+    brutos.push({ tag, cenario: c, status: r.status, ttfbMs: Math.round(tHead), totalMs: Math.round(tTotal), bytes: corpo.length, corpoInicio: r.status >= 400 ? corpo.slice(0, 300) : undefined });
+    console.log(`${c.nome}: ${r.status} ${Math.round(tTotal)} ms`);
+  }
+} finally {
+  await sleep(1000);
+  desligarLog();
+}
+
+const entradas = parse(logsDesde(desde));
+const saida = [];
+for (const b of brutos) {
+  const ids = { ...IDS, extras: b.cenario.extras || [] };
+  const crit = idas(execucoesEntre(entradas, `${b.tag}-INI`, `${b.tag}-RESP`), ids);
+  const depois = idas(execucoesEntre(entradas, `${b.tag}-RESP`, `${b.tag}-FIM`), ids);
+  const nossosRest = crit.rest.filter((r) => r.dono === 'nos');
+  const indef = crit.rest.filter((r) => r.dono === 'indefinido');
+  const outros = crit.rest.filter((r) => r.dono === 'outro');
+  const todas = [...nossosRest, ...crit.auth.map((a) => ({ ...a, consultas: ['auth.getUser'] }))];
+  const on = ondas(todas);
+  saida.push({
+    nome: b.cenario.nome,
+    method: b.cenario.method || 'GET',
+    path: b.cenario.path.replace(/token=[^&]+|\/confirmar\/[^/?]+/g, (m) => m.split(/[=/]/).slice(0, -1).join(m.includes('=') ? '=' : '/') + (m.includes('=') ? '=' : '/') + '<token>'),
+    status: b.status,
+    ttfbMs: b.ttfbMs,
+    totalMs: b.totalMs,
+    bytes: b.bytes,
+    erro: b.corpoInicio,
+    idasRest: nossosRest.length,
+    idasAuth: crit.auth.length,
+    idasTotal: nossosRest.length + crit.auth.length,
+    ondasMedidas: on.length,
+    restIndefinidas: indef.length,
+    restDeOutroUsuario: outros.length,
+    depoisDaResposta: { rest: depois.rest.filter((r) => r.dono === 'nos').map((r) => r.consultas.join(',')), auth: depois.auth.length },
+    porOnda: on.map((o) => o.itens.map((i) => (i.consultas || []).join(',') + (i.papel && i.papel !== 'authenticated' ? `[${i.papel}]` : ''))),
+    indefinidas: indef.map((r) => `${r.papel}:${r.consultas.join(',')}`),
+    dbMsTotal: Math.round(nossosRest.reduce((s, r) => s + r.dur, 0) * 10) / 10,
+  });
+}
+writeFileSync(arqSaida, JSON.stringify(saida, null, 2));
+for (const s of saida)
+  console.log(`${s.nome.padEnd(34)} ${String(s.status).padEnd(4)} ttfb=${String(s.ttfbMs).padStart(5)} rest=${String(s.idasRest).padStart(3)} auth=${s.idasAuth} ondas=${String(s.ondasMedidas).padStart(3)} indef=${s.restIndefinidas} outro=${s.restDeOutroUsuario} após=${s.depoisDaResposta.rest.length}`);

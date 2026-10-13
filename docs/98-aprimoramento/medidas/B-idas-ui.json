@@ -1,0 +1,360 @@
+[
+  {
+    "nome": "Trocar de tela Hoje → Agenda (navegação suave)",
+    "http": [
+      "GET /admin/agenda (RSC)"
+    ],
+    "idasRest": 4,
+    "idasAuth": 2,
+    "idasTotal": 6,
+    "ondas": 4,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:business_hours",
+        "select:appointments+clients+services",
+        "select:professionals"
+      ]
+    ]
+  },
+  {
+    "nome": "Agenda: Confirmar (mutação + router.refresh)",
+    "http": [
+      "POST /api/v1/appointments/:id/confirm",
+      "GET /admin/agenda (RSC)"
+    ],
+    "idasRest": 10,
+    "idasAuth": 4,
+    "idasTotal": 14,
+    "ondas": 12,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "insert:idempotency_keys[service_role]"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "update:appointments"
+      ],
+      [
+        "insert:audit_log[service_role]"
+      ],
+      [
+        "update:idempotency_keys[service_role]"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:business_hours",
+        "select:appointments+clients+services",
+        "select:professionals"
+      ]
+    ]
+  },
+  {
+    "nome": "Comanda: Adicionar item (POST + GET do ticket)",
+    "http": [
+      "POST /api/v1/tickets/:id/items",
+      "GET /api/v1/tickets/:id"
+    ],
+    "idasRest": 16,
+    "idasAuth": 3,
+    "idasTotal": 19,
+    "ondas": 17,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:tenants+professions"
+      ],
+      [
+        "select:tenant_modules"
+      ],
+      [
+        "insert:idempotency_keys[service_role]"
+      ],
+      [
+        "select:tickets"
+      ],
+      [
+        "select:service_products+products",
+        "select:services"
+      ],
+      [
+        "insert:ticket_items"
+      ],
+      [
+        "select:ticket_items",
+        "select:tickets"
+      ],
+      [
+        "update:tickets"
+      ],
+      [
+        "insert:audit_log[service_role]"
+      ],
+      [
+        "update:idempotency_keys[service_role]"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:ticket_items"
+      ],
+      [
+        "select:tickets"
+      ]
+    ]
+  },
+  {
+    "nome": "Comanda: Fechar comanda (POST close + router.refresh)",
+    "http": [
+      "POST /api/v1/tickets/:id/close",
+      "GET /admin/comanda/:id (RSC)",
+      "GET /admin/config/taxas (RSC)"
+    ],
+    "idasRest": 26,
+    "idasAuth": 4,
+    "idasTotal": 30,
+    "ondas": 24,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "insert:idempotency_keys[service_role]"
+      ],
+      [
+        "select:tickets",
+        "select:ticket_items"
+      ],
+      [
+        "select:tenants"
+      ],
+      [
+        "select:professional_services"
+      ],
+      [
+        "select:professionals"
+      ],
+      [
+        "update:ticket_items"
+      ],
+      [
+        "select:professional_services"
+      ],
+      [
+        "select:professionals"
+      ],
+      [
+        "update:ticket_items"
+      ],
+      [
+        "select:services"
+      ],
+      [
+        "update:tickets"
+      ],
+      [
+        "select:ticket_items"
+      ],
+      [
+        "select:service_products"
+      ],
+      [
+        "select:monthly_profit"
+      ],
+      [
+        "insert:audit_log[service_role]"
+      ],
+      [
+        "update:idempotency_keys[service_role]"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:tickets",
+        "select:tenants+professions",
+        "select:ticket_items",
+        "select:products",
+        "select:services",
+        "select:tenant_modules"
+      ],
+      [
+        "select:tenants"
+      ],
+      [
+        "auth.getUser"
+      ]
+    ]
+  },
+  {
+    "nome": "Entrar pela tela (POST login + push + refresh)",
+    "http": [
+      "POST /api/v1/auth/login",
+      "GET /admin/hoje (RSC)",
+      "GET /admin/hoje (RSC)",
+      "GET /admin/hoje (RSC)",
+      "GET /admin/agenda (RSC)",
+      "GET /admin/recuperar (RSC)",
+      "GET /admin/clientes (RSC)",
+      "GET /admin/agenda/novo (RSC)",
+      "GET /demo-salao-encanto (RSC)",
+      "GET /admin/caixa (RSC)",
+      "GET /admin/campanhas/nova (RSC)"
+    ],
+    "idasRest": 57,
+    "idasAuth": 12,
+    "idasTotal": 69,
+    "ondas": 16,
+    "porOnda": [
+      [
+        "rpc:consumir_rate_limit[service_role]"
+      ],
+      [
+        "rpc:consumir_rate_limit[service_role]"
+      ],
+      [
+        "select:memberships+tenants"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:clients"
+      ],
+      [
+        "select:products",
+        "select:appointments+clients+health_records",
+        "select:tenants+professions",
+        "select:tenants",
+        "select:services",
+        "select:appointments",
+        "select:loyalty_entries",
+        "select:stock_moves",
+        "select:appointments+clients",
+        "select:v_recover_revenue",
+        "select:messages",
+        "select:quotes+clients",
+        "select:tenants",
+        "select:client_subscriptions",
+        "rpc:resumo_central_de_acoes",
+        "select:client_cycles",
+        "select:client_cycles",
+        "select:cycle_predictions",
+        "select:clients",
+        "select:tenant_modules",
+        "select:service_products+products",
+        "select:packages",
+        "select:client_cycles",
+        "select:stock_moves",
+        "auth.getUser",
+        "select:memberships+tenants+professions",
+        "select:clients",
+        "select:appointments",
+        "select:stock_moves",
+        "select:appointments+clients+health_records",
+        "select:products",
+        "select:client_subscriptions",
+        "select:tenants",
+        "select:client_cycles",
+        "select:clients",
+        "select:tenants",
+        "select:services",
+        "select:loyalty_entries",
+        "select:client_cycles",
+        "rpc:resumo_central_de_acoes",
+        "select:cycle_predictions",
+        "select:tenants+professions",
+        "select:messages",
+        "select:v_recover_revenue",
+        "select:packages",
+        "select:appointments+clients",
+        "select:client_cycles",
+        "select:stock_moves",
+        "select:quotes+clients",
+        "select:service_products+products",
+        "select:tenant_modules",
+        "select:product_events",
+        "auth.getUser",
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:product_events"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ]
+    ]
+  }
+]

@@ -1,0 +1,28 @@
+{
+ "rota": "layout.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/layout.tsx",
+  "src/app/globals.css",
+  "src/components/shell/registrar-service-worker.tsx",
+  "src/components/shell/configurar-status-bar-nativo.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/lib/app-url.ts"
+ ],
+ "total": 2,
+ "textos": [
+  {
+   "texto": "%s · CICLO",
+   "arquivo": "src/app/layout.tsx",
+   "linha": 61,
+   "tipo": "metadata/template"
+  },
+  {
+   "texto": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+   "arquivo": "src/app/layout.tsx",
+   "linha": 63,
+   "tipo": "metadata/description"
+  }
+ ]
+}

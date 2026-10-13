@@ -1,0 +1,80 @@
+{
+ "rota": "(public)/links/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(public)/links/page.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/card.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 10,
+ "textos": [
+  {
+   "texto": "Retenção de clientes para quem tem agenda",
+   "arquivo": "src/app/(public)/links/page.tsx",
+   "linha": 27,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Mostra quem parou de voltar, pelo nome, e deixa o texto pronto pra chamar de volta. Faça a conta do que você deixou de faturar.",
+   "arquivo": "src/app/(public)/links/page.tsx",
+   "linha": 28,
+   "tipo": "metadata/description"
+  },
+  {
+   "texto": "CICLO · Retenção de clientes",
+   "arquivo": "src/app/(public)/links/page.tsx",
+   "linha": 31,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Quanto você deixou de faturar com quem parou de voltar? A conta sai em um minuto.",
+   "arquivo": "src/app/(public)/links/page.tsx",
+   "linha": 32,
+   "tipo": "metadata/description"
+  },
+  {
+   "texto": "Seu sistema de retenção de clientes",
+   "arquivo": "src/app/(public)/links/page.tsx",
+   "linha": 55,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Mostra quem parou de voltar, pelo nome, e deixa o texto pronto pra chamar de volta.",
+   "arquivo": "src/app/(public)/links/page.tsx",
+   "linha": 57,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Fazer a conta",
+   "arquivo": "src/app/(public)/links/page.tsx",
+   "linha": 80,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Já tenho conta",
+   "arquivo": "src/app/(public)/links/page.tsx",
+   "linha": 125,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Termos",
+   "arquivo": "src/app/(public)/links/page.tsx",
+   "linha": 129,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Privacidade",
+   "arquivo": "src/app/(public)/links/page.tsx",
+   "linha": 133,
+   "tipo": "link",
+   "tag": "Link"
+  }
+ ]
+}

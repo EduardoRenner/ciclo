@@ -1,0 +1,143 @@
+// Agente B · idas ao banco por AÇÃO (API real, sessão do dono demo-salao-encanto, banco LOCAL).
+// Encadeia: criar agendamento → confirmar → chegou → concluir (abre comanda) → abrir comanda (tela)
+// → adicionar item → receber → faltou (outro agendamento) → chamar cliente (manual) → agendar público
+// → abrir link de confirmação + confirmar → entrar (login).
+// Uso: CICLO_DEMO_SENHA=... node B-idas-acoes.mjs <saida.json> <hora-base-BRT ex. 15>
+// Não grava cookie, token nem senha na saída.
+import { createHmac, randomUUID } from 'node:crypto';
+import { readFileSync, writeFileSync } from 'node:fs';
+
+import { BASE, cookieHeader, execucoesEntre, idas, logsDesde, marca, ondas, parse, psql, sleep } from './B-lib-log.mjs';
+
+const IDS = { userId: '6dbcfc89-aca4-4a6e-adcd-29f9d590400a', tenantId: '320d83de-611f-48e1-9761-570863fbb10b' };
+const SLUG = 'demo-salao-encanto';
+const CLIENTE = 'b5a85dd1-6bb6-4393-b416-0c39f4ecc224';
+const CLIENTE2 = '17a6b782-839c-40a7-9681-06d60e7d4e62';
+const SERVICO = '083649fa-03b0-4ed3-86c1-77f39b978aee'; // Corte feminino 60 min
+const PROF = 'b242a39c-3edd-4976-bb54-bf8ae6137390';
+const PROF2 = 'ce860c4b-e3e0-4b32-b509-fb706f5a77b7';
+const PRODUTO = '5113fa5a-f227-472d-8370-0f853fea496e';
+
+const [, , arqSaida, horaBase = '15', dia = '2026-10-13'] = process.argv;
+const cookie = cookieHeader();
+
+// Lê a chave de assinatura do .env.local SEM imprimir (só para gerar o link de confirmação local).
+function chaveLocal() {
+  const env = readFileSync('C:/Users/Usuario/.claude/code/ciclo-aprimoramento/.env.local', 'utf8');
+  const get = (k) => new RegExp(`^${k}=(.*)$`, 'm').exec(env)?.[1]?.trim().replace(/^"|"$/g, '');
+  return get('PUBLIC_LINK_SIGNING_KEY') || get('CRON_SECRET');
+}
+function tokenConfirmacao(id) {
+  const exp = Date.now() + 72 * 3_600_000;
+  const payload = `confirmacao_agendamento.${id}.${exp}`;
+  const ass = createHmac('sha256', chaveLocal()).update(payload, 'utf8').digest('hex');
+  return Buffer.from(`${payload}.${ass}`, 'utf8').toString('base64url');
+}
+
+const passos = [];
+let n = 0;
+async function medir(nome, method, path, body, { anon = false, extras = [], semCorpo = false } = {}) {
+  n++;
+  const tag = `BA${n}`;
+  const headers = anon ? {} : { cookie };
+  if (method !== 'GET') {
+    headers['content-type'] = 'application/json';
+    headers.origin = BASE;
+    headers['idempotency-key'] = randomUUID();
+  }
+  marca(`${tag}-INI`);
+  const t0 = performance.now();
+  const r = await fetch(BASE + path, { method, headers, body: body && !semCorpo ? JSON.stringify(body) : undefined, redirect: 'manual' });
+  const ttfb = performance.now() - t0;
+  const texto = await r.text();
+  const total = performance.now() - t0;
+  marca(`${tag}-RESP`);
+  await sleep(2500);
+  marca(`${tag}-FIM`);
+  let json = null;
+  try {
+    json = JSON.parse(texto);
+  } catch {}
+  passos.push({ tag, nome, method, path: path.replace(/\/confirmar\/[^/?]+/, '/confirmar/<token>').replace(/confirm\/[^/?]+/, 'confirm/<token>'), status: r.status, ttfbMs: Math.round(ttfb), totalMs: Math.round(total), extras, erro: r.status >= 400 ? texto.slice(0, 300) : undefined });
+  console.log(`${nome}: ${r.status} ${Math.round(total)} ms`);
+  return json;
+}
+
+function ligarLog() {
+  psql('alter system set log_min_duration_statement = 0', 'supabase_admin');
+  psql('select pg_reload_conf()', 'supabase_admin');
+}
+function desligarLog() {
+  psql('alter system reset log_min_duration_statement', 'supabase_admin');
+  psql('select pg_reload_conf()', 'supabase_admin');
+}
+
+const desde = new Date(Date.now() - 3000).toISOString();
+ligarLog();
+await sleep(1500);
+try {
+  const h = Number(horaBase);
+  const hh = (x) => String(x).padStart(2, '0');
+  const c1 = await medir('criar agendamento (POST /appointments)', 'POST', '/api/v1/appointments', { clientId: CLIENTE, serviceId: SERVICO, professionalId: PROF, startsAt: `${dia}T${hh(h)}:00:00-03:00` }, { extras: [CLIENTE] });
+  const a1 = c1?.data?.appointment?.id ?? c1?.appointment?.id;
+  const c2 = await medir('criar agendamento 2', 'POST', '/api/v1/appointments', { clientId: CLIENTE2, serviceId: SERVICO, professionalId: PROF2, startsAt: `${dia}T${hh(h)}:00:00-03:00` }, { extras: [CLIENTE2] });
+  const a2 = c2?.data?.appointment?.id ?? c2?.appointment?.id;
+  if (!a1 || !a2) throw new Error('criação falhou: ' + JSON.stringify(c1).slice(0, 300));
+  await medir('confirmar (POST /confirm)', 'POST', `/api/v1/appointments/${a1}/confirm`, {}, { extras: [a1] });
+  await medir('chegou (POST /arrive)', 'POST', `/api/v1/appointments/${a1}/arrive`, {}, { extras: [a1] });
+  const conc = await medir('concluir/abrir comanda (POST /complete)', 'POST', `/api/v1/appointments/${a1}/complete`, {}, { extras: [a1] });
+  const ticket = conc?.data?.ticket?.id ?? conc?.ticket?.id;
+  if (!ticket) throw new Error('sem ticket: ' + JSON.stringify(conc).slice(0, 300));
+  await medir('abrir comanda (GET /admin/comanda/[id])', 'GET', `/admin/comanda/${ticket}`, null, { extras: [ticket] });
+  await medir('adicionar item (POST /tickets/[id]/items)', 'POST', `/api/v1/tickets/${ticket}/items`, { serviceId: SERVICO, professionalId: PROF, qty: 1 }, { extras: [ticket] });
+  await medir('receber (POST /tickets/[id]/close)', 'POST', `/api/v1/tickets/${ticket}/close`, { paymentMethod: 'pix' }, { extras: [ticket] });
+  await medir('confirmar 2 (antes do faltou)', 'POST', `/api/v1/appointments/${a2}/confirm`, {}, { extras: [a2] });
+  await medir('faltou (POST /no-show)', 'POST', `/api/v1/appointments/${a2}/no-show`, {}, { extras: [a2] });
+  await medir('chamar cliente (POST /cycle/recover/manual)', 'POST', '/api/v1/cycle/recover/manual', { clientId: CLIENTE, serviceId: SERVICO }, { extras: [CLIENTE] });
+  // Público: agenda um horário livre no dia seguinte e confirma pelo link.
+  const amanha = '2026-10-15';
+  const pub = await medir('agendar público (POST /public/[slug]/book)', 'POST', `/api/v1/public/${SLUG}/book`, { serviceId: SERVICO, professionalId: PROF2, startsAt: `${amanha}T${hh(h + 1)}:00:00-03:00`, name: 'Teste Medição B', phone: '11988887777' }, { anon: true, extras: [SLUG] });
+  const ap = pub?.data?.appointmentId ?? pub?.data?.appointment?.id;
+  if (ap) {
+    const tk = tokenConfirmacao(ap);
+    await medir('abrir link de confirmação (GET /confirmar/[token])', 'GET', `/confirmar/${tk}`, null, { anon: true, extras: [ap] });
+    await medir('confirmar por link (POST /public/appointments/confirm/[token])', 'POST', `/api/v1/public/appointments/confirm/${tk}`, {}, { anon: true, extras: [ap] });
+  } else console.log('agendamento público sem id na resposta:', JSON.stringify(pub).slice(0, 300));
+  if (process.env.CICLO_DEMO_SENHA)
+    await medir('entrar (POST /auth/login)', 'POST', '/api/v1/auth/login', { email: 'dono-demo-salao-encanto@ciclo.app', password: process.env.CICLO_DEMO_SENHA }, { anon: true, extras: ['login:', IDS.userId, 'dono-demo-salao-encanto'] });
+} finally {
+  await sleep(1000);
+  desligarLog();
+}
+
+const entradas = parse(logsDesde(desde));
+const saida = [];
+for (const p of passos) {
+  const ids = { ...IDS, extras: p.extras };
+  const crit = idas(execucoesEntre(entradas, `${p.tag}-INI`, `${p.tag}-RESP`), ids);
+  const depois = idas(execucoesEntre(entradas, `${p.tag}-RESP`, `${p.tag}-FIM`), ids);
+  const nossos = crit.rest.filter((r) => r.dono === 'nos');
+  const todas = [...nossos, ...crit.auth.map((a) => ({ ...a, consultas: ['auth.getUser'] }))];
+  const on = ondas(todas);
+  saida.push({
+    nome: p.nome,
+    method: p.method,
+    path: p.path,
+    status: p.status,
+    ttfbMs: p.ttfbMs,
+    totalMs: p.totalMs,
+    erro: p.erro,
+    idasRest: nossos.length,
+    idasAuth: crit.auth.length,
+    idasTotal: nossos.length + crit.auth.length,
+    ondasMedidas: on.length,
+    porOnda: on.map((o) => o.itens.map((i) => (i.consultas || []).join(',') + (i.papel && i.papel !== 'authenticated' ? `[${i.papel}]` : ''))),
+    restIndefinidas: crit.rest.filter((r) => r.dono === 'indefinido').map((r) => `${r.papel}:${r.consultas.join(',')}`),
+    restDeOutroUsuario: crit.rest.filter((r) => r.dono === 'outro').length,
+    depoisDaResposta: depois.rest.filter((r) => r.dono === 'nos').map((r) => r.consultas.join(',')),
+    dbMsTotal: Math.round(nossos.reduce((s, r) => s + r.dur, 0) * 10) / 10,
+  });
+}
+writeFileSync(arqSaida, JSON.stringify(saida, null, 2));
+for (const s of saida)
+  console.log(`${s.nome.padEnd(58)} ${String(s.status).padEnd(4)} ${String(s.totalMs).padStart(5)}ms rest=${String(s.idasRest).padStart(3)} auth=${s.idasAuth} ondas=${String(s.ondasMedidas).padStart(3)} indef=${s.restIndefinidas.length} após=${s.depoisDaResposta.length}`);

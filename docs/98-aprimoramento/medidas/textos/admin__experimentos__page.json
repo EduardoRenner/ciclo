@@ -1,0 +1,288 @@
+{
+ "rota": "admin/experimentos/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/experimentos/page.tsx",
+  "src/app/admin/experimentos/experimentos.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/card.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/button.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/section-header.tsx",
+  "src/components/ui/select.tsx",
+  "src/components/ui/toast.tsx"
+ ],
+ "total": 42,
+ "textos": [
+  {
+   "texto": "Testes",
+   "arquivo": "src/app/admin/experimentos/page.tsx",
+   "linha": 18,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Testes",
+   "arquivo": "src/app/admin/experimentos/page.tsx",
+   "linha": 31,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Você não tem acesso aos testes",
+   "arquivo": "src/app/admin/experimentos/page.tsx",
+   "linha": 35,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Eles mostram o movimento e o valor atendido do negócio. Peça ao dono se precisar.",
+   "arquivo": "src/app/admin/experimentos/page.tsx",
+   "linha": 36,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Voltar para Hoje",
+   "arquivo": "src/app/admin/experimentos/page.tsx",
+   "linha": 37,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Testes",
+   "arquivo": "src/app/admin/experimentos/page.tsx",
+   "linha": 50,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Mude uma coisa por alguns dias e compare com os mesmos dias de antes. É teste prático, não prova.",
+   "arquivo": "src/app/admin/experimentos/page.tsx",
+   "linha": 51,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "terça",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 18,
+   "tipo": "texto"
+  },
+  {
+   "texto": "sábado",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 18,
+   "tipo": "texto"
+  },
+  {
+   "texto": "quantos atendimentos",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 22,
+   "tipo": "prop:atendimentos"
+  },
+  {
+   "texto": "valor atendido",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 23,
+   "tipo": "prop:atendido_cents"
+  },
+  {
+   "texto": "Não consegui começar o teste.",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 62,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Teste guardado",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 66,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "O antes já está anotado. O resultado sai quando o teste acabar.",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 66,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 70,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui cancelar",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 82,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente de novo em instantes.",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 82,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Teste cancelado",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 85,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui cancelar",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 88,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Sem conexão agora. Nada mudou.",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 88,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Começar um teste",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 99,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O que você vai mudar?",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 102,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Por exemplo: \"abrir a quinta até as 21h\" ou \"postar a agenda todo domingo\".",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 103,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "O que olhar",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 109,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Quantos atendimentos",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 110,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Valor atendido",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 111,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Só um dia da semana?",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 114,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Se a mudança é num dia só, compare só esse dia: os outros diluem o efeito.",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 115,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Todos os dias",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 120,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Só {d}",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 123,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Começa em",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 128,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Por quanto tempo",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 129,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "{d} dias",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 132,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Começar o teste",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 144,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Seus testes",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 151,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Nenhum teste ainda",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 157,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Quando você mudar alguma coisa no negócio, registre aqui antes. Assim dá para saber se fez diferença.",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 158,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Começar um teste",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 169,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Ver o mês",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 172,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "{e.dias} dias a partir de",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 184,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· só {DIAS_DA_SEMANA[e.weekday]}",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 185,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Cancelar teste",
+   "arquivo": "src/app/admin/experimentos/experimentos.tsx",
+   "linha": 191,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

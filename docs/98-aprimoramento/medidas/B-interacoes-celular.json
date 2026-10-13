@@ -1,0 +1,793 @@
+{
+  "perfil": "celular",
+  "quando": "2026-10-13T05:05:50.698Z",
+  "interacoes": {
+    "Hoje: abrir agendamento": [
+      {
+        "nome": "Hoje: abrir agendamento",
+        "primeiraMudancaMs": 100,
+        "primeiraMudancaDesdeArmarMs": 100,
+        "alvoReagiuMs": null,
+        "inpMs": "<16",
+        "finalMs": 176,
+        "posts": []
+      },
+      {
+        "nome": "Hoje: abrir agendamento",
+        "primeiraMudancaMs": 104,
+        "primeiraMudancaDesdeArmarMs": 151,
+        "alvoReagiuMs": null,
+        "inpMs": 144,
+        "finalMs": 159,
+        "posts": []
+      },
+      {
+        "nome": "Hoje: abrir agendamento",
+        "primeiraMudancaMs": 173,
+        "primeiraMudancaDesdeArmarMs": 222,
+        "alvoReagiuMs": null,
+        "inpMs": 216,
+        "finalMs": 234,
+        "posts": []
+      },
+      {
+        "nome": "Hoje: abrir agendamento",
+        "primeiraMudancaMs": 151,
+        "primeiraMudancaDesdeArmarMs": 197,
+        "alvoReagiuMs": null,
+        "inpMs": 200,
+        "finalMs": 177,
+        "posts": []
+      },
+      {
+        "nome": "Hoje: abrir agendamento",
+        "primeiraMudancaMs": -34,
+        "primeiraMudancaDesdeArmarMs": 46,
+        "alvoReagiuMs": null,
+        "inpMs": 216,
+        "finalMs": 232,
+        "posts": []
+      }
+    ],
+    "Trocar de tela: Hoje → Agenda": [
+      {
+        "nome": "Trocar de tela: Hoje → Agenda",
+        "primeiraMudancaMs": 401,
+        "primeiraMudancaDesdeArmarMs": 457,
+        "alvoReagiuMs": null,
+        "inpMs": 56,
+        "finalMs": 2002,
+        "posts": [],
+        "alertas": "Agenda · CICLO"
+      },
+      {
+        "nome": "Trocar de tela: Hoje → Agenda",
+        "primeiraMudancaMs": 516,
+        "primeiraMudancaDesdeArmarMs": 574,
+        "alvoReagiuMs": null,
+        "inpMs": 80,
+        "finalMs": 1009,
+        "posts": [],
+        "alertas": "Agenda · CICLO"
+      },
+      {
+        "nome": "Trocar de tela: Hoje → Agenda",
+        "primeiraMudancaMs": 344,
+        "primeiraMudancaDesdeArmarMs": 398,
+        "alvoReagiuMs": null,
+        "inpMs": 96,
+        "finalMs": 830,
+        "posts": [],
+        "alertas": "Agenda · CICLO"
+      },
+      {
+        "nome": "Trocar de tela: Hoje → Agenda",
+        "primeiraMudancaMs": 81,
+        "primeiraMudancaDesdeArmarMs": 119,
+        "alvoReagiuMs": null,
+        "inpMs": 48,
+        "finalMs": 1177,
+        "posts": [],
+        "alertas": "Agenda · CICLO"
+      },
+      {
+        "nome": "Trocar de tela: Hoje → Agenda",
+        "primeiraMudancaMs": 232,
+        "primeiraMudancaDesdeArmarMs": 289,
+        "alvoReagiuMs": null,
+        "inpMs": 48,
+        "finalMs": 1145,
+        "posts": [],
+        "alertas": "Agenda · CICLO"
+      }
+    ],
+    "Agenda: trocar de dia": [
+      {
+        "nome": "Agenda: trocar de dia",
+        "primeiraMudancaMs": 1025,
+        "primeiraMudancaDesdeArmarMs": 1071,
+        "alvoReagiuMs": null,
+        "inpMs": 64,
+        "finalMs": 1032,
+        "posts": [],
+        "alertas": "Agenda · CICLO"
+      },
+      {
+        "nome": "Agenda: trocar de dia",
+        "primeiraMudancaMs": 354,
+        "primeiraMudancaDesdeArmarMs": 396,
+        "alvoReagiuMs": null,
+        "inpMs": 56,
+        "finalMs": 356,
+        "posts": [],
+        "alertas": "Agenda · CICLO"
+      },
+      {
+        "nome": "Agenda: trocar de dia",
+        "primeiraMudancaMs": 380,
+        "primeiraMudancaDesdeArmarMs": 405,
+        "alvoReagiuMs": null,
+        "inpMs": 40,
+        "finalMs": 390,
+        "posts": [],
+        "alertas": "Agenda · CICLO"
+      },
+      {
+        "nome": "Agenda: trocar de dia",
+        "primeiraMudancaMs": 899,
+        "primeiraMudancaDesdeArmarMs": 952,
+        "alvoReagiuMs": null,
+        "inpMs": 40,
+        "finalMs": 909,
+        "posts": [],
+        "alertas": "Agenda · CICLO"
+      },
+      {
+        "nome": "Agenda: trocar de dia",
+        "primeiraMudancaMs": 516,
+        "primeiraMudancaDesdeArmarMs": 584,
+        "alvoReagiuMs": null,
+        "inpMs": 48,
+        "finalMs": 530,
+        "posts": [],
+        "alertas": "Agenda · CICLO"
+      }
+    ],
+    "Agenda: Confirmar agendamento": [
+      {
+        "nome": "Agenda: Confirmar agendamento",
+        "primeiraMudancaMs": 62,
+        "primeiraMudancaDesdeArmarMs": 97,
+        "alvoReagiuMs": 62,
+        "inpMs": 104,
+        "finalMs": 1135,
+        "posts": [
+          "/api/v1/appointments/:id/confirm"
+        ]
+      },
+      {
+        "nome": "Agenda: Confirmar agendamento",
+        "primeiraMudancaMs": 34,
+        "primeiraMudancaDesdeArmarMs": 193,
+        "alvoReagiuMs": 34,
+        "inpMs": 64,
+        "finalMs": 1445,
+        "posts": [
+          "/api/v1/appointments/:id/confirm"
+        ]
+      },
+      {
+        "nome": "Agenda: Confirmar agendamento",
+        "primeiraMudancaMs": 150,
+        "primeiraMudancaDesdeArmarMs": 217,
+        "alvoReagiuMs": 150,
+        "inpMs": 184,
+        "finalMs": 566,
+        "posts": [
+          "/api/v1/appointments/:id/confirm"
+        ]
+      },
+      {
+        "nome": "Agenda: Confirmar agendamento",
+        "primeiraMudancaMs": 21,
+        "primeiraMudancaDesdeArmarMs": 148,
+        "alvoReagiuMs": 21,
+        "inpMs": 56,
+        "finalMs": 981,
+        "posts": [
+          "/api/v1/appointments/:id/confirm"
+        ]
+      },
+      {
+        "nome": "Agenda: Confirmar agendamento",
+        "primeiraMudancaMs": 122,
+        "primeiraMudancaDesdeArmarMs": 159,
+        "alvoReagiuMs": 122,
+        "inpMs": 152,
+        "finalMs": 654,
+        "posts": [
+          "/api/v1/appointments/:id/confirm"
+        ]
+      }
+    ],
+    "Clientes: buscar \"Isa\"": [
+      {
+        "nome": "Clientes: buscar \"Isa\"",
+        "inpMs": 40,
+        "primeiraMudancaMs": 59,
+        "finalMs": 386,
+        "obs": "medido do início da digitação (3 teclas, 80 ms entre elas)"
+      },
+      {
+        "nome": "Clientes: buscar \"Isa\"",
+        "inpMs": 240,
+        "primeiraMudancaMs": 243,
+        "finalMs": 579,
+        "obs": "medido do início da digitação (3 teclas, 80 ms entre elas)"
+      },
+      {
+        "nome": "Clientes: buscar \"Isa\"",
+        "inpMs": 352,
+        "primeiraMudancaMs": 349,
+        "finalMs": 717,
+        "obs": "medido do início da digitação (3 teclas, 80 ms entre elas)"
+      },
+      {
+        "nome": "Clientes: buscar \"Isa\"",
+        "inpMs": 56,
+        "primeiraMudancaMs": 97,
+        "finalMs": 523,
+        "obs": "medido do início da digitação (3 teclas, 80 ms entre elas)"
+      },
+      {
+        "nome": "Clientes: buscar \"Isa\"",
+        "inpMs": 216,
+        "primeiraMudancaMs": 223,
+        "finalMs": 603,
+        "obs": "medido do início da digitação (3 teclas, 80 ms entre elas)"
+      }
+    ],
+    "Recuperar: filtro \"Atrasadas\"": [
+      {
+        "nome": "Recuperar: filtro \"Atrasadas\"",
+        "primeiraMudancaMs": 33,
+        "primeiraMudancaDesdeArmarMs": 83,
+        "alvoReagiuMs": null,
+        "inpMs": 64,
+        "finalMs": 50,
+        "posts": []
+      },
+      {
+        "nome": "Recuperar: filtro \"Atrasadas\"",
+        "primeiraMudancaMs": 55,
+        "primeiraMudancaDesdeArmarMs": 89,
+        "alvoReagiuMs": null,
+        "inpMs": 80,
+        "finalMs": 82,
+        "posts": []
+      },
+      {
+        "nome": "Recuperar: filtro \"Atrasadas\"",
+        "primeiraMudancaMs": -100,
+        "primeiraMudancaDesdeArmarMs": 136,
+        "alvoReagiuMs": null,
+        "inpMs": 176,
+        "finalMs": 157,
+        "posts": []
+      },
+      {
+        "nome": "Recuperar: filtro \"Atrasadas\"",
+        "primeiraMudancaMs": 29,
+        "primeiraMudancaDesdeArmarMs": 86,
+        "alvoReagiuMs": null,
+        "inpMs": 56,
+        "finalMs": 53,
+        "posts": []
+      },
+      {
+        "nome": "Recuperar: filtro \"Atrasadas\"",
+        "primeiraMudancaMs": 71,
+        "primeiraMudancaDesdeArmarMs": 194,
+        "alvoReagiuMs": null,
+        "inpMs": 96,
+        "finalMs": 90,
+        "posts": []
+      }
+    ],
+    "Comanda: Adicionar item": [
+      {
+        "nome": "Comanda: Adicionar item",
+        "primeiraMudancaMs": 63,
+        "primeiraMudancaDesdeArmarMs": 106,
+        "alvoReagiuMs": 63,
+        "inpMs": 96,
+        "finalMs": 727,
+        "posts": [
+          "/api/v1/tickets/:id/items"
+        ]
+      },
+      {
+        "nome": "Comanda: Adicionar item",
+        "primeiraMudancaMs": -32,
+        "primeiraMudancaDesdeArmarMs": 34,
+        "alvoReagiuMs": 76,
+        "inpMs": 104,
+        "finalMs": 722,
+        "posts": [
+          "/api/v1/tickets/:id/items"
+        ]
+      },
+      {
+        "nome": "Comanda: Adicionar item",
+        "primeiraMudancaMs": 24,
+        "primeiraMudancaDesdeArmarMs": 78,
+        "alvoReagiuMs": 24,
+        "inpMs": 64,
+        "finalMs": 723,
+        "posts": [
+          "/api/v1/tickets/:id/items"
+        ]
+      },
+      {
+        "nome": "Comanda: Adicionar item",
+        "primeiraMudancaMs": 37,
+        "primeiraMudancaDesdeArmarMs": 82,
+        "alvoReagiuMs": 37,
+        "inpMs": 64,
+        "finalMs": 2059,
+        "posts": [
+          "/api/v1/tickets/:id/items"
+        ]
+      },
+      {
+        "nome": "Comanda: Adicionar item",
+        "primeiraMudancaMs": 43,
+        "primeiraMudancaDesdeArmarMs": 88,
+        "alvoReagiuMs": 43,
+        "inpMs": 64,
+        "finalMs": 682,
+        "posts": [
+          "/api/v1/tickets/:id/items"
+        ]
+      }
+    ],
+    "Comanda: Fechar comanda (receber)": [
+      {
+        "nome": "Comanda: Fechar comanda (receber)",
+        "primeiraMudancaMs": 22,
+        "primeiraMudancaDesdeArmarMs": 71,
+        "alvoReagiuMs": 22,
+        "inpMs": 64,
+        "finalMs": 1260,
+        "posts": [
+          "/api/v1/tickets/:id/close"
+        ]
+      },
+      {
+        "nome": "Comanda: Fechar comanda (receber)",
+        "primeiraMudancaMs": 29,
+        "primeiraMudancaDesdeArmarMs": 72,
+        "alvoReagiuMs": 29,
+        "inpMs": 48,
+        "finalMs": 1790,
+        "posts": [
+          "/api/v1/tickets/:id/close"
+        ]
+      },
+      {
+        "nome": "Comanda: Fechar comanda (receber)",
+        "primeiraMudancaMs": 56,
+        "primeiraMudancaDesdeArmarMs": 120,
+        "alvoReagiuMs": 56,
+        "inpMs": 96,
+        "finalMs": 761,
+        "posts": [
+          "/api/v1/tickets/:id/close"
+        ]
+      },
+      {
+        "nome": "Comanda: Fechar comanda (receber)",
+        "primeiraMudancaMs": 33,
+        "primeiraMudancaDesdeArmarMs": 78,
+        "alvoReagiuMs": 33,
+        "inpMs": 72,
+        "finalMs": 619,
+        "posts": [
+          "/api/v1/tickets/:id/close"
+        ]
+      },
+      {
+        "nome": "Comanda: Fechar comanda (receber)",
+        "primeiraMudancaMs": 44,
+        "primeiraMudancaDesdeArmarMs": 85,
+        "alvoReagiuMs": 44,
+        "inpMs": 72,
+        "finalMs": 508,
+        "posts": [
+          "/api/v1/tickets/:id/close"
+        ]
+      }
+    ],
+    "Público: escolher serviço": [
+      {
+        "nome": "Público: escolher serviço",
+        "primeiraMudancaMs": -99,
+        "primeiraMudancaDesdeArmarMs": 101,
+        "alvoReagiuMs": 92,
+        "inpMs": 128,
+        "finalMs": 106,
+        "posts": []
+      },
+      {
+        "nome": "Público: escolher serviço",
+        "primeiraMudancaMs": 47,
+        "primeiraMudancaDesdeArmarMs": 138,
+        "alvoReagiuMs": 47,
+        "inpMs": 80,
+        "finalMs": 197,
+        "posts": []
+      },
+      {
+        "nome": "Público: escolher serviço",
+        "primeiraMudancaMs": 54,
+        "primeiraMudancaDesdeArmarMs": 116,
+        "alvoReagiuMs": 54,
+        "inpMs": 88,
+        "finalMs": 277,
+        "posts": []
+      },
+      {
+        "nome": "Público: escolher serviço",
+        "primeiraMudancaMs": -61,
+        "primeiraMudancaDesdeArmarMs": 116,
+        "alvoReagiuMs": 44,
+        "inpMs": 88,
+        "finalMs": 96,
+        "posts": []
+      },
+      {
+        "nome": "Público: escolher serviço",
+        "primeiraMudancaMs": 36,
+        "primeiraMudancaDesdeArmarMs": 110,
+        "alvoReagiuMs": 36,
+        "inpMs": 56,
+        "finalMs": 178,
+        "posts": []
+      }
+    ],
+    "Novo agendamento: Confirmar": [
+      {
+        "nome": "Novo agendamento: Confirmar",
+        "primeiraMudancaMs": 41,
+        "primeiraMudancaDesdeArmarMs": 101,
+        "alvoReagiuMs": 41,
+        "inpMs": 72,
+        "finalMs": 1027,
+        "posts": [
+          "/api/v1/appointments"
+        ]
+      },
+      {
+        "nome": "Novo agendamento: Confirmar",
+        "primeiraMudancaMs": 76,
+        "primeiraMudancaDesdeArmarMs": 126,
+        "alvoReagiuMs": 76,
+        "inpMs": 128,
+        "finalMs": 984,
+        "posts": [
+          "/api/v1/appointments"
+        ],
+        "alertas": "Agenda · CICLO"
+      },
+      {
+        "nome": "Novo agendamento: Confirmar",
+        "primeiraMudancaMs": 46,
+        "primeiraMudancaDesdeArmarMs": 116,
+        "alvoReagiuMs": 46,
+        "inpMs": 88,
+        "finalMs": null,
+        "posts": [
+          "/api/v1/appointments"
+        ],
+        "alertas": "Esse horário acabou de ser reservado. | "
+      },
+      {
+        "nome": "Novo agendamento: Confirmar",
+        "primeiraMudancaMs": 126,
+        "primeiraMudancaDesdeArmarMs": 149,
+        "alvoReagiuMs": 126,
+        "inpMs": 160,
+        "finalMs": 797,
+        "posts": [
+          "/api/v1/appointments"
+        ],
+        "alertas": "Agenda · CICLO"
+      },
+      {
+        "nome": "Novo agendamento: Confirmar",
+        "primeiraMudancaMs": 78,
+        "primeiraMudancaDesdeArmarMs": 147,
+        "alvoReagiuMs": 78,
+        "inpMs": 104,
+        "finalMs": null,
+        "posts": [
+          "/api/v1/appointments"
+        ],
+        "alertas": "Esse horário acabou de ser reservado. | "
+      }
+    ]
+  },
+  "duploToque": [
+    {
+      "nome": "duplo: Confirmar",
+      "primeiraMudancaMs": 79,
+      "primeiraMudancaDesdeArmarMs": 128,
+      "alvoReagiuMs": 79,
+      "inpMs": 112,
+      "finalMs": 706,
+      "posts": [
+        "/api/v1/appointments/:id/confirm"
+      ],
+      "gravacoes": 1,
+      "tela": ""
+    },
+    {
+      "nome": "duplo: Adicionar item",
+      "primeiraMudancaMs": 70,
+      "primeiraMudancaDesdeArmarMs": 174,
+      "alvoReagiuMs": 70,
+      "inpMs": 104,
+      "finalMs": 637,
+      "posts": [
+        "/api/v1/tickets/:id/items"
+      ],
+      "gravacoes": 1
+    },
+    {
+      "nome": "duplo: Fechar comanda (receber)",
+      "primeiraMudancaMs": 30,
+      "primeiraMudancaDesdeArmarMs": 39,
+      "alvoReagiuMs": 30,
+      "inpMs": 112,
+      "finalMs": 519,
+      "posts": [
+        "/api/v1/tickets/:id/close"
+      ],
+      "gravacoes": 1,
+      "pagamentos": "0"
+    },
+    {
+      "nome": "duplo: Novo agendamento",
+      "primeiraMudancaMs": 51,
+      "primeiraMudancaDesdeArmarMs": 74,
+      "alvoReagiuMs": 51,
+      "inpMs": 104,
+      "finalMs": 2072,
+      "posts": [
+        "/api/v1/appointments"
+      ],
+      "alertas": "Agenda · CICLO",
+      "gravacoes": 1,
+      "quando": "2026-10-17T18:30",
+      "telaAoFim": "Agenda · CICLO"
+    },
+    {
+      "nome": "duplo: Agendar (público)",
+      "primeiraMudancaMs": 73,
+      "primeiraMudancaDesdeArmarMs": 114,
+      "alvoReagiuMs": 73,
+      "inpMs": 104,
+      "finalMs": null,
+      "posts": [
+        "/api/v1/public/demo-salao-encanto/book"
+      ],
+      "gravacoes": 1
+    },
+    {
+      "nome": "duplo: Chamar (Recuperar)",
+      "erro": "sem cliente em atraso no tenant demo: botão não existe na tela (lista vazia)"
+    }
+  ],
+  "resumo": {
+    "Hoje: abrir agendamento": {
+      "n": 5,
+      "primeiraMudanca": {
+        "mediana": 104,
+        "pior": 173
+      },
+      "alvoReagiu": {
+        "mediana": null,
+        "pior": null
+      },
+      "inp": {
+        "mediana": 208,
+        "pior": 216,
+        "abaixoDe16": 1
+      },
+      "final": {
+        "mediana": 177,
+        "pior": 234
+      }
+    },
+    "Trocar de tela: Hoje → Agenda": {
+      "n": 5,
+      "primeiraMudanca": {
+        "mediana": 344,
+        "pior": 516
+      },
+      "alvoReagiu": {
+        "mediana": null,
+        "pior": null
+      },
+      "inp": {
+        "mediana": 56,
+        "pior": 96,
+        "abaixoDe16": 0
+      },
+      "final": {
+        "mediana": 1145,
+        "pior": 2002
+      }
+    },
+    "Agenda: trocar de dia": {
+      "n": 5,
+      "primeiraMudanca": {
+        "mediana": 516,
+        "pior": 1025
+      },
+      "alvoReagiu": {
+        "mediana": null,
+        "pior": null
+      },
+      "inp": {
+        "mediana": 48,
+        "pior": 64,
+        "abaixoDe16": 0
+      },
+      "final": {
+        "mediana": 530,
+        "pior": 1032
+      }
+    },
+    "Agenda: Confirmar agendamento": {
+      "n": 5,
+      "primeiraMudanca": {
+        "mediana": 62,
+        "pior": 150
+      },
+      "alvoReagiu": {
+        "mediana": 62,
+        "pior": 150
+      },
+      "inp": {
+        "mediana": 104,
+        "pior": 184,
+        "abaixoDe16": 0
+      },
+      "final": {
+        "mediana": 981,
+        "pior": 1445
+      }
+    },
+    "Clientes: buscar \"Isa\"": {
+      "n": 5,
+      "primeiraMudanca": {
+        "mediana": 223,
+        "pior": 349
+      },
+      "alvoReagiu": {
+        "mediana": null,
+        "pior": null
+      },
+      "inp": {
+        "mediana": 216,
+        "pior": 352,
+        "abaixoDe16": 0
+      },
+      "final": {
+        "mediana": 579,
+        "pior": 717
+      }
+    },
+    "Recuperar: filtro \"Atrasadas\"": {
+      "n": 5,
+      "primeiraMudanca": {
+        "mediana": 33,
+        "pior": 71
+      },
+      "alvoReagiu": {
+        "mediana": null,
+        "pior": null
+      },
+      "inp": {
+        "mediana": 80,
+        "pior": 176,
+        "abaixoDe16": 0
+      },
+      "final": {
+        "mediana": 82,
+        "pior": 157
+      }
+    },
+    "Comanda: Adicionar item": {
+      "n": 5,
+      "primeiraMudanca": {
+        "mediana": 37,
+        "pior": 63
+      },
+      "alvoReagiu": {
+        "mediana": 43,
+        "pior": 76
+      },
+      "inp": {
+        "mediana": 64,
+        "pior": 104,
+        "abaixoDe16": 0
+      },
+      "final": {
+        "mediana": 723,
+        "pior": 2059
+      }
+    },
+    "Comanda: Fechar comanda (receber)": {
+      "n": 5,
+      "primeiraMudanca": {
+        "mediana": 33,
+        "pior": 56
+      },
+      "alvoReagiu": {
+        "mediana": 33,
+        "pior": 56
+      },
+      "inp": {
+        "mediana": 72,
+        "pior": 96,
+        "abaixoDe16": 0
+      },
+      "final": {
+        "mediana": 761,
+        "pior": 1790
+      }
+    },
+    "Público: escolher serviço": {
+      "n": 5,
+      "primeiraMudanca": {
+        "mediana": 36,
+        "pior": 54
+      },
+      "alvoReagiu": {
+        "mediana": 47,
+        "pior": 92
+      },
+      "inp": {
+        "mediana": 88,
+        "pior": 128,
+        "abaixoDe16": 0
+      },
+      "final": {
+        "mediana": 178,
+        "pior": 277
+      }
+    },
+    "Novo agendamento: Confirmar": {
+      "n": 5,
+      "primeiraMudanca": {
+        "mediana": 76,
+        "pior": 126
+      },
+      "alvoReagiu": {
+        "mediana": 76,
+        "pior": 126
+      },
+      "inp": {
+        "mediana": 104,
+        "pior": 160,
+        "abaixoDe16": 0
+      },
+      "final": {
+        "mediana": 984,
+        "pior": 1027
+      }
+    }
+  }
+}

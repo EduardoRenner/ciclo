@@ -1,0 +1,104 @@
+// Agente F — páginas públicas por token: confirmar, avaliar, orcamento, lista-espera.
+// Tokens vêm de C:\temp\ciclo-medicao\F-tokens.json (gerado por F-dados.mjs; nunca em docs/).
+// Uso: node F-tokens.mjs <perfil>
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+import { abrir, BASE, CAPTURAS, MEDIDAS, axe, seo, alvosPequenos, rolagemLateral, offline } from './F-lib.mjs'
+
+const perfilNome = process.argv[2] ?? 'celular'
+const { tokens } = JSON.parse(readFileSync('C:/temp/ciclo-medicao/F-tokens.json', 'utf8'))
+const out = []
+const texto = (page) => page.evaluate(() => document.body.innerText.replace(/\n{2,}/g, '\n').trim())
+
+const filtro = process.argv[3] ? process.argv[3].split(',') : null
+async function caso(nome, url, seletorUtil, acao) {
+  if (filtro && !filtro.includes(nome)) return
+  const { browser, page, cdp, consoleErros } = await abrir(perfilNome)
+  const t0 = Date.now()
+  const resp = await page.goto(`${BASE}${url}`, { waitUntil: 'commit' })
+  let utilMs = null
+  try { await page.locator(seletorUtil).first().waitFor({ timeout: 45000 }); utilMs = Date.now() - t0 } catch {}
+  await page.waitForLoadState('load').catch(() => {})
+  const inicial = await texto(page)
+  const r = { caso: nome, perfil: perfilNome, status: resp?.status(), utilMs, textoInicial: inicial.slice(0, 600), seo: await seo(page), axe: await axe(page), alvosPequenos: await alvosPequenos(page), rolagemLateral: await rolagemLateral(page) }
+  await page.screenshot({ path: `${CAPTURAS}/F-${nome}-${perfilNome}.png`, fullPage: true })
+  if (acao) {
+    try { Object.assign(r, await acao(page, cdp)) } catch (e) { r.erroDoScript = String(e).slice(0, 300) }
+    await page.screenshot({ path: `${CAPTURAS}/F-${nome}-depois-${perfilNome}.png`, fullPage: true })
+  }
+  r.consoleErros = consoleErros
+  out.push(r)
+  console.log(`${nome}: status=${r.status} util=${utilMs}ms ${r.resultado ?? ''}`)
+  await browser.close()
+}
+
+async function tocarEEsperar(page, locator, esperado) {
+  const t = Date.now()
+  await locator.click()
+  await page.locator(esperado).first().waitFor({ timeout: 45000 }).catch(() => {})
+  return Date.now() - t
+}
+
+// CONFIRMAR
+await caso('confirmar-valido', `/confirmar/${tokens.confirmarValido}`, 'text=Vou sim', async (page) => {
+  const ms = await tocarEEsperar(page, page.getByRole('button', { name: 'Vou sim' }), 'text=/Prontinho|Não deu certo/')
+  const final = await texto(page)
+  // reabrir o mesmo link (cliente toca de novo na mensagem)
+  await page.reload()
+  await page.getByRole('button', { name: 'Vou sim' }).waitFor({ timeout: 30000 }).catch(() => {})
+  const reaberto = await texto(page)
+  return { toques: 1, msToqueAteResultado: ms, resultado: final.slice(0, 200), reabertoMostra: reaberto.slice(0, 200) }
+})
+await caso('confirmar-vencido', `/confirmar/${tokens.confirmarVencido}`, 'text=Vou sim', async (page) => {
+  const ms = await tocarEEsperar(page, page.getByRole('button', { name: 'Vou sim' }), 'text=/Prontinho|Não deu certo/')
+  return { toques: 1, msToqueAteResultado: ms, resultado: (await texto(page)).slice(0, 300) }
+})
+await caso('confirmar-escopo-errado', `/confirmar/${tokens.confirmarEscopoErrado}`, 'text=Vou sim', async (page) => {
+  await tocarEEsperar(page, page.getByRole('button', { name: 'Vou sim' }), 'text=/Prontinho|Não deu certo/')
+  return { resultado: (await texto(page)).slice(0, 300) }
+})
+await caso('confirmar-offline', `/confirmar/${tokens.confirmarValido}`, 'text=Vou sim', async (page, cdp) => {
+  await offline(cdp, true)
+  await tocarEEsperar(page, page.getByRole('button', { name: 'Vou sim' }), 'text=/Prontinho|Não deu certo/')
+  const t = await texto(page)
+  const temRetentativa = await page.getByRole('button', { name: /Tentar de novo/i }).count()
+  await offline(cdp, false)
+  return { resultado: t.slice(0, 300), botaoTentarDeNovo: temRetentativa }
+})
+
+await caso('confirmar-desmarcar', `/confirmar/${tokens.confirmarDesmarcar}`, 'text=Preciso desmarcar', async (page) => {
+  const ms = await tocarEEsperar(page, page.getByRole('button', { name: 'Preciso desmarcar' }), 'text=/Desmarcado|Não deu certo/')
+  return { toques: 1, msToqueAteResultado: ms, resultado: (await texto(page)).slice(0, 300) }
+})
+
+// AVALIAR
+await caso('avaliar-valido', `/avaliar/${tokens.avaliarValido}`, '[aria-label="5 estrelas"]', async (page) => {
+  let toques = 0
+  await page.getByRole('radio', { name: '5 estrelas' }).click(); toques++
+  const enviar = page.getByRole('button', { name: /Enviar/ })
+  const ms = await tocarEEsperar(page, enviar, 'text=/avaliação enviada|Não/'); toques++
+  const final = await texto(page)
+  await page.reload()
+  await page.waitForTimeout(3000)
+  return { toques, msToqueAteResultado: ms, resultado: final.slice(0, 500), reabertoMostra: (await texto(page)).slice(0, 300) }
+})
+await caso('avaliar-vencido', `/avaliar/${tokens.avaliarVencido}`, 'text=/Não consegui|Como foi/', null)
+
+// ORÇAMENTO
+await caso('orcamento-valido', `/orcamento/${tokens.orcamentoValido}`, 'text=Aprovar orçamento', async (page) => {
+  const ms = await tocarEEsperar(page, page.getByRole('button', { name: 'Aprovar orçamento' }), 'text=/Orçamento aprovado|Não deu certo/')
+  return { toques: 1, msToqueAteResultado: ms, resultado: (await texto(page)).slice(0, 300) }
+})
+await caso('orcamento-data-vencida', `/orcamento/${tokens.orcamentoDataVencida}`, 'text=/Orçamento vencido|Aprovar/', null)
+await caso('orcamento-token-vencido', `/orcamento/${tokens.orcamentoTokenVencido}`, 'text=/Não deu certo|inválido/', null)
+
+// LISTA DE ESPERA (o toque no link já reserva)
+await caso('lista-espera-valido', `/lista-espera/${tokens.listaEsperaValido}`, 'text=/Encaixe garantido|Não consegui reservar/', async (page) => {
+  const final = await texto(page)
+  await page.reload()
+  await page.locator('text=/Encaixe garantido|Não consegui reservar/').first().waitFor({ timeout: 30000 }).catch(() => {})
+  return { resultado: final.slice(0, 300), reabertoMostra: (await texto(page)).slice(0, 300) }
+})
+await caso('lista-espera-vencido', `/lista-espera/${tokens.listaEsperaVencido}`, 'text=/Encaixe garantido|Não consegui reservar/', null)
+
+mkdirSync(`${MEDIDAS}/F`, { recursive: true })
+writeFileSync(`${MEDIDAS}/F/tokens-${perfilNome}${filtro ? '-' + filtro.join('+') : ''}.json`, JSON.stringify(out, null, 2))

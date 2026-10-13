@@ -1,0 +1,589 @@
+{
+ "rota": "admin/layout.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/layout.tsx",
+  "src/components/shell/assistente-flutuante.tsx",
+  "src/components/shell/resolucao-de-fila.tsx",
+  "src/components/shell/faixa-da-conta.tsx",
+  "src/components/shell/indicador-de-conexao.tsx",
+  "src/components/shell/tab-bar.tsx",
+  "src/components/shell/transicao-de-tela.tsx",
+  "src/components/shell/topbar.tsx",
+  "src/lib/offline/api-client.ts",
+  "src/lib/offline/db.ts",
+  "src/components/shell/tabs.ts",
+  "src/components/shell/navegacao.ts"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/toast.tsx",
+  "src/components/shell/vocabulario.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/card.tsx",
+  "src/components/ui/sheet.tsx",
+  "src/lib/formato.ts",
+  "src/components/ui/alert-banner.tsx",
+  "src/components/ui/icone-anel.tsx"
+ ],
+ "total": 90,
+ "textos": [
+  {
+   "texto": "(prefers-color-scheme: dark)",
+   "arquivo": "src/app/admin/layout.tsx",
+   "linha": 80,
+   "tipo": "prop:media"
+  },
+  {
+   "texto": "(prefers-color-scheme: light)",
+   "arquivo": "src/app/admin/layout.tsx",
+   "linha": 81,
+   "tipo": "prop:media"
+  },
+  {
+   "texto": "Dados fictícios de demonstração. Nenhuma pessoa, empresa ou processo aqui existe.",
+   "arquivo": "src/app/admin/layout.tsx",
+   "linha": 160,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Quem falta confirmar hoje?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 38,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Quanto já atendi hoje?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 39,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Quanto eu já atendi hoje?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 39,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Tenho horário vago amanhã?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 40,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Eu tenho horário vago amanhã?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 40,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Quem eu chamo primeiro?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 46,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "De quem eu deveria chamar primeiro para recuperar?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 46,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Quanto tem parado aqui?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 47,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Quanto de receita está parado, esperando eu chamar de volta?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 47,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Quem sumiu há mais de 60 dias?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 48,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Quais clientes estão sumidas há mais de 60 dias?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 48,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Quanto faturei este mês?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 56,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Quanto eu faturei neste mês até agora?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 56,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Qual foi meu lucro no mês?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 57,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Qual foi meu lucro neste mês?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 57,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Quais orçamentos estão sem resposta?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 63,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Quais orçamentos estão parados, sem resposta de quem pediu?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 63,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "O que fazer hoje?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 69,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "O que eu deveria fazer hoje no meu negócio?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 69,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Quem eu chamo primeiro?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 70,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "De quem eu deveria chamar primeiro para recuperar?",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 70,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "{m[3]}/{m[2]} às {m[4]}:{m[5]}",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 107,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Consultando",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 322,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Você fez muitas perguntas seguidas. Tente de novo mais tarde.",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 502,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui responder agora.",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 502,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui responder agora.",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 525,
+   "tipo": "prop:resposta"
+  },
+  {
+   "texto": "Sem conexão com o assistente",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 526,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Essa ação ainda não pode ser feita por aqui.",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 545,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não deu para fazer agora.",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 561,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Feito",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 568,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Sem conexão agora. Nada foi marcado.",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 571,
+   "tipo": "erro"
+  },
+  {
+   "texto": "O assistente está indisponível agora. Tente de novo mais tarde.",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 580,
+   "tipo": "texto",
+   "tag": "Card"
+  },
+  {
+   "texto": "Se continuar, mande este código para o suporte: {codigoDaFalha}",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 585,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Depois de confirmar, não dá para desfazer por aqui.",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 681,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Abrir no meu WhatsApp",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 699,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Não deu para montar a mensagem. Chame pela tela Recuperar receita.",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 703,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Confirmando…",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 713,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Confirmar",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 713,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Pergunte alguma coisa…",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 749,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Enviar",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 758,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "O assistente lê os mesmos dados que você já vê. Ele não envia mensagem nem altera nada sozinho.",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 763,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Abrir assistente (arraste para mudar de lugar)",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 794,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Assistente",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 813,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Assistente",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 824,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Fechar assistente",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 829,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Assistente",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 839,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Pergunte sobre sua agenda, clientes e faturamento.",
+   "arquivo": "src/components/shell/assistente-flutuante.tsx",
+   "linha": 839,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Uma alteração feita offline",
+   "arquivo": "src/components/shell/resolucao-de-fila.tsx",
+   "linha": 33,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Um agendamento criado sem conexão",
+   "arquivo": "src/components/shell/resolucao-de-fila.tsx",
+   "linha": 35,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Uma alteração num agendamento",
+   "arquivo": "src/components/shell/resolucao-de-fila.tsx",
+   "linha": 35,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Uma ficha cadastrada sem conexão",
+   "arquivo": "src/components/shell/resolucao-de-fila.tsx",
+   "linha": 36,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Uma alteração numa ficha",
+   "arquivo": "src/components/shell/resolucao-de-fila.tsx",
+   "linha": 36,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Uma alteração numa comanda",
+   "arquivo": "src/components/shell/resolucao-de-fila.tsx",
+   "linha": 37,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Uma alteração feita offline",
+   "arquivo": "src/components/shell/resolucao-de-fila.tsx",
+   "linha": 38,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Uma alteração feita offline não pôde ser enviada",
+   "arquivo": "src/components/shell/resolucao-de-fila.tsx",
+   "linha": 70,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O que mudou no servidor pode ter conflitado. Confira antes de tentar de novo.",
+   "arquivo": "src/components/shell/resolucao-de-fila.tsx",
+   "linha": 71,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Tentar de novo",
+   "arquivo": "src/components/shell/resolucao-de-fila.tsx",
+   "linha": 74,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Descartar",
+   "arquivo": "src/components/shell/resolucao-de-fila.tsx",
+   "linha": 84,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "{d.descricao} não foi enviado",
+   "arquivo": "src/components/shell/resolucao-de-fila.tsx",
+   "linha": 97,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O servidor recusou em definitivo. Reenviar daria o mesmo resultado. Refaça pela tela normal para ver o motivo.",
+   "arquivo": "src/components/shell/resolucao-de-fila.tsx",
+   "linha": 99,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Entendi",
+   "arquivo": "src/components/shell/resolucao-de-fila.tsx",
+   "linha": 107,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "{pendentes} {…} · enviando quando possível",
+   "arquivo": "src/components/shell/indicador-de-conexao.tsx",
+   "linha": 21,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sem conexão · dá para consultar; caso, prazo e documento só gravam com conexão",
+   "arquivo": "src/components/shell/indicador-de-conexao.tsx",
+   "linha": 23,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sem conexão · {pendentes} {…}",
+   "arquivo": "src/components/shell/indicador-de-conexao.tsx",
+   "linha": 24,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sem conexão · mudanças serão guardadas",
+   "arquivo": "src/components/shell/indicador-de-conexao.tsx",
+   "linha": 25,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Navegação principal",
+   "arquivo": "src/components/shell/tab-bar.tsx",
+   "linha": 57,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Caixa",
+   "arquivo": "src/components/shell/topbar.tsx",
+   "linha": 23,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Serviços",
+   "arquivo": "src/components/shell/topbar.tsx",
+   "linha": 24,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Time",
+   "arquivo": "src/components/shell/topbar.tsx",
+   "linha": 25,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Campanhas",
+   "arquivo": "src/components/shell/topbar.tsx",
+   "linha": 26,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Estoque",
+   "arquivo": "src/components/shell/topbar.tsx",
+   "linha": 27,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Recorrência",
+   "arquivo": "src/components/shell/topbar.tsx",
+   "linha": 28,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Configurações",
+   "arquivo": "src/components/shell/topbar.tsx",
+   "linha": 29,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Menu",
+   "arquivo": "src/components/shell/topbar.tsx",
+   "linha": 100,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Menu",
+   "arquivo": "src/components/shell/topbar.tsx",
+   "linha": 108,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "escrita jurídica não entra na fila offline: {url}",
+   "arquivo": "src/lib/offline/api-client.ts",
+   "linha": 139,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Configurações",
+   "arquivo": "src/components/shell/navegacao.ts",
+   "linha": 21,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Hoje",
+   "arquivo": "src/components/shell/navegacao.ts",
+   "linha": 22,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Campanhas",
+   "arquivo": "src/components/shell/navegacao.ts",
+   "linha": 23,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Configurações",
+   "arquivo": "src/components/shell/navegacao.ts",
+   "linha": 24,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Orçamentos",
+   "arquivo": "src/components/shell/navegacao.ts",
+   "linha": 28,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Configurações",
+   "arquivo": "src/components/shell/navegacao.ts",
+   "linha": 29,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Configurações",
+   "arquivo": "src/components/shell/navegacao.ts",
+   "linha": 30,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Configurações",
+   "arquivo": "src/components/shell/navegacao.ts",
+   "linha": 32,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Agenda",
+   "arquivo": "src/components/shell/navegacao.ts",
+   "linha": 34,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Hoje",
+   "arquivo": "src/components/shell/navegacao.ts",
+   "linha": 36,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Hoje",
+   "arquivo": "src/components/shell/navegacao.ts",
+   "linha": 38,
+   "tipo": "rótulo"
+  }
+ ]
+}

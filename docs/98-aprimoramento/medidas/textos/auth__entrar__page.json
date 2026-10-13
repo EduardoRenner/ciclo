@@ -1,0 +1,134 @@
+{
+ "rota": "(auth)/entrar/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(auth)/entrar/page.tsx",
+  "src/app/(auth)/login-social.tsx",
+  "src/app/(auth)/entrar/formulario.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/shell/selo.tsx",
+  "src/components/shell/tela-publica.tsx",
+  "src/components/ui/toast.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/input.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 18,
+ "textos": [
+  {
+   "texto": "Entrar",
+   "arquivo": "src/app/(auth)/entrar/page.tsx",
+   "linha": 11,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Que bom te ver de novo",
+   "arquivo": "src/app/(auth)/entrar/page.tsx",
+   "linha": 27,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Entre para ver o resumo do seu dia.",
+   "arquivo": "src/app/(auth)/entrar/page.tsx",
+   "linha": 28,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Não consegui abrir o login. Tente de novo.",
+   "arquivo": "src/app/(auth)/login-social.tsx",
+   "linha": 47,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Sem conexão agora. Tente de novo.",
+   "arquivo": "src/app/(auth)/login-social.tsx",
+   "linha": 51,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Aguarde o login que já começou terminar.",
+   "arquivo": "src/app/(auth)/login-social.tsx",
+   "linha": 68,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Continuar com Google",
+   "arquivo": "src/app/(auth)/login-social.tsx",
+   "linha": 92,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Continuar com Apple",
+   "arquivo": "src/app/(auth)/login-social.tsx",
+   "linha": 93,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Esse link não é mais válido. Peça um novo.",
+   "arquivo": "src/app/(auth)/entrar/formulario.tsx",
+   "linha": 19,
+   "tipo": "prop:link_invalido"
+  },
+  {
+   "texto": "O login foi cancelado. Tente de novo quando quiser.",
+   "arquivo": "src/app/(auth)/entrar/formulario.tsx",
+   "linha": 20,
+   "tipo": "prop:login_cancelado"
+  },
+  {
+   "texto": "Não consegui entrar. Confira e-mail e senha.",
+   "arquivo": "src/app/(auth)/entrar/formulario.tsx",
+   "linha": 46,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Tente de novo.",
+   "arquivo": "src/app/(auth)/entrar/formulario.tsx",
+   "linha": 73,
+   "tipo": "erro"
+  },
+  {
+   "texto": "E-mail",
+   "arquivo": "src/app/(auth)/entrar/formulario.tsx",
+   "linha": 100,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Senha",
+   "arquivo": "src/app/(auth)/entrar/formulario.tsx",
+   "linha": 101,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Entrar",
+   "arquivo": "src/app/(auth)/entrar/formulario.tsx",
+   "linha": 108,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Esqueci minha senha",
+   "arquivo": "src/app/(auth)/entrar/formulario.tsx",
+   "linha": 115,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Não tem conta? Cadastre-se",
+   "arquivo": "src/app/(auth)/entrar/formulario.tsx",
+   "linha": 118,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Cadastre-se",
+   "arquivo": "src/app/(auth)/entrar/formulario.tsx",
+   "linha": 118,
+   "tipo": "texto",
+   "tag": "span"
+  }
+ ]
+}

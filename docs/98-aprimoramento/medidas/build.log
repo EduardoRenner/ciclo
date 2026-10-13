@@ -1,0 +1,264 @@
+
+> ciclo@0.1.0 build C:\Users\Usuario\.claude\code\ciclo-aprimoramento
+> next build
+
+   ▲ Next.js 15.5.27
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ⚠ Compiled with warnings in 2.7min
+
+./node_modules/.pnpm/require-in-the-middle@8.0.1/node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/.pnpm/require-in-the-middle@8.0.1/node_modules/require-in-the-middle/index.js
+./node_modules/.pnpm/@opentelemetry+instrumentat_1ad6a0a9759fd13d0c7cf454d56add20/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/.pnpm/@opentelemetry+instrumentat_1ad6a0a9759fd13d0c7cf454d56add20/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/.pnpm/@opentelemetry+instrumentat_1ad6a0a9759fd13d0c7cf454d56add20/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/.pnpm/@opentelemetry+instrumentat_1ad6a0a9759fd13d0c7cf454d56add20/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/.pnpm/@sentry+node@10.70.0_@opent_1470875780c47c456e6e5684b2e1aff2/node_modules/@sentry/node/build/cjs/integrations/tracing/express.js
+./node_modules/.pnpm/@sentry+node@10.70.0_@opent_1470875780c47c456e6e5684b2e1aff2/node_modules/@sentry/node/build/cjs/index.js
+./node_modules/.pnpm/@sentry+nextjs@10.70.0_@ope_22bdae07ce7ebaa41e4d53227cf2bf9e/node_modules/@sentry/nextjs/build/cjs/index.server.js
+
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (107kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (258kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ✓ Compiled successfully in 4.3min
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/99) ...
+   Generating static pages (24/99) 
+   Generating static pages (49/99) 
+   Generating static pages (74/99) 
+ ✓ Generating static pages (99/99)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                         Size  First Load JS  Revalidate  Expire
+┌ ○ /                                            1.37 kB         114 kB         10m      1y
+├ ƒ /_not-found                                    570 B         105 kB
+├ ƒ /[slug]                                        837 B         108 kB
+├ ƒ /[slug]/agendar                              9.93 kB         135 kB
+├ ƒ /[slug]/orcamento                            3.14 kB         120 kB
+├ ƒ /[slug]/previa                                 570 B         105 kB
+├ ƒ /admin                                         570 B         105 kB
+├ ƒ /admin/agenda                                5.71 kB         151 kB
+├ ƒ /admin/agenda/novo                           6.82 kB         136 kB
+├ ƒ /admin/caixa                                 1.23 kB         109 kB
+├ ƒ /admin/campanhas                             1.95 kB         119 kB
+├ ƒ /admin/campanhas/nova                        5.96 kB         135 kB
+├ ƒ /admin/casos                                   825 B         108 kB
+├ ƒ /admin/casos/[id]                            4.98 kB         145 kB
+├ ƒ /admin/casos/novo                            6.19 kB         123 kB
+├ ƒ /admin/clientes                              5.55 kB         122 kB
+├ ƒ /admin/clientes/[id]                         19.5 kB         170 kB
+├ ƒ /admin/clientes/[id]/estrutura               11.8 kB         141 kB
+├ ƒ /admin/clientes/exportar                     3.68 kB         133 kB
+├ ƒ /admin/clientes/importar                     5.92 kB         181 kB
+├ ƒ /admin/clientes/ja-atendo                    8.01 kB         183 kB
+├ ƒ /admin/clientes/nova                         4.06 kB         133 kB
+├ ƒ /admin/clientes/vindo-de-outro-sistema         837 B         108 kB
+├ ƒ /admin/comanda/[id]                          3.29 kB         136 kB
+├ ƒ /admin/comanda/agendamento/[appointmentId]     837 B         108 kB
+├ ƒ /admin/comissao                                837 B         108 kB
+├ ƒ /admin/config                                6.04 kB         123 kB
+├ ƒ /admin/config/advocacia                      5.99 kB         132 kB
+├ ƒ /admin/config/automacoes                     2.98 kB         129 kB
+├ ƒ /admin/config/cofre                          1.48 kB         115 kB
+├ ƒ /admin/config/custo-fixo                     4.58 kB         130 kB
+├ ƒ /admin/config/excluir-conta                  4.83 kB         145 kB
+├ ƒ /admin/config/horarios                         172 B         130 kB
+├ ƒ /admin/config/mensagens                      6.63 kB         140 kB
+├ ƒ /admin/config/meu-plano                      2.54 kB         114 kB
+├ ƒ /admin/config/modulos                        1.83 kB         119 kB
+├ ƒ /admin/config/negocio                        3.54 kB         132 kB
+├ ƒ /admin/config/notificacoes                   3.59 kB         117 kB
+├ ƒ /admin/config/planos                         6.65 kB         144 kB
+├ ƒ /admin/config/profissionais                  3.88 kB         144 kB
+├ ƒ /admin/config/profissionais/[id]               194 B         134 kB
+├ ƒ /admin/config/seguranca                      5.04 kB         131 kB
+├ ƒ /admin/config/servicos                       7.01 kB         150 kB
+├ ƒ /admin/config/servicos/[id]/ficha            6.65 kB         136 kB
+├ ƒ /admin/config/taxas                          1.54 kB         130 kB
+├ ƒ /admin/estoque                               9.52 kB         147 kB
+├ ƒ /admin/experimentos                          6.07 kB         135 kB
+├ ƒ /admin/hoje                                  7.96 kB         156 kB
+├ ƒ /admin/intimacoes/[id]                       6.93 kB         136 kB
+├ ƒ /admin/mes                                     825 B         108 kB
+├ ƒ /admin/orcamentos                            4.85 kB         122 kB
+├ ƒ /admin/orcamentos/novo                       3.91 kB         120 kB
+├ ƒ /admin/pendencias                            1.16 kB         138 kB
+├ ƒ /admin/recuperar                             6.32 kB         141 kB
+├ ƒ /admin/series                                4.61 kB         134 kB
+├ ƒ /api/cron/campaigns                            570 B         105 kB
+├ ƒ /api/cron/expirar-graca                        570 B         105 kB
+├ ƒ /api/cron/jobs                                 570 B         105 kB
+├ ƒ /api/cron/legal-intimacoes                     570 B         105 kB
+├ ƒ /api/cron/lgpd-retention                       570 B         105 kB
+├ ƒ /api/cron/recompute-cycles                     570 B         105 kB
+├ ƒ /api/cron/reminders                            570 B         105 kB
+├ ƒ /api/cron/segments                             570 B         105 kB
+├ ƒ /api/cron/stock-alerts                         570 B         105 kB
+├ ƒ /api/health                                    570 B         105 kB
+├ ƒ /api/v1/account                                570 B         105 kB
+├ ƒ /api/v1/appointments                           570 B         105 kB
+├ ƒ /api/v1/appointments/[id]                      570 B         105 kB
+├ ƒ /api/v1/appointments/[id]/arrive               570 B         105 kB
+├ ƒ /api/v1/appointments/[id]/complete             570 B         105 kB
+├ ƒ /api/v1/appointments/[id]/confirm              570 B         105 kB
+├ ƒ /api/v1/appointments/[id]/no-show              570 B         105 kB
+├ ƒ /api/v1/appointments/series                    570 B         105 kB
+├ ƒ /api/v1/appointments/series/[id]/cancel        570 B         105 kB
+├ ƒ /api/v1/assistant                              570 B         105 kB
+├ ƒ /api/v1/assistant/rapido                       570 B         105 kB
+├ ƒ /api/v1/auth/login                             570 B         105 kB
+├ ƒ /api/v1/auth/logout                            570 B         105 kB
+├ ƒ /api/v1/auth/mfa/enroll                        570 B         105 kB
+├ ƒ /api/v1/auth/mfa/factors                       570 B         105 kB
+├ ƒ /api/v1/auth/mfa/factors/[id]                  570 B         105 kB
+├ ƒ /api/v1/auth/mfa/verify                        570 B         105 kB
+├ ƒ /api/v1/auth/password/forgot                   570 B         105 kB
+├ ƒ /api/v1/auth/password/reset                    570 B         105 kB
+├ ƒ /api/v1/auth/signup                            570 B         105 kB
+├ ƒ /api/v1/auth/signup/resend                     570 B         105 kB
+├ ƒ /api/v1/billing/assinar                        570 B         105 kB
+├ ƒ /api/v1/billing/cancelar                       570 B         105 kB
+├ ƒ /api/v1/campaigns                              570 B         105 kB
+├ ƒ /api/v1/cash/daily                             570 B         105 kB
+├ ƒ /api/v1/cash/summary                           570 B         105 kB
+├ ƒ /api/v1/clients                                570 B         105 kB
+├ ƒ /api/v1/clients/[id]                           570 B         105 kB
+├ ƒ /api/v1/clients/[id]/consents                  570 B         105 kB
+├ ƒ /api/v1/clients/[id]/consents/[kind]           570 B         105 kB
+├ ƒ /api/v1/clients/[id]/data-export               570 B         105 kB
+├ ƒ /api/v1/clients/[id]/erase                     570 B         105 kB
+├ ƒ /api/v1/clients/[id]/loyalty                   570 B         105 kB
+├ ƒ /api/v1/clients/[id]/media                     570 B         105 kB
+├ ƒ /api/v1/clients/[id]/notes                     570 B         105 kB
+├ ƒ /api/v1/clients/[id]/subscription              570 B         105 kB
+├ ƒ /api/v1/clients/[id]/vault                     570 B         105 kB
+├ ƒ /api/v1/clients/export                         570 B         105 kB
+├ ƒ /api/v1/clients/import                         570 B         105 kB
+├ ƒ /api/v1/clients/import/preview                 570 B         105 kB
+├ ƒ /api/v1/clients/ja-atendo                      570 B         105 kB
+├ ƒ /api/v1/commissions/extract                    570 B         105 kB
+├ ƒ /api/v1/cycle/attribution                      570 B         105 kB
+├ ƒ /api/v1/cycle/recover                          570 B         105 kB
+├ ƒ /api/v1/cycle/recover/manual                   570 B         105 kB
+├ ƒ /api/v1/cycle/recover/send                     570 B         105 kB
+├ ƒ /api/v1/cycles/recompute                       570 B         105 kB
+├ ƒ /api/v1/experiments                            570 B         105 kB
+├ ƒ /api/v1/experiments/[id]/cancel                570 B         105 kB
+├ ƒ /api/v1/inventory/entries                      570 B         105 kB
+├ ƒ /api/v1/legal/cases                            570 B         105 kB
+├ ƒ /api/v1/legal/cases/[id]                       570 B         105 kB
+├ ƒ /api/v1/legal/checklist/[id]                   570 B         105 kB
+├ ƒ /api/v1/legal/checklist/lembrete               570 B         105 kB
+├ ƒ /api/v1/legal/deadlines                        570 B         105 kB
+├ ƒ /api/v1/legal/deadlines/[id]                   570 B         105 kB
+├ ƒ /api/v1/legal/deadlines/[id]/close             570 B         105 kB
+├ ƒ /api/v1/legal/documents                        570 B         105 kB
+├ ƒ /api/v1/legal/documents/[id]                   570 B         105 kB
+├ ƒ /api/v1/legal/documents/[id]/open              570 B         105 kB
+├ ƒ /api/v1/legal/entities                         570 B         105 kB
+├ ƒ /api/v1/legal/entities/[id]/changes            570 B         105 kB
+├ ƒ /api/v1/legal/intimations/[id]/decide          570 B         105 kB
+├ ƒ /api/v1/legal/persons                          570 B         105 kB
+├ ƒ /api/v1/me                                     570 B         105 kB
+├ ƒ /api/v1/media/[id]                             570 B         105 kB
+├ ƒ /api/v1/media/[id]/publish                     570 B         105 kB
+├ ƒ /api/v1/media/[id]/url                         570 B         105 kB
+├ ƒ /api/v1/memberships/accept                     570 B         105 kB
+├ ƒ /api/v1/memberships/invite                     570 B         105 kB
+├ ƒ /api/v1/message-templates                      570 B         105 kB
+├ ƒ /api/v1/message-templates/[id]                 570 B         105 kB
+├ ƒ /api/v1/onboarding                             570 B         105 kB
+├ ƒ /api/v1/onboarding/perfil                      570 B         105 kB
+├ ƒ /api/v1/packages                               570 B         105 kB
+├ ƒ /api/v1/packages/[id]/use                      570 B         105 kB
+├ ƒ /api/v1/products                               570 B         105 kB
+├ ƒ /api/v1/products/[id]                          570 B         105 kB
+├ ƒ /api/v1/professionals                          570 B         105 kB
+├ ƒ /api/v1/professionals/[id]                     570 B         105 kB
+├ ƒ /api/v1/professionals/[id]/business-hours      570 B         105 kB
+├ ƒ /api/v1/public/[slug]                          570 B         105 kB
+├ ƒ /api/v1/public/[slug]/availability             570 B         105 kB
+├ ƒ /api/v1/public/[slug]/book                     570 B         105 kB
+├ ƒ /api/v1/public/[slug]/quote-request            570 B         105 kB
+├ ƒ /api/v1/public/[slug]/reconhecer               570 B         105 kB
+├ ƒ /api/v1/public/appointments/cancel/[token]     570 B         105 kB
+├ ƒ /api/v1/public/appointments/confirm/[token]    570 B         105 kB
+├ ƒ /api/v1/public/quotes/[token]                  570 B         105 kB
+├ ƒ /api/v1/public/quotes/[token]/approve          570 B         105 kB
+├ ƒ /api/v1/public/quotes/[token]/reject           570 B         105 kB
+├ ƒ /api/v1/public/reviews/[token]                 570 B         105 kB
+├ ƒ /api/v1/public/waitlist/claim/[token]          570 B         105 kB
+├ ƒ /api/v1/push/subscriptions                     570 B         105 kB
+├ ƒ /api/v1/quotes                                 570 B         105 kB
+├ ƒ /api/v1/quotes/[id]/convert                    570 B         105 kB
+├ ƒ /api/v1/services                               570 B         105 kB
+├ ƒ /api/v1/services/[id]                          570 B         105 kB
+├ ƒ /api/v1/services/[id]/consumption              570 B         105 kB
+├ ƒ /api/v1/services/reorder                       570 B         105 kB
+├ ƒ /api/v1/subscription-plans                     570 B         105 kB
+├ ƒ /api/v1/tenant                                 570 B         105 kB
+├ ƒ /api/v1/tenant/advocacia                       570 B         105 kB
+├ ƒ /api/v1/tenant/automacoes                      570 B         105 kB
+├ ƒ /api/v1/tenant/fixed-cost                      570 B         105 kB
+├ ƒ /api/v1/tenant/loyalty-config                  570 B         105 kB
+├ ƒ /api/v1/tenant/modules                         570 B         105 kB
+├ ƒ /api/v1/tenant/payment-fees                    570 B         105 kB
+├ ƒ /api/v1/tenant/vitrine                         570 B         105 kB
+├ ƒ /api/v1/tenant/vitrine/entidade                570 B         105 kB
+├ ƒ /api/v1/tickets/[id]                           570 B         105 kB
+├ ƒ /api/v1/tickets/[id]/cancel                    570 B         105 kB
+├ ƒ /api/v1/tickets/[id]/close                     570 B         105 kB
+├ ƒ /api/v1/tickets/[id]/items                     570 B         105 kB
+├ ƒ /api/v1/tickets/[id]/items/[itemId]            570 B         105 kB
+├ ƒ /api/v1/time-off                               570 B         105 kB
+├ ƒ /api/v1/time-off/[id]                          570 B         105 kB
+├ ƒ /api/v1/vault/access-log                       570 B         105 kB
+├ ƒ /api/v1/waitlist                               570 B         105 kB
+├ ƒ /api/v1/wallet                                 570 B         105 kB
+├ ƒ /api/v1/wallet/credit                          570 B         105 kB
+├ ƒ /api/v1/wallet/debit                           570 B         105 kB
+├ ƒ /api/v1/webhooks/mercado-pago                  570 B         105 kB
+├ ƒ /api/webhooks/whatsapp                         570 B         105 kB
+├ ƒ /auth/callback                                 570 B         105 kB
+├ ƒ /avaliar/[token]                             4.89 kB         118 kB
+├ ƒ /cadastro                                    4.54 kB         142 kB
+├ ○ /calculadora                                 4.14 kB         126 kB          1h      1y
+├ ƒ /confirmar/[token]                           3.24 kB         120 kB
+├ ○ /dev/ui                                      6.89 kB         152 kB
+├ ƒ /entrar                                       2.5 kB         141 kB
+├ ○ /icon.svg                                        0 B            0 B
+├ ○ /links                                       1.37 kB         114 kB         10m      1y
+├ ƒ /lista-espera/[token]                        2.81 kB         116 kB
+├ ○ /llms.txt                                      570 B         105 kB          1h      1y
+├ ƒ /nova-senha                                   4.9 kB         136 kB
+├ ƒ /onboarding                                  5.73 kB         137 kB
+├ ƒ /onboarding/perfil                           3.84 kB         135 kB
+├ ○ /opengraph-image                               570 B         105 kB
+├ ƒ /orcamento/[token]                           4.54 kB         118 kB
+├ ○ /precos                                      1.37 kB         114 kB          1h      1y
+├ ○ /privacidade                                   721 B         113 kB          1h      1y
+├ ƒ /recuperar-senha                             4.59 kB         139 kB
+├ ○ /robots.txt                                    570 B         105 kB
+├ ○ /sitemap.xml                                   570 B         105 kB          1h      1y
+├ ○ /termos                                        721 B         113 kB          1h      1y
+└ ƒ /verificar                                    1.4 kB         136 kB
++ First Load JS shared by all                     104 kB
+  ├ chunks/7843f6d6-19a17ff3fe561db8.js          54.2 kB
+  ├ chunks/9012-d511222ebf7cb143.js              46.6 kB
+  └ other shared chunks (total)                  3.09 kB
+
+
+ƒ Middleware                                      177 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+real	10m12.375s
+user	0m0.105s
+sys	0m0.245s

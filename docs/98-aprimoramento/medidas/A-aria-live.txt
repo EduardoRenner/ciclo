@@ -1,0 +1,15 @@
+/admin/hoje {"regioesVivas":0,"exemplos":[],"animacoesRodandoComReduce":0}
+/admin/agenda {"regioesVivas":1,"exemplos":["polite:terça-feira, 13 de outubro. Nada marcado"],"animacoesRodandoComReduce":0}
+/admin/agenda/novo {"regioesVivas":0,"exemplos":[],"animacoesRodandoComReduce":0}
+/admin/comanda/agendamento/07bce881-65e9-4597-bb44-98c4c4a0796f {"regioesVivas":0,"exemplos":[],"animacoesRodandoComReduce":0}
+/admin/caixa {"regioesVivas":0,"exemplos":[],"animacoesRodandoComReduce":0}
+/admin/clientes {"regioesVivas":1,"exemplos":["polite:22 clientes na lista."],"animacoesRodandoComReduce":0}
+/admin/clientes/cf3e5831-4a82-4fe0-8398-0f060d41ec95 {"regioesVivas":0,"exemplos":[],"animacoesRodandoComReduce":0}
+/admin/recuperar {"regioesVivas":1,"exemplos":["polite:0 clientes, R$ 0,00 para recuperar."],"animacoesRodandoComReduce":0}
+/admin/campanhas {"regioesVivas":0,"exemplos":[],"animacoesRodandoComReduce":0}
+/admin/mes {"regioesVivas":0,"exemplos":[],"animacoesRodandoComReduce":0}
+/admin/config {"regioesVivas":0,"exemplos":[],"animacoesRodandoComReduce":0}
+/admin/orcamentos {"regioesVivas":0,"exemplos":[],"animacoesRodandoComReduce":0}
+/demo-dom-estilo {"regioesVivas":1,"exemplos":["status:Negócio de exemplo. Ele não existe e nen"],"animacoesRodandoComReduce":0}
+/demo-dom-estilo/agendar {"regioesVivas":2,"exemplos":["status:Negócio de exemplo. Ele não existe: dá p","polite:38 horários livres em terça-feira, 13 de"],"animacoesRodandoComReduce":0}
+/confirmar/token-de-medicao-inexistente {"regioesVivas":0,"exemplos":[],"animacoesRodandoComReduce":0}

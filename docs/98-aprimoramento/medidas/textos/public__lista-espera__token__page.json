@@ -1,0 +1,76 @@
+{
+ "rota": "(public)/lista-espera/[token]/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(public)/lista-espera/[token]/page.tsx",
+  "src/app/(public)/lista-espera/[token]/reivindicar.tsx",
+  "src/components/ui/erro-publico.tsx",
+  "src/components/ui/titulo-de-estado.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/button.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 9,
+ "textos": [
+  {
+   "texto": "Vaga na agenda",
+   "arquivo": "src/app/(public)/lista-espera/[token]/page.tsx",
+   "linha": 12,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Esse encaixe não está mais disponível.",
+   "arquivo": "src/app/(public)/lista-espera/[token]/reivindicar.tsx",
+   "linha": 31,
+   "tipo": "estado/aviso"
+  },
+  {
+   "texto": "Não consegui falar com o servidor.",
+   "arquivo": "src/app/(public)/lista-espera/[token]/reivindicar.tsx",
+   "linha": 40,
+   "tipo": "estado/aviso"
+  },
+  {
+   "texto": "Confirmando o horário…",
+   "arquivo": "src/app/(public)/lista-espera/[token]/reivindicar.tsx",
+   "linha": 57,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Encaixe garantido!",
+   "arquivo": "src/app/(public)/lista-espera/[token]/reivindicar.tsx",
+   "linha": 64,
+   "tipo": "texto",
+   "tag": "TituloDeEstado"
+  },
+  {
+   "texto": "Seu horário está reservado. Até lá!",
+   "arquivo": "src/app/(public)/lista-espera/[token]/reivindicar.tsx",
+   "linha": 65,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Não consegui reservar",
+   "arquivo": "src/app/(public)/lista-espera/[token]/reivindicar.tsx",
+   "linha": 72,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Tentar de novo",
+   "arquivo": "src/components/ui/erro-publico.tsx",
+   "linha": 69,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Chame quem vai te atender pelo WhatsApp: por lá dá para resolver na hora.",
+   "arquivo": "src/components/ui/erro-publico.tsx",
+   "linha": 73,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

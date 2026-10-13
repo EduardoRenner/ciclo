@@ -1,0 +1,85 @@
+{
+  "perfil": "celular",
+  "slug": "demo-espaco-vitoria",
+  "modo": "normal",
+  "telefone": "•••••••0011",
+  "totalMs": 11898,
+  "pausaFotoMs": 395,
+  "toques": 7,
+  "camposDigitados": 2,
+  "pedidosBook": 1,
+  "ok": true,
+  "horaEscolhida": "09:00",
+  "passos": [
+    {
+      "passo": "servicos visiveis (conteudo util)",
+      "msDesdeInicio": 3185
+    },
+    {
+      "passo": "load",
+      "msDesdeInicio": 4666
+    },
+    {
+      "passo": "toca servico",
+      "msDesdeInicio": 5081,
+      "respostaMs": 365
+    },
+    {
+      "passo": "toca Tanto faz",
+      "msDesdeInicio": 5329,
+      "respostaMs": null
+    },
+    {
+      "passo": "toca dia +2 (quinta-feira, dia 15)",
+      "msDesdeInicio": 7428,
+      "respostaMs": null
+    },
+    {
+      "passo": "horarios do dia visiveis",
+      "msDesdeInicio": 8531,
+      "esperaMs": 1103
+    },
+    {
+      "passo": "toca horario 09:00",
+      "msDesdeInicio": 8777,
+      "respostaMs": 237
+    },
+    {
+      "passo": "toca campo nome",
+      "msDesdeInicio": 9042,
+      "respostaMs": null
+    },
+    {
+      "passo": "toca campo telefone",
+      "msDesdeInicio": 9259,
+      "respostaMs": null
+    },
+    {
+      "passo": "formulario preenchido",
+      "msDesdeInicio": 10852
+    },
+    {
+      "passo": "toca Confirmar (2x em 80 ms)",
+      "msDesdeInicio": 11540,
+      "estadoBotaoApos80ms": {
+        "disabled": true,
+        "ariaBusy": "true",
+        "ariaDisabled": null,
+        "texto": "Confirmar agendamento"
+      }
+    },
+    {
+      "passo": "SUCESSO visivel",
+      "msDesdeInicio": 12309,
+      "msDoToqueAteResultado": 1046
+    }
+  ],
+  "alertas": [],
+  "textoFinalTrecho": "Agendar em Espaço Vitória\nNegócio de exemplo. Ele não existe: dá para percorrer o agendamento inteiro, mas nenhum horário marcado será atendido.\nVisão de quem agenda\nVisão de quem atende\nAgendamento enviado!\nManicure simples\nquinta-feira, 15 de outubro às 09:00\ncom Bruna Siqueira\nSeu pedido chegou e já apareceu para a equipe. A confirmação vem de quem vai te atender, e pode não ser na hora. Se não tiver retorno em algumas horas, fale direto:\nLigar para Espaço Vitória\nAdicionar à minha agenda\nVoltar para Espaço Vitória",
+  "rolagemLateral": 0,
+  "alvosPequenos": [],
+  "axeFinal": [],
+  "consoleErros": [
+    "pageerror: EvalError: Evaluating a string as JavaScript violates the following Content Security Policy directive because 'unsafe-eval' is not an allowed source of script: script-src 'self' 'nonce-ZGNkZjZlN2MtMTZiYS00MjU4LTgwMDQtODM0MDcwNWJmYjU2' 'strict-dynamic' 'unsafe-inline'\".\n"
+  ]
+}

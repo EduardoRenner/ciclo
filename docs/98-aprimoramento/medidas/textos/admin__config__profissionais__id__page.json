@@ -1,0 +1,242 @@
+{
+ "rota": "admin/config/profissionais/[id]/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/profissionais/[id]/page.tsx",
+  "src/components/config/editor-expediente.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/bloqueio-plano.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/lib/formato.ts",
+  "src/lib/app-url.ts",
+  "src/lib/utils.ts",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/toast.tsx"
+ ],
+ "total": 35,
+ "textos": [
+  {
+   "texto": "Profissional",
+   "arquivo": "src/app/admin/config/profissionais/[id]/page.tsx",
+   "linha": 18,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Expediente e folgas.",
+   "arquivo": "src/app/admin/config/profissionais/[id]/page.tsx",
+   "linha": 51,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "dar um expediente próprio a cada profissional",
+   "arquivo": "src/app/admin/config/profissionais/[id]/page.tsx",
+   "linha": 58,
+   "tipo": "prop:acao"
+  },
+  {
+   "texto": "Definir o horário do negócio inteiro",
+   "arquivo": "src/app/admin/config/profissionais/[id]/page.tsx",
+   "linha": 59,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Domingo",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 13,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Segunda",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 13,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Terça",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 13,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Quarta",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 13,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Quinta",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 13,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sexta",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 13,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sábado",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 13,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{d.getFullYear()}-{pad(d.getMonth() + 1)}-{pad(d.getDate())}T{pad(d.getHours())}:{pad(d.getMinutes())}",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 28,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui salvar o expediente",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 87,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Voltei o horário para o que estava salvo. Tente de novo.",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 88,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 97,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Voltei o horário para o que estava salvo. Confira a conexão e tente de novo.",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 98,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui salvar a folga",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 142,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "remoção recusada pelo servidor",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 160,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui remover a folga",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 163,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente de novo em instantes.",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 163,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Expediente",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 171,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Adicionar intervalo em {nome}",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 184,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Fechado",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 203,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "até",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 223,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "{nome}, abre às",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 218,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "até",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 224,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "{nome}, fecha às",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 228,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Remover este intervalo",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 235,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Folgas",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 253,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Fechamentos (feriados, férias coletivas)",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 253,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Remover folga",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 269,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Início",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 290,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Fim",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 300,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Motivo (opcional)",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 310,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Adicionar",
+   "arquivo": "src/components/config/editor-expediente.tsx",
+   "linha": 317,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

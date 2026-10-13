@@ -1,0 +1,68 @@
+{
+  "c07": {
+    "servidor_sp_3200": {
+      "/admin/agenda?date=2026-10-14": [],
+      "/admin/hoje": [],
+      "folga_inicio_padrao_html": "2026-10-13T02:44"
+    },
+    "servidor_utc_3201": {
+      "/admin/agenda?date=2026-10-14": [],
+      "/admin/hoje": [],
+      "folga_inicio_padrao_html": "2026-10-13T05:44"
+    },
+    "utc_com_js_depois_de_hidratar": [
+      "09:11",
+      "10:16"
+    ],
+    "utc_com_js_erros_console": [],
+    "relogio_maquina": "Tue Oct 13 2026 02:44:42 GMT-0300 (Horário Padrão de Brasília)"
+  },
+  "_quando": "2026-10-13T05:47:05.320Z",
+  "c05": {
+    "boundary_apareceu": true,
+    "campo_motivo_ainda_na_tela": null,
+    "toast_de_erro": false,
+    "trecho": "Configurações\n\nNão consegui carregar esta tela\n\nPode ter sido a conexão. Nada do que você salvou foi perdido.\n\nTentar de novo\nIr para Hoje\nHoje\nAgenda\nClientes\nMarcar"
+  },
+  "c19": {
+    "mostra_vazio_como_resultado": true,
+    "mostra_aviso_de_falha": false,
+    "trecho": "Clientes\n\n22 na carteira\n\nBaixar todos em planilha\n\nTICKET MÉDIO\n\nR$ 66,35\n\nVOLTAM DE NOVO\n\n100%\n\n2 fazem aniversário esse mês\n\nBuscar cliente por nome ou telefone\n🎂 Aniversariante\nPrimeira visita sem volta\nTicket alto\n\n0 clientes na lista.\n\nNenhum resultado\n\nConfira a grafia do nome ou o telefone digitado.\n\nCadastrar cliente"
+  },
+  "c04": {
+    "slot": "2026-10-22T21:15:00Z",
+    "primeiro": {
+      "status": 200,
+      "appointmentId": "d27202ab-31a0-498f-b4d7-4f0803adaf67"
+    },
+    "reenvio": {
+      "status": 409,
+      "code": "SLOT_TAKEN",
+      "message": "Esse horário acabou de ser reservado."
+    }
+  },
+  "_ticket_c01": "f9b4129c-9358-4d90-a14e-580e4183040c",
+  "c01": {
+    "chegou": 200,
+    "concluiu": 200,
+    "ticketId": "f9b4129c-9358-4d90-a14e-580e4183040c",
+    "comanda_vazia": true,
+    "servico_pre_selecionado": "Barba · R$ 35,00",
+    "servico_do_agendamento": "Corte + barba · R$ 70,00"
+  },
+  "c13": {
+    "requisicoes_depois_do_toque": [
+      "PATCH /tickets/f9b4129c-9358-4d90-a14e-580e4183040c"
+    ],
+    "comanda_fechou_com_um_toque": false
+  },
+  "c45": {
+    "url_depois_de_enfileirar": "chrome-error://chromewebdata/",
+    "depois_de_enfileirar": "Toque no dinossauro para jogar\n\nTente:\n\nVerificar os cabos de rede, modem e roteador\nConectar à rede Wi-Fi novamente\nExecutar o Diagnóstico de Rede do Windows\nERR_INTERNET_DISCONNECTED",
+    "itens_na_fila_offline": "medido na pagina seguinte (a atual virou pagina de erro do navegador)",
+    "itens_na_fila_ao_abrir_online": 1,
+    "posts_em_10s_depois_de_abrir_online": 0,
+    "itens_ainda_na_fila": 1,
+    "faixa": "1 alteração pendente · enviando quando possível"
+  }
+}

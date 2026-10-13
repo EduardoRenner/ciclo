@@ -1,0 +1,138 @@
+// Agente F — entrar (erros), cadastro com senha fraca, recuperar senha e nova senha (banco local).
+// O link do e-mail é lido no Mailpit local. NEXT_PUBLIC_APP_URL do build aponta para :3000 e o app
+// roda em :3200: o redirecionamento do link é reescrito para :3200 (cookies não dependem da porta).
+// Uso: node F-senha.mjs <email-de-conta-local-descartavel>
+import { writeFileSync } from 'node:fs'
+import { abrir, BASE, CAPTURAS, MEDIDAS } from './F-lib.mjs'
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs'
+
+const email = process.argv[2]
+const SENHA_NOVA = 'Nova#AgenteF2026x'
+const browser = await chromium.launch({ channel: 'chrome' })
+const out = { email, casos: [] }
+const texto = (p) => p.evaluate(() => document.body.innerText.replace(/\n{2,}/g, '\n').trim())
+const caso = (c) => { out.casos.push(c); console.log(JSON.stringify(c)) }
+
+// 1. Entrar com senha errada / e-mail inexistente / campos vazios
+{
+  const { context, page } = await abrir('celular', { browser })
+  await page.goto(`${BASE}/entrar`)
+  await page.getByLabel('E-mail').fill(email)
+  await page.getByLabel('Senha', { exact: true }).fill('senha-errada-123')
+  const t = Date.now()
+  await page.getByRole('button', { name: /^Entrar$/ }).click()
+  await page.locator('[role=alert]:not(:empty)').first().waitFor().catch(() => {})
+  caso({ caso: 'entrar senha errada', ms: Date.now() - t, alerta: await page.locator('[role=alert]').allInnerTexts(), emailMantido: await page.getByLabel('E-mail').inputValue() === email })
+  await page.screenshot({ path: `${CAPTURAS}/F-entrar-senha-errada-celular.png` })
+  await page.getByLabel('E-mail').fill('ninguem-agente-f@exemplo.com')
+  await page.getByRole('button', { name: /^Entrar$/ }).click()
+  await page.waitForTimeout(2500)
+  caso({ caso: 'entrar e-mail inexistente', alerta: await page.locator('[role=alert]').allInnerTexts() })
+  const links = await page.evaluate(() => [...document.querySelectorAll('a')].map((a) => `${a.innerText.trim()} -> ${a.getAttribute('href')}`))
+  caso({ caso: 'entrar: links da tela', links })
+  await context.close()
+}
+
+// 2. Cadastro com senha curta (8 caracteres passa no navegador; o servidor decide)
+{
+  const { context, page } = await abrir('celular', { browser })
+  await page.goto(`${BASE}/cadastro`)
+  await page.getByLabel('Nome completo').fill('Senha Fraca Agente F')
+  await page.getByLabel('E-mail').fill(`fraca-${Date.now()}@agente-f.test`)
+  await page.getByLabel('Telefone com DDD').fill('11976549999')
+  await page.getByLabel('Senha', { exact: true }).fill('abc12345')
+  await page.getByRole('button', { name: 'Criar conta' }).click()
+  await page.getByText(/Quase lá/).or(page.locator('form [role=alert]:not(:empty)')).first().waitFor().catch(() => {})
+  caso({ caso: 'cadastro senha de 8 caracteres', resultado: (await texto(page)).slice(0, 300), alerta: await page.locator('[role=alert]').allInnerTexts() })
+  await page.screenshot({ path: `${CAPTURAS}/F-cadastro-senha-fraca-celular.png`, fullPage: true })
+  await page.goto(`${BASE}/cadastro`)
+  await page.getByLabel('Nome completo').fill('Senha Comum Agente F')
+  await page.getByLabel('E-mail').fill(`comum-${Date.now()}@agente-f.test`)
+  await page.getByLabel('Telefone com DDD').fill('11976549998')
+  await page.getByLabel('Senha', { exact: true }).fill('senha12345')
+  await page.getByRole('button', { name: 'Criar conta' }).click()
+  await page.waitForTimeout(3000)
+  caso({ caso: 'cadastro senha comum de 10 caracteres', alerta: await page.locator('[role=alert]').allInnerTexts(), resultado: (await texto(page)).slice(0, 200) })
+  await context.close()
+}
+
+// 3. /nova-senha sem sessão
+{
+  const { context, page } = await abrir('celular', { browser })
+  await page.goto(`${BASE}/nova-senha`)
+  await page.waitForLoadState('load')
+  caso({ caso: 'nova-senha sem sessao', url: page.url(), texto: (await texto(page)).slice(0, 400) })
+  await page.screenshot({ path: `${CAPTURAS}/F-nova-senha-sem-sessao-celular.png`, fullPage: true })
+  await context.close()
+}
+
+async function pedirLink(page) {
+  await page.goto(`${BASE}/recuperar-senha`)
+  await page.getByLabel('E-mail').fill(email)
+  const t = Date.now()
+  await page.getByRole('button').filter({ hasText: /link|Enviar/i }).first().click()
+  await page.waitForTimeout(2500)
+  const tela = await texto(page)
+  // Mailpit: a mensagem mais nova para este e-mail
+  let link = null
+  for (let i = 0; i < 20 && !link; i++) {
+    const busca = await (await fetch(`http://127.0.0.1:54324/api/v1/search?query=${encodeURIComponent('to:' + email)}`)).json()
+    const msg = (busca.messages ?? []).find((m) => new Date(m.Created).getTime() > t - 5000)
+    if (msg) {
+      const corpo = await (await fetch(`http://127.0.0.1:54324/api/v1/message/${msg.ID}`)).json()
+      link = (corpo.HTML ?? corpo.Text ?? '').match(/https?:\/\/[^"'\s<>]+verify[^"'\s<>]+/)?.[0]?.replace(/&amp;/g, '&') ?? null
+      out.assuntoEmail = msg.Subject
+    } else await new Promise((r) => setTimeout(r, 500))
+  }
+  return { tela, link }
+}
+
+async function seguirLink(page, link) {
+  // o verify do Supabase redireciona para NEXT_PUBLIC_APP_URL (:3000); seguimos à mão para :3200
+  const r = await fetch(link, { redirect: 'manual' })
+  const destino = (r.headers.get('location') ?? '').replace('http://localhost:3000', BASE).replace('http://127.0.0.1:3000', BASE)
+  await page.goto(destino)
+  await page.waitForLoadState('load')
+  return { destinoDoVerify: destino.replace(/code=[^&]+/, 'code=<omitido>'), urlFinal: page.url(), texto: (await texto(page)).slice(0, 300) }
+}
+
+// 4. Recuperar senha — link aberto em OUTRO navegador (como o app de e-mail do celular faz)
+{
+  const { context: a, page: pa } = await abrir('celular', { browser })
+  const { tela, link } = await pedirLink(pa)
+  caso({ caso: 'recuperar-senha: tela apos pedir', tela: tela.slice(0, 400), linkRecebido: !!link })
+  await pa.screenshot({ path: `${CAPTURAS}/F-recuperar-senha-enviado-celular.png`, fullPage: true })
+  if (link) {
+    const { context: b, page: pb } = await abrir('celular', { browser })
+    caso({ caso: 'recuperar-senha: link aberto em outro navegador', ...(await seguirLink(pb, link)) })
+    await pb.screenshot({ path: `${CAPTURAS}/F-recuperar-senha-outro-navegador-celular.png`, fullPage: true })
+    await b.close()
+  }
+  await a.close()
+}
+
+// 5. Recuperar senha — link aberto no MESMO navegador; troca a senha
+{
+  const { context, page } = await abrir('celular', { browser })
+  const { link } = await pedirLink(page)
+  if (link) {
+    const r = await seguirLink(page, link)
+    caso({ caso: 'recuperar-senha: link no mesmo navegador', ...r })
+    if (page.url().includes('/nova-senha')) {
+      await page.getByLabel('Senha nova', { exact: true }).fill('abc12345')
+      await page.getByLabel('Repita a senha', { exact: true }).fill('abc12345')
+      await page.getByRole('button').filter({ hasText: /senha|Salvar|Trocar/i }).first().click()
+      await page.waitForTimeout(2500)
+      caso({ caso: 'nova-senha fraca', alerta: await page.locator('[role=alert]').allInnerTexts() })
+      await page.getByLabel('Senha nova', { exact: true }).fill(SENHA_NOVA)
+      await page.getByLabel('Repita a senha', { exact: true }).fill(SENHA_NOVA)
+      const t = Date.now()
+      await page.getByRole('button').filter({ hasText: /senha|Salvar|Trocar/i }).first().click()
+      await page.waitForURL((u) => !u.pathname.includes('nova-senha'), { timeout: 30000 }).catch(() => {})
+      caso({ caso: 'nova-senha forte', ms: Date.now() - t, urlFinal: page.url(), texto: (await texto(page)).slice(0, 200) })
+    }
+  } else caso({ caso: 'recuperar-senha 2o pedido', link: null, nota: 'sem e-mail (limite do projeto local: email_sent=2/h?)' })
+  await context.close()
+}
+await browser.close()
+writeFileSync(`${MEDIDAS}/F/senha-e-entrar.json`, JSON.stringify(out, null, 2))

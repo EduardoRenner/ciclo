@@ -1,0 +1,109 @@
+{
+  "rotulo": "barbearia",
+  "passos": [
+    {
+      "passo": "servico",
+      "msAteTela": 1880,
+      "toques": 5,
+      "campos": 3,
+      "msPreencherEEnviar": 1694,
+      "avisos": [
+        "Notification Serviço cadastrado"
+      ],
+      "urlFinal": "http://localhost:3200/admin/config/servicos",
+      "textoFinal": "Serviços\nO que você oferece, quanto dura e quanto custa. Arraste para mudar a ordem que aparece na sua página.\nAtivos\nTodos\nNovo\nBarba\n30min · R$ 35,00 · volta em 14d\nainda sem atendimentos suficientes para calcular a margem\nFicha de consumo\nCorte\n40min · R$ 45,00 · volta em 21d\nainda sem atendimentos suficientes para calcular a margem\nFicha de consumo\nCorte + barba\n1h · R$ 70,00 · volta em 21d\nainda sem atendimentos suficientes para calcular a margem\nFicha de consumo\nCorte infantil\n30min · R$ 40,00 · volta em 25d\nainda sem atendimentos suficientes para calcular a margem\nFicha de consumo\nPigmentação\n45min · R$ 60,00 · volta em 30d\nainda sem atendimentos suficientes para calcular a margem\nFic"
+    },
+    {
+      "passo": "profissional",
+      "msAteTela": 1236,
+      "toques": 3,
+      "campos": 1,
+      "msPreencherEEnviar": 1223,
+      "avisos": [
+        "Notification Profissional cadastrado"
+      ],
+      "urlFinal": "http://localhost:3200/admin/config/profissionais",
+      "textoFinal": "Time\nQuem atende, expediente e quem você já convidou.\nAtivos\nTodos\nCadastrar\nConvidar\nDono barbearia Agente F\nDesativar\nRafa Barbeiro\nSem login\nDesativar"
+    },
+    {
+      "passo": "cliente",
+      "msAteTela": 1504,
+      "toques": 3,
+      "campos": 2,
+      "msPreencherEEnviar": 1509,
+      "avisos": [],
+      "urlFinal": "http://localhost:3200/admin/clientes/75a9593e-964a-413c-9852-89f8fa3282e9",
+      "textoFinal": "CF\nCliente Primeira Agente F\n(11) 97777-1234\nCOMO ATENDER\nNada anotado ainda. Toque para registrar as preferências de atendimento.\nResumo\nHistórico\nFidelidade\nFicha\nVALOR ATENDIDO\nR$ 0,00\nSOBROU\nR$ 0,00\nnenhuma comanda fechada ainda\nVISITAS\n0\nTICKET MÉDIO\nR$ 0,00\nFALTAS\n0\nCriar orçamento\nOrçamento é do plano Essencial. Veja os planos em Configurações, Meu plano.\nIndicar\nHorário\nMensagem"
+    },
+    {
+      "passo": "agendamento",
+      "msAteTela": 1282,
+      "toques": 8,
+      "campos": 3,
+      "camposDaTela": [
+        "Serviço:select-one",
+        "Profissional:select-one",
+        "Cliente:text",
+        "Telefone:tel",
+        "Data e horário:datetime-local",
+        "Repetir este horário\nRepetir é do Solo. Marcar este horário continua funcionando normalmente.:checkbox"
+      ],
+      "sugestoesDeCliente": [],
+      "temSeletorDeProfissional": true,
+      "msPreencherEEnviar": 1951,
+      "avisos": [
+        "Notification Agendamento criado"
+      ],
+      "urlFinal": "http://localhost:3200/admin/agenda",
+      "textoFinal": "Agenda\nDOM\n11\nSEG\n12\nTER\n13\nQUA\n14\nQUI\n15\nSEX\n16\nSÁB\n17\nTodos\nDono barbearia Agente F\nRafa Barbeiro\nOCUPAÇÃO DO DIA\n0%\nPREVISTO\nR$ 0,00\nterça-feira, 13 de outubro. Nada marcado. Ocupação 0%.\nNada marcado nesse dia\nToque no botão + para criar o primeiro agendamento.\nNovo agendamento"
+    },
+    {
+      "passo": "agendamento-conflito",
+      "msAteTela": 1416,
+      "toques": 8,
+      "campos": 3,
+      "camposDaTela": [
+        "Serviço:select-one",
+        "Profissional:select-one",
+        "Cliente:text",
+        "Telefone:tel",
+        "Data e horário:datetime-local",
+        "Repetir este horário\nRepetir é do Solo. Marcar este horário continua funcionando normalmente.:checkbox"
+      ],
+      "sugestoesDeCliente": [],
+      "temSeletorDeProfissional": true,
+      "msPreencherEEnviar": 16933,
+      "avisos": [
+        "Esse horário acabou de ser reservado."
+      ],
+      "urlFinal": "http://localhost:3200/admin/agenda/novo",
+      "textoFinal": "Novo agendamento\nServiço\nBarba · R$ 35,00\nCorte · R$ 45,00\nCorte + barba · R$ 70,00\nCorte infantil · R$ 40,00\nPigmentação · R$ 60,00\nPlatinado · R$ 180,00\nCorte degradê · R$ 50,00\nProfissional\nDono barbearia Agente F\nRafa Barbeiro\nCliente\nTelefone\nData e horário\nRepetir este horário\nRepetir é do Solo. Marcar este horário continua funcionando normalmente.\nEsse horário acabou de ser reservado.\nqua., 14/10, 09:15\nqua., 14/10, 10:45\nqua., 14/10, 09:00\nConfirmar agendamento"
+    },
+    {
+      "passo": "agendamento-domingo",
+      "msAteTela": 769,
+      "toques": 8,
+      "campos": 3,
+      "camposDaTela": [
+        "Serviço:select-one",
+        "Profissional:select-one",
+        "Cliente:text",
+        "Telefone:tel",
+        "Data e horário:datetime-local",
+        "Repetir este horário\nRepetir é do Solo. Marcar este horário continua funcionando normalmente.:checkbox"
+      ],
+      "sugestoesDeCliente": [],
+      "temSeletorDeProfissional": true,
+      "msPreencherEEnviar": 2196,
+      "avisos": [
+        "Notification Agendamento criado"
+      ],
+      "urlFinal": "http://localhost:3200/admin/agenda",
+      "textoFinal": "Agenda\nDOM\n11\nSEG\n12\nTER\n13\nQUA\n14\nQUI\n15\nSEX\n16\nSÁB\n17\nTodos\nDono barbearia Agente F\nRafa Barbeiro\nOCUPAÇÃO DO DIA\n0%\nPREVISTO\nR$ 0,00\nterça-feira, 13 de outubro. Nada marcado. Ocupação 0%.\nNada marcado nesse dia\nToque no botão + para criar o primeiro agendamento.\nNovo agendamento"
+    }
+  ],
+  "consoleErros": [
+    "Failed to load resource: the server responded with a status of 409 (Conflict)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+}

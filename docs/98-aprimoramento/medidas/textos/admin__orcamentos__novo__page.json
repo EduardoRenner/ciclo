@@ -1,0 +1,210 @@
+{
+ "rota": "admin/orcamentos/novo/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/orcamentos/novo/page.tsx",
+  "src/app/admin/orcamentos/novo/formulario.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/components/shell/vocabulario.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/money-input.tsx",
+  "src/components/ui/phone-input.tsx",
+  "src/components/ui/select.tsx",
+  "src/components/ui/textarea.tsx",
+  "src/lib/formato.ts",
+  "src/lib/utils.ts"
+ ],
+ "total": 29,
+ "textos": [
+  {
+   "texto": "Novo orçamento",
+   "arquivo": "src/app/admin/orcamentos/novo/page.tsx",
+   "linha": 10,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Novo orçamento",
+   "arquivo": "src/app/admin/orcamentos/novo/page.tsx",
+   "linha": 20,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Adicione pelo menos um item com descrição.",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 95,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Oi! Segue o orçamento: {json.data.url}",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 109,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui criar o orçamento.",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 115,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 119,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Orçamento pronto ·",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 127,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Mandar pelo WhatsApp",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 134,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Voltar pra agenda",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 137,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Nome",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 155,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Itens do orçamento",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 159,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Descrição",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 163,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Ex.: Mão de obra",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 166,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Qtd.",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 170,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Preço",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 177,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "unitPriceCents",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 177,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Remover item",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 183,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Adicionar item",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 197,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Vale por",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 201,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "7 dias",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 202,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "15 dias",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 203,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "30 dias",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 204,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Sem data para vencer",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 205,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Mensagem (opcional)",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 208,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Ex.: Inclui material e mão de obra",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 208,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Total {…}",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 211,
+   "tipo": "texto",
+   "tag": "Card"
+  },
+  {
+   "texto": "Total",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 211,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Criar orçamento",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 230,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cadastre pelo menos um profissional em Configurações para montar um orçamento.",
+   "arquivo": "src/app/admin/orcamentos/novo/formulario.tsx",
+   "linha": 228,
+   "tipo": "prop:motivoDesabilitado"
+  }
+ ]
+}

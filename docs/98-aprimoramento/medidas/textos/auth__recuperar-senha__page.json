@@ -1,0 +1,99 @@
+{
+ "rota": "(auth)/recuperar-senha/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(auth)/recuperar-senha/page.tsx",
+  "src/app/(auth)/recuperar-senha/formulario.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/shell/selo.tsx",
+  "src/components/shell/tela-publica.tsx",
+  "src/components/ui/toast.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/input.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 12,
+ "textos": [
+  {
+   "texto": "Recuperar senha",
+   "arquivo": "src/app/(auth)/recuperar-senha/page.tsx",
+   "linha": 9,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Esqueceu a senha?",
+   "arquivo": "src/app/(auth)/recuperar-senha/page.tsx",
+   "linha": 32,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Diga o e-mail da sua conta e mandamos um link para você criar uma nova.",
+   "arquivo": "src/app/(auth)/recuperar-senha/page.tsx",
+   "linha": 34,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Esse link não vale mais: eles expiram e só funcionam no aparelho em que você pediu. Peça outro abaixo.",
+   "arquivo": "src/app/(auth)/recuperar-senha/page.tsx",
+   "linha": 39,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Não consegui enviar o link. Tente de novo.",
+   "arquivo": "src/app/(auth)/recuperar-senha/formulario.tsx",
+   "linha": 25,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Tente de novo.",
+   "arquivo": "src/app/(auth)/recuperar-senha/formulario.tsx",
+   "linha": 30,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Se esse e-mail tem conta no CICLO, o link para criar uma senha nova já está a caminho. Abra a mensagem no mesmo aparelho em que você pediu.",
+   "arquivo": "src/app/(auth)/recuperar-senha/formulario.tsx",
+   "linha": 45,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Voltar para entrar",
+   "arquivo": "src/app/(auth)/recuperar-senha/formulario.tsx",
+   "linha": 49,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "E-mail",
+   "arquivo": "src/app/(auth)/recuperar-senha/formulario.tsx",
+   "linha": 76,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Mandar link",
+   "arquivo": "src/app/(auth)/recuperar-senha/formulario.tsx",
+   "linha": 83,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Lembrou? Entrar",
+   "arquivo": "src/app/(auth)/recuperar-senha/formulario.tsx",
+   "linha": 86,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Entrar",
+   "arquivo": "src/app/(auth)/recuperar-senha/formulario.tsx",
+   "linha": 86,
+   "tipo": "texto",
+   "tag": "span"
+  }
+ ]
+}

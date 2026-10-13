@@ -1,0 +1,79 @@
+{
+  "email": "dona-faxina@agente-f.test",
+  "casos": [
+    {
+      "caso": "entrar senha errada",
+      "ms": 323,
+      "alerta": [
+        "E-mail ou senha não conferem.",
+        ""
+      ],
+      "emailMantido": true
+    },
+    {
+      "caso": "entrar e-mail inexistente",
+      "alerta": [
+        "E-mail ou senha não conferem.",
+        ""
+      ]
+    },
+    {
+      "caso": "entrar: links da tela",
+      "links": [
+        "Esqueci minha senha -> /recuperar-senha",
+        "Não tem conta?\nCadastre-se -> /cadastro"
+      ]
+    },
+    {
+      "caso": "cadastro senha de 8 caracteres",
+      "resultado": "Criar sua conta\nLeva menos de um minuto. Você começa com tudo liberado, sem cartão. Sem prazo por enquanto.\nQuase lá! Mandamos um link de confirmação para fraca-1791869590442@agente-f.test. Abra a mensagem e clique nele para continuar.\nNão chegou? Confira também a caixa de spam ou lixo eletrônico.\nR",
+      "alerta": [
+        ""
+      ]
+    },
+    {
+      "caso": "cadastro senha comum de 10 caracteres",
+      "alerta": [
+        "Essa senha é fácil de adivinhar. Escolha algo que só você usaria.",
+        ""
+      ],
+      "resultado": "Criar sua conta\nLeva menos de um minuto. Você começa com tudo liberado, sem cartão. Sem prazo por enquanto.\nNome completo\nE-mail\nTelefone com DDD\nSenha\nEssa senha é fácil de adivinhar. Escolha algo qu"
+    },
+    {
+      "caso": "nova-senha sem sessao",
+      "url": "http://localhost:3200/recuperar-senha?erro=link_expirado",
+      "texto": "Esqueceu a senha?\nDiga o e-mail da sua conta e mandamos um link para você criar uma nova.\nEsse link não vale mais: eles expiram e só funcionam no aparelho em que você pediu. Peça outro abaixo.\nE-mail\nMandar link\nLembrou?\nEntrar"
+    },
+    {
+      "caso": "recuperar-senha: tela apos pedir",
+      "tela": "Esqueceu a senha?\nDiga o e-mail da sua conta e mandamos um link para você criar uma nova.\nSe esse e-mail tem conta no CICLO, o link para criar uma senha nova já está a caminho. Abra a mensagem no mesmo aparelho em que você pediu.\nVoltar para entrar",
+      "linkRecebido": true
+    },
+    {
+      "caso": "recuperar-senha: link aberto em outro navegador",
+      "destinoDoVerify": "http://localhost:3200/auth/callback?code=<omitido>&next=%2Fnova-senha",
+      "urlFinal": "http://localhost:3200/entrar?erro=link_invalido",
+      "texto": "Que bom te ver de novo\nEntre para ver o resumo do seu dia.\nE-mail\nSenha\nEsse link não é mais válido. Peça um novo.\nEntrar\nEsqueci minha senha\nNão tem conta?\nCadastre-se"
+    },
+    {
+      "caso": "recuperar-senha: link no mesmo navegador",
+      "destinoDoVerify": "http://localhost:3200/auth/callback?code=<omitido>&next=%2Fnova-senha",
+      "urlFinal": "http://localhost:3200/nova-senha",
+      "texto": "Criar senha nova\nEscolha uma senha que você use só aqui. Os outros aparelhos conectados vão cair.\nSenha nova\nRepita a senha\nSalvar senha nova"
+    },
+    {
+      "caso": "nova-senha fraca",
+      "alerta": [
+        "Algo deu errado do nosso lado. Tente de novo em instantes.",
+        ""
+      ]
+    },
+    {
+      "caso": "nova-senha forte",
+      "ms": 1882,
+      "urlFinal": "http://localhost:3200/admin/hoje",
+      "texto": "Hoje\nAgenda\nClientes\nMarcar"
+    }
+  ],
+  "assuntoEmail": "Reset your password"
+}

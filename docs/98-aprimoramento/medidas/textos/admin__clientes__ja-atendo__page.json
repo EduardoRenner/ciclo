@@ -1,0 +1,394 @@
+{
+ "rota": "admin/clientes/ja-atendo/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/clientes/ja-atendo/page.tsx",
+  "src/app/admin/clientes/ja-atendo/formulario.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/textarea.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 57,
+ "textos": [
+  {
+   "texto": "Quem você já atende",
+   "arquivo": "src/app/admin/clientes/ja-atendo/page.tsx",
+   "linha": 14,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Quem você já atende",
+   "arquivo": "src/app/admin/clientes/ja-atendo/page.tsx",
+   "linha": 66,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Busque quem já tem ficha e voltou, ou escreva o nome de quem é novo. Não precisa ser exato na data.",
+   "arquivo": "src/app/admin/clientes/ja-atendo/page.tsx",
+   "linha": 69,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Escreva o nome de quem você atende e mais ou menos quando veio pela última vez. Não precisa ser exato.",
+   "arquivo": "src/app/admin/clientes/ja-atendo/page.tsx",
+   "linha": 70,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Antes de trazer sua clientela, confira seus",
+   "arquivo": "src/app/admin/clientes/ja-atendo/page.tsx",
+   "linha": 76,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": ". É deles que o CICLO tira de quanto em quanto tempo cada pessoa costuma voltar.",
+   "arquivo": "src/app/admin/clientes/ja-atendo/page.tsx",
+   "linha": 80,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "serviços e preços",
+   "arquivo": "src/app/admin/clientes/ja-atendo/page.tsx",
+   "linha": 78,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Já tem tudo numa planilha?",
+   "arquivo": "src/app/admin/clientes/ja-atendo/page.tsx",
+   "linha": 90,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Importe de um arquivo CSV",
+   "arquivo": "src/app/admin/clientes/ja-atendo/page.tsx",
+   "linha": 92,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Confira e toque em \"Pôr no Motor\".",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 94,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "{trazidas} {…} dos contatos",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 105,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Ajuste a \"Última vez\" de cada uma antes de pôr no Motor.",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 106,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui abrir os contatos",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 110,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Cole a lista ou escreva os nomes abaixo.",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 110,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui salvar.",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 141,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Pronto",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 145,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "{total} {…} no Motor.",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 145,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui salvar",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 147,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "atrasadas para voltar",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 170,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "pessoa já está",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 170,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "pessoas já estão",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 170,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O Motor de Ciclo já está acompanhando essa gente. Ver quem são →",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 173,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Já tinha ficha",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 214,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Já tinham ficha",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 214,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Adicionar mais gente",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 220,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Ir para o Hoje",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 225,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Que serviço essas pessoas fazem com você?",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 236,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "É por ele que o CICLO sabe de quanto em quanto tempo cada pessoa costuma voltar.",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 248,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "{s.nome} · volta a cada {s.cycleDays} dias",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 244,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "É por ele que o CICLO sabe de quanto em quanto tempo cada pessoa costuma voltar.",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 249,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Tirar {rt.nome}",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 281,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Ou gente nova, que ainda não tem ficha",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 293,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Quem você atende e quando veio pela última vez",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 293,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Cole a lista, um nome por linha",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 299,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Do bloco de notas ou de uma conversa. Telefone na mesma linha entra junto.",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 300,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Marcos - 49 99999-0001 Rafael Dona Alzira",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 304,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Quando essas pessoas vieram, mais ou menos?",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 307,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Dá para mudar uma por uma depois. Quem sumiu faz tempo, cole numa lista separada.",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 319,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Cole pelo menos um nome.",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 322,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Pôr na lista",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 323,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Pôr {daLista.length} na lista",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 323,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cancelar",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 326,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Colar uma lista",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 334,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escolher dos contatos",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 339,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Nome {i + 1}",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 348,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Ex.: Dona Alzira",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 348,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Tirar a linha {i + 1}",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 354,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Última vez",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 370,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "WhatsApp (opcional)",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 385,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Adicionar mais uma",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 402,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Escreva um nome ou escolha alguém que já atende.",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 414,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Escolha acima o serviço que essas pessoas fazem.",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 414,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Adicione pelo menos uma pessoa",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 416,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Pôr {total} {…} no Motor",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 416,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Alguém que você já atende voltou?",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 457,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Busque pelo nome",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 463,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Ninguém com esse nome na sua base ainda.",
+   "arquivo": "src/app/admin/clientes/ja-atendo/formulario.tsx",
+   "linha": 470,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

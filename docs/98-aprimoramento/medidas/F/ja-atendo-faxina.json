@@ -1,0 +1,15 @@
+{
+  "rotulo": "faxina",
+  "pessoas": 10,
+  "toques": 6,
+  "ms": 3489,
+  "opcoesDePeriodo": [
+    "Semana passada",
+    "Uns 15 dias",
+    "Um mês",
+    "Uns 2 meses",
+    "Faz tempo"
+  ],
+  "rotuloBotaoFinal": "Pôr 10 pessoas no Motor",
+  "resultado": "Quem você já atende\nEscreva o nome de quem você atende e mais ou menos quando veio pela última vez. Não precisa ser exato.\n10 pessoas já estão atrasadas para voltar\nO Motor de Ciclo já está acompanhando essa gente. Ver quem são →\n10 pessoas cadastradas\nAdicionar mais gente\nIr para o Hoje\nJá tem tudo numa planilha? Importe de um arquivo CSV."
+}

@@ -1,0 +1,275 @@
+{
+ "rota": "(public)/[slug]/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(public)/[slug]/page.tsx",
+  "src/app/(public)/[slug]/secoes.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/badge.tsx",
+  "src/components/ui/card.tsx",
+  "src/lib/formato.ts",
+  "src/lib/mensagens.ts",
+  "src/components/ui/icone-anel.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 39,
+ "textos": [
+  {
+   "texto": "Agende seu horário na {perfil.name}.",
+   "arquivo": "src/app/(public)/[slug]/page.tsx",
+   "linha": 17,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Negócio de exemplo. Ele não existe e nenhum horário marcado aqui será atendido. A página está no ar para mostrar como fica a de quem usa o CICLO.",
+   "arquivo": "src/app/(public)/[slug]/page.tsx",
+   "linha": 122,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Negócio de exemplo.",
+   "arquivo": "src/app/(public)/[slug]/page.tsx",
+   "linha": 122,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Domingo",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 19,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Segunda",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 19,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Terça",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 19,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Quarta",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 19,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Quinta",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 19,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sexta",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 19,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sábado",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 19,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sun",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 30,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Mon",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 30,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Tue",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 30,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Wed",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 30,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Thu",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 30,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Fri",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 30,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sat",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 30,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Oi! Vim pelo site da {perfil.name}.",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 53,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Logo de {perfil.name}",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 138,
+   "tipo": "alt"
+  },
+  {
+   "texto": "Aberto agora",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 150,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "· até {fechaHoje}",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 150,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Abre hoje às {abreHoje}",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 152,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Fechado agora",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 152,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Agendar horário",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 162,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Pedir orçamento",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 176,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Falar no WhatsApp",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 194,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Sobre",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 283,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Quem atende",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 306,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Horário",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 347,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Fechado",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 362,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Trabalhos",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 379,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Avaliações",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 406,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "avaliação",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 423,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "avaliações",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 423,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "{r.rating} de 5 estrelas",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 443,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Contato",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 473,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "{perfil.address} Como chegar",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 490,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Como chegar",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 491,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Feito com",
+   "arquivo": "src/app/(public)/[slug]/secoes.tsx",
+   "linha": 555,
+   "tipo": "texto",
+   "tag": "footer"
+  }
+ ]
+}

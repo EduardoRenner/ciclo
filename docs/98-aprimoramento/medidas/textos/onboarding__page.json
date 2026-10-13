@@ -1,0 +1,137 @@
+{
+ "rota": "onboarding/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/onboarding/page.tsx",
+  "src/app/onboarding/formulario.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/shell/selo.tsx",
+  "src/components/shell/tela-publica.tsx",
+  "src/components/ui/toast.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/input.tsx",
+  "src/lib/app-url.ts",
+  "src/lib/utils.ts"
+ ],
+ "total": 18,
+ "textos": [
+  {
+   "texto": "Primeiros passos",
+   "arquivo": "src/app/onboarding/page.tsx",
+   "linha": 11,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Três respostas e sua página está no ar",
+   "arquivo": "src/app/onboarding/page.tsx",
+   "linha": 63,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Você pode ajustar tudo isso depois.",
+   "arquivo": "src/app/onboarding/page.tsx",
+   "linha": 64,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Escolha sua profissão na lista.",
+   "arquivo": "src/app/onboarding/formulario.tsx",
+   "linha": 65,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui criar sua conta. Confira o endereço da página e tente de novo.",
+   "arquivo": "src/app/onboarding/formulario.tsx",
+   "linha": 90,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Tente de novo.",
+   "arquivo": "src/app/onboarding/formulario.tsx",
+   "linha": 99,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Nome do negócio",
+   "arquivo": "src/app/onboarding/formulario.tsx",
+   "linha": 107,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "{profissaoEscolhida.nome} Trocar",
+   "arquivo": "src/app/onboarding/formulario.tsx",
+   "linha": 115,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Trocar",
+   "arquivo": "src/app/onboarding/formulario.tsx",
+   "linha": 116,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Sua profissão",
+   "arquivo": "src/app/onboarding/formulario.tsx",
+   "linha": 121,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Ex.: barbeiro, diarista, personal…",
+   "arquivo": "src/app/onboarding/formulario.tsx",
+   "linha": 124,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Não achamos “",
+   "arquivo": "src/app/onboarding/formulario.tsx",
+   "linha": 138,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "” na lista.",
+   "arquivo": "src/app/onboarding/formulario.tsx",
+   "linha": 138,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Seguir como {generica.nome}",
+   "arquivo": "src/app/onboarding/formulario.tsx",
+   "linha": 146,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "A profissão só escolhe o ponto de partida. Seus serviços e horários você configura do seu jeito depois.",
+   "arquivo": "src/app/onboarding/formulario.tsx",
+   "linha": 150,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Endereço da sua página",
+   "arquivo": "src/app/onboarding/formulario.tsx",
+   "linha": 181,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "É o link que você manda para agendar.",
+   "arquivo": "src/app/onboarding/formulario.tsx",
+   "linha": 193,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Colocar minha página no ar",
+   "arquivo": "src/app/onboarding/formulario.tsx",
+   "linha": 202,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

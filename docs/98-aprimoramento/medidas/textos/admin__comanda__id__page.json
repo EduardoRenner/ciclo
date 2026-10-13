@@ -1,0 +1,293 @@
+{
+ "rota": "admin/comanda/[id]/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/comanda/[id]/page.tsx",
+  "src/app/admin/comanda/[id]/comanda.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/alert-banner.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/toast.tsx",
+  "src/components/ui/icone-anel.tsx"
+ ],
+ "total": 41,
+ "textos": [
+  {
+   "texto": "Comanda",
+   "arquivo": "src/app/admin/comanda/[id]/page.tsx",
+   "linha": 20,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Comanda",
+   "arquivo": "src/app/admin/comanda/[id]/page.tsx",
+   "linha": 118,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Aberta",
+   "arquivo": "src/app/admin/comanda/[id]/page.tsx",
+   "linha": 118,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Fechada",
+   "arquivo": "src/app/admin/comanda/[id]/page.tsx",
+   "linha": 118,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Não consegui completar a ação.",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 31,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Essa comanda não tem profissional vinculado.",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 85,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Comanda fechada",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 159,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Nenhum item ainda.",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 176,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Remover {item.description}",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 193,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Adicionar item",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 210,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Tipo de item",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 218,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Serviço",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 228,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Produto",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 239,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Serviço",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 245,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Serviço",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 247,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Produto",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 264,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Produto",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 266,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Quantidade",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 283,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Adicionar",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 301,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Lançar item na comanda é do plano Essencial. Veja os planos em Configurações, Meu plano.",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 298,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Desconto e gorjeta",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 308,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Desconto (R$)",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 310,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Gorjeta (R$)",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 323,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Subtotal {…}",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 340,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Subtotal",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 340,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Total {…}",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 344,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Total",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 344,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Sobrou {…}",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 362,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Sobrou",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 362,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Entrou",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 370,
+   "tipo": "texto",
+   "tag": "dt"
+  },
+  {
+   "texto": "A gorjeta de",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 383,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "é de quem atendeu e não entra nesta conta.",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 383,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Informar",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 402,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Completar o custo",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 404,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Como foi pago?",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 426,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Fechar comanda",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 455,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Adicione pelo menos um item para poder fechar a comanda.",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 450,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Escolha como foi pago. É o que permite descontar a taxa da maquininha.",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 451,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Comanda fechada",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 460,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": ". Nada mais pode mudar aqui.",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 460,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "(paga em {formaFechada})",
+   "arquivo": "src/app/admin/comanda/[id]/comanda.tsx",
+   "linha": 460,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

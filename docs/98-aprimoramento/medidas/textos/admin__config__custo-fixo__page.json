@@ -1,0 +1,151 @@
+{
+ "rota": "admin/config/custo-fixo/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/custo-fixo/page.tsx",
+  "src/app/admin/config/custo-fixo/editor.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/alert-banner.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/toast.tsx",
+  "src/components/ui/icone-anel.tsx"
+ ],
+ "total": 20,
+ "textos": [
+  {
+   "texto": "Aluguel e contas",
+   "arquivo": "src/app/admin/config/custo-fixo/page.tsx",
+   "linha": 12,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Aluguel e contas",
+   "arquivo": "src/app/admin/config/custo-fixo/page.tsx",
+   "linha": 22,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Três perguntas que você responde de cabeça. É o que separa o que sobrou do que sobrou de verdade.",
+   "arquivo": "src/app/admin/config/custo-fixo/page.tsx",
+   "linha": 23,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Não consegui salvar.",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 65,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Custo fixo salvo",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 69,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 73,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Enquanto você não responder, o CICLO calcula o que sobrou sem descontar o aluguel, e o número fica maior do que a verdade. Se você atende em casa e não tem esse custo, deixe em zero e salve mesmo assim.",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 83,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "sem descontar o aluguel",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 83,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "O que sai todo mês, atendendo ou não",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 89,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Aluguel, luz, água, internet, software. Vale a partir da próxima comanda fechada; as antigas não mudam.",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 91,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sai por mês",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 96,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "R$",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 98,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "R$",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 99,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Quanto sai por mês de aluguel e contas, em reais",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 108,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Horas abertas no mês",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 115,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Quantas horas o negócio fica aberto por mês",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 124,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Postos de atendimento",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 130,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Quantas cadeiras ou postos atendem ao mesmo tempo",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 139,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Cada hora de atendimento custa {…} antes de qualquer coisa acontecer.",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 151,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Salvar",
+   "arquivo": "src/app/admin/config/custo-fixo/editor.tsx",
+   "linha": 162,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

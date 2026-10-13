@@ -1,0 +1,398 @@
+{
+ "rota": "admin/config/meu-plano/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/meu-plano/page.tsx",
+  "src/lib/planos-cartoes.ts",
+  "src/app/admin/config/meu-plano/assinar-plano.tsx",
+  "src/app/admin/config/meu-plano/cancelar-assinatura.tsx",
+  "src/app/admin/config/meu-plano/compartilhar-convite.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/lib/app-url.ts",
+  "src/lib/mensagens.ts",
+  "src/components/ui/card.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/section-header.tsx",
+  "src/components/ui/stat-tile.tsx",
+  "src/lib/contato.ts",
+  "src/lib/utils.ts"
+ ],
+ "total": 58,
+ "textos": [
+  {
+   "texto": "Meu plano",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 31,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "{usado} · sem limite",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 59,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{usado} de {limite}",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 60,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Meu plano",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 127,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Gerencie seu plano em {APP_HOST}.",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 131,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Assinatura cancelada, sem nova cobrança. {…}",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 175,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Assinatura cancelada, sem nova cobrança.",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 175,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Seu plano {NOME_DO_PLANO[pago]} continua valendo até {…}, o fim do período que você já pagou.",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 176,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Seu pagamento não passou.",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 185,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Você continua no {NOME_DO_PLANO[pago]} até {…}. Depois disso, cai para o Grátis, sem perder nada: só limita o que dá para criar.",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 187,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O Mercado Pago está tentando de novo. Se não resolver, o plano cai para o Grátis.",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 188,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O que você está usando",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 193,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Profissionais",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 196,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Acima do teto, e nada foi removido",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 201,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Acima do teto, e cadastrar continua liberado",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 211,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Seu dado nunca fica preso. Cair de plano limita o que dá para fazer. Nunca esconde nem apaga cliente, histórico ou agendamento. Se você passar de um teto, o que existe continua à vista; o que trava é criar mais.",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 225,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Seu dado nunca fica preso.",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 225,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Você tem {usoProf} profissionais ativos, e o {NOME_DO_PLANO[tier]} comporta {…}.",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 260,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Oi! Uso o CICLO e quero assinar o {NOME_DO_PLANO[tier]}.",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 269,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Oi! Uso o CICLO no {NOME_DO_PLANO[pago]} e quero passar para o {NOME_DO_PLANO[tier]}.",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 270,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Quero o {NOME_DO_PLANO[tier]}",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 279,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Mais de {…} profissionais?",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 300,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Oi! Meu negócio tem mais profissionais do que o plano Equipe comporta.",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 302,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Esse plano é combinado em uma conversa, porque cada equipe grande é diferente.",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 303,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Esse plano é combinado à parte, porque cada equipe grande é diferente.",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 304,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Oi! Meu negócio tem mais profissionais do que o plano Equipe comporta.",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 307,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Indicar o CICLO",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 334,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Ver a tabela de preços completa",
+   "arquivo": "src/app/admin/config/meu-plano/page.tsx",
+   "linha": 343,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "menos de R$ 1,70 por dia, o preço de um corte uma vez por mês",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 57,
+   "tipo": "prop:porDia"
+  },
+  {
+   "texto": "Por mês, um profissional.",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 58,
+   "tipo": "prop:chamada"
+  },
+  {
+   "texto": "Você atende por conta e quer o produto inteiro, sem escolher módulo.",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 63,
+   "tipo": "prop:paraQuem"
+  },
+  {
+   "texto": "Agenda sem risco de marcar dois no mesmo horário",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 65,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Sua página de agendamento com link para a bio, sem o selo do CICLO",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 66,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Clientes com ficha e histórico, sem limite",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 67,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Motor de Ciclo: veja quem sumiu e quanto isso vale",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 68,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Chamar de volta a base inteira de uma vez",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 77,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Campanhas para datas e aniversários",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 78,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Comanda, caixa e fechamento do dia",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 79,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Orçamento com aprovação por link",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 80,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Controle de estoque",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 81,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Anamnese e ficha de saúde em cofre cifrado",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 82,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Recorrência e pacotes",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 83,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Fidelidade e pontos",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 84,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Relatórios do negócio",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 85,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Por mês, até {…} profissionais.",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 90,
+   "tipo": "prop:chamada"
+  },
+  {
+   "texto": "Você contratou alguém e precisa de agenda e acerto separados.",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 91,
+   "tipo": "prop:paraQuem"
+  },
+  {
+   "texto": "Tudo do Solo, sem tirar nada",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 93,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Até {…} profissionais, cada um com agenda, comissão e extrato próprios",
+   "arquivo": "src/lib/planos-cartoes.ts",
+   "linha": 95,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Não deu para abrir o pagamento. Tente de novo em instantes.",
+   "arquivo": "src/app/admin/config/meu-plano/assinar-plano.tsx",
+   "linha": 36,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Sem conexão agora. Tente de novo quando a internet voltar.",
+   "arquivo": "src/app/admin/config/meu-plano/assinar-plano.tsx",
+   "linha": 41,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Abrindo…",
+   "arquivo": "src/app/admin/config/meu-plano/assinar-plano.tsx",
+   "linha": 55,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Assinar o {NOME_DO_PLANO[tier]}",
+   "arquivo": "src/app/admin/config/meu-plano/assinar-plano.tsx",
+   "linha": 55,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Não deu para cancelar agora. Tente de novo em instantes.",
+   "arquivo": "src/app/admin/config/meu-plano/cancelar-assinatura.tsx",
+   "linha": 28,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Sem conexão agora. Tente de novo quando a internet voltar.",
+   "arquivo": "src/app/admin/config/meu-plano/cancelar-assinatura.tsx",
+   "linha": 33,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Cancelando…",
+   "arquivo": "src/app/admin/config/meu-plano/cancelar-assinatura.tsx",
+   "linha": 47,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Cancelar assinatura",
+   "arquivo": "src/app/admin/config/meu-plano/cancelar-assinatura.tsx",
+   "linha": 47,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Mandar para um colega",
+   "arquivo": "src/app/admin/config/meu-plano/compartilhar-convite.tsx",
+   "linha": 34,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Mandar para um colega",
+   "arquivo": "src/app/admin/config/meu-plano/compartilhar-convite.tsx",
+   "linha": 47,
+   "tipo": "link",
+   "tag": "a"
+  }
+ ]
+}

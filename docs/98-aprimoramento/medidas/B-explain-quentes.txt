@@ -1,0 +1,286 @@
+                              set_config                               
+-----------------------------------------------------------------------
+ {"sub":"6dbcfc89-aca4-4a6e-adcd-29f9d590400a","role":"authenticated"}
+(1 row)
+
+                                                                        QUERY PLAN                                                                         
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on appointments a (actual time=1.323..5.344 rows=35 loops=1)
+   Recheck Cond: ((tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid) AND (starts_at >= (now() - '56 days'::interval)) AND (starts_at < now()))
+   Filter: (has_tenant(tenant_id) AND can_see_appointment(tenant_id, professional_id) AND (status = 'done'::appointment_status))
+   Heap Blocks: exact=4
+   Buffers: shared hit=501
+   ->  Bitmap Index Scan on appointments_tenant_id_starts_at_idx (actual time=0.059..0.060 rows=35 loops=1)
+         Index Cond: ((tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid) AND (starts_at >= (now() - '56 days'::interval)) AND (starts_at < now()))
+         Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=268
+ Planning Time: 0.515 ms
+ Execution Time: 5.375 ms
+(12 rows)
+
+                                                                                                 QUERY PLAN                                                                                                 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on appointments a (actual time=0.894..22.822 rows=144 loops=1)
+   Recheck Cond: (tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid)
+   Filter: ((created_at < now()) AND (created_at >= (now() - '90 days'::interval)) AND has_tenant(tenant_id) AND can_see_appointment(tenant_id, professional_id) AND (status = 'done'::appointment_status))
+   Rows Removed by Filter: 21
+   Heap Blocks: exact=24
+   Buffers: shared hit=1098
+   ->  Bitmap Index Scan on appointments_tenant_id_client_id_starts_at_idx (actual time=0.031..0.031 rows=177 loops=1)
+         Index Cond: (tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid)
+         Buffers: shared hit=3
+   SubPlan 1
+     ->  Index Scan using clients_id_tenant_uidx on clients c (actual time=0.010..0.010 rows=1 loops=144)
+           Index Cond: (id = a.client_id)
+           Filter: has_tenant(tenant_id)
+           Buffers: shared hit=576
+ Planning:
+   Buffers: shared hit=213
+ Planning Time: 0.575 ms
+ Execution Time: 22.900 ms
+(18 rows)
+
+                                                                      QUERY PLAN                                                                       
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+ Result (actual time=20.417..20.423 rows=1 loops=1)
+   Buffers: shared hit=616
+   InitPlan 1
+     ->  Aggregate (actual time=0.347..0.348 rows=1 loops=1)
+           Buffers: shared hit=35
+           ->  Index Only Scan using clients_tenant_id_idx on clients (actual time=0.175..0.343 rows=30 loops=1)
+                 Index Cond: (tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid)
+                 Filter: has_tenant(tenant_id)
+                 Heap Fetches: 2
+                 Buffers: shared hit=35
+   InitPlan 2
+     ->  Aggregate (actual time=19.280..19.281 rows=1 loops=1)
+           Buffers: shared hit=533
+           ->  Index Only Scan using appointments_tenant_id_professional_id_starts_at_idx on appointments (actual time=0.357..19.249 rows=165 loops=1)
+                 Index Cond: (tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid)
+                 Filter: (has_tenant(tenant_id) AND can_see_appointment(tenant_id, professional_id))
+                 Heap Fetches: 45
+                 Buffers: shared hit=533
+   InitPlan 3
+     ->  Aggregate (actual time=0.129..0.132 rows=1 loops=1)
+           Buffers: shared hit=9
+           ->  GroupAggregate (actual time=0.128..0.130 rows=0 loops=1)
+                 Group Key: cc.client_id
+                 Filter: bool_or((cc.state = ANY ('{late,at_risk,lost}'::cycle_state[])))
+                 Buffers: shared hit=9
+                 ->  Nested Loop (actual time=0.127..0.129 rows=0 loops=1)
+                       Buffers: shared hit=9
+                       ->  Nested Loop Anti Join (actual time=0.126..0.128 rows=0 loops=1)
+                             Join Filter: (saudavel.client_id = cc.client_id)
+                             Buffers: shared hit=9
+                             ->  Index Scan using client_cycles_pkey on client_cycles cc (actual time=0.126..0.126 rows=0 loops=1)
+                                   Index Cond: (tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid)
+                                   Filter: (has_tenant(tenant_id) AND (state = ANY ('{due,late,at_risk,lost}'::cycle_state[])))
+                                   Rows Removed by Filter: 3
+                                   Buffers: shared hit=9
+                             ->  Nested Loop (never executed)
+                                   ->  Index Scan using client_cycles_lucro_em_risco_idx on client_cycles saudavel (never executed)
+                                         Index Cond: (tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid)
+                                         Filter: (has_tenant(tenant_id) AND (state = 'on_track'::cycle_state))
+                                   ->  Index Scan using services_pkey on services s2 (never executed)
+                                         Index Cond: (id = saudavel.service_id)
+                                         Filter: (active AND has_tenant(tenant_id))
+                       ->  Index Scan using services_pkey on services s (never executed)
+                             Index Cond: (id = cc.service_id)
+                             Filter: (active AND has_tenant(tenant_id))
+   InitPlan 4
+     ->  Aggregate (actual time=0.652..0.653 rows=1 loops=1)
+           Buffers: shared hit=39
+           ->  Subquery Scan on v_client_segments (actual time=0.537..0.647 rows=2 loops=1)
+                 Filter: v_client_segments.is_aniversariante
+                 Rows Removed by Filter: 28
+                 Buffers: shared hit=39
+                 ->  Nested Loop (actual time=0.180..0.644 rows=30 loops=1)
+                       Buffers: shared hit=39
+                       ->  Seq Scan on tenants t (actual time=0.089..0.095 rows=1 loops=1)
+                             Filter: ((id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid) AND has_tenant(id))
+                             Rows Removed by Filter: 9
+                             Buffers: shared hit=3
+                       ->  Index Scan using clients_tenant_id_idx on clients c (actual time=0.086..0.271 rows=30 loops=1)
+                             Index Cond: (tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid)
+                             Filter: has_tenant(tenant_id)
+                             Buffers: shared hit=36
+ Planning:
+   Buffers: shared hit=993
+ Planning Time: 2.058 ms
+ Execution Time: 20.565 ms
+(66 rows)
+
+Q1 memberships+tenants (toda requisicao)
+                                                   QUERY PLAN                                                    
+-----------------------------------------------------------------------------------------------------------------
+ Nested Loop (actual time=0.282..0.287 rows=1 loops=1)
+   Join Filter: (t.id = m.tenant_id)
+   Buffers: shared hit=18
+   ->  Seq Scan on memberships m (actual time=0.137..0.138 rows=1 loops=1)
+         Filter: (active AND (user_id = '6dbcfc89-aca4-4a6e-adcd-29f9d590400a'::uuid) AND has_tenant(tenant_id))
+         Rows Removed by Filter: 12
+         Buffers: shared hit=2
+   ->  Hash Right Join (actual time=0.143..0.147 rows=1 loops=1)
+         Hash Cond: ((p.slug)::text = (t.vertical)::text)
+         Buffers: shared hit=16
+         ->  Seq Scan on professions p (actual time=0.004..0.006 rows=19 loops=1)
+               Buffers: shared hit=2
+         ->  Hash (actual time=0.135..0.135 rows=1 loops=1)
+               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+               Buffers: shared hit=14
+               ->  Seq Scan on tenants t (actual time=0.104..0.125 rows=1 loops=1)
+                     Filter: has_tenant(id)
+                     Rows Removed by Filter: 9
+                     Buffers: shared hit=12
+ Planning:
+   Buffers: shared hit=195
+ Planning Time: 0.393 ms
+ Execution Time: 0.306 ms
+(23 rows)
+
+Q2 v_recover_revenue (Hoje/Recuperar)
+                                                            QUERY PLAN                                                             
+-----------------------------------------------------------------------------------------------------------------------------------
+ Sort (actual time=0.145..0.145 rows=0 loops=1)
+   Sort Key: cc.value_at_risk_cents DESC
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=11
+   ->  Nested Loop (actual time=0.135..0.135 rows=0 loops=1)
+         Buffers: shared hit=8
+         ->  Nested Loop (actual time=0.135..0.135 rows=0 loops=1)
+               Buffers: shared hit=8
+               ->  Index Scan using client_cycles_lucro_em_risco_idx on client_cycles cc (actual time=0.135..0.135 rows=0 loops=1)
+                     Index Cond: (tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid)
+                     Filter: (has_tenant(tenant_id) AND (state = ANY ('{due,late,at_risk,lost}'::cycle_state[])))
+                     Rows Removed by Filter: 3
+                     Buffers: shared hit=8
+               ->  Index Scan using clients_id_tenant_uidx on clients c (never executed)
+                     Index Cond: (id = cc.client_id)
+                     Filter: ((deleted_at IS NULL) AND has_tenant(tenant_id))
+         ->  Index Scan using services_pkey on services s (never executed)
+               Index Cond: (id = cc.service_id)
+               Filter: (active AND has_tenant(tenant_id))
+ Planning:
+   Buffers: shared hit=76
+ Planning Time: 0.293 ms
+ Execution Time: 0.167 ms
+(23 rows)
+
+Q3 loyalty_entries sem filtro (Hoje)
+                                            QUERY PLAN                                             
+---------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on loyalty_entries (actual time=0.118..0.171 rows=11 loops=1)
+   Recheck Cond: (tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid)
+   Filter: has_tenant(tenant_id)
+   Heap Blocks: exact=1
+   Buffers: shared hit=13
+   ->  Bitmap Index Scan on loyalty_entries_cliente_idx (actual time=0.005..0.005 rows=11 loops=1)
+         Index Cond: (tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid)
+         Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=93
+ Planning Time: 0.131 ms
+ Execution Time: 0.182 ms
+(12 rows)
+
+Q4 cycle_predictions 12 meses (Hoje)
+                                                          QUERY PLAN                                                          
+------------------------------------------------------------------------------------------------------------------------------
+ Limit (actual time=0.024..0.025 rows=0 loops=1)
+   Buffers: shared hit=6
+   ->  Sort (actual time=0.024..0.024 rows=0 loops=1)
+         Sort Key: id
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=6
+         ->  Index Scan using cycle_predictions_uma_por_visita on cycle_predictions (actual time=0.015..0.015 rows=0 loops=1)
+               Index Cond: (tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid)
+               Filter: (has_tenant(tenant_id) AND (predicted_on >= (now() - '1 year'::interval)))
+               Buffers: shared hit=3
+ Planning:
+   Buffers: shared hit=124
+ Planning Time: 0.193 ms
+ Execution Time: 0.040 ms
+(14 rows)
+
+Q5 tickets do mes (Caixa)
+                                                                                                                           QUERY PLAN                                                                                                                            
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit (actual time=0.479..2.062 rows=10 loops=1)
+   Buffers: shared hit=36
+   ->  Seq Scan on tickets (actual time=0.479..2.059 rows=10 loops=1)
+         Filter: ((tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid) AND (closed_at >= date_trunc('month'::text, now())) AND has_tenant(tenant_id) AND can_see_ticket(tenant_id, professional_id) AND (status = ANY ('{closed,paid}'::ticket_status[])))
+         Rows Removed by Filter: 2
+         Buffers: shared hit=36
+ Planning:
+   Buffers: shared hit=245
+ Planning Time: 0.321 ms
+ Execution Time: 2.081 ms
+(10 rows)
+
+Q6 v_carteira_resumo (Clientes)
+                                                 QUERY PLAN                                                 
+------------------------------------------------------------------------------------------------------------
+ GroupAggregate (actual time=0.390..0.390 rows=1 loops=1)
+   Buffers: shared hit=39
+   ->  Nested Loop (actual time=0.173..0.366 rows=30 loops=1)
+         Buffers: shared hit=39
+         ->  Seq Scan on tenants t (actual time=0.102..0.104 rows=1 loops=1)
+               Filter: ((id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid) AND has_tenant(id))
+               Rows Removed by Filter: 9
+               Buffers: shared hit=3
+         ->  Index Scan using clients_tenant_id_idx on clients c (actual time=0.070..0.255 rows=30 loops=1)
+               Index Cond: (tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid)
+               Filter: has_tenant(tenant_id)
+               Buffers: shared hit=36
+ Planning:
+   Buffers: shared hit=54
+ Planning Time: 0.168 ms
+ Execution Time: 0.414 ms
+(16 rows)
+
+Q7 v_client_segments (Clientes)
+                                                                                              QUERY PLAN                                                                                              
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ WindowAgg (actual time=0.369..0.400 rows=30 loops=1)
+   Buffers: shared hit=39
+   ->  Sort (actual time=0.360..0.362 rows=30 loops=1)
+         Sort Key: c.ltv_cents
+         Sort Method: quicksort  Memory: 32kB
+         Buffers: shared hit=39
+         ->  Nested Loop (actual time=0.182..0.344 rows=30 loops=1)
+               Buffers: shared hit=39
+               ->  Seq Scan on tenants t (actual time=0.112..0.114 rows=1 loops=1)
+                     Filter: ((id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid) AND has_tenant(id))
+                     Rows Removed by Filter: 9
+                     Buffers: shared hit=3
+               ->  Index Scan using clients_tenant_id_idx on clients c (actual time=0.068..0.221 rows=30 loops=1)
+                     Index Cond: (tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid)
+                     Filter: has_tenant(tenant_id)
+                     Buffers: shared hit=36
+   SubPlan 1
+     ->  Index Scan using appointments_client_id_idx on appointments a (never executed)
+           Index Cond: (client_id = c.id)
+           Filter: ((tenant_id = c.tenant_id) AND has_tenant(tenant_id) AND can_see_appointment(tenant_id, professional_id) AND (status = ANY ('{pending,confirmed,arrived}'::appointment_status[])))
+ Planning:
+   Buffers: shared hit=135
+ Planning Time: 0.402 ms
+ Execution Time: 0.447 ms
+(24 rows)
+
+Q8 messages de campanha + appointments done (Campanhas)
+                                                           QUERY PLAN                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on appointments (actual time=0.466..18.070 rows=144 loops=1)
+   Recheck Cond: (tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid)
+   Filter: (has_tenant(tenant_id) AND can_see_appointment(tenant_id, professional_id) AND (status = 'done'::appointment_status))
+   Rows Removed by Filter: 21
+   Heap Blocks: exact=24
+   Buffers: shared hit=522
+   ->  Bitmap Index Scan on appointments_tenant_id_client_id_starts_at_idx (actual time=0.012..0.013 rows=177 loops=1)
+         Index Cond: (tenant_id = '320d83de-611f-48e1-9761-570863fbb10b'::uuid)
+         Buffers: shared hit=3
+ Planning Time: 0.087 ms
+ Execution Time: 18.093 ms
+(11 rows)
+

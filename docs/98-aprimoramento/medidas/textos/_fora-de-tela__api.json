@@ -1,0 +1,654 @@
+{
+ "grupo": "api",
+ "total": 108,
+ "textos": [
+  {
+   "texto": "America/Sao_Paulo",
+   "arquivo": "src/app/api/v1/appointments/route.ts",
+   "linha": 38,
+   "tipo": "texto"
+  },
+  {
+   "texto": "America/Sao_Paulo",
+   "arquivo": "src/app/api/v1/appointments/series/route.ts",
+   "linha": 26,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Essa série não existe mais.",
+   "arquivo": "src/app/api/v1/appointments/series/[id]/cancel/route.ts",
+   "linha": 15,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse agendamento não existe mais.",
+   "arquivo": "src/app/api/v1/appointments/[id]/arrive/route.ts",
+   "linha": 18,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse agendamento não existe mais.",
+   "arquivo": "src/app/api/v1/appointments/[id]/complete/route.ts",
+   "linha": 19,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse agendamento não existe mais.",
+   "arquivo": "src/app/api/v1/appointments/[id]/confirm/route.ts",
+   "linha": 18,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse agendamento não existe mais.",
+   "arquivo": "src/app/api/v1/appointments/[id]/no-show/route.ts",
+   "linha": 18,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse agendamento não existe mais.",
+   "arquivo": "src/app/api/v1/appointments/[id]/route.ts",
+   "linha": 18,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "America/Sao_Paulo",
+   "arquivo": "src/app/api/v1/appointments/[id]/route.ts",
+   "linha": 34,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Digite uma pergunta.",
+   "arquivo": "src/app/api/v1/assistant/route.ts",
+   "linha": 18,
+   "tipo": "validação"
+  },
+  {
+   "texto": "Pergunta muito longa.",
+   "arquivo": "src/app/api/v1/assistant/route.ts",
+   "linha": 18,
+   "tipo": "validação"
+  },
+  {
+   "texto": "America/Sao_Paulo",
+   "arquivo": "src/app/api/v1/assistant/route.ts",
+   "linha": 59,
+   "tipo": "prop:provider"
+  },
+  {
+   "texto": "Não consegui verificar seu acesso agora. Não é problema com a sua senha, tente de novo em instantes.",
+   "arquivo": "src/app/api/v1/auth/login/route.ts",
+   "linha": 53,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "E-mail ou senha não conferem.",
+   "arquivo": "src/app/api/v1/auth/login/route.ts",
+   "linha": 59,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Fator não encontrado.",
+   "arquivo": "src/app/api/v1/auth/mfa/factors/[id]/route.ts",
+   "linha": 18,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Para trocar a senha, abra o link \"Esqueci minha senha\" que enviamos por e-mail. É assim que confirmamos que é você.",
+   "arquivo": "src/app/api/v1/auth/password/reset/route.ts",
+   "linha": 21,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Gerencie seu plano em {APP_HOST}.",
+   "arquivo": "src/app/api/v1/billing/assinar/route.ts",
+   "linha": 39,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "tier inválido",
+   "arquivo": "src/app/api/v1/billing/assinar/route.ts",
+   "linha": 46,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Sua conta não tem e-mail — o Mercado Pago precisa dele para a assinatura.",
+   "arquivo": "src/app/api/v1/billing/assinar/route.ts",
+   "linha": 50,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Informe a data no formato AAAA-MM-DD.",
+   "arquivo": "src/app/api/v1/cash/daily/route.ts",
+   "linha": 14,
+   "tipo": "prop:date"
+  },
+  {
+   "texto": "America/Sao_Paulo",
+   "arquivo": "src/app/api/v1/cash/daily/route.ts",
+   "linha": 20,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Informe o mês no formato AAAA-MM.",
+   "arquivo": "src/app/api/v1/cash/summary/route.ts",
+   "linha": 14,
+   "tipo": "prop:month"
+  },
+  {
+   "texto": "America/Sao_Paulo",
+   "arquivo": "src/app/api/v1/cash/summary/route.ts",
+   "linha": 20,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Você já baixou a base este mês. O limite existe para proteger os dados dos seus clientes. Tente de novo daqui a alguns dias.",
+   "arquivo": "src/app/api/v1/clients/export/route.ts",
+   "linha": 50,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "America/Sao_Paulo",
+   "arquivo": "src/app/api/v1/clients/export/route.ts",
+   "linha": 60,
+   "tipo": "texto"
+  },
+  {
+   "texto": "attachment; filename=\"clientes.csv\"",
+   "arquivo": "src/app/api/v1/clients/export/route.ts",
+   "linha": 90,
+   "tipo": "prop:content-disposition"
+  },
+  {
+   "texto": "Envie um arquivo CSV.",
+   "arquivo": "src/app/api/v1/clients/import/preview/route.ts",
+   "linha": 16,
+   "tipo": "prop:file"
+  },
+  {
+   "texto": "Arquivo maior que 5 MB.",
+   "arquivo": "src/app/api/v1/clients/import/preview/route.ts",
+   "linha": 17,
+   "tipo": "prop:file"
+  },
+  {
+   "texto": "Envie um arquivo CSV.",
+   "arquivo": "src/app/api/v1/clients/import/route.ts",
+   "linha": 21,
+   "tipo": "prop:file"
+  },
+  {
+   "texto": "Arquivo maior que 5 MB.",
+   "arquivo": "src/app/api/v1/clients/import/route.ts",
+   "linha": 22,
+   "tipo": "prop:file"
+  },
+  {
+   "texto": "Envie o mapeamento de colunas.",
+   "arquivo": "src/app/api/v1/clients/import/route.ts",
+   "linha": 23,
+   "tipo": "prop:mapping"
+  },
+  {
+   "texto": "Mapeamento de colunas inválido.",
+   "arquivo": "src/app/api/v1/clients/import/route.ts",
+   "linha": 29,
+   "tipo": "prop:mapping"
+  },
+  {
+   "texto": "Essa ficha não está mais na sua lista.",
+   "arquivo": "src/app/api/v1/clients/[id]/consents/route.ts",
+   "linha": 16,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa ficha não está mais na sua lista.",
+   "arquivo": "src/app/api/v1/clients/[id]/consents/[kind]/route.ts",
+   "linha": 17,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa ficha não está mais na sua lista.",
+   "arquivo": "src/app/api/v1/clients/[id]/data-export/route.ts",
+   "linha": 40,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa ficha não está mais na sua lista.",
+   "arquivo": "src/app/api/v1/clients/[id]/erase/route.ts",
+   "linha": 31,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa ficha não está mais na sua lista.",
+   "arquivo": "src/app/api/v1/clients/[id]/loyalty/route.ts",
+   "linha": 17,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa ficha não está mais na sua lista.",
+   "arquivo": "src/app/api/v1/clients/[id]/media/route.ts",
+   "linha": 16,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Envie uma imagem.",
+   "arquivo": "src/app/api/v1/clients/[id]/media/route.ts",
+   "linha": 49,
+   "tipo": "prop:file"
+  },
+  {
+   "texto": "Arquivo maior que 10MB.",
+   "arquivo": "src/app/api/v1/clients/[id]/media/route.ts",
+   "linha": 50,
+   "tipo": "prop:file"
+  },
+  {
+   "texto": "Essa ficha não está mais na sua lista.",
+   "arquivo": "src/app/api/v1/clients/[id]/notes/route.ts",
+   "linha": 16,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa ficha não está mais na sua lista.",
+   "arquivo": "src/app/api/v1/clients/[id]/route.ts",
+   "linha": 16,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa ficha não está mais na sua lista.",
+   "arquivo": "src/app/api/v1/clients/[id]/subscription/route.ts",
+   "linha": 17,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse cliente não tem assinatura ativa.",
+   "arquivo": "src/app/api/v1/clients/[id]/subscription/route.ts",
+   "linha": 67,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa ficha não está mais na sua lista.",
+   "arquivo": "src/app/api/v1/clients/[id]/vault/route.ts",
+   "linha": 19,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa ficha ainda não tem anamnese preenchida.",
+   "arquivo": "src/app/api/v1/clients/[id]/vault/route.ts",
+   "linha": 41,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Escolha um profissional.",
+   "arquivo": "src/app/api/v1/commissions/extract/route.ts",
+   "linha": 33,
+   "tipo": "prop:professionalId"
+  },
+  {
+   "texto": "Informe a data de início (AAAA-MM-DD).",
+   "arquivo": "src/app/api/v1/commissions/extract/route.ts",
+   "linha": 45,
+   "tipo": "prop:desde"
+  },
+  {
+   "texto": "Informe a data de fim (AAAA-MM-DD).",
+   "arquivo": "src/app/api/v1/commissions/extract/route.ts",
+   "linha": 46,
+   "tipo": "prop:ate"
+  },
+  {
+   "texto": "America/Sao_Paulo",
+   "arquivo": "src/app/api/v1/commissions/extract/route.ts",
+   "linha": 64,
+   "tipo": "texto"
+  },
+  {
+   "texto": "America/Sao_Paulo",
+   "arquivo": "src/app/api/v1/cycle/attribution/route.ts",
+   "linha": 22,
+   "tipo": "texto"
+  },
+  {
+   "texto": "America/Sao_Paulo",
+   "arquivo": "src/app/api/v1/cycle/recover/send/route.ts",
+   "linha": 35,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Você já pediu esse recálculo há pouco. Espere alguns minutos e tente de novo.",
+   "arquivo": "src/app/api/v1/cycles/recompute/route.ts",
+   "linha": 54,
+   "tipo": "prop:_"
+  },
+  {
+   "texto": "Esse teste não está mais na sua lista.",
+   "arquivo": "src/app/api/v1/experiments/[id]/cancel/route.ts",
+   "linha": 19,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse caso não está mais disponível.",
+   "arquivo": "src/app/api/v1/legal/cases/[id]/route.ts",
+   "linha": 30,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa pendência não está mais disponível.",
+   "arquivo": "src/app/api/v1/legal/checklist/[id]/route.ts",
+   "linha": 28,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse prazo não está mais disponível.",
+   "arquivo": "src/app/api/v1/legal/deadlines/[id]/close/route.ts",
+   "linha": 24,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse prazo não está mais disponível.",
+   "arquivo": "src/app/api/v1/legal/deadlines/[id]/route.ts",
+   "linha": 28,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Escolha o arquivo.",
+   "arquivo": "src/app/api/v1/legal/documents/route.ts",
+   "linha": 28,
+   "tipo": "prop:file"
+  },
+  {
+   "texto": "O arquivo passa de 50 MB.",
+   "arquivo": "src/app/api/v1/legal/documents/route.ts",
+   "linha": 29,
+   "tipo": "prop:file"
+  },
+  {
+   "texto": "clientId",
+   "arquivo": "src/app/api/v1/legal/documents/route.ts",
+   "linha": 35,
+   "tipo": "prop:clientId"
+  },
+  {
+   "texto": "caseId",
+   "arquivo": "src/app/api/v1/legal/documents/route.ts",
+   "linha": 36,
+   "tipo": "prop:caseId"
+  },
+  {
+   "texto": "documentId",
+   "arquivo": "src/app/api/v1/legal/documents/route.ts",
+   "linha": 37,
+   "tipo": "prop:documentId"
+  },
+  {
+   "texto": "Esse documento não está mais disponível.",
+   "arquivo": "src/app/api/v1/legal/documents/[id]/open/route.ts",
+   "linha": 28,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse documento não está mais disponível.",
+   "arquivo": "src/app/api/v1/legal/documents/[id]/route.ts",
+   "linha": 24,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa empresa não está mais disponível.",
+   "arquivo": "src/app/api/v1/legal/entities/[id]/changes/route.ts",
+   "linha": 24,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa intimação não está mais disponível.",
+   "arquivo": "src/app/api/v1/legal/intimations/[id]/decide/route.ts",
+   "linha": 28,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa foto não existe mais.",
+   "arquivo": "src/app/api/v1/media/[id]/publish/route.ts",
+   "linha": 18,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa foto não existe mais.",
+   "arquivo": "src/app/api/v1/media/[id]/publish/route.ts",
+   "linha": 31,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa foto não existe mais.",
+   "arquivo": "src/app/api/v1/media/[id]/route.ts",
+   "linha": 17,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa foto não existe mais.",
+   "arquivo": "src/app/api/v1/media/[id]/url/route.ts",
+   "linha": 17,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse modelo não existe mais.",
+   "arquivo": "src/app/api/v1/message-templates/[id]/route.ts",
+   "linha": 16,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Escolha uma profissão da lista.",
+   "arquivo": "src/app/api/v1/onboarding/route.ts",
+   "linha": 33,
+   "tipo": "prop:professionId"
+  },
+  {
+   "texto": "Informe a ficha.",
+   "arquivo": "src/app/api/v1/packages/route.ts",
+   "linha": 16,
+   "tipo": "prop:clientId"
+  },
+  {
+   "texto": "Esse pacote não existe mais.",
+   "arquivo": "src/app/api/v1/packages/[id]/use/route.ts",
+   "linha": 23,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse produto não está mais no seu estoque.",
+   "arquivo": "src/app/api/v1/products/[id]/route.ts",
+   "linha": 18,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse profissional não está mais no seu time.",
+   "arquivo": "src/app/api/v1/professionals/[id]/business-hours/route.ts",
+   "linha": 19,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "O profissional do corpo não bate com o da URL.",
+   "arquivo": "src/app/api/v1/professionals/[id]/business-hours/route.ts",
+   "linha": 40,
+   "tipo": "prop:professionalId"
+  },
+  {
+   "texto": "Esse profissional não está mais no seu time.",
+   "arquivo": "src/app/api/v1/professionals/[id]/route.ts",
+   "linha": 17,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse link não é mais válido.",
+   "arquivo": "src/app/api/v1/public/appointments/cancel/[token]/route.ts",
+   "linha": 25,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse agendamento não existe mais.",
+   "arquivo": "src/app/api/v1/public/appointments/cancel/[token]/route.ts",
+   "linha": 34,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse link de confirmação não é mais válido.",
+   "arquivo": "src/app/api/v1/public/appointments/confirm/[token]/route.ts",
+   "linha": 20,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse agendamento não existe mais.",
+   "arquivo": "src/app/api/v1/public/appointments/confirm/[token]/route.ts",
+   "linha": 28,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse link de avaliação não é mais válido.",
+   "arquivo": "src/app/api/v1/public/reviews/[token]/route.ts",
+   "linha": 12,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse atendimento não existe mais.",
+   "arquivo": "src/app/api/v1/public/reviews/[token]/route.ts",
+   "linha": 23,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Escolha um serviço.",
+   "arquivo": "src/app/api/v1/public/[slug]/availability/route.ts",
+   "linha": 13,
+   "tipo": "validação"
+  },
+  {
+   "texto": "Data inválida.",
+   "arquivo": "src/app/api/v1/public/[slug]/availability/route.ts",
+   "linha": 14,
+   "tipo": "prop:date"
+  },
+  {
+   "texto": "Não conseguimos confirmar que você não é um robô. Tente de novo.",
+   "arquivo": "src/app/api/v1/public/[slug]/book/route.ts",
+   "linha": 46,
+   "tipo": "sucesso"
+  },
+  {
+   "texto": "Token ausente.",
+   "arquivo": "src/app/api/v1/public/[slug]/reconhecer/route.ts",
+   "linha": 24,
+   "tipo": "sucesso"
+  },
+  {
+   "texto": "Endpoint inválido.",
+   "arquivo": "src/app/api/v1/push/subscriptions/route.ts",
+   "linha": 22,
+   "tipo": "validação"
+  },
+  {
+   "texto": "Esse orçamento não existe mais.",
+   "arquivo": "src/app/api/v1/quotes/[id]/convert/route.ts",
+   "linha": 16,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse serviço não está mais no seu catálogo.",
+   "arquivo": "src/app/api/v1/services/[id]/consumption/route.ts",
+   "linha": 16,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse serviço não está mais no seu catálogo.",
+   "arquivo": "src/app/api/v1/services/[id]/route.ts",
+   "linha": 18,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Escolha uma imagem.",
+   "arquivo": "src/app/api/v1/tenant/vitrine/entidade/route.ts",
+   "linha": 28,
+   "tipo": "prop:file"
+  },
+  {
+   "texto": "Imagem maior que 2MB. Tente uma menor.",
+   "arquivo": "src/app/api/v1/tenant/vitrine/entidade/route.ts",
+   "linha": 29,
+   "tipo": "prop:file"
+  },
+  {
+   "texto": "Escolha uma imagem.",
+   "arquivo": "src/app/api/v1/tenant/vitrine/route.ts",
+   "linha": 32,
+   "tipo": "prop:file"
+  },
+  {
+   "texto": "Imagem maior que 2MB. Tente uma menor.",
+   "arquivo": "src/app/api/v1/tenant/vitrine/route.ts",
+   "linha": 33,
+   "tipo": "prop:file"
+  },
+  {
+   "texto": "Essa comanda não existe mais.",
+   "arquivo": "src/app/api/v1/tickets/[id]/cancel/route.ts",
+   "linha": 18,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa comanda não existe mais.",
+   "arquivo": "src/app/api/v1/tickets/[id]/close/route.ts",
+   "linha": 19,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa comanda não existe mais.",
+   "arquivo": "src/app/api/v1/tickets/[id]/items/route.ts",
+   "linha": 20,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Esse item não existe mais.",
+   "arquivo": "src/app/api/v1/tickets/[id]/items/[itemId]/route.ts",
+   "linha": 17,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa comanda não existe mais.",
+   "arquivo": "src/app/api/v1/tickets/[id]/route.ts",
+   "linha": 16,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Essa folga não existe mais.",
+   "arquivo": "src/app/api/v1/time-off/[id]/route.ts",
+   "linha": 18,
+   "tipo": "mensagem/message"
+  },
+  {
+   "texto": "Informe a ficha.",
+   "arquivo": "src/app/api/v1/wallet/route.ts",
+   "linha": 13,
+   "tipo": "prop:clientId"
+  },
+  {
+   "texto": "Invalid JSON",
+   "arquivo": "src/app/api/v1/webhooks/mercado-pago/route.ts",
+   "linha": 31,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Invalid signature",
+   "arquivo": "src/app/api/v1/webhooks/mercado-pago/route.ts",
+   "linha": 45,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Forbidden",
+   "arquivo": "src/app/api/webhooks/whatsapp/route.ts",
+   "linha": 32,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Invalid signature",
+   "arquivo": "src/app/api/webhooks/whatsapp/route.ts",
+   "linha": 54,
+   "tipo": "texto"
+  }
+ ]
+}

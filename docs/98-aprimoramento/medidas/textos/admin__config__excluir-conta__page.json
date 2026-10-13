@@ -1,0 +1,183 @@
+{
+ "rota": "admin/config/excluir-conta/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/excluir-conta/page.tsx",
+  "src/app/admin/config/excluir-conta/formulario.tsx",
+  "src/lib/offline/api-client.ts",
+  "src/lib/offline/db.ts"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/sheet.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/contato.ts",
+  "src/lib/mensagens.ts"
+ ],
+ "total": 24,
+ "textos": [
+  {
+   "texto": "Excluir minha conta",
+   "arquivo": "src/app/admin/config/excluir-conta/page.tsx",
+   "linha": 5,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Excluir minha conta",
+   "arquivo": "src/app/admin/config/excluir-conta/page.tsx",
+   "linha": 16,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Não consegui excluir sua conta",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 65,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 86,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 86,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Conferindo sua conta…",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 92,
+   "tipo": "texto",
+   "tag": "Card"
+  },
+  {
+   "texto": "Não consegui verificar sua conta agora. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 97,
+   "tipo": "texto",
+   "tag": "Card"
+  },
+  {
+   "texto": "Isto apaga seu login do CICLO para sempre. Não dá para voltar atrás. O histórico de",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 109,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "(agenda, clientes, caixa) continua intacto, exatamente como quando alguém sai da equipe: só o SEU acesso some.",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 110,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "qualquer negócio",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 110,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "o negócio abaixo",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 110,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "os negócios abaixo",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 110,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Antes disso, ligue a verificação em duas etapas na sua conta:",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 124,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Configurações · Segurança",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 126,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Excluir minha conta",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 153,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Excluir sua conta?",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 158,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Não dá para voltar atrás.",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 158,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Seu nome, e-mail e login somem.",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 161,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "funcionando com o histórico intacto, só você deixa de conseguir entrar.",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 161,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O negócio continua",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 161,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Os negócios continuam",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 161,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Excluir mesmo assim",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 165,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cancelar",
+   "arquivo": "src/app/admin/config/excluir-conta/formulario.tsx",
+   "linha": 168,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "escrita jurídica não entra na fila offline: {url}",
+   "arquivo": "src/lib/offline/api-client.ts",
+   "linha": 139,
+   "tipo": "erro"
+  }
+ ]
+}

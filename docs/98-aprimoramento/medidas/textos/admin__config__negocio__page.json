@@ -1,0 +1,316 @@
+{
+ "rota": "admin/config/negocio/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/negocio/page.tsx",
+  "src/app/admin/config/negocio/formulario.tsx",
+  "src/app/admin/config/negocio/imagens.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/app-url.ts",
+  "src/lib/utils.ts"
+ ],
+ "total": 46,
+ "textos": [
+  {
+   "texto": "Negócio",
+   "arquivo": "src/app/admin/config/negocio/page.tsx",
+   "linha": 12,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Negócio",
+   "arquivo": "src/app/admin/config/negocio/page.tsx",
+   "linha": 23,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "O que aparece no seu site e como as pessoas te encontram.",
+   "arquivo": "src/app/admin/config/negocio/page.tsx",
+   "linha": 23,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Não consegui salvar.",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 73,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Negócio atualizado",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 76,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 80,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Seu site",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 89,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Copiar link do site",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 95,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Abrir o site em nova aba",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 104,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Nome do negócio",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 113,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Endereço da página",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 123,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Não dá pra trocar depois de criado: links já enviados quebrariam.",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 129,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Frase de capa (opcional)",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 133,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Ex.: Elevando sua autoestima",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 137,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Sobre o negócio (opcional)",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 144,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Endereço (rua, número, bairro, cidade)",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 155,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Telefone",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 165,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Instagram (opcional)",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 187,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Cor do seu site",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 197,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Usar a cor {p.nome}",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 204,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Escolher outra cor do site",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 220,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Usar a cor padrão",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 229,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Cor padrão do CICLO, ou escolha outra ao lado.",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 232,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Salvar",
+   "arquivo": "src/app/admin/config/negocio/formulario.tsx",
+   "linha": 244,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Imagens do seu site",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 33,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "É o que faz sua página parecer sua, e não do sistema. Aparecem para quem abre o link que você manda.",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 35,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Logo",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 41,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Aparece redonda, no topo da página. Uma imagem quadrada fica melhor.",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 42,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Capa",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 48,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "A faixa larga atrás do seu nome. Uma foto do espaço ou de um trabalho seu funciona bem.",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 49,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Não consegui subir a {rotulo.toLowerCase()}",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 86,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente outra imagem.",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 86,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 96,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira sua conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 96,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui remover a {rotulo.toLowerCase()}",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 107,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente de novo.",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 107,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "{rotulo} removida",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 111,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Sua página já está sem ela.",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 111,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 113,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira sua conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 113,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "{rotulo} atual",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 127,
+   "tipo": "alt"
+  },
+  {
+   "texto": "Enviando…",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 142,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Trocar",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 142,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Escolher imagem",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 142,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Remover",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 153,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "{ajuda} Até 2MB.",
+   "arquivo": "src/app/admin/config/negocio/imagens.tsx",
+   "linha": 159,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

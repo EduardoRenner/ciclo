@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agendar e confirmar (público) · protótipo</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  /* Páginas públicas cravam o tema claro de propósito (tela-publica.tsx:50): o "escuro" aqui fica claro. */
+  .aparelho[data-tema='escuro'] {
+    --bg: #faf8f5; --surface: #ffffff; --surface-2: #f1eee9; --surface-3: #e7e2db; --line: rgba(24,18,12,.10); --line-2: rgba(24,18,12,.16);
+    --txt: #1b1712; --txt-2: #5b544c; --txt-3: #655d53; --acc: #0b7d6f; --acc-2: #0a6a5e; --acc-soft: rgba(11,125,111,.12); --on-acc: #fff; --ring: #0b7d6f;
+    --ok: #2a8148; --warn: #835800; --bad: #78120b;
+  }
+  .area { position: absolute; inset: 0; overflow-y: auto; }
+  .aparelho[data-aparelho='celular'] .area { padding-bottom: 140px; }
+  .cab-pub { padding: 16px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .cab-pub b { font-size: 18px; }
+  .aparelho[data-aparelho='computador'] .grade { display: grid; grid-template-columns: 1fr 380px; gap: 32px; max-width: 1040px; margin: 0 auto; padding: 24px 32px; }
+  .aparelho[data-aparelho='computador'] .conteudo { padding: 0; }
+  .aparelho[data-aparelho='computador'] .so-pc-centro { max-width: 520px; margin: 40px auto; }
+  .passo { margin-top: 20px; }
+  .passo > .label { display: block; margin-bottom: 8px; font-size: 13.5px; }
+  .barra-pub { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 16px 20px; background: var(--surface); border-top: 1px solid var(--line); z-index: 9; }
+  .barra-pub .resumo { margin: 0 0 8px; font-size: 14px; }
+  .aparelho[data-aparelho='computador'] .barra-pub { position: sticky; top: 24px; border: 1px solid var(--line); border-radius: 16px; }
+  .diverge { outline: 3px solid #e05d52; outline-offset: 2px; border-radius: 8px; }
+  .anota { background: #fde8e6; color: #78120b; border: 1px solid #e05d52; border-radius: 12px; padding: 10px 12px; font-size: 13px; margin-top: 8px; }
+  .resumo-confirmar { border-left: 4px solid var(--acc); }
+</style>
+</head>
+<body>
+<p class="nota-proto"><strong>Página pública: agendar e confirmar (F-01 S0, F-02, C-04, F-04, D-04, A-03, C-21, F-07).</strong> O estado "Antes: o defeito F-01" mostra o que a cliente vê hoje quando a resposta antiga de horários chega por último: a tela diz quinta e o banco grava terça (3 casos reais no banco local: <code>cce7078a</code>, <code>6de7506c</code>, <code>95886ec1</code>, todos "Tue 13/10 09:00"). Os outros estados mostram a proposta: a lista só aceita a resposta do dia que está selecionado, e o resumo tira dia e hora do horário escolhido. Fala sempre em nome do negócio, sem prometer canal que não existe. Tema claro fixo (decisão: é a cor do negócio).</p>
+<div class="palco">
+<div class="aparelho">
+  <div class="area">
+    <header class="cab-pub"><b>Barbearia Dom Estilo</b><br><span class="sec">Rua das Flores, 120 · Pinheiros</span></header>
+
+    <!-- ================= AGENDAR ================= -->
+    <div class="grade" data-estado="escolher carregando antes-corrida conflito enviando offline">
+      <div class="conteudo">
+        <h1 class="titulo" style="font-size:24px">Escolha seu horário</h1>
+        <div class="aviso" data-estado="offline" role="status" style="margin-top:8px"><strong>Sem internet.</strong> Seu pedido ainda não saiu. Quando a conexão voltar, toque em "Pedir este horário" de novo: o pedido não vai sair duplicado.</div>
+        <div class="passo"><span class="label">1 · Serviço</span>
+          <div class="card linha entre" style="padding:12px 16px"><span><strong>Corte</strong><br><span class="sec">40 min · R$ 45,00</span></span><button class="btn btn-fantasma">Trocar</button></div>
+        </div>
+        <div class="passo"><span class="label">2 · Com quem</span>
+          <div class="chips"><button class="chip" data-grupo="p" aria-pressed="false">Quem estiver livre</button><button class="chip" data-grupo="p" aria-pressed="true">Bruna</button><button class="chip" data-grupo="p" aria-pressed="false">Vitória</button><button class="chip" data-grupo="p" aria-pressed="false">Larissa</button></div>
+        </div>
+        <div class="passo"><span class="label">3 · Dia</span>
+          <div class="chips">
+            <button class="chip dia" data-grupo="d" aria-pressed="false">TER<b>13</b></button>
+            <button class="chip dia" data-grupo="d" aria-pressed="false">QUA<b>14</b></button>
+            <button class="chip dia" id="qui" data-grupo="d" aria-pressed="true">QUI<b>15</b></button>
+            <button class="chip dia" data-grupo="d" aria-pressed="false">SEX<b>16</b></button>
+            <button class="chip dia" data-grupo="d" aria-pressed="false">SÁB<b>17</b></button>
+            <button class="chip dia fechado" disabled aria-label="Domingo 18, fechado">DOM<b>18</b></button>
+            <button class="chip dia fechado" disabled aria-label="Segunda 19, fechado">SEG<b>19</b></button>
+          </div>
+        </div>
+        <div class="passo" aria-live="polite"><span class="label">4 · Horário na quinta, 15/10</span>
+          <div data-estado="carregando"><p class="sr-so">Buscando os horários de quinta, 15/10</p><div class="grade-horarios"><div class="esqueleto" style="height:48px"></div><div class="esqueleto" style="height:48px"></div><div class="esqueleto" style="height:48px"></div><div class="esqueleto" style="height:48px"></div></div></div>
+
+          <div class="aviso erro" data-estado="conflito" role="alert" style="margin-bottom:12px"><strong>Esse horário acabou de ser marcado por outra pessoa.</strong> Seu nome e telefone continuam aqui. Estes estão livres, perto do que você queria:
+            <div class="linha" style="flex-wrap:wrap;gap:8px;margin-top:8px"><button class="chip">09:40</button><button class="chip">10:20</button><button class="chip">11:00</button></div>
+          </div>
+
+          <div data-estado="escolher conflito enviando offline">
+            <p class="sec" style="margin:0 0 6px">Manhã</p>
+            <div class="grade-horarios"><button class="chip" data-grupo="h" aria-pressed="true">09:00</button><button class="chip" data-grupo="h">09:40</button><button class="chip" data-grupo="h">10:20</button><button class="chip" data-grupo="h">11:00</button></div>
+          </div>
+          <!-- ANTES: a lista que chegou por último é a de HOJE (terça), embaixo do cabeçalho de quinta -->
+          <div data-estado="antes-corrida">
+            <p class="sec" style="margin:0 0 6px">Manhã</p>
+            <div class="grade-horarios diverge"><button class="chip" aria-pressed="true">09:00</button><button class="chip">09:45</button><button class="chip">10:30</button><button class="chip">11:15</button></div>
+            <p class="anota">Antes (hoje no ar): esta lista é a de <strong>terça 13</strong>, que chegou depois da de quinta e escreveu por cima (<code>agendar.tsx:448-501</code>). O cabeçalho continua dizendo quinta.</p>
+          </div>
+          <label class="campo passo" data-estado="escolher conflito enviando offline antes-corrida"><span class="label">Seu nome</span><input value="Juliana Prado"></label>
+          <label class="campo" style="margin-top:8px" data-estado="escolher conflito enviando offline antes-corrida"><span class="label">Seu WhatsApp</span><input value="(11) 98877-6655" inputmode="tel"></label>
+        </div>
+      </div>
+
+      <aside>
+        <div class="barra-pub">
+          <p class="resumo" data-estado="escolher enviando offline"><strong>Corte com Bruna</strong><br>quinta, 15/10, às 09:00 · R$ 45,00</p>
+          <p class="resumo" data-estado="carregando conflito">Escolha um horário</p>
+          <p class="resumo diverge" data-estado="antes-corrida"><strong>Corte com Bruna</strong><br>quinta, 15/10, às 09:00</p>
+          <p class="anota" data-estado="antes-corrida" style="margin:0 0 8px">O banco grava <strong>terça, 13/10, às 09:00</strong>: o dia sai do chip tocado; a hora, do horário (que era de terça). Proposta: dia e hora saem os dois do horário escolhido.</p>
+          <button class="btn btn-primario btn-cheio" data-estado="escolher offline antes-corrida">Pedir este horário</button>
+          <button class="btn btn-primario btn-cheio" data-estado="carregando conflito" disabled>Pedir este horário</button>
+          <button class="btn btn-primario btn-cheio" data-estado="enviando" aria-busy="true" disabled>Enviando o pedido…</button>
+        </div>
+      </aside>
+    </div>
+
+    <!-- SUCESSO -->
+    <div class="conteudo so-pc-centro" data-estado="sucesso">
+      <div class="card" style="margin-top:8px">
+        <p class="titulo" style="font-size:22px">Pedido enviado</p>
+        <p style="margin:4px 0"><strong>Corte com Bruna</strong><br>quinta, 15/10, às 09:00</p>
+        <p class="sec">Quem vai te atender confirma com você, e pode não ser na hora. O contato fica com o WhatsApp que você deixou: (11) 98877-6655.</p>
+        <div class="pilha"><button class="btn btn-secundario btn-cheio">Pôr na agenda do celular</button><a class="btn btn-fantasma btn-cheio" href="#">Ver a página da Barbearia Dom Estilo</a></div>
+      </div>
+      <p class="sec" style="text-align:center">Sem telefone do negócio cadastrado, a frase não promete ligação (F-04).</p>
+    </div>
+
+    <!-- ================= CONFIRMAR (/confirmar/[token]) ================= -->
+    <div class="conteudo so-pc-centro" data-estado="confirmar desmarcar desmarcado ja-confirmado token-invalido">
+      <div data-estado="confirmar desmarcar desmarcado ja-confirmado">
+        <h1 class="titulo" style="font-size:24px" data-estado="confirmar">Você vem?</h1>
+        <h1 class="titulo" style="font-size:24px" data-estado="ja-confirmado">Você já confirmou</h1>
+        <h1 class="titulo" style="font-size:24px" data-estado="desmarcado">Horário desmarcado</h1>
+        <h1 class="titulo" style="font-size:24px" data-estado="desmarcar">Desmarcar este horário?</h1>
+        <div class="card resumo-confirmar" data-resposta>
+          <p style="margin:0"><strong>Corte com Bruna</strong></p>
+          <p class="stat" style="margin:4px 0">quinta, 15/10, às 09:00</p>
+          <p class="sec" style="margin:0">Barbearia Dom Estilo · Rua das Flores, 120</p>
+        </div>
+        <div class="pilha" style="margin-top:16px" data-estado="confirmar">
+          <button class="btn btn-primario btn-cheio">Vou sim</button>
+          <button class="btn btn-secundario btn-cheio" onclick="protoIrPara('desmarcar')">Preciso desmarcar</button>
+        </div>
+        <div class="pilha" style="margin-top:16px" data-estado="desmarcar">
+          <p class="sec" style="margin:0">O horário fica livre para outra pessoa.</p>
+          <button class="btn btn-perigo btn-cheio" onclick="protoIrPara('desmarcado')">Sim, desmarcar</button>
+          <button class="btn btn-secundario btn-cheio" onclick="protoIrPara('confirmar')">Voltar</button>
+        </div>
+        <div data-estado="desmarcado">
+          <p class="sec">Quando quiser, é só marcar de novo.</p>
+          <a class="btn btn-secundario btn-cheio" href="#">Marcar outro horário</a>
+          <div class="toast" role="status" style="position:static;margin-top:16px">Desmarcado. <button onclick="protoIrPara('confirmar')">Desfazer</button></div>
+        </div>
+        <div data-estado="ja-confirmado"><p class="sec">Até quinta! Se precisar mudar, fale com a Barbearia Dom Estilo pelo WhatsApp.</p><a class="btn btn-secundario btn-cheio" href="#">Abrir o WhatsApp da Barbearia</a></div>
+      </div>
+      <div class="card vazio" data-estado="token-invalido">
+        <div class="icone-grande">⌛</div>
+        <p style="font-weight:800;margin:0">Esse link não vale mais</p>
+        <p class="sec">Ele pode ter vencido ou já ter sido usado. Seu horário não mudou por causa disso.</p>
+        <a class="btn btn-primario btn-cheio" href="#">Ver a página da Barbearia Dom Estilo</a>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+  window.PROTO = {
+    titulo: 'Agendar e confirmar (público)',
+    padrao: 'escolher',
+    estados: [
+      ['escolher', 'Agendar: escolhendo'], ['carregando', 'Agendar: dia acabou de mudar'], ['antes-corrida', 'ANTES: o defeito F-01 (hoje no ar)'],
+      ['conflito', 'Agendar: horário ocupado (409)'], ['enviando', 'Agendar: enviando'], ['sucesso', 'Agendar: pedido enviado'], ['offline', 'Agendar: sem conexão'],
+      ['confirmar', 'Confirmar: abrir o link'], ['desmarcar', 'Confirmar: 2º passo do desmarcar'], ['desmarcado', 'Confirmar: desmarcado (desfazer)'], ['ja-confirmado', 'Confirmar: já confirmado'], ['token-invalido', 'Confirmar: link vencido'],
+    ],
+  }
+  document.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip.dia:not([disabled])')
+    if (!chip || document.querySelector('.aparelho').dataset.estadoAtual !== 'escolher') return
+    chip.classList.add('carregando'); window.protoIrPara('carregando')
+    setTimeout(() => { chip.classList.remove('carregando'); window.protoIrPara('escolher') }, 700)
+  })
+</script>
+<script src="base.js"></script>
+</body>
+</html>

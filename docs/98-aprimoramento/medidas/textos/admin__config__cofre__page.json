@@ -1,0 +1,86 @@
+{
+ "rota": "admin/config/cofre/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/cofre/page.tsx",
+  "src/app/admin/config/cofre/trilha.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 11,
+ "textos": [
+  {
+   "texto": "Trilha do cofre",
+   "arquivo": "src/app/admin/config/cofre/page.tsx",
+   "linha": 10,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Trilha do cofre",
+   "arquivo": "src/app/admin/config/cofre/page.tsx",
+   "linha": 19,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Toda vez que uma ficha de saúde foi aberta.",
+   "arquivo": "src/app/admin/config/cofre/page.tsx",
+   "linha": 19,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Abriu",
+   "arquivo": "src/app/admin/config/cofre/trilha.tsx",
+   "linha": 11,
+   "tipo": "prop:read"
+  },
+  {
+   "texto": "Preencheu",
+   "arquivo": "src/app/admin/config/cofre/trilha.tsx",
+   "linha": 12,
+   "tipo": "prop:write"
+  },
+  {
+   "texto": "Exportou",
+   "arquivo": "src/app/admin/config/cofre/trilha.tsx",
+   "linha": 13,
+   "tipo": "prop:export"
+  },
+  {
+   "texto": "Nenhum acesso ainda",
+   "arquivo": "src/app/admin/config/cofre/trilha.tsx",
+   "linha": 26,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Toda vez que alguém abrir uma ficha de saúde, aparece aqui.",
+   "arquivo": "src/app/admin/config/cofre/trilha.tsx",
+   "linha": 27,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Nada pra ver por enquanto",
+   "arquivo": "src/app/admin/config/cofre/trilha.tsx",
+   "linha": 28,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "por {e.actorName} ·",
+   "arquivo": "src/app/admin/config/cofre/trilha.tsx",
+   "linha": 41,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "IP {e.ip}",
+   "arquivo": "src/app/admin/config/cofre/trilha.tsx",
+   "linha": 43,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

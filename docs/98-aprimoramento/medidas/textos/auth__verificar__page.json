@@ -1,0 +1,70 @@
+{
+ "rota": "(auth)/verificar/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(auth)/verificar/page.tsx",
+  "src/app/(auth)/verificar/formulario.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/shell/selo.tsx",
+  "src/components/shell/tela-publica.tsx",
+  "src/components/ui/toast.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/input.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 8,
+ "textos": [
+  {
+   "texto": "Confirme seu e-mail",
+   "arquivo": "src/app/(auth)/verificar/page.tsx",
+   "linha": 9,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Confirmar identidade",
+   "arquivo": "src/app/(auth)/verificar/page.tsx",
+   "linha": 27,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Digite o código do seu app autenticador.",
+   "arquivo": "src/app/(auth)/verificar/page.tsx",
+   "linha": 28,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Não consegui confirmar o código.",
+   "arquivo": "src/app/(auth)/verificar/formulario.tsx",
+   "linha": 29,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Tente de novo.",
+   "arquivo": "src/app/(auth)/verificar/formulario.tsx",
+   "linha": 41,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Código de 6 dígitos",
+   "arquivo": "src/app/(auth)/verificar/formulario.tsx",
+   "linha": 50,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Confirmar",
+   "arquivo": "src/app/(auth)/verificar/formulario.tsx",
+   "linha": 71,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Digite os 6 dígitos do código que chegou para continuar.",
+   "arquivo": "src/app/(auth)/verificar/formulario.tsx",
+   "linha": 69,
+   "tipo": "prop:motivoDesabilitado"
+  }
+ ]
+}

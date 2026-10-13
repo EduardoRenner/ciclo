@@ -1,0 +1,42 @@
+{
+  "cliente": [
+    "/admin/clientes/fe4ad012-78a1-43c9-9b13-8ed119ac6c29",
+    "/admin/clientes/ea83ba99-874e-44c8-915f-26657a0eaad7",
+    "/admin/clientes/e3b77b65-672b-4ef1-9462-eac92e4e5270",
+    "/admin/clientes/cf3e5831-4a82-4fe0-8398-0f060d41ec95",
+    "/admin/clientes/c4c172b8-aad0-407f-bb41-3d4d1356e861"
+  ],
+  "comanda": [],
+  "comandaAgendamento": [],
+  "profissional": [],
+  "servicoFicha": [
+    "/admin/config/servicos/d3df68a3-2742-49e5-ab10-4aa93fa84245/ficha",
+    "/admin/config/servicos/e5ee748d-24b7-4bba-8387-8ffecc1277fb/ficha",
+    "/admin/config/servicos/1f179071-ec75-4865-9fe3-749f8e146e33/ficha",
+    "/admin/config/servicos/3ab5fcf3-9b0c-4295-bd7d-2e0ecc3d5823/ficha",
+    "/admin/config/servicos/6c22ea86-e4a4-408f-8c79-11787412b4c4/ficha"
+  ],
+  "caso": [],
+  "intimacao": [],
+  "outros": [
+    "/",
+    "/admin/agenda",
+    "/admin/agenda/novo",
+    "/admin/caixa",
+    "/admin/caixa?dia=2026-10-12",
+    "/admin/campanhas",
+    "/admin/campanhas/nova",
+    "/admin/clientes",
+    "/admin/clientes/exportar",
+    "/admin/clientes/ja-atendo",
+    "/admin/clientes/nova",
+    "/admin/config",
+    "/admin/config/servicos",
+    "/admin/config/taxas",
+    "/admin/experimentos",
+    "/admin/hoje",
+    "/admin/orcamentos/novo",
+    "/admin/recuperar",
+    "/demo-dom-estilo"
+  ]
+}

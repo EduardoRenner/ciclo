@@ -1,0 +1,47 @@
+{
+ "rota": "admin/comanda/agendamento/[appointmentId]/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/comanda/agendamento/[appointmentId]/page.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/card.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 5,
+ "textos": [
+  {
+   "texto": "Comanda",
+   "arquivo": "src/app/admin/comanda/agendamento/[appointmentId]/page.tsx",
+   "linha": 13,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Comanda",
+   "arquivo": "src/app/admin/comanda/agendamento/[appointmentId]/page.tsx",
+   "linha": 43,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Esse atendimento não tem comanda",
+   "arquivo": "src/app/admin/comanda/agendamento/[appointmentId]/page.tsx",
+   "linha": 47,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "A comanda é aberta na hora de concluir o atendimento. Este aqui foi concluído antes disso, então não há nada para mostrar.",
+   "arquivo": "src/app/admin/comanda/agendamento/[appointmentId]/page.tsx",
+   "linha": 48,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Voltar para a agenda",
+   "arquivo": "src/app/admin/comanda/agendamento/[appointmentId]/page.tsx",
+   "linha": 49,
+   "tipo": "link",
+   "tag": "Link"
+  }
+ ]
+}

@@ -1,0 +1,182 @@
+{
+ "rota": "admin/casos/novo/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/casos/novo/page.tsx",
+  "src/app/admin/casos/novo/formulario.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/bloqueio-plano.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/lib/formato.ts",
+  "src/lib/app-url.ts",
+  "src/lib/utils.ts",
+  "src/components/ui/button.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/select.tsx",
+  "src/lib/advocacia/escrever.ts"
+ ],
+ "total": 25,
+ "textos": [
+  {
+   "texto": "Novo caso",
+   "arquivo": "src/app/admin/casos/novo/page.tsx",
+   "linha": 18,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "organizar os casos do escritório",
+   "arquivo": "src/app/admin/casos/novo/page.tsx",
+   "linha": 38,
+   "tipo": "prop:acao"
+  },
+  {
+   "texto": "Ver os clientes",
+   "arquivo": "src/app/admin/casos/novo/page.tsx",
+   "linha": 39,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Casos",
+   "arquivo": "src/app/admin/casos/novo/page.tsx",
+   "linha": 54,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Novo caso",
+   "arquivo": "src/app/admin/casos/novo/page.tsx",
+   "linha": 56,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "O caso já nasce com as pendências do modelo do tipo escolhido.",
+   "arquivo": "src/app/admin/casos/novo/page.tsx",
+   "linha": 56,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Não consegui abrir o caso. Tente de novo.",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 82,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui abrir o caso. Tente de novo.",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 85,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Cliente",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 95,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Escolha o cliente",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 97,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Tipo de caso",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 106,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Área",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 114,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Título interno",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 123,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Só a equipe vê. Ex.: Holding Moreira Alves",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 124,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "O cliente lê",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 134,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Vai nas mensagens de WhatsApp. Nunca coloque número de processo, valor ou nome de outra parte.",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 135,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Responsável",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 148,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Ninguém por enquanto",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 149,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Caso sigiloso {…}",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 167,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Esta área é sempre sigilosa.",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 169,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Só a equipe do caso e a direção veem.",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 169,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Criar as pendências do modelo Documentos e etapas do tipo de caso, com datas em dias úteis.",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 177,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Documentos e etapas do tipo de caso, com datas em dias úteis.",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 178,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Abrir caso",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 195,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escolha o cliente e preencha os dois títulos.",
+   "arquivo": "src/app/admin/casos/novo/formulario.tsx",
+   "linha": 193,
+   "tipo": "prop:motivoDesabilitado"
+  }
+ ]
+}

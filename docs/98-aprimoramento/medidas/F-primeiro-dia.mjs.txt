@@ -1,0 +1,108 @@
+// Agente F — primeiro dia do dono: /cadastro → (e-mail) → /onboarding → /onboarding/perfil → painel vazio.
+// Cria conta SÓ no banco local. Sessão salva FORA do repositório (C:\temp\ciclo-medicao\estado-F-*.json).
+// Uso: node F-primeiro-dia.mjs <rotulo> <email> <nomeNegocio> <buscaProfissao> <nomeProfissao> <respostasPerfil separadas por |>
+import { writeFileSync, mkdirSync } from 'node:fs'
+import { abrir, BASE, CAPTURAS, MEDIDAS, axe, alvosPequenos, rolagemLateral } from './F-lib.mjs'
+
+const [rotulo, email, negocio, busca, profissao, respostas = ''] = process.argv.slice(2)
+const SENHA = 'Teste#AgenteF2026' // conta descartável do banco local
+const { browser, context, page, consoleErros } = await abrir('celular')
+const etapas = []
+const texto = () => page.evaluate(() => document.body.innerText.replace(/\n{2,}/g, '\n').trim())
+let toquesEtapa = 0
+let camposEtapa = 0
+let tEtapa = Date.now()
+async function fecharEtapa(nome, extra = {}) {
+  const r = { etapa: nome, ms: Date.now() - tEtapa, toques: toquesEtapa, campos: camposEtapa, url: page.url(), ...extra }
+  etapas.push(r)
+  console.log(JSON.stringify(r))
+  toquesEtapa = 0; camposEtapa = 0; tEtapa = Date.now()
+}
+const toque = async (loc) => { await loc.click(); toquesEtapa++ }
+const digitar = async (loc, valor) => { await loc.click(); toquesEtapa++; await loc.pressSequentially(valor, { delay: 15 }); camposEtapa++ }
+
+// 1. CADASTRO
+await page.goto(`${BASE}/cadastro`, { waitUntil: 'commit' })
+await page.locator('button[type=submit]').waitFor({ timeout: 60000 })
+await fecharEtapa('cadastro: tela pronta')
+const a11yCadastro = await axe(page)
+await digitar(page.getByLabel('Nome completo'), `Dono ${rotulo} Agente F`)
+await digitar(page.getByLabel('E-mail'), email)
+await digitar(page.getByLabel('Telefone com DDD'), '11976540' + String(Math.floor(Math.random() * 900) + 100))
+await digitar(page.getByLabel('Senha', { exact: true }), SENHA)
+await toque(page.getByRole('button', { name: 'Criar conta' }))
+await page.getByText(/Quase lá/).or(page.locator('form [role=alert]:not(:empty)')).first().waitFor({ timeout: 60000 }).catch(() => {})
+const posCadastro = await texto()
+await page.screenshot({ path: `${CAPTURAS}/F-cadastro-enviado-${rotulo}.png`, fullPage: true })
+await fecharEtapa('cadastro: preencher e enviar', { textoDepois: posCadastro.slice(0, 400), axeTela: a11yCadastro })
+
+// 2. E-MAIL (Mailpit local)
+const caixa = await (await fetch(`http://127.0.0.1:54324/api/v1/search?query=${encodeURIComponent('to:' + email)}`)).json().catch(() => null)
+await fecharEtapa('e-mail de confirmacao (Mailpit)', { mensagensRecebidas: caixa?.messages_count ?? caixa?.total ?? null, assuntos: (caixa?.messages ?? []).map((m) => m.Subject) })
+
+// 3. ONBOARDING (3 respostas)
+await page.goto(`${BASE}/onboarding`, { waitUntil: 'commit' })
+await page.locator('text=/Três respostas|Que bom te ver/').first().waitFor({ timeout: 60000 })
+let precisouEntrar = false
+if (page.url().includes('/entrar')) {
+  precisouEntrar = true
+  await digitar(page.getByLabel('E-mail'), email)
+  await digitar(page.getByLabel('Senha', { exact: true }), SENHA)
+  await toque(page.getByRole('button', { name: /^Entrar$/ }))
+  await page.waitForURL(/onboarding|admin/, { timeout: 60000 })
+}
+await page.getByLabel('Nome do negócio').waitFor({ timeout: 60000 })
+await fecharEtapa('onboarding: tela pronta', { precisouEntrar })
+await page.screenshot({ path: `${CAPTURAS}/F-onboarding-vazio-${rotulo}.png`, fullPage: true })
+const a11yOnb = await axe(page)
+const alvosOnb = await alvosPequenos(page)
+await digitar(page.getByLabel('Nome do negócio'), negocio)
+await digitar(page.getByLabel('Sua profissão'), busca)
+await toque(page.getByRole('button', { name: new RegExp(`^${profissao}`) }).first())
+const slug = await page.getByLabel('Endereço da sua página').inputValue()
+await page.screenshot({ path: `${CAPTURAS}/F-onboarding-preenchido-${rotulo}.png`, fullPage: true })
+await toque(page.getByRole('button', { name: 'Colocar minha página no ar' }))
+await page.waitForURL(/onboarding\/perfil|admin/, { timeout: 60000 }).catch(() => {})
+await page.locator('h1').first().waitFor({ timeout: 60000 })
+await fecharEtapa('onboarding: 3 respostas', { slugSugerido: slug, axeTela: a11yOnb, alvosPequenos: alvosOnb, erro: await page.locator('[role=alert]').allInnerTexts().catch(() => []) })
+
+// 4. PERFIL ("do seu jeito")
+await page.screenshot({ path: `${CAPTURAS}/F-perfil-${rotulo}.png`, fullPage: true })
+const alvosPerfil = await alvosPequenos(page)
+for (const r of respostas.split('|').filter(Boolean)) {
+  await toque(page.getByRole(r.startsWith('btn:') ? 'button' : 'radio', { name: r.replace(/^btn:/, '') }))
+  await page.waitForTimeout(150)
+}
+await page.waitForURL(/admin/, { timeout: 60000 }).catch(() => {})
+await page.locator('main h1, h1').first().waitFor({ timeout: 60000 }).catch(() => {})
+await fecharEtapa('perfil: perguntas', { respostas, destino: page.url(), alvosPequenos: alvosPerfil })
+
+await context.storageState({ path: `C:/temp/ciclo-medicao/estado-F-${rotulo}.json` })
+
+// 5. PAINEL VAZIO: o que a pessoa vê em cada tela do primeiro dia
+const telas = [
+  ['destino-do-perfil', null],
+  ['hoje', '/admin/hoje'],
+  ['servicos', '/admin/config/servicos'],
+  ['profissionais', '/admin/config/profissionais'],
+  ['clientes', '/admin/clientes'],
+  ['agenda', '/admin/agenda'],
+  ['horarios', '/admin/config/horarios'],
+  ['recuperar', '/admin/recuperar'],
+]
+const painel = []
+for (const [nome, rota] of telas) {
+  const t = Date.now()
+  if (rota) await page.goto(`${BASE}${rota}`, { waitUntil: 'commit' })
+  await page.locator('main h1, h1').first().waitFor({ timeout: 60000 }).catch(() => {})
+  await page.waitForLoadState('load').catch(() => {})
+  const ms = Date.now() - t
+  await page.screenshot({ path: `${CAPTURAS}/F-painel-${nome}-${rotulo}.png`, fullPage: true })
+  painel.push({ tela: nome, url: page.url(), msAteTitulo: rota ? ms : null, texto: (await texto()).slice(0, 2500), rolagemLateral: await rolagemLateral(page), alvosPequenos: (await alvosPequenos(page)).slice(0, 15) })
+}
+
+const saida = { rotulo, email, slug, etapas, painel, consoleErros, totalMsAtePainel: etapas.reduce((s, e) => s + e.ms, 0), toquesAtePainel: etapas.reduce((s, e) => s + e.toques, 0), camposAtePainel: etapas.reduce((s, e) => s + e.campos, 0) }
+mkdirSync(`${MEDIDAS}/F`, { recursive: true })
+writeFileSync(`${MEDIDAS}/F/primeiro-dia-${rotulo}.json`, JSON.stringify(saida, null, 2))
+console.log(JSON.stringify({ slug, totalMsAtePainel: saida.totalMsAtePainel, toques: saida.toquesAtePainel, campos: saida.camposAtePainel }))
+await browser.close()

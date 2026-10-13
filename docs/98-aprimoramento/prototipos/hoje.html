@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hoje · protótipo</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  .area { position: absolute; inset: 0; overflow-y: auto; }
+  .aparelho[data-aparelho='celular'] .area { top: 0; bottom: 0; padding-bottom: 96px; }
+  .aparelho[data-aparelho='computador'] .area { left: 232px; }
+  .grade-hoje { display: block; }
+  .aparelho[data-aparelho='computador'] .grade-hoje { display: grid; grid-template-columns: minmax(420px, 1fr) 380px; gap: 24px; max-width: 1000px; padding: 24px 32px; }
+  .aparelho[data-aparelho='computador'] .conteudo { padding: 0; }
+  .agora { border-left: 4px solid var(--acc); }
+  .agora .nome { font-size: 21px; font-weight: 800; }
+  .numero-dia { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .cab-hoje { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+</style>
+</head>
+<body>
+<p class="nota-proto"><strong>Hoje (I-01, I-02, I-04, I-05).</strong> A tela responde "o que faço agora": o próximo horário com a ação dele, o resto do dia logo abaixo, o número do dia numa linha e um cartão de "vale a pena". Dados fictícios. Ligue a régua: a lista do dia começa acima de y=420 no celular (hoje fica em y≈1080 sem horário, <code>A-dobra.txt</code>).</p>
+<div class="palco">
+<div class="aparelho">
+
+  <nav class="lateral" data-so="computador" aria-label="Menu">
+    <a href="#" class="destaque"><span class="ico">⟳</span> Quem sumiu</a>
+    <a href="#" aria-current="page"><span class="ico">⌂</span> Hoje</a>
+    <a href="#"><span class="ico">▦</span> Agenda</a>
+    <a href="#"><span class="ico">☺</span> Clientes</a>
+    <a href="#"><span class="ico">＋</span> Marcar</a>
+  </nav>
+
+  <div class="area">
+    <header class="topo" data-so="celular"><span class="marca"><b>C</b>iclo</span><span><button class="btn-topo" aria-label="Perguntar ao assistente">✦ Perguntar</button><button class="btn-topo" aria-label="Mais opções">☰ Mais</button></span></header>
+    <div class="faixa-conexao" data-estado="offline" role="status">Sem internet. O que você marcar fica guardado aqui e sai quando a conexão voltar.</div>
+
+    <div class="grade-hoje">
+      <div class="conteudo">
+        <div class="cab-hoje">
+          <div>
+            <p class="sec" style="margin:0">Terça, 13 de outubro</p>
+            <h1 class="titulo">Hoje</h1>
+          </div>
+          <button class="btn btn-secundario" aria-label="Compartilhar meu link de agendamento">↗ Link</button>
+        </div>
+
+        <!-- carregando -->
+        <div data-estado="carregando" aria-busy="true">
+          <p class="overline">Agora</p>
+          <div class="card"><div class="esqueleto" style="height:22px;width:60%"></div><div class="esqueleto" style="height:16px;width:40%;margin-top:8px"></div><div class="esqueleto" style="height:48px;margin-top:12px"></div></div>
+          <p class="overline">Resto do dia</p>
+          <div class="card"><div class="esqueleto" style="height:16px;margin:8px 0"></div><div class="esqueleto" style="height:16px;margin:8px 0"></div><div class="esqueleto" style="height:16px;margin:8px 0"></div></div>
+        </div>
+
+        <!-- agora -->
+        <div data-estado="normal erro offline longo">
+          <p class="overline">Agora · em 12 min</p>
+          <div class="card agora" data-resposta>
+            <div class="linha entre">
+              <div>
+                <p class="hora" style="font-size:21px;margin:0">09:15</p>
+                <p class="nome" style="margin:0">Elaine Prado</p>
+                <p class="sec" style="margin:0">Barba · com Anderson · <span class="selo ok">Confirmou</span></p>
+              </div>
+            </div>
+            <p class="sec" style="margin:8px 0 0">Costuma vir às terças. Prefere máquina 2 dos lados.</p>
+            <div class="barra-acao" style="position:static;border:0;padding:0;margin-top:12px;background:transparent">
+              <button class="btn btn-primario">Chegou</button>
+              <button class="btn btn-secundario">💬 Mensagem</button>
+            </div>
+          </div>
+
+          <p class="overline">Resto do dia · 5 horários</p>
+          <div class="card" style="padding:4px 16px">
+            <a class="item-lista" href="#"><span class="hora">10:00</span><span style="flex:1">Marcos Lima<br><span class="sec">Corte · Diego</span></span><span class="estado" style="color:var(--ok)">Confirmou</span></a>
+            <a class="item-lista" href="#"><span class="hora">10:45</span><span style="flex:1">João Pedro<br><span class="sec">Corte + barba · Anderson</span></span><span class="estado" style="color:var(--warn)">Falta confirmar</span></a>
+            <a class="item-lista" href="#"><span class="hora">11:30</span><span style="flex:1">Rafael Souza<br><span class="sec">Pigmentação · Felipe</span></span><span class="estado" style="color:var(--ok)">Confirmou</span></a>
+            <a class="item-lista" href="#"><span class="hora">14:00</span><span style="flex:1">Theo (filho da Ana)<br><span class="sec">Corte infantil · Diego</span></span><span class="estado" style="color:var(--warn)">Falta confirmar</span></a>
+            <a class="item-lista" href="#"><span class="hora">15:00</span><span style="flex:1">Bruno Alves<br><span class="sec">Platinado · Felipe</span></span><span class="estado" style="color:var(--ok)">Confirmou</span></a>
+            <a class="item-lista" href="#" data-estado="longo"><span class="hora">15:40</span><span style="flex:1">Caio Henrique Albuquerque de Souza Filho<br><span class="sec">Corte + barba + sobrancelha · Anderson</span></span><span class="estado" style="color:var(--ok)">Confirmou</span></a>
+            <a class="item-lista" href="#" data-estado="longo"><span class="hora">16:20</span><span style="flex:1">Lucas Ferreira<br><span class="sec">Barba · Diego</span></span><span class="estado" style="color:var(--warn)">Falta confirmar</span></a>
+            <a class="item-lista" href="#" data-estado="longo"><span class="hora">16:30</span><span style="flex:1">Pedro Henrique<br><span class="sec">Corte · Felipe</span></span><span class="estado" style="color:var(--ok)">Confirmou</span></a>
+            <a class="item-lista" href="#" data-estado="longo"><span class="hora">17:00</span><span style="flex:1">Gustavo Ramos<br><span class="sec">Corte · Anderson</span></span><span class="estado" style="color:var(--ok)">Confirmou</span></a>
+            <a class="item-lista" href="#" data-estado="longo"><span class="hora">17:15</span><span style="flex:1">Vinícius Prado<br><span class="sec">Corte infantil · Diego</span></span><span class="estado" style="color:var(--ok)">Confirmou</span></a>
+            <a class="item-lista" href="#" data-estado="longo"><span class="hora">18:00</span><span style="flex:1">Henrique Costa<br><span class="sec">Platinado · Felipe</span></span><span class="estado" style="color:var(--warn)">Falta confirmar</span></a>
+            <a class="item-lista" href="#" data-estado="longo"><span class="hora">18:40</span><span style="flex:1">Mateus Lopes<br><span class="sec">Barba · Anderson</span></span><span class="estado" style="color:var(--ok)">Confirmou</span></a>
+            <a class="item-lista" href="#" data-estado="longo"><span class="hora">19:20</span><span style="flex:1">Daniel Moreira<br><span class="sec">Corte · Diego</span></span><span class="estado" style="color:var(--ok)">Confirmou</span></a>
+          </div>
+          <button class="btn btn-fantasma btn-cheio">＋ Marcar horário</button>
+        </div>
+
+        <!-- vazio -->
+        <div data-estado="vazio">
+          <div class="card vazio" data-resposta>
+            <div class="icone-grande">▦</div>
+            <p style="font-weight:800;margin:0">Nada marcado para hoje</p>
+            <p class="sec">Mande seu link para quem costuma vir. A pessoa escolhe o horário sozinha.</p>
+            <div class="pilha">
+              <button class="btn btn-primario btn-cheio">Marcar horário</button>
+              <button class="btn btn-secundario btn-cheio">↗ Compartilhar meu link</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="conteudo">
+        <!-- número do dia -->
+        <p class="overline">O dia até agora</p>
+        <div class="card" data-estado="normal offline longo vazio">
+          <div class="numero-dia"><span class="stat tabular">R$ 0,00</span><span class="sec">0 de 6 horários feitos</span></div>
+          <p class="sec" style="margin:6px 0 0">A comparação com o seu costume aparece quando o dia fechar.</p>
+          <a href="#" class="btn btn-fantasma" style="padding:0">Ver o caixa ›</a>
+        </div>
+        <div class="card" data-estado="carregando"><div class="esqueleto" style="height:28px;width:50%"></div></div>
+        <div class="aviso erro" data-estado="erro" role="status">
+          <strong>Não consegui carregar o valor do dia.</strong> O resto da tela está certo.
+          <div><button class="btn btn-fantasma" style="padding:0">Tentar de novo</button></div>
+        </div>
+
+        <!-- vale a pena -->
+        <p class="overline">Vale a pena hoje</p>
+        <a href="#" class="card linha" style="text-decoration:none;color:inherit" data-estado="normal erro offline longo vazio">
+          <span class="ico">🎁</span>
+          <span style="flex:1"><strong>2 aniversariantes este mês</strong><br><span class="sec">Uma mensagem de parabéns com um mimo fortalece quem já vem.</span></span>
+          <span aria-hidden="true">›</span>
+        </a>
+        <div class="card" data-estado="carregando"><div class="esqueleto" style="height:40px"></div></div>
+        <button class="btn btn-fantasma btn-cheio" data-estado="normal erro offline longo vazio">Ver mais 2</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="assistente" aria-label="Perguntar ao assistente">✦</button>
+  <nav class="barra" data-so="celular" aria-label="Navegação">
+    <a href="#" aria-current="page"><span class="ico">⌂</span>Hoje</a>
+    <a href="#"><span class="ico">▦</span>Agenda</a>
+    <a href="#" class="central"><span class="circulo">⟳</span>Quem sumiu</a>
+    <a href="#"><span class="ico">☺</span>Clientes</a>
+    <a href="#"><span class="ico">＋</span>Marcar</a>
+  </nav>
+</div>
+</div>
+<script>
+  window.PROTO = {
+    titulo: 'Hoje',
+    padrao: 'normal',
+    estados: [['normal', 'Normal (6 horários)'], ['carregando', 'Carregando'], ['vazio', 'Vazio (nada hoje)'], ['erro', 'Erro num bloco'], ['offline', 'Sem conexão'], ['longo', 'Dia longo (14 horários, nome longo)']],
+  }
+</script>
+<script src="base.js"></script>
+</body>
+</html>

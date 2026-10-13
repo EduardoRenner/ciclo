@@ -1,0 +1,133 @@
+// Agente F — cliente final agenda pela página do salão, do começo ao fim, + estados de erro.
+// Uso: node F-agendar.mjs <perfil celular|computador> <slug> <modo normal|ocupado|offline> <telefone>
+import { writeFileSync, mkdirSync } from 'node:fs'
+import { abrir, BASE, CAPTURAS, MEDIDAS, axe, alvosPequenos, rolagemLateral, offline } from './F-lib.mjs'
+
+const [perfilNome = 'celular', slug = 'demo-espaco-vitoria', modo = 'normal', telefone = '11987650001', diaIdx = '2'] = process.argv.slice(2)
+const { browser, page, cdp, consoleErros } = await abrir(perfilNome)
+const passos = []
+let toques = 0
+let campos = 0
+const t0 = Date.now()
+const marca = (nome, extra = {}) => passos.push({ passo: nome, msDesdeInicio: Date.now() - t0, ...extra })
+
+const respostasDisponibilidade = []
+page.on('response', async (r) => {
+  if (r.url().includes('/availability')) {
+    try { respostasDisponibilidade.push(await r.json()) } catch {}
+  }
+})
+let bookCount = 0
+page.on('request', (r) => { if (r.url().includes('/book') && r.method() === 'POST') bookCount++ })
+
+async function tocar(locator, nome, esperaVisual) {
+  const t = Date.now()
+  await locator.click()
+  toques++
+  let visual = null
+  if (esperaVisual) {
+    try { await page.locator(esperaVisual).first().waitFor({ state: 'visible', timeout: 30000 }); visual = Date.now() - t } catch { visual = 'nao-apareceu' }
+  }
+  marca(nome, { respostaMs: visual })
+}
+
+await page.goto(`${BASE}/${slug}/agendar`, { waitUntil: 'commit' })
+await page.locator('button:has-text("R$")').first().waitFor({ state: 'visible', timeout: 60000 })
+marca('servicos visiveis (conteudo util)')
+await page.waitForLoadState('load').catch(() => {})
+marca('load')
+
+// 1. Serviço (o mais barato e curto da lista de exemplo)
+const servicoAlvo = (await page.getByRole('button', { name: /^Manicure simples/ }).count()) ? page.getByRole('button', { name: /^Manicure simples/ }) : page.locator('button:has-text("R$")').first()
+await tocar(servicoAlvo, 'toca servico', 'text=Trocar')
+// 2. Profissional
+const tantoFaz = page.getByRole('button', { name: /^Tanto faz/ })
+if (modo === 'ocupado' && (await tantoFaz.count())) {
+  // Profissional fixo: com "Tanto faz" o chip pode ser de outra pessoa e não haveria conflito.
+  const primeiro = page.getByRole('button', { name: /^Bruna Siqueira/ })
+  await tocar(primeiro, 'toca 1o profissional', null)
+} else if (await tantoFaz.count()) await tocar(tantoFaz, 'toca Tanto faz', null)
+// 3. Dia (diaIdx dias à frente, para não colidir com outros agentes no dia de hoje)
+const dias = page.locator('button', { hasText: /^(DOM|SEG|TER|QUA|QUI|SEX|SÁB)\.?\s*\d{1,2}$/i })
+await dias.nth(Number(diaIdx)).waitFor({ state: 'visible', timeout: 30000 })
+const rotuloDia = (await dias.nth(Number(diaIdx)).getAttribute('aria-label')) ?? ''
+const numeroDia = rotuloDia.match(/dia (\d+)/)?.[1]
+// Espera as consultas pendentes (serviço/profissional) assentarem antes de tocar o dia: a corrida
+// "resposta velha sobrescreve o dia novo" é medida à parte em F-corrida-dia.mjs.
+await page.waitForLoadState('networkidle').catch(() => {})
+await tocar(dias.nth(Number(diaIdx)), `toca dia +${diaIdx} (${rotuloDia})`, null)
+const tDia = Date.now()
+await page.waitForFunction((n) => (document.querySelector('[aria-live="polite"]')?.textContent ?? '').includes(`${n} de `), numeroDia, { timeout: 30000 }).catch(() => {})
+const slotBtn = page.locator('button', { hasText: /^\d\d:\d\d$/ }).first()
+await slotBtn.waitFor({ state: 'visible', timeout: 30000 })
+marca('horarios do dia visiveis', { esperaMs: Date.now() - tDia })
+const horaEscolhida = (await slotBtn.innerText()).trim()
+await tocar(slotBtn, `toca horario ${horaEscolhida}`, 'text=Seu nome')
+
+// Formulário
+await tocar(page.getByLabel('Seu nome'), 'toca campo nome', null)
+await page.getByLabel('Seu nome').fill('Teste Agente F')
+campos++
+await tocar(page.getByLabel(/Seu telefone/), 'toca campo telefone', null)
+await page.getByLabel(/Seu telefone/).pressSequentially(telefone, { delay: 20 })
+campos++
+marca('formulario preenchido')
+const tFoto = Date.now()
+await page.screenshot({ path: `${CAPTURAS}/F-agendar-formulario-${perfilNome}.png`, fullPage: false })
+const pausaFoto = Date.now() - tFoto
+
+let resultado = {}
+if (modo === 'ocupado') {
+  // Outra pessoa reserva o MESMO horário pela API antes do toque em Confirmar.
+  const ultima = respostasDisponibilidade.at(-1)?.data?.slots ?? []
+  const alvo = ultima.find((s) => s.startsAt && new Date(s.startsAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) === horaEscolhida)
+  const servicoId = await page.evaluate(() => null)
+  const corpoAlvo = alvo ? { professionalId: alvo.professionalId, startsAt: alvo.startsAt } : null
+  // serviceId: tirado do último pedido de disponibilidade
+  const urlDisp = (await page.evaluate(() => performance.getEntriesByType('resource').map((r) => r.name).filter((n) => n.includes('/availability')).at(-1)))
+  const serviceId = new URL(urlDisp).searchParams.get('serviceId')
+  const r = await fetch(`${BASE}/api/v1/public/${slug}/book`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ serviceId, ...corpoAlvo, name: 'Concorrente Agente F', phone: '11987659999' }) })
+  resultado.reservaConcorrente = { status: r.status, corpo: await r.text() }
+}
+if (modo === 'offline') await offline(cdp, true)
+
+const sucesso = page.locator('text=Agendamento enviado!')
+const erro = page.locator('[role="alert"]:not(:empty)')
+const botao = page.getByRole('button', { name: /Confirmar agendamento/ })
+const tConf = Date.now()
+await botao.click()
+toques++
+let fim = null
+const esperaResultado = Promise.race([sucesso.waitFor({ timeout: 45000 }), erro.first().waitFor({ timeout: 45000 })]).catch(() => {}).then(() => { fim = Date.now() })
+// duplo toque: segundo toque 80 ms depois (sem esperar o botão: se ele travou, o toque cai no vazio)
+await page.waitForTimeout(80)
+const botaoMudou = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button')].find((x) => /Confirmar agendamento/.test(x.innerText))
+  return b ? { disabled: b.disabled, ariaBusy: b.getAttribute('aria-busy'), ariaDisabled: b.getAttribute('aria-disabled'), texto: b.innerText.slice(0, 60) } : 'sumiu'
+})
+await botao.click({ timeout: 300, force: true }).catch(() => {})
+marca('toca Confirmar (2x em 80 ms)', { estadoBotaoApos80ms: botaoMudou })
+await esperaResultado
+fim = fim ?? Date.now()
+const textoFinal = await page.evaluate(() => document.body.innerText.replace(/\n{2,}/g, '\n'))
+const ok = await sucesso.isVisible().catch(() => false)
+marca(ok ? 'SUCESSO visivel' : 'ERRO/sem sucesso', { msDoToqueAteResultado: fim - tConf })
+await page.screenshot({ path: `${CAPTURAS}/F-agendar-${modo}-${perfilNome}.png`, fullPage: true })
+
+if (modo === 'offline') {
+  await offline(cdp, false)
+}
+
+const final = {
+  perfil: perfilNome, slug, modo, telefone: telefone.replace(/\d(?=\d{4})/g, '•'),
+  totalMs: fim - t0 - pausaFoto, pausaFotoMs: pausaFoto, toques, camposDigitados: campos, pedidosBook: bookCount, ok, horaEscolhida,
+  passos, alertas: await erro.allInnerTexts().catch(() => []),
+  textoFinalTrecho: textoFinal.slice(-900),
+  rolagemLateral: await rolagemLateral(page), alvosPequenos: ok ? await alvosPequenos(page) : undefined,
+  axeFinal: ok ? await axe(page) : undefined,
+  consoleErros, ...resultado,
+}
+mkdirSync(`${MEDIDAS}/F`, { recursive: true })
+writeFileSync(`${MEDIDAS}/F/agendar-${modo}-${perfilNome}.json`, JSON.stringify(final, null, 2))
+console.log(JSON.stringify(final, null, 2))
+await browser.close()

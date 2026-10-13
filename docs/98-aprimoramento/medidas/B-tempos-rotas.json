@@ -1,0 +1,2318 @@
+{
+  "quando": "2026-10-13T04:53:08.547Z",
+  "perfis": {
+    "celular": [
+      {
+        "rota": "Hoje",
+        "path": "/admin/hoje",
+        "urlFinal": "/admin/hoje",
+        "ttfb": {
+          "mediana": 608,
+          "pior": 1328,
+          "fria": 1328,
+          "quentes": [
+            743,
+            308,
+            345,
+            608
+          ]
+        },
+        "util": {
+          "mediana": 1083,
+          "pior": 2156,
+          "fria": 2156,
+          "quentes": [
+            1083,
+            832,
+            743,
+            1112
+          ]
+        },
+        "fcp": {
+          "mediana": 828,
+          "fria": 2704
+        },
+        "lcp": {
+          "mediana": 1196,
+          "fria": 3116
+        },
+        "cls": {
+          "pior": 0.012,
+          "todas": [
+            0.012,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            174,
+            110,
+            130
+          ],
+          "quentes": [
+            [
+              114
+            ],
+            [
+              261,
+              62
+            ],
+            [
+              50
+            ],
+            [
+              235,
+              57
+            ]
+          ],
+          "maiorMs": 261,
+          "totalFriaMs": 414
+        },
+        "jsFriaKB": 190.9,
+        "jsDecodificadoKB": 576.3,
+        "jsArquivos": 21,
+        "docKB": 15.6,
+        "requisicoesFria": 33,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Agenda",
+        "path": "/admin/agenda",
+        "urlFinal": "/admin/agenda",
+        "ttfb": {
+          "mediana": 359,
+          "pior": 1389,
+          "fria": 1389,
+          "quentes": [
+            491,
+            294,
+            359,
+            286
+          ]
+        },
+        "util": {
+          "mediana": 904,
+          "pior": 2552,
+          "fria": 2552,
+          "quentes": [
+            1086,
+            736,
+            904,
+            817
+          ]
+        },
+        "fcp": {
+          "mediana": 668,
+          "fria": 2164
+        },
+        "lcp": {
+          "mediana": 836,
+          "fria": 2664
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            170,
+            100
+          ],
+          "quentes": [
+            [
+              132,
+              99
+            ],
+            [
+              221,
+              62
+            ],
+            [
+              51,
+              273,
+              64
+            ],
+            [
+              243,
+              71
+            ]
+          ],
+          "maiorMs": 273,
+          "totalFriaMs": 270
+        },
+        "jsFriaKB": 185,
+        "jsDecodificadoKB": 561,
+        "jsArquivos": 19,
+        "docKB": 14.5,
+        "requisicoesFria": 28,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Novo agendamento",
+        "path": "/admin/agenda/novo",
+        "urlFinal": "/admin/agenda/novo",
+        "ttfb": {
+          "mediana": 902,
+          "pior": 1913,
+          "fria": 1913,
+          "quentes": [
+            902,
+            448,
+            1473,
+            242
+          ]
+        },
+        "util": {
+          "mediana": 1596,
+          "pior": 2979,
+          "fria": 2979,
+          "quentes": [
+            1596,
+            1219,
+            2046,
+            877
+          ]
+        },
+        "fcp": {
+          "mediana": 1124,
+          "fria": 2672
+        },
+        "lcp": {
+          "mediana": 1608,
+          "fria": 3024
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            309,
+            79,
+            128
+          ],
+          "quentes": [
+            [
+              300,
+              119
+            ],
+            [
+              84
+            ],
+            [
+              254,
+              78
+            ],
+            [
+              299,
+              74
+            ]
+          ],
+          "maiorMs": 309,
+          "totalFriaMs": 516
+        },
+        "jsFriaKB": 184.4,
+        "jsDecodificadoKB": 557.5,
+        "jsArquivos": 19,
+        "docKB": 16.3,
+        "requisicoesFria": 27,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Caixa",
+        "path": "/admin/caixa",
+        "urlFinal": "/admin/caixa",
+        "ttfb": {
+          "mediana": 593,
+          "pior": 1302,
+          "fria": 593,
+          "quentes": [
+            1302,
+            724,
+            344,
+            556
+          ]
+        },
+        "util": {
+          "mediana": 1459,
+          "pior": 1820,
+          "fria": 1820,
+          "quentes": [
+            1717,
+            1459,
+            968,
+            1191
+          ]
+        },
+        "fcp": {
+          "mediana": 1108,
+          "fria": 1404
+        },
+        "lcp": {
+          "mediana": 1488,
+          "fria": 1852
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            161,
+            97,
+            86
+          ],
+          "quentes": [
+            [
+              158
+            ],
+            [
+              190,
+              77
+            ],
+            [
+              238
+            ],
+            [
+              57
+            ]
+          ],
+          "maiorMs": 238,
+          "totalFriaMs": 344
+        },
+        "jsFriaKB": 175.6,
+        "jsDecodificadoKB": 534.7,
+        "jsArquivos": 18,
+        "docKB": 14.2,
+        "requisicoesFria": 28,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Mês",
+        "path": "/admin/mes",
+        "urlFinal": "/admin/mes",
+        "ttfb": {
+          "mediana": 533,
+          "pior": 1435,
+          "fria": 1411,
+          "quentes": [
+            434,
+            1435,
+            533,
+            467
+          ]
+        },
+        "util": {
+          "mediana": 1124,
+          "pior": 2577,
+          "fria": 2577,
+          "quentes": [
+            919,
+            2048,
+            1124,
+            1084
+          ]
+        },
+        "fcp": {
+          "mediana": 856,
+          "fria": 2172
+        },
+        "lcp": {
+          "mediana": 1140,
+          "fria": 2620
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            308,
+            64
+          ],
+          "quentes": [
+            [
+              215
+            ],
+            [
+              201,
+              72
+            ],
+            [
+              299,
+              56
+            ],
+            [
+              195,
+              65
+            ]
+          ],
+          "maiorMs": 308,
+          "totalFriaMs": 372
+        },
+        "jsFriaKB": 175.2,
+        "jsDecodificadoKB": 533.8,
+        "jsArquivos": 18,
+        "docKB": 14.9,
+        "requisicoesFria": 31,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Clientes",
+        "path": "/admin/clientes",
+        "urlFinal": "/admin/clientes",
+        "ttfb": {
+          "mediana": 472,
+          "pior": 2211,
+          "fria": 2211,
+          "quentes": [
+            418,
+            472,
+            1520,
+            296
+          ]
+        },
+        "util": {
+          "mediana": 1080,
+          "pior": 3480,
+          "fria": 3480,
+          "quentes": [
+            1080,
+            1037,
+            2021,
+            939
+          ]
+        },
+        "fcp": {
+          "mediana": 772,
+          "fria": 2944
+        },
+        "lcp": {
+          "mediana": 1152,
+          "fria": 3680
+        },
+        "cls": {
+          "pior": 0.001,
+          "todas": [
+            0.001,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            244,
+            82,
+            53
+          ],
+          "quentes": [
+            [
+              168,
+              84
+            ],
+            [
+              199,
+              82
+            ],
+            [
+              135,
+              65
+            ],
+            [
+              341,
+              77
+            ]
+          ],
+          "maiorMs": 341,
+          "totalFriaMs": 379
+        },
+        "jsFriaKB": 179.8,
+        "jsDecodificadoKB": 547.3,
+        "jsArquivos": 18,
+        "docKB": 19.3,
+        "requisicoesFria": 35,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Ficha do cliente",
+        "path": "/admin/clientes/b5a85dd1-6bb6-4393-b416-0c39f4ecc224",
+        "urlFinal": "/admin/clientes/b5a85dd1-6bb6-4393-b416-0c39f4ecc224",
+        "ttfb": {
+          "mediana": 646,
+          "pior": 897,
+          "fria": 705,
+          "quentes": [
+            646,
+            488,
+            391,
+            897
+          ]
+        },
+        "util": {
+          "mediana": 1023,
+          "pior": 1620,
+          "fria": 1408,
+          "quentes": [
+            1023,
+            918,
+            825,
+            1620
+          ]
+        },
+        "fcp": {
+          "mediana": 936,
+          "fria": 1404
+        },
+        "lcp": {
+          "mediana": 1552,
+          "fria": 2052
+        },
+        "cls": {
+          "pior": 0.001,
+          "todas": [
+            0.001,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            291,
+            102,
+            89
+          ],
+          "quentes": [
+            [
+              255,
+              58
+            ],
+            [
+              237,
+              72
+            ],
+            [
+              57,
+              197,
+              79
+            ],
+            [
+              286
+            ]
+          ],
+          "maiorMs": 291,
+          "totalFriaMs": 482
+        },
+        "jsFriaKB": 208.1,
+        "jsDecodificadoKB": 638.4,
+        "jsArquivos": 23,
+        "docKB": 18.7,
+        "requisicoesFria": 32,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Recuperar",
+        "path": "/admin/recuperar",
+        "urlFinal": "/admin/recuperar",
+        "ttfb": {
+          "mediana": 770,
+          "pior": 2289,
+          "fria": 2289,
+          "quentes": [
+            387,
+            770,
+            370,
+            974
+          ]
+        },
+        "util": {
+          "mediana": 1489,
+          "pior": 4724,
+          "fria": 4724,
+          "quentes": [
+            1530,
+            1290,
+            1219,
+            1489
+          ]
+        },
+        "fcp": {
+          "mediana": 1060,
+          "fria": 3120
+        },
+        "lcp": {
+          "mediana": 1540,
+          "fria": 4784
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            80,
+            216,
+            64,
+            54
+          ],
+          "quentes": [
+            [
+              193,
+              61
+            ],
+            [
+              149
+            ],
+            [
+              371
+            ],
+            [
+              51,
+              209
+            ]
+          ],
+          "maiorMs": 371,
+          "totalFriaMs": 414
+        },
+        "jsFriaKB": 186.2,
+        "jsDecodificadoKB": 561.5,
+        "jsArquivos": 20,
+        "docKB": 14.7,
+        "requisicoesFria": 31,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Campanhas",
+        "path": "/admin/campanhas",
+        "urlFinal": "/admin/campanhas",
+        "ttfb": {
+          "mediana": 1206,
+          "pior": 1558,
+          "fria": 1460,
+          "quentes": [
+            992,
+            1136,
+            1206,
+            1558
+          ]
+        },
+        "util": {
+          "mediana": 1839,
+          "pior": 2685,
+          "fria": 2168,
+          "quentes": [
+            1839,
+            1803,
+            1787,
+            2685
+          ]
+        },
+        "fcp": {
+          "mediana": 1476,
+          "fria": 2176
+        },
+        "lcp": {
+          "mediana": 1892,
+          "fria": 2524
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            309,
+            70
+          ],
+          "quentes": [
+            [
+              277,
+              71
+            ],
+            [
+              146
+            ],
+            [
+              203,
+              74
+            ],
+            [
+              217,
+              93
+            ]
+          ],
+          "maiorMs": 309,
+          "totalFriaMs": 379
+        },
+        "jsFriaKB": 176.3,
+        "jsDecodificadoKB": 536.3,
+        "jsArquivos": 18,
+        "docKB": 13.4,
+        "requisicoesFria": 29,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Config/serviços",
+        "path": "/admin/config/servicos",
+        "urlFinal": "/admin/config/servicos",
+        "ttfb": {
+          "mediana": 1841,
+          "pior": 2810,
+          "fria": 1798,
+          "quentes": [
+            2560,
+            1841,
+            1338,
+            2810
+          ]
+        },
+        "util": {
+          "mediana": 2676,
+          "pior": 3594,
+          "fria": 2676,
+          "quentes": [
+            3495,
+            2580,
+            2380,
+            3594
+          ]
+        },
+        "fcp": {
+          "mediana": 2580,
+          "fria": 2580
+        },
+        "lcp": {
+          "mediana": 2844,
+          "fria": 2844
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            130,
+            153,
+            63
+          ],
+          "quentes": [
+            [
+              248,
+              53,
+              71
+            ],
+            [
+              54,
+              114
+            ],
+            [
+              55,
+              354,
+              79
+            ],
+            [
+              371,
+              53,
+              129
+            ]
+          ],
+          "maiorMs": 371,
+          "totalFriaMs": 346
+        },
+        "jsFriaKB": 193.9,
+        "jsDecodificadoKB": 582.4,
+        "jsArquivos": 21,
+        "docKB": 15.5,
+        "requisicoesFria": 35,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Comanda (fechada)",
+        "path": "/admin/comanda/d549578a-64fe-40de-9f5e-8e1419817e55",
+        "urlFinal": "/admin/comanda/d549578a-64fe-40de-9f5e-8e1419817e55",
+        "ttfb": {
+          "mediana": 833,
+          "pior": 2164,
+          "fria": 1260,
+          "quentes": [
+            833,
+            342,
+            815,
+            2164
+          ]
+        },
+        "util": {
+          "mediana": 1651,
+          "pior": 2810,
+          "fria": 2568,
+          "quentes": [
+            1651,
+            1204,
+            1628,
+            2810
+          ]
+        },
+        "fcp": {
+          "mediana": 1092,
+          "fria": 2048
+        },
+        "lcp": {
+          "mediana": 1608,
+          "fria": 2632
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            351
+          ],
+          "quentes": [
+            [
+              272,
+              74
+            ],
+            [
+              395
+            ],
+            [
+              323
+            ],
+            [
+              64,
+              282,
+              102
+            ]
+          ],
+          "maiorMs": 395,
+          "totalFriaMs": 351
+        },
+        "jsFriaKB": 181,
+        "jsDecodificadoKB": 550.4,
+        "jsArquivos": 19,
+        "docKB": 13.5,
+        "requisicoesFria": 29,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Comanda via agendamento (redirect)",
+        "path": "/admin/comanda/agendamento/acf0a230-3a9b-419d-bafc-881ceed00f14",
+        "urlFinal": "/admin/comanda/d549578a-64fe-40de-9f5e-8e1419817e55",
+        "ttfb": {
+          "mediana": 2226,
+          "pior": 2416,
+          "fria": 2226,
+          "quentes": [
+            2027,
+            2416,
+            1052,
+            2355
+          ]
+        },
+        "util": {
+          "mediana": 3118,
+          "pior": 3270,
+          "fria": 3200,
+          "quentes": [
+            2631,
+            3270,
+            1821,
+            3118
+          ]
+        },
+        "fcp": {
+          "mediana": 2572,
+          "fria": 2796
+        },
+        "lcp": {
+          "mediana": 3188,
+          "fria": 3260
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            356,
+            137
+          ],
+          "quentes": [
+            [
+              257,
+              50,
+              68
+            ],
+            [
+              62,
+              449
+            ],
+            [
+              52,
+              86
+            ],
+            [
+              69,
+              364,
+              65
+            ]
+          ],
+          "maiorMs": 449,
+          "totalFriaMs": 493
+        },
+        "jsFriaKB": 6.9,
+        "jsDecodificadoKB": 550.4,
+        "jsArquivos": 19,
+        "docKB": 13.5,
+        "requisicoesFria": 29,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Página pública",
+        "path": "/demo-salao-encanto",
+        "urlFinal": "/demo-salao-encanto",
+        "ttfb": {
+          "mediana": 105,
+          "pior": 140,
+          "fria": 65,
+          "quentes": [
+            69,
+            136,
+            105,
+            140
+          ]
+        },
+        "util": {
+          "mediana": 451,
+          "pior": 623,
+          "fria": 417,
+          "quentes": [
+            155,
+            608,
+            623,
+            451
+          ]
+        },
+        "fcp": {
+          "mediana": 368,
+          "fria": 992
+        },
+        "lcp": {
+          "mediana": 368,
+          "fria": 992
+        },
+        "cls": {
+          "pior": 0.001,
+          "todas": [
+            0.001,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            216
+          ],
+          "quentes": [
+            [
+              263
+            ],
+            [
+              238
+            ],
+            [
+              249
+            ],
+            [
+              156
+            ]
+          ],
+          "maiorMs": 263,
+          "totalFriaMs": 216
+        },
+        "jsFriaKB": 149.1,
+        "jsDecodificadoKB": 461.1,
+        "jsArquivos": 15,
+        "docKB": 15.8,
+        "requisicoesFria": 20,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Agendar (público)",
+        "path": "/demo-salao-encanto/agendar",
+        "urlFinal": "/demo-salao-encanto/agendar",
+        "ttfb": {
+          "mediana": 140,
+          "pior": 259,
+          "fria": 172,
+          "quentes": [
+            259,
+            140,
+            126,
+            92
+          ]
+        },
+        "util": {
+          "mediana": 478,
+          "pior": 648,
+          "fria": 648,
+          "quentes": [
+            391,
+            478,
+            491,
+            367
+          ]
+        },
+        "fcp": {
+          "mediana": 436,
+          "fria": 1168
+        },
+        "lcp": {
+          "mediana": 436,
+          "fria": 1168
+        },
+        "cls": {
+          "pior": 0.001,
+          "todas": [
+            0.001,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            312,
+            51,
+            54,
+            80,
+            195,
+            167
+          ],
+          "quentes": [
+            [
+              270,
+              69,
+              96,
+              85,
+              124
+            ],
+            [
+              280,
+              55,
+              53,
+              105
+            ],
+            [
+              290,
+              66,
+              176,
+              171
+            ],
+            [
+              335
+            ]
+          ],
+          "maiorMs": 335,
+          "totalFriaMs": 859
+        },
+        "jsFriaKB": 162.5,
+        "jsDecodificadoKB": 496.8,
+        "jsArquivos": 17,
+        "docKB": 9.5,
+        "requisicoesFria": 23,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Confirmar por link",
+        "path": "/confirmar/<token>",
+        "urlFinal": "/confirmar/<token>",
+        "ttfb": {
+          "mediana": 38,
+          "pior": 42,
+          "fria": 22,
+          "quentes": [
+            39,
+            31,
+            42,
+            38
+          ]
+        },
+        "util": {
+          "mediana": 389,
+          "pior": 415,
+          "fria": 389,
+          "quentes": [
+            102,
+            415,
+            410,
+            336
+          ]
+        },
+        "fcp": {
+          "mediana": 356,
+          "fria": 912
+        },
+        "lcp": {
+          "mediana": 356,
+          "fria": 912
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            324,
+            50
+          ],
+          "quentes": [
+            [
+              233
+            ],
+            [
+              236
+            ],
+            [],
+            []
+          ],
+          "maiorMs": 324,
+          "totalFriaMs": 374
+        },
+        "jsFriaKB": 151.5,
+        "jsDecodificadoKB": 467.8,
+        "jsArquivos": 15,
+        "docKB": 6.7,
+        "requisicoesFria": 19,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Entrar",
+        "path": "/entrar",
+        "urlFinal": "/entrar",
+        "ttfb": {
+          "mediana": 26,
+          "pior": 33,
+          "fria": 26,
+          "quentes": [
+            33,
+            28,
+            26,
+            22
+          ]
+        },
+        "util": {
+          "mediana": 689,
+          "pior": 700,
+          "fria": 486,
+          "quentes": [
+            281,
+            700,
+            689,
+            696
+          ]
+        },
+        "fcp": {
+          "mediana": 840,
+          "fria": 1164
+        },
+        "lcp": {
+          "mediana": 840,
+          "fria": 1164
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            187,
+            172
+          ],
+          "quentes": [
+            [
+              346
+            ],
+            [
+              243,
+              81
+            ],
+            [
+              225
+            ],
+            [
+              313
+            ]
+          ],
+          "maiorMs": 346,
+          "totalFriaMs": 359
+        },
+        "jsFriaKB": 153,
+        "jsDecodificadoKB": 470.6,
+        "jsArquivos": 15,
+        "docKB": 8.2,
+        "requisicoesFria": 23,
+        "utilNaoAchado": 0
+      }
+    ],
+    "computador": [
+      {
+        "rota": "Hoje",
+        "path": "/admin/hoje",
+        "urlFinal": "/admin/hoje",
+        "ttfb": {
+          "mediana": 1574,
+          "pior": 2425,
+          "fria": 2425,
+          "quentes": [
+            1574,
+            1772,
+            1203,
+            297
+          ]
+        },
+        "util": {
+          "mediana": 2610,
+          "pior": 3191,
+          "fria": 3175,
+          "quentes": [
+            3191,
+            2610,
+            1662,
+            596
+          ]
+        },
+        "fcp": {
+          "mediana": 2068,
+          "fria": 3028
+        },
+        "lcp": {
+          "mediana": 2648,
+          "fria": 3296
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            247,
+            64
+          ],
+          "quentes": [
+            [
+              114
+            ],
+            [
+              51
+            ],
+            [
+              88
+            ],
+            []
+          ],
+          "maiorMs": 247,
+          "totalFriaMs": 311
+        },
+        "jsFriaKB": 190.9,
+        "jsDecodificadoKB": 576.3,
+        "jsArquivos": 21,
+        "docKB": 15.6,
+        "requisicoesFria": 33,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Agenda",
+        "path": "/admin/agenda",
+        "urlFinal": "/admin/agenda",
+        "ttfb": {
+          "mediana": 1156,
+          "pior": 3267,
+          "fria": 3267,
+          "quentes": [
+            897,
+            950,
+            1156,
+            1867
+          ]
+        },
+        "util": {
+          "mediana": 1431,
+          "pior": 4134,
+          "fria": 4134,
+          "quentes": [
+            1403,
+            1245,
+            1431,
+            2242
+          ]
+        },
+        "fcp": {
+          "mediana": 1476,
+          "fria": 3848
+        },
+        "lcp": {
+          "mediana": 1476,
+          "fria": 4212
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            147,
+            52
+          ],
+          "quentes": [
+            [
+              69,
+              82
+            ],
+            [],
+            [],
+            []
+          ],
+          "maiorMs": 147,
+          "totalFriaMs": 199
+        },
+        "jsFriaKB": 185,
+        "jsDecodificadoKB": 561,
+        "jsArquivos": 19,
+        "docKB": 14.5,
+        "requisicoesFria": 28,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Novo agendamento",
+        "path": "/admin/agenda/novo",
+        "urlFinal": "/admin/agenda/novo",
+        "ttfb": {
+          "mediana": 1395,
+          "pior": 1806,
+          "fria": 1806,
+          "quentes": [
+            257,
+            1240,
+            1554,
+            1395
+          ]
+        },
+        "util": {
+          "mediana": 1588,
+          "pior": 2684,
+          "fria": 2684,
+          "quentes": [
+            376,
+            1502,
+            1900,
+            1588
+          ]
+        },
+        "fcp": {
+          "mediana": 1636,
+          "fria": 2764
+        },
+        "lcp": {
+          "mediana": 1636,
+          "fria": 2796
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            58,
+            181,
+            66
+          ],
+          "quentes": [
+            [
+              95
+            ],
+            [],
+            [],
+            []
+          ],
+          "maiorMs": 181,
+          "totalFriaMs": 305
+        },
+        "jsFriaKB": 184.4,
+        "jsDecodificadoKB": 557.5,
+        "jsArquivos": 19,
+        "docKB": 16.3,
+        "requisicoesFria": 27,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Caixa",
+        "path": "/admin/caixa",
+        "urlFinal": "/admin/caixa",
+        "ttfb": {
+          "mediana": 996,
+          "pior": 1570,
+          "fria": 996,
+          "quentes": [
+            1570,
+            299,
+            1423,
+            444
+          ]
+        },
+        "util": {
+          "mediana": 1445,
+          "pior": 1990,
+          "fria": 1445,
+          "quentes": [
+            1990,
+            535,
+            1761,
+            702
+          ]
+        },
+        "fcp": {
+          "mediana": 1288,
+          "fria": 1288
+        },
+        "lcp": {
+          "mediana": 1472,
+          "fria": 1472
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            76
+          ],
+          "quentes": [
+            [
+              88
+            ],
+            [
+              76
+            ],
+            [],
+            []
+          ],
+          "maiorMs": 88,
+          "totalFriaMs": 76
+        },
+        "jsFriaKB": 175.6,
+        "jsDecodificadoKB": 534.7,
+        "jsArquivos": 18,
+        "docKB": 14.2,
+        "requisicoesFria": 28,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Mês",
+        "path": "/admin/mes",
+        "urlFinal": "/admin/mes",
+        "ttfb": {
+          "mediana": 1230,
+          "pior": 1482,
+          "fria": 1408,
+          "quentes": [
+            838,
+            1482,
+            1230,
+            569
+          ]
+        },
+        "util": {
+          "mediana": 1897,
+          "pior": 2084,
+          "fria": 1903,
+          "quentes": [
+            1234,
+            1897,
+            2084,
+            859
+          ]
+        },
+        "fcp": {
+          "mediana": 1464,
+          "fria": 1696
+        },
+        "lcp": {
+          "mediana": 1932,
+          "fria": 1964
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            116
+          ],
+          "quentes": [
+            [
+              60
+            ],
+            [],
+            [
+              100
+            ],
+            []
+          ],
+          "maiorMs": 116,
+          "totalFriaMs": 116
+        },
+        "jsFriaKB": 175.2,
+        "jsDecodificadoKB": 533.8,
+        "jsArquivos": 18,
+        "docKB": 14.9,
+        "requisicoesFria": 31,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Clientes",
+        "path": "/admin/clientes",
+        "urlFinal": "/admin/clientes",
+        "ttfb": {
+          "mediana": 564,
+          "pior": 2376,
+          "fria": 2376,
+          "quentes": [
+            300,
+            250,
+            564,
+            918
+          ]
+        },
+        "util": {
+          "mediana": 922,
+          "pior": 3147,
+          "fria": 3147,
+          "quentes": [
+            733,
+            419,
+            922,
+            1162
+          ]
+        },
+        "fcp": {
+          "mediana": 800,
+          "fria": 2852
+        },
+        "lcp": {
+          "mediana": 1032,
+          "fria": 3236
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            93,
+            54
+          ],
+          "quentes": [
+            [
+              97
+            ],
+            [
+              54
+            ],
+            [
+              76
+            ],
+            []
+          ],
+          "maiorMs": 97,
+          "totalFriaMs": 147
+        },
+        "jsFriaKB": 179.8,
+        "jsDecodificadoKB": 547.3,
+        "jsArquivos": 18,
+        "docKB": 19.3,
+        "requisicoesFria": 34,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Ficha do cliente",
+        "path": "/admin/clientes/b5a85dd1-6bb6-4393-b416-0c39f4ecc224",
+        "urlFinal": "/admin/clientes/b5a85dd1-6bb6-4393-b416-0c39f4ecc224",
+        "ttfb": {
+          "mediana": 580,
+          "pior": 1138,
+          "fria": 404,
+          "quentes": [
+            662,
+            1138,
+            580,
+            249
+          ]
+        },
+        "util": {
+          "mediana": 915,
+          "pior": 1777,
+          "fria": 915,
+          "quentes": [
+            1187,
+            1777,
+            875,
+            597
+          ]
+        },
+        "fcp": {
+          "mediana": 804,
+          "fria": 816
+        },
+        "lcp": {
+          "mediana": 1072,
+          "fria": 1048
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            71,
+            115
+          ],
+          "quentes": [
+            [
+              148
+            ],
+            [],
+            [],
+            [
+              91
+            ]
+          ],
+          "maiorMs": 148,
+          "totalFriaMs": 186
+        },
+        "jsFriaKB": 208.1,
+        "jsDecodificadoKB": 638.4,
+        "jsArquivos": 23,
+        "docKB": 18.6,
+        "requisicoesFria": 32,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Recuperar",
+        "path": "/admin/recuperar",
+        "urlFinal": "/admin/recuperar",
+        "ttfb": {
+          "mediana": 649,
+          "pior": 1527,
+          "fria": 1527,
+          "quentes": [
+            473,
+            649,
+            429,
+            842
+          ]
+        },
+        "util": {
+          "mediana": 1341,
+          "pior": 2245,
+          "fria": 2245,
+          "quentes": [
+            1481,
+            1215,
+            739,
+            1341
+          ]
+        },
+        "fcp": {
+          "mediana": 940,
+          "fria": 2032
+        },
+        "lcp": {
+          "mediana": 1360,
+          "fria": 2292
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            61,
+            137
+          ],
+          "quentes": [
+            [
+              56
+            ],
+            [],
+            [],
+            []
+          ],
+          "maiorMs": 137,
+          "totalFriaMs": 198
+        },
+        "jsFriaKB": 186.2,
+        "jsDecodificadoKB": 561.5,
+        "jsArquivos": 20,
+        "docKB": 14.8,
+        "requisicoesFria": 31,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Campanhas",
+        "path": "/admin/campanhas",
+        "urlFinal": "/admin/campanhas",
+        "ttfb": {
+          "mediana": 1360,
+          "pior": 1757,
+          "fria": 1757,
+          "quentes": [
+            872,
+            925,
+            1642,
+            1360
+          ]
+        },
+        "util": {
+          "mediana": 2351,
+          "pior": 4195,
+          "fria": 4195,
+          "quentes": [
+            1627,
+            1610,
+            2475,
+            2351
+          ]
+        },
+        "fcp": {
+          "mediana": 1584,
+          "fria": 2056
+        },
+        "lcp": {
+          "mediana": 2380,
+          "fria": 4232
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            97
+          ],
+          "quentes": [
+            [],
+            [
+              81
+            ],
+            [],
+            []
+          ],
+          "maiorMs": 97,
+          "totalFriaMs": 97
+        },
+        "jsFriaKB": 176.3,
+        "jsDecodificadoKB": 536.3,
+        "jsArquivos": 18,
+        "docKB": 13.4,
+        "requisicoesFria": 29,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Config/serviços",
+        "path": "/admin/config/servicos",
+        "urlFinal": "/admin/config/servicos",
+        "ttfb": {
+          "mediana": 838,
+          "pior": 1418,
+          "fria": 1254,
+          "quentes": [
+            1418,
+            838,
+            223,
+            521
+          ]
+        },
+        "util": {
+          "mediana": 1070,
+          "pior": 1714,
+          "fria": 1656,
+          "quentes": [
+            1714,
+            1070,
+            478,
+            824
+          ]
+        },
+        "fcp": {
+          "mediana": 1024,
+          "fria": 1720
+        },
+        "lcp": {
+          "mediana": 1108,
+          "fria": 1720
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            104,
+            120
+          ],
+          "quentes": [
+            [
+              72
+            ],
+            [],
+            [],
+            []
+          ],
+          "maiorMs": 120,
+          "totalFriaMs": 224
+        },
+        "jsFriaKB": 193.9,
+        "jsDecodificadoKB": 582.4,
+        "jsArquivos": 21,
+        "docKB": 15.5,
+        "requisicoesFria": 35,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Comanda (fechada)",
+        "path": "/admin/comanda/d549578a-64fe-40de-9f5e-8e1419817e55",
+        "urlFinal": "/admin/comanda/d549578a-64fe-40de-9f5e-8e1419817e55",
+        "ttfb": {
+          "mediana": 461,
+          "pior": 1894,
+          "fria": 1894,
+          "quentes": [
+            252,
+            461,
+            659,
+            271
+          ]
+        },
+        "util": {
+          "mediana": 705,
+          "pior": 2393,
+          "fria": 2393,
+          "quentes": [
+            642,
+            705,
+            880,
+            547
+          ]
+        },
+        "fcp": {
+          "mediana": 656,
+          "fria": 2248
+        },
+        "lcp": {
+          "mediana": 740,
+          "fria": 2428
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            114
+          ],
+          "quentes": [
+            [
+              77
+            ],
+            [],
+            [],
+            []
+          ],
+          "maiorMs": 114,
+          "totalFriaMs": 114
+        },
+        "jsFriaKB": 181,
+        "jsDecodificadoKB": 550.4,
+        "jsArquivos": 19,
+        "docKB": 13.5,
+        "requisicoesFria": 29,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Comanda via agendamento (redirect)",
+        "path": "/admin/comanda/agendamento/acf0a230-3a9b-419d-bafc-881ceed00f14",
+        "urlFinal": "/admin/comanda/d549578a-64fe-40de-9f5e-8e1419817e55",
+        "ttfb": {
+          "mediana": 1256,
+          "pior": 1784,
+          "fria": 1784,
+          "quentes": [
+            1235,
+            977,
+            1256,
+            1405
+          ]
+        },
+        "util": {
+          "mediana": 1515,
+          "pior": 1987,
+          "fria": 1987,
+          "quentes": [
+            1515,
+            1262,
+            1495,
+            1649
+          ]
+        },
+        "fcp": {
+          "mediana": 1456,
+          "fria": 2024
+        },
+        "lcp": {
+          "mediana": 1556,
+          "fria": 2024
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [],
+          "quentes": [
+            [],
+            [],
+            [],
+            []
+          ],
+          "maiorMs": null,
+          "totalFriaMs": 0
+        },
+        "jsFriaKB": 6.9,
+        "jsDecodificadoKB": 550.4,
+        "jsArquivos": 19,
+        "docKB": 13.5,
+        "requisicoesFria": 29,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Página pública",
+        "path": "/demo-salao-encanto",
+        "urlFinal": "/demo-salao-encanto",
+        "ttfb": {
+          "mediana": 69,
+          "pior": 81,
+          "fria": 69,
+          "quentes": [
+            65,
+            73,
+            64,
+            81
+          ]
+        },
+        "util": {
+          "mediana": 201,
+          "pior": 537,
+          "fria": 537,
+          "quentes": [
+            122,
+            201,
+            157,
+            238
+          ]
+        },
+        "fcp": {
+          "mediana": 244,
+          "fria": 488
+        },
+        "lcp": {
+          "mediana": 244,
+          "fria": 488
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            82
+          ],
+          "quentes": [
+            [
+              74
+            ],
+            [],
+            [],
+            []
+          ],
+          "maiorMs": 82,
+          "totalFriaMs": 82
+        },
+        "jsFriaKB": 149.1,
+        "jsDecodificadoKB": 461.1,
+        "jsArquivos": 15,
+        "docKB": 15.8,
+        "requisicoesFria": 20,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Agendar (público)",
+        "path": "/demo-salao-encanto/agendar",
+        "urlFinal": "/demo-salao-encanto/agendar",
+        "ttfb": {
+          "mediana": 182,
+          "pior": 265,
+          "fria": 265,
+          "quentes": [
+            182,
+            81,
+            253,
+            87
+          ]
+        },
+        "util": {
+          "mediana": 249,
+          "pior": 667,
+          "fria": 667,
+          "quentes": [
+            248,
+            230,
+            467,
+            249
+          ]
+        },
+        "fcp": {
+          "mediana": 360,
+          "fria": 696
+        },
+        "lcp": {
+          "mediana": 360,
+          "fria": 696
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            109
+          ],
+          "quentes": [
+            [
+              79
+            ],
+            [],
+            [
+              108
+            ],
+            []
+          ],
+          "maiorMs": 109,
+          "totalFriaMs": 109
+        },
+        "jsFriaKB": 162.5,
+        "jsDecodificadoKB": 496.8,
+        "jsArquivos": 17,
+        "docKB": 9.5,
+        "requisicoesFria": 23,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Confirmar por link",
+        "path": "/confirmar/<token>",
+        "urlFinal": "/confirmar/<token>",
+        "ttfb": {
+          "mediana": 31,
+          "pior": 51,
+          "fria": 31,
+          "quentes": [
+            51,
+            21,
+            30,
+            39
+          ]
+        },
+        "util": {
+          "mediana": 167,
+          "pior": 275,
+          "fria": 275,
+          "quentes": [
+            97,
+            158,
+            167,
+            194
+          ]
+        },
+        "fcp": {
+          "mediana": 188,
+          "fria": 304
+        },
+        "lcp": {
+          "mediana": 188,
+          "fria": 304
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            78
+          ],
+          "quentes": [
+            [
+              113
+            ],
+            [],
+            [],
+            []
+          ],
+          "maiorMs": 113,
+          "totalFriaMs": 78
+        },
+        "jsFriaKB": 151.5,
+        "jsDecodificadoKB": 467.8,
+        "jsArquivos": 15,
+        "docKB": 6.7,
+        "requisicoesFria": 19,
+        "utilNaoAchado": 0
+      },
+      {
+        "rota": "Entrar",
+        "path": "/entrar",
+        "urlFinal": "/entrar",
+        "ttfb": {
+          "mediana": 26,
+          "pior": 40,
+          "fria": 20,
+          "quentes": [
+            27,
+            40,
+            26,
+            19
+          ]
+        },
+        "util": {
+          "mediana": 185,
+          "pior": 324,
+          "fria": 324,
+          "quentes": [
+            78,
+            241,
+            185,
+            151
+          ]
+        },
+        "fcp": {
+          "mediana": 684,
+          "fria": 488
+        },
+        "lcp": {
+          "mediana": 684,
+          "fria": 488
+        },
+        "cls": {
+          "pior": 0,
+          "todas": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tarefasLongas": {
+          "fria": [
+            93
+          ],
+          "quentes": [
+            [
+              94
+            ],
+            [],
+            [
+              79
+            ],
+            [
+              66
+            ]
+          ],
+          "maiorMs": 94,
+          "totalFriaMs": 93
+        },
+        "jsFriaKB": 153,
+        "jsDecodificadoKB": 470.6,
+        "jsArquivos": 15,
+        "docKB": 8.2,
+        "requisicoesFria": 23,
+        "utilNaoAchado": 0
+      }
+    ]
+  }
+}

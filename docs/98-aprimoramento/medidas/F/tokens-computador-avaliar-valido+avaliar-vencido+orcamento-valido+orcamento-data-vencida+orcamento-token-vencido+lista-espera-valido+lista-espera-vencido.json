@@ -1,0 +1,183 @@
+[
+  {
+    "caso": "avaliar-valido",
+    "perfil": "computador",
+    "status": 200,
+    "utilMs": null,
+    "textoInicial": "Pronto, avaliação enviada!\nA equipe da Espaço Vitória agradece.",
+    "seo": {
+      "title": "Avaliar atendimento · CICLO",
+      "description": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogTitle": "Avaliar atendimento · CICLO",
+      "ogDescription": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Pronto, avaliação enviada!"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "erroDoScript": "TimeoutError: locator.click: Timeout 45000ms exceeded.\nCall log:\n  \u001b[2m- waiting for getByRole('radio', { name: '5 estrelas' })\u001b[22m\n",
+    "consoleErros": []
+  },
+  {
+    "caso": "avaliar-vencido",
+    "perfil": "computador",
+    "status": 200,
+    "utilMs": 547,
+    "textoInicial": "Não consegui abrir\nEsse link de avaliação não é mais válido.\nChame quem vai te atender pelo WhatsApp: por lá dá para resolver na hora.",
+    "seo": {
+      "title": "Avaliar atendimento · CICLO",
+      "description": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogTitle": "Avaliar atendimento · CICLO",
+      "ogDescription": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Não consegui abrir"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+  },
+  {
+    "caso": "orcamento-valido",
+    "perfil": "computador",
+    "status": 200,
+    "utilMs": null,
+    "textoInicial": "Orçamento aprovado\nEspaço Vitória já foi avisado. Combine o horário por lá.",
+    "seo": {
+      "title": "Orçamento · CICLO",
+      "description": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogTitle": "Orçamento · CICLO",
+      "ogDescription": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Orçamento aprovado"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "erroDoScript": "TimeoutError: locator.click: Timeout 45000ms exceeded.\nCall log:\n  \u001b[2m- waiting for getByRole('button', { name: 'Aprovar orçamento' })\u001b[22m\n",
+    "consoleErros": []
+  },
+  {
+    "caso": "orcamento-data-vencida",
+    "perfil": "computador",
+    "status": 200,
+    "utilMs": 657,
+    "textoInicial": "Orçamento vencido\nEsse orçamento não vale mais. Fale com Espaço Vitória pra pedir um novo.",
+    "seo": {
+      "title": "Orçamento · CICLO",
+      "description": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogTitle": "Orçamento · CICLO",
+      "ogDescription": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Orçamento vencido"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": []
+  },
+  {
+    "caso": "orcamento-token-vencido",
+    "perfil": "computador",
+    "status": 200,
+    "utilMs": 633,
+    "textoInicial": "Não deu certo\nLink inválido ou expirado.\nChame quem vai te atender pelo WhatsApp: por lá dá para resolver na hora.",
+    "seo": {
+      "title": "Orçamento · CICLO",
+      "description": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogTitle": "Orçamento · CICLO",
+      "ogDescription": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Não deu certo"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+  },
+  {
+    "caso": "lista-espera-valido",
+    "perfil": "computador",
+    "status": 200,
+    "utilMs": 787,
+    "textoInicial": "Não consegui reservar\nEsse encaixe já foi usado.\nChame quem vai te atender pelo WhatsApp: por lá dá para resolver na hora.",
+    "seo": {
+      "title": "Vaga na agenda · CICLO",
+      "description": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogTitle": "Vaga na agenda · CICLO",
+      "ogDescription": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Não consegui reservar"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "resultado": "Não consegui reservar\nEsse encaixe já foi usado.\nChame quem vai te atender pelo WhatsApp: por lá dá para resolver na hora.",
+    "reabertoMostra": "Não consegui reservar\nEsse encaixe já foi usado.\nChame quem vai te atender pelo WhatsApp: por lá dá para resolver na hora.",
+    "consoleErros": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+  },
+  {
+    "caso": "lista-espera-vencido",
+    "perfil": "computador",
+    "status": 200,
+    "utilMs": 910,
+    "textoInicial": "Não consegui reservar\nEsse link de encaixe não é mais válido.\nChame quem vai te atender pelo WhatsApp: por lá dá para resolver na hora.",
+    "seo": {
+      "title": "Vaga na agenda · CICLO",
+      "description": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogTitle": "Vaga na agenda · CICLO",
+      "ogDescription": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Não consegui reservar"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+  }
+]

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quem sumiu · protótipo</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  .area { position: absolute; inset: 0; overflow-y: auto; }
+  .aparelho[data-aparelho='celular'] .area { padding-bottom: 96px; }
+  .aparelho[data-aparelho='computador'] .area { left: 232px; }
+  .aparelho[data-aparelho='computador'] .grade { display: grid; grid-template-columns: 480px 1fr; gap: 24px; padding: 24px 32px; max-width: 1048px; }
+  .aparelho[data-aparelho='computador'] .conteudo { padding: 0; }
+  .fila { border-left: 4px solid var(--acc); }
+  .fila .nome { font-size: 21px; font-weight: 800; margin: 2px 0; }
+  .linha-cliente { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .linha-cliente:last-child { border-bottom: 0; }
+  .linha-cliente .btn { min-height: 48px; padding: 0 12px; }
+  textarea { width: 100%; min-height: 140px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--surface-2); color: var(--txt); padding: 12px; font: inherit; }
+</style>
+</head>
+<body>
+<p class="nota-proto"><strong>Quem sumiu / Recuperar (A-07, D-14, D-17, D-19, F-26, C-20).</strong> Construído <em>por cima</em> do PR #149 (filtros extras fechados) e da fila do <code>docs/95</code> E2: a fila de hoje vai para o topo, um trilho de situação fica visível e o resto vai para "Filtrar". Nomes de estado sem gênero. O nome da tela e do botão central depende da decisão D-17. Dados fictícios.</p>
+<div class="palco">
+<div class="aparelho">
+  <nav class="lateral" data-so="computador" aria-label="Menu">
+    <a href="#" class="destaque" aria-current="page"><span class="ico">⟳</span> Quem sumiu</a>
+    <a href="#"><span class="ico">⌂</span> Hoje</a>
+    <a href="#"><span class="ico">▦</span> Agenda</a>
+    <a href="#"><span class="ico">☺</span> Clientes</a>
+    <a href="#"><span class="ico">＋</span> Marcar</a>
+  </nav>
+
+  <div class="area">
+    <header class="topo" data-so="celular"><span class="marca"><b>C</b>iclo</span><span><button class="btn-topo" aria-label="Perguntar ao assistente">✦ Perguntar</button><button class="btn-topo">☰ Mais</button></span></header>
+    <div class="faixa-conexao" data-estado="offline" role="status">Sem internet. A lista pode estar desatualizada, e uma chamada feita agora só fica anotada quando a conexão voltar.</div>
+
+    <div class="grade">
+      <div class="conteudo">
+        <h1 class="titulo">Quem sumiu</h1>
+        <p class="sec" style="margin:0" data-estado="normal longo filtro erro-filtro offline">R$ 1.240 parados em 18 pessoas · estimativa <a href="#" class="btn btn-fantasma" style="min-height:24px;padding:0">como a conta é feita</a></p>
+
+        <!-- FILA DE HOJE -->
+        <p class="overline" data-estado="normal longo filtro erro-filtro offline">Fila de hoje · 1 de 8</p>
+        <div class="card fila" data-resposta data-estado="normal longo filtro erro-filtro offline">
+          <p class="sec" style="margin:0">Corte · costuma voltar a cada 21 dias</p>
+          <p class="nome">Ana Souza</p>
+          <p class="sec" style="margin:0"><span class="selo warn">Passou da hora</span> 9 dias depois do costume · última vez R$ 45</p>
+          <div class="pilha" style="margin-top:12px">
+            <button class="btn btn-primario btn-cheio">Chamar pelo WhatsApp</button>
+            <div class="linha" style="gap:8px"><button class="btn btn-secundario" style="flex:1">Pular</button><button class="btn btn-fantasma" style="flex:1;white-space:nowrap;font-size:14px">Não chamar mais</button></div>
+          </div>
+        </div>
+
+        <!-- UM trilho + Filtrar -->
+        <div data-estado="normal longo filtro erro-filtro offline">
+          <p class="overline">Todos que passaram da hora</p>
+          <div class="chips" role="group" aria-label="Situação">
+            <button class="chip" data-grupo="sit" aria-pressed="true">Todos · 18</button>
+            <button class="chip" data-grupo="sit" aria-pressed="false">Na hora de voltar · 5</button>
+            <button class="chip" data-grupo="sit" aria-pressed="false">Passou da hora · 8</button>
+            <button class="chip" data-grupo="sit" aria-pressed="false">Em risco · 3</button>
+            <button class="chip" data-grupo="sit" aria-pressed="false">Sem previsão · 2</button>
+          </div>
+          <button class="btn btn-secundario" style="margin-top:4px" onclick="protoIrPara('filtro')">⚙ Filtrar e ordenar</button>
+          <div class="aviso erro" data-estado="erro-filtro" role="alert" style="margin-top:12px"><strong>Não consegui trocar o filtro.</strong> A lista abaixo continua sendo de "Todos". Confira a internet e toque de novo.</div>
+          <div class="card" style="padding:4px 16px;margin-top:12px">
+            <div class="linha-cliente"><span style="flex:1"><strong>Marcos Lima</strong><br><span class="sec">Barba · 12 dias depois do costume · R$ 35</span></span><button class="btn btn-secundario">Chamar</button></div>
+            <div class="linha-cliente"><span style="flex:1"><strong>Joana Martins</strong><br><span class="sec">Corte · 6 dias depois · R$ 45</span></span><button class="btn btn-secundario">Chamar</button></div>
+            <div class="linha-cliente"><span style="flex:1"><strong>Rafael Souza</strong><br><span class="sec">Pigmentação · 20 dias depois · R$ 60</span></span><button class="btn btn-secundario">Chamar</button></div>
+            <div class="linha-cliente"><span style="flex:1"><strong>Bruno Alves</strong><br><span class="sec">Platinado · na hora de voltar · R$ 180</span></span><button class="btn btn-secundario">Chamar</button></div>
+            <div class="linha-cliente" data-estado="longo"><span style="flex:1"><strong>Maria Eduarda Cavalcanti de Albuquerque</strong><br><span class="sec">Corte + barba + sobrancelha · 31 dias depois · R$ 95</span></span><button class="btn btn-secundario">Chamar</button></div>
+            <div class="linha-cliente" data-estado="longo"><span style="flex:1"><strong>Lucas Ferreira</strong><br><span class="sec">Barba · 3 dias depois · R$ 35</span></span><button class="btn btn-secundario">Chamar</button></div>
+            <div class="linha-cliente" data-estado="longo"><span style="flex:1"><strong>Pedro Henrique</strong><br><span class="sec">Corte · em risco · R$ 45</span></span><button class="btn btn-secundario">Chamar</button></div>
+          </div>
+          <p class="sec" style="text-align:center" data-estado="longo">Mostrando 7 de 18 · <a href="#">Ver mais</a></p>
+        </div>
+
+        <!-- VAZIOS: sem filtro na tela, um motivo e uma ação -->
+        <div class="card vazio" data-estado="vazio-sem-clientes" data-resposta>
+          <div class="icone-grande">☺</div>
+          <p style="font-weight:800;margin:0">Cadastre quem você já atende</p>
+          <p class="sec">Com a última visita de cada pessoa, o CICLO mostra aqui quem passou da hora de voltar.</p>
+          <div class="pilha"><button class="btn btn-primario btn-cheio">Escrever os nomes que lembro</button><button class="btn btn-secundario btn-cheio">Importar uma planilha</button></div>
+        </div>
+        <div class="card vazio" data-estado="vazio-motor" data-resposta>
+          <div class="icone-grande">⟳</div>
+          <p style="font-weight:800;margin:0">A conta ainda não rodou</p>
+          <p class="sec">Seus atendimentos já estão aqui. A previsão de quem volta é refeita algumas vezes por dia.</p>
+          <button class="btn btn-primario btn-cheio">Calcular agora</button>
+        </div>
+      </div>
+
+      <!-- COMPUTADOR: a mensagem da pessoa escolhida, ao lado -->
+      <aside class="coluna-direita" data-so="computador" data-estado="normal longo filtro erro-filtro offline">
+        <p class="overline" style="margin-top:0">Mensagem para Ana Souza</p>
+        <div class="card pilha">
+          <textarea aria-label="Mensagem">Oi, Ana! Faz um tempinho desde o seu último corte. Quer que eu guarde um horário para esta semana? Pode marcar direto por aqui: ciclo.app/dom-estilo</textarea>
+          <div class="linha" style="gap:8px"><button class="btn btn-secundario" style="flex:1">Outra mensagem pronta</button><button class="btn btn-primario" style="flex:1">Abrir no WhatsApp</button></div>
+          <p class="sec" style="margin:0">Abre o WhatsApp do seu celular ou do computador. O CICLO anota que você chamou, para medir se a pessoa voltou.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- SHEET: Filtrar e ordenar (o que o PR #149 pôs em "Mais filtros") -->
+  <div data-estado="filtro">
+    <div class="sheet-fundo" onclick="protoIrPara('normal')"></div>
+    <div class="sheet" role="dialog" aria-label="Filtrar e ordenar">
+      <p class="titulo" style="font-size:21px">Filtrar e ordenar</p>
+      <p class="label">Ordem</p>
+      <div class="chips" role="group"><button class="chip" data-grupo="ord" aria-pressed="true">Quem vale mais</button><button class="chip" data-grupo="ord" aria-pressed="false">Mais tempo sem vir</button><button class="chip" data-grupo="ord" aria-pressed="false">Volta mais fácil</button></div>
+      <p class="label">Quanto gasta</p>
+      <div class="chips" role="group"><button class="chip" aria-pressed="false">Mais</button><button class="chip" aria-pressed="false">Médio</button><button class="chip" aria-pressed="false">Menos</button></div>
+      <p class="label">Jeito de vir</p>
+      <div class="chips" role="group"><button class="chip" aria-pressed="false">Vem sempre</button><button class="chip" aria-pressed="false">Regular</button><button class="chip" aria-pressed="false">Primeiras visitas</button><button class="chip" aria-pressed="false">Costuma faltar</button></div>
+      <div class="linha" style="gap:8px;margin-top:16px"><button class="btn btn-secundario" style="flex:1" onclick="protoIrPara('normal')">Limpar</button><button class="btn btn-primario" style="flex:1" onclick="protoIrPara('normal')">Ver 18 pessoas</button></div>
+    </div>
+  </div>
+
+  <button class="assistente" aria-label="Perguntar ao assistente">✦</button>
+  <nav class="barra" data-so="celular" aria-label="Navegação">
+    <a href="#"><span class="ico">⌂</span>Hoje</a>
+    <a href="#"><span class="ico">▦</span>Agenda</a>
+    <a href="#" class="central" aria-current="page"><span class="circulo">⟳</span>Quem sumiu</a>
+    <a href="#"><span class="ico">☺</span>Clientes</a>
+    <a href="#"><span class="ico">＋</span>Marcar</a>
+  </nav>
+</div>
+</div>
+<script>
+  window.PROTO = {
+    titulo: 'Quem sumiu (Recuperar)',
+    padrao: 'normal',
+    estados: [['normal', 'Normal (fila + lista)'], ['longo', 'Lista longa, nome longo'], ['filtro', '"Filtrar e ordenar" aberto'], ['erro-filtro', 'Erro ao trocar filtro'], ['vazio-sem-clientes', 'Vazio: conta sem clientes'], ['vazio-motor', 'Vazio: a conta ainda não rodou'], ['offline', 'Sem conexão']],
+  }
+</script>
+<script src="base.js"></script>
+</body>
+</html>

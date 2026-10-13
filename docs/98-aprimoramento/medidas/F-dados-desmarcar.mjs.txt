@@ -1,0 +1,10 @@
+﻿import { createHmac } from 'node:crypto'
+import { readFileSync, writeFileSync } from 'node:fs'
+const ENV = readFileSync('C:/Users/Usuario/.claude/code/ciclo-aprimoramento/.env.local', 'utf8')
+const s = (ENV.match(/^PUBLIC_LINK_SIGNING_KEY=(.+)$/m) ?? ENV.match(/^CRON_SECRET=(.+)$/m))[1].trim().replace(/^"|"$/g, '')
+const t = (e, id, h) => { const p = `${e}.${id}.${Date.now() + h * 3600000}`; return Buffer.from(`${p}.${createHmac('sha256', s).update(p, 'utf8').digest('hex')}`, 'utf8').toString('base64url') }
+const f = 'C:/temp/ciclo-medicao/F-tokens.json'
+const a = JSON.parse(readFileSync(f, 'utf8'))
+a.tokens.confirmarDesmarcar = t('confirmacao_agendamento', process.argv[2], 72)
+a.ids.desmarcar = process.argv[2]
+writeFileSync(f, JSON.stringify(a, null, 2))

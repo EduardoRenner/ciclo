@@ -1,0 +1,18 @@
+// Agente B · verifica o limite de tamanho de URL do PostgREST LOCAL (via Kong :54321) para o padrão
+// `.in('ticket_id', ids)` de `margemDosServicos` (caixa.ts:273). Só leitura; ids aleatórios (não existem).
+// 401 = passou do proxy (o token salvo pode ter vencido; o que interessa é 414 = URL longa demais).
+// O token do usuário sai do cookie de sessão salvo fora do repo e NÃO é impresso.
+import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+const env = readFileSync('C:/Users/Usuario/.claude/code/ciclo-aprimoramento/.env.local', 'utf8');
+const anon = /^NEXT_PUBLIC_SUPABASE_ANON_KEY=(.*)$/m.exec(env)[1].trim().replace(/^"|"$/g, '');
+const url = /^NEXT_PUBLIC_SUPABASE_URL=(.*)$/m.exec(env)[1].trim().replace(/^"|"$/g, '');
+if (!/127\.0\.0\.1|localhost/.test(url)) throw new Error('só local');
+const c = JSON.parse(readFileSync('C:/temp/ciclo-medicao/estado-B-dono.json', 'utf8')).cookies.find((x) => x.name.includes('auth-token'));
+const sessao = JSON.parse(Buffer.from(c.value.replace(/^base64-/, ''), 'base64url').toString('utf8'));
+for (const n of [100, 150, 200, 220, 250, 300, 400, 500, 800, 2000]) {
+  const ids = Array.from({ length: n }, () => randomUUID()).join(',');
+  const u = `${url}/rest/v1/ticket_items?select=ticket_id&tenant_id=eq.320d83de-611f-48e1-9761-570863fbb10b&ticket_id=in.(${ids})&order=id`;
+  const r = await fetch(u, { headers: { apikey: anon, authorization: `Bearer ${sessao.access_token}`, range: '0-999' } });
+  console.log(`${n} ids · URL ${(u.length / 1024).toFixed(1)} KB · HTTP ${r.status}`);
+}

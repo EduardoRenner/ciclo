@@ -1,0 +1,54 @@
+// Agente F — reprodução da corrida "resposta velha de disponibilidade sobrescreve o dia novo".
+// Toca serviço → espera `pausa` ms → toca um dia à frente → toca o 1º horário que aparecer → lê o
+// resumo e o corpo do POST /book (o POST é ABORTADO: nada é gravado no banco).
+// Uso: node F-corrida-dia.mjs <pausaMs> <repeticoes> [atrasoForcadoMs]
+import { writeFileSync } from 'node:fs'
+import { abrir, BASE, MEDIDAS, CAPTURAS } from './F-lib.mjs'
+
+const [pausa = '400', rep = '5', atrasoForcado = '0', esperaAntesDoHorario = '0'] = process.argv.slice(2)
+const resultados = []
+for (let i = 0; i < Number(rep); i++) {
+  const { browser, page } = await abrir('celular')
+  let corpo = null
+  let nConsulta = 0
+  await page.route('**/availability**', async (route) => {
+    // Opcional: segura a 2ª consulta (a do toque no serviço, dia de hoje) para provar o mecanismo.
+    nConsulta++
+    if (nConsulta === 2 && Number(atrasoForcado) > 0) await new Promise((r) => setTimeout(r, Number(atrasoForcado)))
+    await route.continue()
+  })
+  await page.route('**/book', async (route) => { corpo = JSON.parse(route.request().postData() ?? '{}'); await route.abort() })
+  await page.goto(`${BASE}/demo-espaco-vitoria/agendar`, { waitUntil: 'commit' })
+  await page.getByRole('button', { name: /^Manicure simples/ }).waitFor({ timeout: 60000 })
+  await page.waitForLoadState('load').catch(() => {})
+  await page.getByRole('button', { name: /^Manicure simples/ }).click()
+  await page.waitForTimeout(Number(pausa))
+  const dias = page.locator('button', { hasText: /^(DOM|SEG|TER|QUA|QUI|SEX|SÁB)\.?\s*\d{1,2}$/i })
+  const alvo = dias.nth(2)
+  const rotuloDia = (await alvo.getAttribute('aria-label')) ?? ''
+  await alvo.click()
+  const chip = page.locator('button', { hasText: /^\d\d:\d\d$/ }).first()
+  await chip.waitFor({ timeout: 30000 })
+  await page.waitForTimeout(Number(esperaAntesDoHorario))
+  const hora = (await chip.innerText()).trim()
+  await chip.click()
+  await page.getByLabel('Seu nome').waitFor({ timeout: 10000 })
+  await page.waitForTimeout(1500) // deixa qualquer resposta atrasada chegar antes de ler o resumo
+  const resumo = await page.evaluate(() => {
+    const el = [...document.querySelectorAll('p')].find((p) => / às \d\d:\d\d · /.test(p.innerText))
+    return el?.innerText ?? null
+  })
+  const anuncio = await page.evaluate(() => document.querySelector('[aria-live="polite"]')?.innerText ?? null)
+  await page.getByLabel('Seu nome').fill('Corrida Agente F')
+  await page.getByLabel(/Seu telefone/).fill('11987658888')
+  await page.getByRole('button', { name: /Confirmar agendamento/ }).click()
+  await page.waitForTimeout(1500)
+  const diaEnviado = corpo?.startsAt ? new Date(corpo.startsAt).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long', day: '2-digit', month: 'long' }) : null
+  const divergiu = !!(resumo && diaEnviado && !resumo.toLowerCase().startsWith(diaEnviado.toLowerCase()))
+  if (divergiu && i === 0) await page.screenshot({ path: `${CAPTURAS}/F-corrida-resumo-diverge-celular.png`, fullPage: false })
+  resultados.push({ i, pausaMs: Number(pausa), atrasoForcadoMs: Number(atrasoForcado), diaTocado: rotuloDia, horaTocada: hora, resumoNaTela: resumo, anuncioLeitorDeTela: anuncio, startsAtEnviado: corpo?.startsAt ?? null, diaEnviado, divergiu })
+  await browser.close()
+}
+const sumario = { divergencias: resultados.filter((r) => r.divergiu).length, de: resultados.length, resultados }
+writeFileSync(`${MEDIDAS}/F/corrida-dia-pausa${pausa}-atraso${atrasoForcado}-espera${esperaAntesDoHorario}.json`, JSON.stringify(sumario, null, 2))
+console.log(JSON.stringify(sumario, null, 2))

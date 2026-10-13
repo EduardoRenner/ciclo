@@ -1,0 +1,6150 @@
+{
+ "grupo": "core",
+ "total": 1024,
+ "textos": [
+  {
+   "texto": "Processo sem caso no escritório: vincule a um caso para a contagem considerar o rito.",
+   "arquivo": "src/core/advocacia/captura.ts",
+   "linha": 36,
+   "tipo": "prop:sem_sugestao"
+  },
+  {
+   "texto": "Holding e planejamento",
+   "arquivo": "src/core/advocacia/casos.ts",
+   "linha": 23,
+   "tipo": "prop:holding_planejamento"
+  },
+  {
+   "texto": "Empresarial",
+   "arquivo": "src/core/advocacia/casos.ts",
+   "linha": 24,
+   "tipo": "prop:empresarial"
+  },
+  {
+   "texto": "Família e sucessões",
+   "arquivo": "src/core/advocacia/casos.ts",
+   "linha": 25,
+   "tipo": "sucesso"
+  },
+  {
+   "texto": "Tributário",
+   "arquivo": "src/core/advocacia/casos.ts",
+   "linha": 26,
+   "tipo": "prop:tributario"
+  },
+  {
+   "texto": "Bancário",
+   "arquivo": "src/core/advocacia/casos.ts",
+   "linha": 27,
+   "tipo": "prop:bancario"
+  },
+  {
+   "texto": "Trabalhista",
+   "arquivo": "src/core/advocacia/casos.ts",
+   "linha": 28,
+   "tipo": "prop:trabalhista"
+  },
+  {
+   "texto": "Previdenciário",
+   "arquivo": "src/core/advocacia/casos.ts",
+   "linha": 29,
+   "tipo": "prop:previdenciario"
+  },
+  {
+   "texto": "Cível",
+   "arquivo": "src/core/advocacia/casos.ts",
+   "linha": 30,
+   "tipo": "prop:civel"
+  },
+  {
+   "texto": "Criminal",
+   "arquivo": "src/core/advocacia/casos.ts",
+   "linha": 31,
+   "tipo": "prop:criminal"
+  },
+  {
+   "texto": "Tribunal do júri",
+   "arquivo": "src/core/advocacia/casos.ts",
+   "linha": 32,
+   "tipo": "prop:tribunal_juri"
+  },
+  {
+   "texto": "Outra",
+   "arquivo": "src/core/advocacia/casos.ts",
+   "linha": 33,
+   "tipo": "prop:outro"
+  },
+  {
+   "texto": "Este papel não edita casos.",
+   "arquivo": "src/core/advocacia/casos.ts",
+   "linha": 73,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "Casos desta área são sempre sigilosos.",
+   "arquivo": "src/core/advocacia/casos.ts",
+   "linha": 75,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "Só a direção tira o sigilo de um caso.",
+   "arquivo": "src/core/advocacia/casos.ts",
+   "linha": 77,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "Escreva o motivo (pelo menos 5 letras): ele fica no histórico.",
+   "arquivo": "src/core/advocacia/casos.ts",
+   "linha": 78,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "Holding",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 29,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "o planejamento da família",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 29,
+   "tipo": "prop:paraCliente"
+  },
+  {
+   "texto": "Inventário",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 30,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "o inventário",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 30,
+   "tipo": "prop:paraCliente"
+  },
+  {
+   "texto": "Planejamento sucessório",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 31,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "o planejamento sucessório",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 31,
+   "tipo": "prop:paraCliente"
+  },
+  {
+   "texto": "Divórcio e partilha",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 32,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "a partilha",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 32,
+   "tipo": "prop:paraCliente"
+  },
+  {
+   "texto": "Contrato",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 33,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "o contrato",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 33,
+   "tipo": "prop:paraCliente"
+  },
+  {
+   "texto": "Societário",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 34,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "a alteração da empresa",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 34,
+   "tipo": "prop:paraCliente"
+  },
+  {
+   "texto": "Tributário",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 35,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "o seu processo",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 35,
+   "tipo": "prop:paraCliente"
+  },
+  {
+   "texto": "Trabalhista",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 36,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "o seu processo",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 36,
+   "tipo": "prop:paraCliente"
+  },
+  {
+   "texto": "Cível",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 37,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "o seu processo",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 37,
+   "tipo": "prop:paraCliente"
+  },
+  {
+   "texto": "Outro",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 38,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "o seu atendimento",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 38,
+   "tipo": "prop:paraCliente"
+  },
+  {
+   "texto": "Não há dia útil à vista: confira o cadastro de feriados.",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 88,
+   "tipo": "erro"
+  },
+  {
+   "texto": "O prazo do passo deve ser de 0 a 365 dias úteis.",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 93,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não dá para {ROTULO_DA_ACAO[acao]} uma pendência {…}.",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 153,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "Escreva o motivo (pelo menos 5 letras): ele fica no histórico.",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 156,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "marcar como recebida",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 164,
+   "tipo": "prop:receber"
+  },
+  {
+   "texto": "em rascunho",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 172,
+   "tipo": "prop:rascunho"
+  },
+  {
+   "texto": "em conferência",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 175,
+   "tipo": "prop:em_conferencia"
+  },
+  {
+   "texto": "concluída",
+   "arquivo": "src/core/advocacia/checklist.ts",
+   "linha": 176,
+   "tipo": "prop:concluido"
+  },
+  {
+   "texto": "Em prospecção",
+   "arquivo": "src/core/advocacia/clientes-do-pacote.ts",
+   "linha": 12,
+   "tipo": "prop:em_prospeccao"
+  },
+  {
+   "texto": "Ativo",
+   "arquivo": "src/core/advocacia/clientes-do-pacote.ts",
+   "linha": 12,
+   "tipo": "prop:ativo"
+  },
+  {
+   "texto": "Encerrado",
+   "arquivo": "src/core/advocacia/clientes-do-pacote.ts",
+   "linha": 12,
+   "tipo": "prop:encerrado"
+  },
+  {
+   "texto": "sáb",
+   "arquivo": "src/core/advocacia/datas.ts",
+   "linha": 35,
+   "tipo": "texto"
+  },
+  {
+   "texto": "O arquivo está vazio.",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 36,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "O arquivo passa de 50 MB.",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 37,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "Este arquivo compactado não é um documento aceito (Word, Excel ou ODT).",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 45,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "Este arquivo não pôde ser aceito: tipo não permitido.",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 48,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "Identificação pessoal",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 71,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Certidão civil",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 72,
+   "tipo": "prop:certidao_civil"
+  },
+  {
+   "texto": "Pacto antenupcial",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 73,
+   "tipo": "prop:pacto_antenupcial"
+  },
+  {
+   "texto": "Comprovante de endereço",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 74,
+   "tipo": "prop:comprovante_endereco"
+  },
+  {
+   "texto": "Contrato social",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 75,
+   "tipo": "prop:contrato_social"
+  },
+  {
+   "texto": "Alteração contratual",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 76,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Ata de assembleia",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 77,
+   "tipo": "prop:ata_assembleia"
+  },
+  {
+   "texto": "Acordo de sócios",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 78,
+   "tipo": "prop:acordo_socios"
+  },
+  {
+   "texto": "Cartão CNPJ",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 79,
+   "tipo": "prop:cartao_cnpj"
+  },
+  {
+   "texto": "Procuração",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 80,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Matrícula de imóvel",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 81,
+   "tipo": "prop:matricula_imovel"
+  },
+  {
+   "texto": "Escritura",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 82,
+   "tipo": "prop:escritura"
+  },
+  {
+   "texto": "IPTU, ITR ou CCIR",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 83,
+   "tipo": "prop:iptu_itr_ccir"
+  },
+  {
+   "texto": "Contrato",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 84,
+   "tipo": "prop:contrato"
+  },
+  {
+   "texto": "Declaração de IR",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 85,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Extrato bancário",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 86,
+   "tipo": "prop:extrato_bancario"
+  },
+  {
+   "texto": "Contrato bancário",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 87,
+   "tipo": "prop:contrato_bancario"
+  },
+  {
+   "texto": "Testamento",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 88,
+   "tipo": "prop:testamento"
+  },
+  {
+   "texto": "Petição ou decisão",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 89,
+   "tipo": "prop:peticao_decisao"
+  },
+  {
+   "texto": "Laudo de avaliação",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 90,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Comprovante de pagamento",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 91,
+   "tipo": "prop:comprovante_pagamento"
+  },
+  {
+   "texto": "Outro",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 92,
+   "tipo": "prop:outro"
+  },
+  {
+   "texto": "Recebido, a conferir",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 97,
+   "tipo": "prop:recebido"
+  },
+  {
+   "texto": "Em conferência",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 98,
+   "tipo": "prop:em_conferencia"
+  },
+  {
+   "texto": "Aceito",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 99,
+   "tipo": "prop:aceito"
+  },
+  {
+   "texto": "Recusado",
+   "arquivo": "src/core/advocacia/documentos.ts",
+   "linha": 100,
+   "tipo": "prop:recusado"
+  },
+  {
+   "texto": "Sem nome",
+   "arquivo": "src/core/advocacia/estrutura-da-familia.ts",
+   "linha": 59,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Sem nome",
+   "arquivo": "src/core/advocacia/estrutura-da-familia.ts",
+   "linha": 61,
+   "tipo": "prop:usufruto"
+  },
+  {
+   "texto": "{pct(a.percent)} direto",
+   "arquivo": "src/core/advocacia/estrutura-da-familia.ts",
+   "linha": 102,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{pct(h.percent)} × {pct(o.percent)} via {…}",
+   "arquivo": "src/core/advocacia/estrutura-da-familia.ts",
+   "linha": 108,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Informe quanto mover (mais que zero).",
+   "arquivo": "src/core/advocacia/estrutura-da-familia.ts",
+   "linha": 130,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "Escolha duas pessoas diferentes.",
+   "arquivo": "src/core/advocacia/estrutura-da-familia.ts",
+   "linha": 131,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "Só há {pct(tem)} para mover.",
+   "arquivo": "src/core/advocacia/estrutura-da-familia.ts",
+   "linha": 136,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "Sem conexão: nada foi gravado. O que você digitou continua aqui; tente de novo quando a conexão voltar.",
+   "arquivo": "src/core/advocacia/falha-de-escrita.ts",
+   "linha": 16,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sua sessão terminou. Abra o CICLO em outra aba, entre de novo e volte aqui para salvar: o que você digitou continua nesta tela.",
+   "arquivo": "src/core/advocacia/falha-de-escrita.ts",
+   "linha": 17,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Falta confirmar o código de verificação. Abra o CICLO em outra aba, confirme e volte aqui para salvar: o que você digitou continua nesta tela.",
+   "arquivo": "src/core/advocacia/falha-de-escrita.ts",
+   "linha": 19,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Alguém alterou isto enquanto você editava. A tela já mostra a versão atual e o que você digitou continua aqui: confira e salve de novo.",
+   "arquivo": "src/core/advocacia/falha-de-escrita.ts",
+   "linha": 20,
+   "tipo": "texto"
+  },
+  {
+   "texto": "os seus atendimentos",
+   "arquivo": "src/core/advocacia/fila-de-pendencias.ts",
+   "linha": 99,
+   "tipo": "texto"
+  },
+  {
+   "texto": "motivo de teste",
+   "arquivo": "src/core/advocacia/fila-de-pendencias.ts",
+   "linha": 153,
+   "tipo": "texto"
+  },
+  {
+   "texto": "á",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 125,
+   "tipo": "prop:aacute"
+  },
+  {
+   "texto": "é",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 126,
+   "tipo": "prop:eacute"
+  },
+  {
+   "texto": "í",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 127,
+   "tipo": "prop:iacute"
+  },
+  {
+   "texto": "ó",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 128,
+   "tipo": "prop:oacute"
+  },
+  {
+   "texto": "ú",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 129,
+   "tipo": "prop:uacute"
+  },
+  {
+   "texto": "à",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 130,
+   "tipo": "prop:agrave"
+  },
+  {
+   "texto": "â",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 131,
+   "tipo": "prop:acirc"
+  },
+  {
+   "texto": "ê",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 132,
+   "tipo": "prop:ecirc"
+  },
+  {
+   "texto": "ô",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 133,
+   "tipo": "prop:ocirc"
+  },
+  {
+   "texto": "ã",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 134,
+   "tipo": "prop:atilde"
+  },
+  {
+   "texto": "õ",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 135,
+   "tipo": "prop:otilde"
+  },
+  {
+   "texto": "ç",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 136,
+   "tipo": "prop:ccedil"
+  },
+  {
+   "texto": "Á",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 137,
+   "tipo": "prop:Aacute"
+  },
+  {
+   "texto": "É",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 138,
+   "tipo": "prop:Eacute"
+  },
+  {
+   "texto": "Í",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 139,
+   "tipo": "prop:Iacute"
+  },
+  {
+   "texto": "Ó",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 140,
+   "tipo": "prop:Oacute"
+  },
+  {
+   "texto": "Ú",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 141,
+   "tipo": "prop:Uacute"
+  },
+  {
+   "texto": "Ç",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 142,
+   "tipo": "prop:Ccedil"
+  },
+  {
+   "texto": "Z",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 271,
+   "tipo": "texto"
+  },
+  {
+   "texto": "item não é objeto",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 309,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "siglaTribunal",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 325,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "resposta não é objeto",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 394,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "DJEN informa {d.countFonte}, recebidas {d.comunicacoes.length}",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 475,
+   "tipo": "texto"
+  },
+  {
+   "texto": "formato inesperado: {…}",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 478,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{d.repetidos} repetidas pela API (teto de paginação)",
+   "arquivo": "src/core/advocacia/intimacoes.ts",
+   "linha": 479,
+   "tipo": "texto"
+  },
+  {
+   "texto": "número de processo",
+   "arquivo": "src/core/advocacia/mensagens.ts",
+   "linha": 21,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "valor em reais",
+   "arquivo": "src/core/advocacia/mensagens.ts",
+   "linha": 22,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Oi, {nome.trim()}!",
+   "arquivo": "src/core/advocacia/mensagens.ts",
+   "linha": 30,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Oi!",
+   "arquivo": "src/core/advocacia/mensagens.ts",
+   "linha": 30,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nenhuma pendência para cobrar.",
+   "arquivo": "src/core/advocacia/mensagens.ts",
+   "linha": 42,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "{saudacao(p.primeiroNome)} Aqui é do {p.escritorio}. Novidade sobre {p.casoParaCliente}: {p.frase}",
+   "arquivo": "src/core/advocacia/mensagens.ts",
+   "linha": 53,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{saudacao(p.primeiroNome)} Aqui é do {p.escritorio}. Confirmamos nossa conversa {p.quando}? Se precisar mudar, é só responder.",
+   "arquivo": "src/core/advocacia/mensagens.ts",
+   "linha": 55,
+   "tipo": "texto"
+  },
+  {
+   "texto": "A mensagem traria {achado.nome}. Corrija o texto do caso ou da pendência antes de enviar.",
+   "arquivo": "src/core/advocacia/mensagens.ts",
+   "linha": 58,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "Estrutura com ciclo",
+   "arquivo": "src/core/advocacia/participacao.ts",
+   "linha": 86,
+   "tipo": "erro"
+  },
+  {
+   "texto": "publicação no 1º dia útil após a disponibilização; contagem a partir do 1º dia útil seguinte",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 31,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Lei 11.419/2006 art. 4º §3º e §4º; CPC art. 224",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 32,
+   "tipo": "prop:fonte"
+  },
+  {
+   "texto": "suspensão dos prazos de 20/12 a 20/01",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 38,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "CPC art. 220",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 39,
+   "tipo": "prop:fonte"
+  },
+  {
+   "texto": "cível",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 46,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "contagem em dias úteis no rito cível",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 48,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "CPC art. 219",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 49,
+   "tipo": "prop:fonte"
+  },
+  {
+   "texto": "contagem em dias úteis no rito trabalhista",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 56,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "CLT art. 775",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 57,
+   "tipo": "prop:fonte"
+  },
+  {
+   "texto": "Juizado Especial Cível",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 62,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "contagem em dias úteis no Juizado Especial Cível",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 64,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Lei 13.728/2018",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 65,
+   "tipo": "prop:fonte"
+  },
+  {
+   "texto": "contagem em dias corridos no rito penal",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 72,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "CPP art. 798",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 73,
+   "tipo": "prop:fonte"
+  },
+  {
+   "texto": "suspensão de fim de ano, CPC art. 220",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 126,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Confraternização Universal",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 135,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Tiradentes",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 136,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Dia do Trabalho",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 137,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Independência",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 138,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nossa Senhora Aparecida",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 139,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Finados",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 140,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Proclamação da República",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 141,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Consciência Negra",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 142,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Natal",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 143,
+   "tipo": "texto"
+  },
+  {
+   "texto": "feriado nacional: {nome}",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 145,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "Não há dia útil à vista: confira o cadastro de feriados.",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 168,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não há dia útil à vista: confira o cadastro de feriados.",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 177,
+   "tipo": "erro"
+  },
+  {
+   "texto": "{fmtDiaMes(g.de)} a {fmtDiaMes(g.ate)} ({g.motivo})",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 198,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Data da disponibilização inválida.",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 208,
+   "tipo": "erro"
+  },
+  {
+   "texto": "O prazo deve ser de 1 a 365 dias.",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 210,
+   "tipo": "erro"
+  },
+  {
+   "texto": "{diasContados} dias úteis ({regra.nome}{…})",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 246,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{diasContados} dias corridos ({regra.nome}{…})",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 247,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Disponibilizado {…} → publicado {fmtDiaSemana(publicadoEm)} → início {fmtDiaSemana(inicioEm)} → {quanto} → {fmtDiaSemana(venceEm)}.",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 249,
+   "tipo": "texto"
+  },
+  {
+   "texto": "O prazo vencia {fmtDiaSemana(prorrogadoDe)}, sem expediente: prorrogado para o dia útil seguinte.",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 253,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Pulados: {textoDosPulados(pulados)}.",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 255,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Regras {PRAZO_REGRAS_V1}.",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 256,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Data do prazo inválida.",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 282,
+   "tipo": "erro"
+  },
+  {
+   "texto": "O recuo deve ser de 0 a 30 dias úteis.",
+   "arquivo": "src/core/advocacia/prazo-calculo.ts",
+   "linha": 284,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não encontrei um prazo em dias no texto.",
+   "arquivo": "src/core/advocacia/prazo-leitura.ts",
+   "linha": 117,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "O texto traz mais de um prazo: digite o número de dias.",
+   "arquivo": "src/core/advocacia/prazo-leitura.ts",
+   "linha": 122,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "Prazo em horas não é calculado: digite a data.",
+   "arquivo": "src/core/advocacia/prazo-leitura.ts",
+   "linha": 127,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "O numeral e o número por extenso não batem: confira o texto.",
+   "arquivo": "src/core/advocacia/prazo-leitura.ts",
+   "linha": 131,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "O prazo lido está fora do esperado: digite o número de dias.",
+   "arquivo": "src/core/advocacia/prazo-leitura.ts",
+   "linha": 137,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "suspensão de fim de ano, CPC art. 220",
+   "arquivo": "src/core/advocacia/prazo-sugestao.ts",
+   "linha": 59,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "feriado{…}: {f.name}",
+   "arquivo": "src/core/advocacia/prazo-sugestao.ts",
+   "linha": 60,
+   "tipo": "prop:motivo"
+  },
+  {
+   "texto": "Esta comunicação é do tipo \"{e.tipoDaComunicacao}\": o prazo não corre pela regra da intimação. Digite a data.",
+   "arquivo": "src/core/advocacia/prazo-sugestao.ts",
+   "linha": 112,
+   "tipo": "texto"
+  },
+  {
+   "texto": "O texto fala em juntada, citação, ciência ou outro termo inicial: a contagem não é a da publicação. Digite a data.",
+   "arquivo": "src/core/advocacia/prazo-sugestao.ts",
+   "linha": 117,
+   "tipo": "texto"
+  },
+  {
+   "texto": "O caso ainda não tem o rito marcado (cível, trabalhista, juizado ou penal).",
+   "arquivo": "src/core/advocacia/prazo-sugestao.ts",
+   "linha": 122,
+   "tipo": "texto"
+  },
+  {
+   "texto": "O texto fala em dias {…}, mas o rito do caso conta em dias {…}: confira o rito e digite a data.",
+   "arquivo": "src/core/advocacia/prazo-sugestao.ts",
+   "linha": 128,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Prazo em dobro marcado em caso de juizado ou penal: a regra não está validada. Digite a data.",
+   "arquivo": "src/core/advocacia/prazo-sugestao.ts",
+   "linha": 133,
+   "tipo": "texto"
+  },
+  {
+   "texto": "O prazo penal atravessa o recesso de fim de ano e a regra da suspensão não vale para ele. Digite a data.",
+   "arquivo": "src/core/advocacia/prazo-sugestao.ts",
+   "linha": 152,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Regra ainda não confirmada pela direção do escritório: {…}. A data não vem preenchida.",
+   "arquivo": "src/core/advocacia/prazo-sugestao.ts",
+   "linha": 158,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sem responsável",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 46,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Atrasado",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 47,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Hoje",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 48,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Esta semana",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 49,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Aguardando cliente",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 50,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Aguardando terceiros",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 51,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Depois",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 52,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sem data",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 53,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Intimação nova",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 95,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Audiência",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 98,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Prazo fatal",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 99,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Prazo contratual",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 100,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Prazo interno",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 101,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Pedido para aprovar",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 105,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Pedido para conferir",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 107,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Cliente travando prazo",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 108,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Pedido ao cliente",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 109,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Documento para conferir",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 112,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Cliente respondeu",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 115,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Solicitação sem resposta",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 116,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Lead novo",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 118,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Parcela em atraso",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 120,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Obrigação",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 122,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Mensagens prontas",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 124,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Tarefa",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 127,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "{plural(-d, \"dia\", \"dias\")} de atraso",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 167,
+   "tipo": "texto"
+  },
+  {
+   "texto": "vence hoje",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 168,
+   "tipo": "texto"
+  },
+  {
+   "texto": "em {plural(d, \"dia\", \"dias\")}",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 169,
+   "tipo": "texto"
+  },
+  {
+   "texto": "passou do fazer até {fmtDiaMes(i.due_on)}",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 193,
+   "tipo": "texto"
+  },
+  {
+   "texto": "fazer até {fmtDiaMes(i.due_on)}",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 194,
+   "tipo": "texto"
+  },
+  {
+   "texto": "fatal {fmtDiaMes(fatalEm)}",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 196,
+   "tipo": "texto"
+  },
+  {
+   "texto": "adiada {…}",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 201,
+   "tipo": "texto"
+  },
+  {
+   "texto": "trava {plural(n, \"prazo\", \"prazos\")}",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 204,
+   "tipo": "texto"
+  },
+  {
+   "texto": "travando prazo",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 212,
+   "tipo": "texto"
+  },
+  {
+   "texto": "com o cliente",
+   "arquivo": "src/core/advocacia/prioridade.ts",
+   "linha": 213,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Aberto",
+   "arquivo": "src/core/advocacia/resumo-do-caso.ts",
+   "linha": 15,
+   "tipo": "prop:aberto"
+  },
+  {
+   "texto": "Em andamento",
+   "arquivo": "src/core/advocacia/resumo-do-caso.ts",
+   "linha": 16,
+   "tipo": "prop:em_andamento"
+  },
+  {
+   "texto": "Aguardando cliente",
+   "arquivo": "src/core/advocacia/resumo-do-caso.ts",
+   "linha": 17,
+   "tipo": "prop:aguardando_cliente"
+  },
+  {
+   "texto": "Aguardando terceiros",
+   "arquivo": "src/core/advocacia/resumo-do-caso.ts",
+   "linha": 18,
+   "tipo": "prop:aguardando_terceiros"
+  },
+  {
+   "texto": "Concluído",
+   "arquivo": "src/core/advocacia/resumo-do-caso.ts",
+   "linha": 19,
+   "tipo": "prop:concluido"
+  },
+  {
+   "texto": "Arquivado",
+   "arquivo": "src/core/advocacia/resumo-do-caso.ts",
+   "linha": 20,
+   "tipo": "prop:arquivado"
+  },
+  {
+   "texto": "{p.titulo}: fazer até {dataCurta(p.internoEm)} · fatal {dataCurta(p.venceEm)}",
+   "arquivo": "src/core/advocacia/resumo-do-caso.ts",
+   "linha": 70,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "{p.titulo} até {dataCurta(dia)}",
+   "arquivo": "src/core/advocacia/resumo-do-caso.ts",
+   "linha": 70,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "{i.titulo} até {dataCurta(i.venceEm)}",
+   "arquivo": "src/core/advocacia/resumo-do-caso.ts",
+   "linha": 82,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "terça",
+   "arquivo": "src/core/agenda/ociosidade.ts",
+   "linha": 23,
+   "tipo": "prop:2"
+  },
+  {
+   "texto": "sábado",
+   "arquivo": "src/core/agenda/ociosidade.ts",
+   "linha": 27,
+   "tipo": "prop:6"
+  },
+  {
+   "texto": "CICLO | Retenção de clientes",
+   "arquivo": "src/core/aquisicao/links-da-bio.ts",
+   "linha": 22,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{appUrl.replace(/\\/$/, '')}/links",
+   "arquivo": "src/core/aquisicao/links-da-bio.ts",
+   "linha": 30,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Seu sistema de retenção de clientes. Mostra quem sumiu, pelo nome, e o texto pronto pra chamar de volta. Veja quanto você perde 👇",
+   "arquivo": "src/core/aquisicao/links-da-bio.ts",
+   "linha": 38,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sistema de retenção de clientes pra quem vive de cliente que volta. Descubra quanto seu negócio deixou de faturar com quem sumiu 👇",
+   "arquivo": "src/core/aquisicao/links-da-bio.ts",
+   "linha": 39,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Retenção de clientes pra quem tem agenda. Faça a conta do que você deixou de faturar com quem parou de voltar 👇",
+   "arquivo": "src/core/aquisicao/links-da-bio.ts",
+   "linha": 40,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Quanto você deixou de faturar?",
+   "arquivo": "src/core/aquisicao/links-da-bio.ts",
+   "linha": 64,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Três números que você sabe de cabeça e a conta aparece. Sem cadastro.",
+   "arquivo": "src/core/aquisicao/links-da-bio.ts",
+   "linha": 65,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Comece por aqui",
+   "arquivo": "src/core/aquisicao/links-da-bio.ts",
+   "linha": 68,
+   "tipo": "prop:selo"
+  },
+  {
+   "texto": "Criar minha conta",
+   "arquivo": "src/core/aquisicao/links-da-bio.ts",
+   "linha": 72,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "É grátis pra começar, sem cartão. Traga quem você já atende e veja quem sumiu.",
+   "arquivo": "src/core/aquisicao/links-da-bio.ts",
+   "linha": 73,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Como funciona",
+   "arquivo": "src/core/aquisicao/links-da-bio.ts",
+   "linha": 79,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "O que o CICLO calcula e como você começa.",
+   "arquivo": "src/core/aquisicao/links-da-bio.ts",
+   "linha": 80,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Ver funcionando, sem cadastro",
+   "arquivo": "src/core/aquisicao/links-da-bio.ts",
+   "linha": 89,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Abre um negócio de exemplo, do lado de quem atende.",
+   "arquivo": "src/core/aquisicao/links-da-bio.ts",
+   "linha": 90,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Marcado.",
+   "arquivo": "src/core/assistente/acoes.ts",
+   "linha": 77,
+   "tipo": "prop:criar_agendamento"
+  },
+  {
+   "texto": "Atendimento concluído.",
+   "arquivo": "src/core/assistente/acoes.ts",
+   "linha": 78,
+   "tipo": "prop:concluir_atendimento"
+  },
+  {
+   "texto": "Lançado na comanda.",
+   "arquivo": "src/core/assistente/acoes.ts",
+   "linha": 79,
+   "tipo": "prop:adicionar_item_comanda"
+  },
+  {
+   "texto": "Cadastro feito.",
+   "arquivo": "src/core/assistente/acoes.ts",
+   "linha": 80,
+   "tipo": "prop:cadastrar_cliente"
+  },
+  {
+   "texto": "Anotação salva.",
+   "arquivo": "src/core/assistente/acoes.ts",
+   "linha": 81,
+   "tipo": "prop:adicionar_nota"
+  },
+  {
+   "texto": "Chamada anotada. Se marcar, a volta conta para o Motor de Ciclo.",
+   "arquivo": "src/core/assistente/acoes.ts",
+   "linha": 82,
+   "tipo": "prop:chamar_de_volta"
+  },
+  {
+   "texto": "Já estava anotada nesta semana. A mensagem abre do mesmo jeito.",
+   "arquivo": "src/core/assistente/acoes.ts",
+   "linha": 91,
+   "tipo": "prop:ja_chamada"
+  },
+  {
+   "texto": "A mensagem abre, mas não conta para o Motor de Ciclo: essa pessoa saiu da lista.",
+   "arquivo": "src/core/assistente/acoes.ts",
+   "linha": 92,
+   "tipo": "prop:sem_ciclo"
+  },
+  {
+   "texto": "Essa pessoa pediu para não receber mensagem. Nada foi anotado.",
+   "arquivo": "src/core/assistente/acoes.ts",
+   "linha": 93,
+   "tipo": "prop:opt_out"
+  },
+  {
+   "texto": "A mensagem abre, mas a chamada não foi anotada.",
+   "arquivo": "src/core/assistente/acoes.ts",
+   "linha": 99,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Feito.",
+   "arquivo": "src/core/assistente/acoes.ts",
+   "linha": 101,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{b.rotulo} (está no plano {b.precisaDoPlano})",
+   "arquivo": "src/core/assistente/bloqueios.ts",
+   "linha": 32,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{b.rotulo} (desligado nas configurações)",
+   "arquivo": "src/core/assistente/bloqueios.ts",
+   "linha": 32,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Argumentos inválidos para esta ferramenta.",
+   "arquivo": "src/core/assistente/erro-de-argumento.ts",
+   "linha": 27,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Argumentos inválidos: {partes.join('; ')}. Corrija e chame a ferramenta de novo.",
+   "arquivo": "src/core/assistente/erro-de-argumento.ts",
+   "linha": 28,
+   "tipo": "texto"
+  },
+  {
+   "texto": "minItems",
+   "arquivo": "src/core/assistente/json-schema.ts",
+   "linha": 27,
+   "tipo": "texto"
+  },
+  {
+   "texto": "maxItems",
+   "arquivo": "src/core/assistente/json-schema.ts",
+   "linha": 28,
+   "tipo": "texto"
+  },
+  {
+   "texto": "anyOf",
+   "arquivo": "src/core/assistente/json-schema.ts",
+   "linha": 29,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Cliente",
+   "arquivo": "src/core/assistente/resumo.ts",
+   "linha": 24,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Cadastrar nova",
+   "arquivo": "src/core/assistente/resumo.ts",
+   "linha": 25,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Serviço",
+   "arquivo": "src/core/assistente/resumo.ts",
+   "linha": 26,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Com",
+   "arquivo": "src/core/assistente/resumo.ts",
+   "linha": 27,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Quando",
+   "arquivo": "src/core/assistente/resumo.ts",
+   "linha": 28,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Valor",
+   "arquivo": "src/core/assistente/resumo.ts",
+   "linha": 29,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Duração",
+   "arquivo": "src/core/assistente/resumo.ts",
+   "linha": 32,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "{base} Fale com a gente para transferir.",
+   "arquivo": "src/core/auth/bloqueio-de-titular.ts",
+   "linha": 12,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Gmail",
+   "arquivo": "src/core/auth/caixa-de-entrada.ts",
+   "linha": 18,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Outlook",
+   "arquivo": "src/core/auth/caixa-de-entrada.ts",
+   "linha": 21,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Yahoo Mail",
+   "arquivo": "src/core/auth/caixa-de-entrada.ts",
+   "linha": 24,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "iCloud Mail",
+   "arquivo": "src/core/auth/caixa-de-entrada.ts",
+   "linha": 25,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "UOL Mail",
+   "arquivo": "src/core/auth/caixa-de-entrada.ts",
+   "linha": 26,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "BOL Mail",
+   "arquivo": "src/core/auth/caixa-de-entrada.ts",
+   "linha": 27,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Dono",
+   "arquivo": "src/core/auth/rotulo-do-papel.ts",
+   "linha": 14,
+   "tipo": "prop:owner"
+  },
+  {
+   "texto": "Gerente",
+   "arquivo": "src/core/auth/rotulo-do-papel.ts",
+   "linha": 15,
+   "tipo": "prop:manager"
+  },
+  {
+   "texto": "Profissional",
+   "arquivo": "src/core/auth/rotulo-do-papel.ts",
+   "linha": 16,
+   "tipo": "prop:professional"
+  },
+  {
+   "texto": "Recepção",
+   "arquivo": "src/core/auth/rotulo-do-papel.ts",
+   "linha": 17,
+   "tipo": "prop:reception"
+  },
+  {
+   "texto": "Financeiro",
+   "arquivo": "src/core/auth/rotulo-do-papel.ts",
+   "linha": 18,
+   "tipo": "prop:finance"
+  },
+  {
+   "texto": "Membro",
+   "arquivo": "src/core/auth/rotulo-do-papel.ts",
+   "linha": 29,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Só me avisa",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 21,
+   "tipo": "prop:1"
+  },
+  {
+   "texto": "Deixa pronto",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 22,
+   "tipo": "prop:2"
+  },
+  {
+   "texto": "Faz e me conta",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 23,
+   "tipo": "prop:3"
+  },
+  {
+   "texto": "Encontra e mostra na tela. Você decide tudo.",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 27,
+   "tipo": "prop:1"
+  },
+  {
+   "texto": "Encontra e deixa a mensagem pronta. Você confere e toca em enviar.",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 28,
+   "tipo": "prop:2"
+  },
+  {
+   "texto": "Faz sozinho e registra o que fez.",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 29,
+   "tipo": "prop:3"
+  },
+  {
+   "texto": "Motor de Ciclo",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 61,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Calcula quando cada cliente deve voltar e quanto está em risco.",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 62,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Só calcula e mostra, e nunca fala com quem é atendido.",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 66,
+   "tipo": "prop:motivoDoTeto"
+  },
+  {
+   "texto": "Vale a pena hoje",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 70,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Mostra na tela Hoje quem sumiu, quem faz aniversário e o que está parado.",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 71,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Só mostra na sua tela: nada sai daqui.",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 75,
+   "tipo": "prop:motivoDoTeto"
+  },
+  {
+   "texto": "Pontos automáticos",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 79,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "A cada atendimento concluído, os pontos entram sozinhos, sem ninguém lançar na mão.",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 80,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Escreve só na ficha de quem foi atendido, e não manda mensagem.",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 83,
+   "tipo": "prop:motivoDoTeto"
+  },
+  {
+   "texto": "Aviso de reposição",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 87,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Avisa quando um produto bate o ponto de recompra.",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 88,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Comprar é decisão sua, e o CICLO nunca gasta dinheiro por você.",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 91,
+   "tipo": "prop:motivoDoTeto"
+  },
+  {
+   "texto": "Lembrete de horário",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 95,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Lembra do horário marcado e pede a confirmação.",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 96,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Uma pessoa por vez, de um horário que ela já marcou.",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 99,
+   "tipo": "prop:motivoDoTeto"
+  },
+  {
+   "texto": "Campanha de recuperação",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 103,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Chama de volta quem passou do tempo de voltar.",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 104,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Alcança várias pessoas de uma vez, então esta sempre espera seu toque.",
+   "arquivo": "src/core/automacoes/catalogo.ts",
+   "linha": 109,
+   "tipo": "prop:motivoDoTeto"
+  },
+  {
+   "texto": "Oi! Eu uso o CICLO pra tocar a agenda e os clientes do meu negócio, {nomeDoNegocio.trim()}.",
+   "arquivo": "src/core/billing/convite-do-ciclo.ts",
+   "linha": 57,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Oi! Eu uso o CICLO pra tocar a agenda e os clientes aqui.",
+   "arquivo": "src/core/billing/convite-do-ciclo.ts",
+   "linha": 58,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ele me avisa quem parou de voltar, que era o que eu mais deixava passar, e o cliente marca sozinho por um link.",
+   "arquivo": "src/core/billing/convite-do-ciclo.ts",
+   "linha": 61,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Se você entrar por mim, nós dois ganhamos um mês: {url}",
+   "arquivo": "src/core/billing/convite-do-ciclo.ts",
+   "linha": 64,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Dá pra usar de graça pra começar: {url}",
+   "arquivo": "src/core/billing/convite-do-ciclo.ts",
+   "linha": 65,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Quando um colega entra pelo seu convite, vocês dois ganham um mês. É assim que o CICLO cresce sem anúncio.",
+   "arquivo": "src/core/billing/convite-do-ciclo.ts",
+   "linha": 76,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Quem trabalha por conta escuta colega de ofício, não anúncio. Se o CICLO está te servindo, esse é o jeito mais direto de outra pessoa descobrir.",
+   "arquivo": "src/core/billing/convite-do-ciclo.ts",
+   "linha": 77,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Escolher plano",
+   "arquivo": "src/core/billing/faixa-da-conta.ts",
+   "linha": 37,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Conta pausada: você vê e exporta tudo, mas não cria nada novo. Escolher um plano reativa na hora.",
+   "arquivo": "src/core/billing/faixa-da-conta.ts",
+   "linha": 46,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Sua cortesia acabou. Tudo continua funcionando até {…}; depois a conta fica pausada.",
+   "arquivo": "src/core/billing/faixa-da-conta.ts",
+   "linha": 54,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "do seu teste",
+   "arquivo": "src/core/billing/faixa-da-conta.ts",
+   "linha": 62,
+   "tipo": "texto"
+  },
+  {
+   "texto": "da sua cortesia",
+   "arquivo": "src/core/billing/faixa-da-conta.ts",
+   "linha": 62,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Teste grátis",
+   "arquivo": "src/core/billing/faixa-da-conta.ts",
+   "linha": 67,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Pré-lançamento",
+   "arquivo": "src/core/billing/faixa-da-conta.ts",
+   "linha": 67,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{abertura}: tudo liberado até {descreverDia(ultimo)}. Nada é cobrado sem você escolher um plano.",
+   "arquivo": "src/core/billing/faixa-da-conta.ts",
+   "linha": 70,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Hoje é o último dia {deQuem}. Escolha um plano para continuar criando.",
+   "arquivo": "src/core/billing/faixa-da-conta.ts",
+   "linha": 75,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Amanhã é o último dia {deQuem}. Escolha um plano para continuar criando.",
+   "arquivo": "src/core/billing/faixa-da-conta.ts",
+   "linha": 76,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Faltam {dias} dias para o fim {deQuem} (último dia: {descreverDiaCurto(ultimo)}). Escolha um plano para continuar criando.",
+   "arquivo": "src/core/billing/faixa-da-conta.ts",
+   "linha": 79,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "valorMensalEmReais: {tier} não é um degrau cobrável",
+   "arquivo": "src/core/billing/mercado-pago.ts",
+   "linha": 150,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Tudo liberado, sem cobrança.",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 73,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Acesso aberto",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 74,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Você usa o CICLO inteiro, sem cartão e sem prazo por enquanto. A gente avisa com antecedência antes de qualquer cobrança, e a sua base é sua: dá para exportar quando quiser.",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 76,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Tudo liberado, sem cobrança, até {descreverDiaCurto(ultimo)}.",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 87,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Teste grátis",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 88,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Cortesia de pré-lançamento",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 88,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Você usa o CICLO inteiro até {descreverDia(ultimo)}, sem cartão. Nada é cobrado sem você escolher um plano abaixo.",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 90,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Escolha seu plano",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 92,
+   "tipo": "prop:cabecalho"
+  },
+  {
+   "texto": "Sua cortesia acabou. Escolha um plano para continuar criando.",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 99,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Cortesia encerrada",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 100,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Tudo continua funcionando até {…}. Depois a conta fica pausada: você vê e exporta tudo, mas não cria nada novo. Assinar um plano reativa na hora.",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 102,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Escolha seu plano",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 104,
+   "tipo": "prop:cabecalho"
+  },
+  {
+   "texto": "Conta pausada. Escolha um plano para voltar a criar.",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 111,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Conta pausada",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 112,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Você vê e exporta tudo, mas não cria nada novo. Seus dados ficam guardados até {…}, e assinar um plano reativa tudo na hora.",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 114,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Escolha seu plano",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 116,
+   "tipo": "prop:cabecalho"
+  },
+  {
+   "texto": "Você está no {NOME_DO_PLANO.gratis}.",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 125,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Escolha seu plano",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 130,
+   "tipo": "prop:cabecalho"
+  },
+  {
+   "texto": "Você está no {NOME_DO_PLANO[planoPago]}.",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 137,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Se precisar de mais",
+   "arquivo": "src/core/billing/meu-plano.ts",
+   "linha": 142,
+   "tipo": "prop:cabecalho"
+  },
+  {
+   "texto": "Agenda",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 81,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Motor de Ciclo",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 82,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Página pública",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 83,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Clientes e CRM",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 84,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Lembrete e confirmação",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 85,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Recorrência",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 86,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Orçamento",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 87,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Deslocamento e rota",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 88,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Comanda e caixa",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 89,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Estoque",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 90,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Fidelidade e pontos",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 91,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Assinatura e clube",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 92,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Campanhas",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 93,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Equipe e comissão",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 94,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Anamnese e dado de saúde",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 95,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Documentos e contratos",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 96,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Assistente",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 99,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Casos",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 102,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Pendências do cliente",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 103,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Estrutura da família",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 104,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Prazos e intimações",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 105,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Documentos do caso",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 106,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Grátis",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 243,
+   "tipo": "prop:gratis"
+  },
+  {
+   "texto": "Solo",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 246,
+   "tipo": "prop:essencial"
+  },
+  {
+   "texto": "Equipe",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 247,
+   "tipo": "prop:equipe"
+  },
+  {
+   "texto": "Avançado",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 248,
+   "tipo": "prop:avancado"
+  },
+  {
+   "texto": "custoPorAtendimento: mês sem atendimento não tem custo por atendimento",
+   "arquivo": "src/core/billing/planos.ts",
+   "linha": 295,
+   "tipo": "erro"
+  },
+  {
+   "texto": "America/Sao_Paulo",
+   "arquivo": "src/core/billing/prelancamento.ts",
+   "linha": 37,
+   "tipo": "texto"
+  },
+  {
+   "texto": "instante inválido",
+   "arquivo": "src/core/billing/prelancamento.ts",
+   "linha": 160,
+   "tipo": "validação"
+  },
+  {
+   "texto": "março",
+   "arquivo": "src/core/billing/prelancamento.ts",
+   "linha": 327,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{d.day} de {MESES[d.month - 1]} de {d.year}",
+   "arquivo": "src/core/billing/prelancamento.ts",
+   "linha": 346,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{d.day} de {MESES[d.month - 1]}",
+   "arquivo": "src/core/billing/prelancamento.ts",
+   "linha": 352,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Tudo liberado, sem cartão",
+   "arquivo": "src/core/billing/prelancamento.ts",
+   "linha": 380,
+   "tipo": "prop:chamada"
+  },
+  {
+   "texto": "{PRELANCAMENTO.diasDoTeste} dias de tudo liberado, sem cartão",
+   "arquivo": "src/core/billing/prelancamento.ts",
+   "linha": 387,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Pelo menos {PRELANCAMENTO.diasDaChamada} dias de tudo liberado, sem cartão",
+   "arquivo": "src/core/billing/prelancamento.ts",
+   "linha": 388,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Tudo liberado até {descreverDiaCurto(ultimo)}, sem cartão",
+   "arquivo": "src/core/billing/prelancamento.ts",
+   "linha": 389,
+   "tipo": "texto"
+  },
+  {
+   "texto": "A comissão",
+   "arquivo": "src/core/caixa/frase-da-margem.ts",
+   "linha": 16,
+   "tipo": "prop:comissao"
+  },
+  {
+   "texto": "O produto",
+   "arquivo": "src/core/caixa/frase-da-margem.ts",
+   "linha": 17,
+   "tipo": "prop:material"
+  },
+  {
+   "texto": "A taxa da maquininha",
+   "arquivo": "src/core/caixa/frase-da-margem.ts",
+   "linha": 18,
+   "tipo": "prop:taxa"
+  },
+  {
+   "texto": "{…} leva {Math.round(fatiaBps / 100)}% do que este serviço fatura.",
+   "arquivo": "src/core/caixa/frase-da-margem.ts",
+   "linha": 38,
+   "tipo": "texto"
+  },
+  {
+   "texto": "a comissão",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 40,
+   "tipo": "prop:comissao"
+  },
+  {
+   "texto": "o material",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 40,
+   "tipo": "prop:material"
+  },
+  {
+   "texto": "a taxa da maquininha",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 40,
+   "tipo": "prop:taxa"
+  },
+  {
+   "texto": "{base} e mais {resto}",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 46,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Clientes para chamar de volta",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 62,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "{…} (estimativa, não promessa).",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 64,
+   "tipo": "prop:fato"
+  },
+  {
+   "texto": "Chamar de volta",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 66,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Clube de assinatura no prejuízo",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 75,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "{…} mais para atender do que paga{…} neste ciclo.",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 77,
+   "tipo": "prop:fato"
+  },
+  {
+   "texto": "Ver o clube",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 79,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Serviço que sobra pouco",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 88,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Serviços que sobram pouco",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 88,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "{listar(s.map((x) => x.nome))}: sobra menos de 30% do que entra{…}. Quanto é o certo, só você sabe.",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 90,
+   "tipo": "prop:fato"
+  },
+  {
+   "texto": "Ver os serviços",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 92,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Gente procurando horário {noOuNa(p.weekday)} {NOME_DO_DIA[p.weekday]}",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 101,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "{p.procuras} procuras {noOuNa(p.weekday)} {NOME_DO_DIA[p.weekday]} pela página de agendamento nos últimos 30 dias, e o dia está fechado. Procura não é atendimento: é o sinal para você pesar.",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 103,
+   "tipo": "prop:fato"
+  },
+  {
+   "texto": "Ver os horários",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 105,
+   "tipo": "botão"
+  },
+  {
+   "texto": "O dia mais parado: {…}",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 112,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Vazia há {…} semanas seguidas. Horário vazio só é dinheiro perdido se alguém queria vir.",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 114,
+   "tipo": "prop:fato"
+  },
+  {
+   "texto": "Ver a agenda",
+   "arquivo": "src/core/caixa/mapa-de-vazamento.ts",
+   "linha": 116,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Diga quando cada pessoa veio pela última vez",
+   "arquivo": "src/core/ciclo/acao-do-motor.ts",
+   "linha": 36,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Suas fichas ainda não têm a última visita, então o Motor não sabe quem está sumindo. Diga de memória, sem precisar ser exato, e ele começa hoje.",
+   "arquivo": "src/core/ciclo/acao-do-motor.ts",
+   "linha": 38,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Ninguém sumiu por enquanto",
+   "arquivo": "src/core/ciclo/acao-do-motor.ts",
+   "linha": 47,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "O Motor está de olho em quem você cadastrou. O próximo deve voltar {estado.quandoOProximoVolta}; se atrasar, aparece aqui.",
+   "arquivo": "src/core/ciclo/acao-do-motor.ts",
+   "linha": 48,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Prioridade",
+   "arquivo": "src/core/ciclo/fila-de-chamadas.ts",
+   "linha": 28,
+   "tipo": "prop:prioridade"
+  },
+  {
+   "texto": "Lucro",
+   "arquivo": "src/core/ciclo/fila-de-chamadas.ts",
+   "linha": 29,
+   "tipo": "prop:lucro"
+  },
+  {
+   "texto": "Nota do cliente",
+   "arquivo": "src/core/ciclo/fila-de-chamadas.ts",
+   "linha": 30,
+   "tipo": "prop:nota"
+  },
+  {
+   "texto": "Mais atrasado",
+   "arquivo": "src/core/ciclo/fila-de-chamadas.ts",
+   "linha": 31,
+   "tipo": "prop:atraso"
+  },
+  {
+   "texto": "Nome",
+   "arquivo": "src/core/ciclo/fila-de-chamadas.ts",
+   "linha": 32,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Ninguém atrasado por enquanto",
+   "arquivo": "src/core/ciclo/primeira-volta.ts",
+   "linha": 28,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "O primeiro deve voltar {quando}. Se passar do tempo, aparece no Hoje para você chamar.",
+   "arquivo": "src/core/ciclo/primeira-volta.ts",
+   "linha": 30,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Lembrou de alguém que sumiu faz mais tempo? Adicione com \"Um mês\" ou mais.",
+   "arquivo": "src/core/ciclo/primeira-volta.ts",
+   "linha": 31,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "amanhã",
+   "arquivo": "src/core/ciclo/primeira-volta.ts",
+   "linha": 43,
+   "tipo": "texto"
+  },
+  {
+   "texto": "daqui a {dias} dias ({diaMes})",
+   "arquivo": "src/core/ciclo/primeira-volta.ts",
+   "linha": 43,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Cliente cadastrado",
+   "arquivo": "src/core/ciclo/primeiro-cliente.ts",
+   "linha": 12,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Cliente cadastrado",
+   "arquivo": "src/core/ciclo/primeiro-cliente.ts",
+   "linha": 15,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "O primeiro da casa. Marque o horário para o Motor de Ciclo começar a acompanhar o retorno.",
+   "arquivo": "src/core/ciclo/primeiro-cliente.ts",
+   "linha": 16,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Semana passada",
+   "arquivo": "src/core/ciclo/quando-foi-a-ultima-vez.ts",
+   "linha": 32,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Uns 15 dias",
+   "arquivo": "src/core/ciclo/quando-foi-a-ultima-vez.ts",
+   "linha": 33,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Um mês",
+   "arquivo": "src/core/ciclo/quando-foi-a-ultima-vez.ts",
+   "linha": 34,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Uns 2 meses",
+   "arquivo": "src/core/ciclo/quando-foi-a-ultima-vez.ts",
+   "linha": 35,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Faz tempo",
+   "arquivo": "src/core/ciclo/quando-foi-a-ultima-vez.ts",
+   "linha": 36,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "degrau de tempo desconhecido: {valor}",
+   "arquivo": "src/core/ciclo/quando-foi-a-ultima-vez.ts",
+   "linha": 49,
+   "tipo": "erro"
+  },
+  {
+   "texto": "a outra",
+   "arquivo": "src/core/ciclo/recorte-da-lista.ts",
+   "linha": 23,
+   "tipo": "texto"
+  },
+  {
+   "texto": "as outras {escondidos}",
+   "arquivo": "src/core/ciclo/recorte-da-lista.ts",
+   "linha": 23,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Mostrando {mostrados} de {total}, as de maior valor. Filtre por situação para chegar {outras}.",
+   "arquivo": "src/core/ciclo/recorte-da-lista.ts",
+   "linha": 24,
+   "tipo": "texto"
+  },
+  {
+   "texto": "1 volta",
+   "arquivo": "src/core/ciclo/regua-do-servico.ts",
+   "linha": 43,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{quantas} voltas",
+   "arquivo": "src/core/ciclo/regua-do-servico.ts",
+   "linha": 43,
+   "tipo": "texto"
+  },
+  {
+   "texto": "há {…}",
+   "arquivo": "src/core/ciclo/regua-do-servico.ts",
+   "linha": 55,
+   "tipo": "texto"
+  },
+  {
+   "texto": "confirmado por {voltas(amostra)}{quando}",
+   "arquivo": "src/core/ciclo/regua-do-servico.ts",
+   "linha": 82,
+   "tipo": "prop:procedencia"
+  },
+  {
+   "texto": "mais espaçado",
+   "arquivo": "src/core/ciclo/regua-do-servico.ts",
+   "linha": 85,
+   "tipo": "texto"
+  },
+  {
+   "texto": "mais curto",
+   "arquivo": "src/core/ciclo/regua-do-servico.ts",
+   "linha": 85,
+   "tipo": "texto"
+  },
+  {
+   "texto": "medido em {voltas(amostra)}{quando} · {direcao} que os {cycleDays}d configurados",
+   "arquivo": "src/core/ciclo/regua-do-servico.ts",
+   "linha": 88,
+   "tipo": "prop:procedencia"
+  },
+  {
+   "texto": "fora do horário de envio ({JANELA_INICIO}h às {JANELA_FIM}h); tente de manhã.",
+   "arquivo": "src/core/ciclo/resumo-do-envio.ts",
+   "linha": 40,
+   "tipo": "prop:uma"
+  },
+  {
+   "texto": "fora do horário de envio ({JANELA_INICIO}h às {JANELA_FIM}h); tente de manhã.",
+   "arquivo": "src/core/ciclo/resumo-do-envio.ts",
+   "linha": 41,
+   "tipo": "prop:varias"
+  },
+  {
+   "texto": "já recebeu uma mensagem nos últimos 7 dias.",
+   "arquivo": "src/core/ciclo/resumo-do-envio.ts",
+   "linha": 44,
+   "tipo": "prop:uma"
+  },
+  {
+   "texto": "já receberam uma mensagem nos últimos 7 dias.",
+   "arquivo": "src/core/ciclo/resumo-do-envio.ts",
+   "linha": 45,
+   "tipo": "prop:varias"
+  },
+  {
+   "texto": "pediu para não receber, ou está sem telefone cadastrado.",
+   "arquivo": "src/core/ciclo/resumo-do-envio.ts",
+   "linha": 48,
+   "tipo": "prop:uma"
+  },
+  {
+   "texto": "pediram para não receber, ou estão sem telefone cadastrado.",
+   "arquivo": "src/core/ciclo/resumo-do-envio.ts",
+   "linha": 49,
+   "tipo": "prop:varias"
+  },
+  {
+   "texto": "não recebeu; tentar de novo agora não resolve.",
+   "arquivo": "src/core/ciclo/resumo-do-envio.ts",
+   "linha": 52,
+   "tipo": "prop:uma"
+  },
+  {
+   "texto": "não receberam; tentar de novo agora não resolve.",
+   "arquivo": "src/core/ciclo/resumo-do-envio.ts",
+   "linha": 53,
+   "tipo": "prop:varias"
+  },
+  {
+   "texto": "não foi avisada agora.",
+   "arquivo": "src/core/ciclo/resumo-do-envio.ts",
+   "linha": 58,
+   "tipo": "prop:uma"
+  },
+  {
+   "texto": "não foram avisadas agora.",
+   "arquivo": "src/core/ciclo/resumo-do-envio.ts",
+   "linha": 58,
+   "tipo": "prop:varias"
+  },
+  {
+   "texto": "1 pessoa {forma.uma}",
+   "arquivo": "src/core/ciclo/resumo-do-envio.ts",
+   "linha": 62,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{quantas} pessoas {forma.varias}",
+   "arquivo": "src/core/ciclo/resumo-do-envio.ts",
+   "linha": 62,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Mensagem enviada para {enviadas} {…}.",
+   "arquivo": "src/core/ciclo/resumo-do-envio.ts",
+   "linha": 74,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nenhuma mensagem enviada.",
+   "arquivo": "src/core/ciclo/resumo-do-envio.ts",
+   "linha": 84,
+   "tipo": "texto"
+  },
+  {
+   "texto": "1 dia",
+   "arquivo": "src/core/ciclo/ritmo-do-cliente.ts",
+   "linha": 54,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{quantos} dias",
+   "arquivo": "src/core/ciclo/ritmo-do-cliente.ts",
+   "linha": 54,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Vem a cada {…}",
+   "arquivo": "src/core/ciclo/ritmo-do-cliente.ts",
+   "linha": 60,
+   "tipo": "texto"
+  },
+  {
+   "texto": "medido em {voltas(intervalos)}",
+   "arquivo": "src/core/ciclo/ritmo-do-cliente.ts",
+   "linha": 61,
+   "tipo": "texto"
+  },
+  {
+   "texto": "veio hoje",
+   "arquivo": "src/core/ciclo/ritmo-do-cliente.ts",
+   "linha": 74,
+   "tipo": "texto"
+  },
+  {
+   "texto": "veio faz {dias(arredondado)}",
+   "arquivo": "src/core/ciclo/ritmo-do-cliente.ts",
+   "linha": 74,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Cadastre suas clientes para o Motor começar",
+   "arquivo": "src/core/ciclo/vazio-de-recuperar.ts",
+   "linha": 49,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Ele usa o intervalo entre as visitas de cada pessoa para saber quando ela costuma voltar. Sem ficha, não há o que acompanhar.",
+   "arquivo": "src/core/ciclo/vazio-de-recuperar.ts",
+   "linha": 50,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Cadastrar cliente",
+   "arquivo": "src/core/ciclo/vazio-de-recuperar.ts",
+   "linha": 51,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Diga quando foi o último atendimento de cada um",
+   "arquivo": "src/core/ciclo/vazio-de-recuperar.ts",
+   "linha": 67,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Suas fichas já estão aqui. Conte de memória quando cada pessoa veio pela última vez (não precisa ser exato) e o Motor começa hoje, sem esperar a agenda.",
+   "arquivo": "src/core/ciclo/vazio-de-recuperar.ts",
+   "linha": 69,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Dizer quando vieram",
+   "arquivo": "src/core/ciclo/vazio-de-recuperar.ts",
+   "linha": 70,
+   "tipo": "botão"
+  },
+  {
+   "texto": "O Motor ainda não processou seus atendimentos",
+   "arquivo": "src/core/ciclo/vazio-de-recuperar.ts",
+   "linha": 92,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Seus atendimentos concluídos já estão aqui, mas a previsão de retorno é recalculada de tempos em tempos e ainda não rodou.",
+   "arquivo": "src/core/ciclo/vazio-de-recuperar.ts",
+   "linha": 94,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Se continuar assim por vários dias, fale com a gente.",
+   "arquivo": "src/core/ciclo/vazio-de-recuperar.ts",
+   "linha": 95,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Ver clientes",
+   "arquivo": "src/core/ciclo/vazio-de-recuperar.ts",
+   "linha": 96,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Todo mundo em dia",
+   "arquivo": "src/core/ciclo/vazio-de-recuperar.ts",
+   "linha": 104,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Ninguém passou do tempo de voltar. O próximo deve voltar {quandoOProximoVolta}; se atrasar, aparece aqui.",
+   "arquivo": "src/core/ciclo/vazio-de-recuperar.ts",
+   "linha": 106,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Ninguém passou do tempo de voltar. Quando alguém atrasar, aparece aqui.",
+   "arquivo": "src/core/ciclo/vazio-de-recuperar.ts",
+   "linha": 107,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Ver clientes",
+   "arquivo": "src/core/ciclo/vazio-de-recuperar.ts",
+   "linha": 108,
+   "tipo": "botão"
+  },
+  {
+   "texto": "Você ainda não disse quanto a maquininha cobra",
+   "arquivo": "src/core/comanda/completude-do-lucro.ts",
+   "linha": 62,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Sem isso o \"Sobrou\" de cada atendimento sai maior do que é. Se você só recebe em dinheiro e Pix, salve com zero e a pergunta não volta.",
+   "arquivo": "src/core/comanda/completude-do-lucro.ts",
+   "linha": 64,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "O aluguel ainda não entra no que sobrou",
+   "arquivo": "src/core/comanda/completude-do-lucro.ts",
+   "linha": 73,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "São três perguntas que você responde de cabeça: quanto sai por mês, quantas horas você abre e quantas cadeiras tem. Quem atende em casa responde zero.",
+   "arquivo": "src/core/comanda/completude-do-lucro.ts",
+   "linha": 75,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Diga o que cada um gasta e quanto você pagou na última compra. É o que falta para o \"Sobrou\" ser o número de verdade.",
+   "arquivo": "src/core/comanda/completude-do-lucro.ts",
+   "linha": 92,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "o produto",
+   "arquivo": "src/core/comanda/sobra-explicada.ts",
+   "linha": 75,
+   "tipo": "texto"
+  },
+  {
+   "texto": "a taxa da maquininha",
+   "arquivo": "src/core/comanda/sobra-explicada.ts",
+   "linha": 76,
+   "tipo": "texto"
+  },
+  {
+   "texto": "o aluguel",
+   "arquivo": "src/core/comanda/sobra-explicada.ts",
+   "linha": 77,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Falta descontar {ultimo}.",
+   "arquivo": "src/core/comanda/sobra-explicada.ts",
+   "linha": 85,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Falta descontar {nomes.join(', ')} e {ultimo}.",
+   "arquivo": "src/core/comanda/sobra-explicada.ts",
+   "linha": 85,
+   "tipo": "texto"
+  },
+  {
+   "texto": "1 item entrou sem o custo real do produto: falta a ficha do serviço, ou falta registrar a compra do insumo",
+   "arquivo": "src/core/comanda/sobra-explicada.ts",
+   "linha": 99,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{itens} itens entraram sem o custo real do produto: falta a ficha do serviço, ou falta registrar a compra do insumo",
+   "arquivo": "src/core/comanda/sobra-explicada.ts",
+   "linha": 100,
+   "tipo": "texto"
+  },
+  {
+   "texto": "você ainda não informou quanto a maquininha cobra",
+   "arquivo": "src/core/comanda/sobra-explicada.ts",
+   "linha": 103,
+   "tipo": "texto"
+  },
+  {
+   "texto": "o aluguel e as contas não entram nesta conta: falta dizer quanto sai por mês, quantas horas você abre e quantas cadeiras tem",
+   "arquivo": "src/core/comanda/sobra-explicada.ts",
+   "linha": 105,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Material",
+   "arquivo": "src/core/comanda/sobra-explicada.ts",
+   "linha": 134,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Taxa da maquininha",
+   "arquivo": "src/core/comanda/sobra-explicada.ts",
+   "linha": 135,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Comissão",
+   "arquivo": "src/core/comanda/sobra-explicada.ts",
+   "linha": 136,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Aluguel e contas",
+   "arquivo": "src/core/comanda/sobra-explicada.ts",
+   "linha": 137,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Dinheiro",
+   "arquivo": "src/core/comanda/taxa-de-pagamento.ts",
+   "linha": 17,
+   "tipo": "prop:cash"
+  },
+  {
+   "texto": "Pix",
+   "arquivo": "src/core/comanda/taxa-de-pagamento.ts",
+   "linha": 18,
+   "tipo": "prop:pix"
+  },
+  {
+   "texto": "Cartão de débito",
+   "arquivo": "src/core/comanda/taxa-de-pagamento.ts",
+   "linha": 19,
+   "tipo": "prop:debit"
+  },
+  {
+   "texto": "Cartão de crédito",
+   "arquivo": "src/core/comanda/taxa-de-pagamento.ts",
+   "linha": 20,
+   "tipo": "prop:credit"
+  },
+  {
+   "texto": "Outra forma",
+   "arquivo": "src/core/comanda/taxa-de-pagamento.ts",
+   "linha": 21,
+   "tipo": "prop:other"
+  },
+  {
+   "texto": "às segundas",
+   "arquivo": "src/core/crm/memoria-do-cliente.ts",
+   "linha": 49,
+   "tipo": "prop:1"
+  },
+  {
+   "texto": "às terças",
+   "arquivo": "src/core/crm/memoria-do-cliente.ts",
+   "linha": 50,
+   "tipo": "prop:2"
+  },
+  {
+   "texto": "às quartas",
+   "arquivo": "src/core/crm/memoria-do-cliente.ts",
+   "linha": 51,
+   "tipo": "prop:3"
+  },
+  {
+   "texto": "às quintas",
+   "arquivo": "src/core/crm/memoria-do-cliente.ts",
+   "linha": 52,
+   "tipo": "prop:4"
+  },
+  {
+   "texto": "às sextas",
+   "arquivo": "src/core/crm/memoria-do-cliente.ts",
+   "linha": 53,
+   "tipo": "prop:5"
+  },
+  {
+   "texto": "aos sábados",
+   "arquivo": "src/core/crm/memoria-do-cliente.ts",
+   "linha": 54,
+   "tipo": "prop:6"
+  },
+  {
+   "texto": "aos domingos",
+   "arquivo": "src/core/crm/memoria-do-cliente.ts",
+   "linha": 55,
+   "tipo": "prop:7"
+  },
+  {
+   "texto": "{vezes} de {de} visitas",
+   "arquivo": "src/core/crm/memoria-do-cliente.ts",
+   "linha": 114,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Costuma vir {NO_DIA[m.diaDaSemana.dia]} ({…}).",
+   "arquivo": "src/core/crm/memoria-do-cliente.ts",
+   "linha": 124,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sempre com {nome} ({de} visitas).",
+   "arquivo": "src/core/crm/memoria-do-cliente.ts",
+   "linha": 128,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Quase sempre com {nome} ({visitasDe(vezes, de)}).",
+   "arquivo": "src/core/crm/memoria-do-cliente.ts",
+   "linha": 128,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Costuma voltar em {…}.",
+   "arquivo": "src/core/crm/memoria-do-cliente.ts",
+   "linha": 132,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Costuma voltar entre {de} e {ate} dias.",
+   "arquivo": "src/core/crm/memoria-do-cliente.ts",
+   "linha": 132,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Fiel",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 71,
+   "tipo": "prop:fiel"
+  },
+  {
+   "texto": "Regular",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 72,
+   "tipo": "prop:regular"
+  },
+  {
+   "texto": "Novo",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 73,
+   "tipo": "prop:novo"
+  },
+  {
+   "texto": "Atrasado",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 74,
+   "tipo": "prop:atrasado"
+  },
+  {
+   "texto": "Costuma faltar",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 75,
+   "tipo": "prop:faltante"
+  },
+  {
+   "texto": "Sumido",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 76,
+   "tipo": "prop:sumido"
+  },
+  {
+   "texto": "Ouro",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 79,
+   "tipo": "prop:ouro"
+  },
+  {
+   "texto": "Prata",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 79,
+   "tipo": "prop:prata"
+  },
+  {
+   "texto": "Bronze",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 79,
+   "tipo": "prop:bronze"
+  },
+  {
+   "texto": "Ainda sem atendimento concluído",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 169,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ainda sem atendimento concluído",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 170,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Gastou mais que {Math.round(pv * 100)}% dos clientes no último ano",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 173,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{visitasAno} {…} no último ano",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 175,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ainda sem atendimento concluído",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 183,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Pouco histórico para medir a regularidade",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 184,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Volta com intervalo parecido",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 185,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Intervalo entre visitas varia bastante",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 185,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ainda sem atendimento concluído",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 189,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{falhas} {…} e nenhum atendimento",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 189,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sem faltas registradas",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 190,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nunca faltou",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 191,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{falhas} {…} em cima da hora",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 191,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ainda sem atendimento concluído",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 194,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ritmo ainda não medido",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 195,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Dentro do ritmo dele",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 196,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Passou {…}% do ritmo sem vir",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 197,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Indicou {h.indicou} {…}",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 204,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Cliente há {…} meses",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 204,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Quantas vezes vem",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 282,
+   "tipo": "prop:frequencia"
+  },
+  {
+   "texto": "Regularidade",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 283,
+   "tipo": "prop:regularidade"
+  },
+  {
+   "texto": "Presença",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 284,
+   "tipo": "prop:presenca"
+  },
+  {
+   "texto": "Em dia com o ritmo",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 285,
+   "tipo": "prop:recencia"
+  },
+  {
+   "texto": "Tempo de casa e indicações",
+   "arquivo": "src/core/crm/nota-do-cliente.ts",
+   "linha": 286,
+   "tipo": "prop:vinculo"
+  },
+  {
+   "texto": "terça",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 82,
+   "tipo": "texto"
+  },
+  {
+   "texto": "sábado",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 82,
+   "tipo": "texto"
+  },
+  {
+   "texto": "terças",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 83,
+   "tipo": "texto"
+  },
+  {
+   "texto": "sábados",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 83,
+   "tipo": "texto"
+  },
+  {
+   "texto": "1 atendimento",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 88,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{n} atendimentos",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 88,
+   "tipo": "texto"
+  },
+  {
+   "texto": "1 dia",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 99,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{quantos} dias",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 99,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Teste cancelado.",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 135,
+   "tipo": "prop:frase"
+  },
+  {
+   "texto": "Começa em {ddmm(jDurante.de)}. O antes já está guardado: {fmt(valor(e.antes))} em {…}.",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 143,
+   "tipo": "prop:frase"
+  },
+  {
+   "texto": "Em andamento: {diasCorridos} de {e.dias} dias. Até agora, {fmt(valor(durante))}; {…} antes do teste, {fmt(valor(e.antes))}. O resultado sai quando o teste acabar.",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 161,
+   "tipo": "prop:frase"
+  },
+  {
+   "texto": "Indicativo: {nDurante} de teste, {nAtendimentos(movimento)} somando os dois períodos.",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 170,
+   "tipo": "texto"
+  },
+  {
+   "texto": "É pouco movimento para ler diferença: pode ser acaso.",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 174,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Antes não havia nenhum; o teste trouxe movimento onde não tinha.",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 175,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nenhum movimento nos dois períodos.",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 175,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ficou parecido ({pct}% de diferença).",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 179,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…} {pct}%. É um teste prático, não uma prova: semana de pagamento e feriado também mexem nesse número.",
+   "arquivo": "src/core/experimentos/experimento.ts",
+   "linha": 180,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Muitas tentativas seguidas. Espere um instante e tente de novo.",
+   "arquivo": "src/core/http/espera.ts",
+   "linha": 15,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Muitas tentativas seguidas. Tente de novo em cerca de {minutos} minutos.",
+   "arquivo": "src/core/http/espera.ts",
+   "linha": 18,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Você fez muitas perguntas seguidas. Tente de novo daqui a cerca de uma hora.",
+   "arquivo": "src/core/http/espera.ts",
+   "linha": 23,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Você fez muitas perguntas seguidas. Tente de novo daqui a cerca de {horas} horas.",
+   "arquivo": "src/core/http/espera.ts",
+   "linha": 24,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Você atingiu o limite de uso de hoje. Tente de novo mais tarde.",
+   "arquivo": "src/core/http/espera.ts",
+   "linha": 43,
+   "tipo": "texto"
+  },
+  {
+   "texto": "agenda de hoje",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 94,
+   "tipo": "prop:agenda_de_hoje"
+  },
+  {
+   "texto": "meu dia",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 94,
+   "tipo": "prop:agenda_de_hoje"
+  },
+  {
+   "texto": "como ta o dia",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 94,
+   "tipo": "prop:agenda_de_hoje"
+  },
+  {
+   "texto": "como esta o dia",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 94,
+   "tipo": "prop:agenda_de_hoje"
+  },
+  {
+   "texto": "proxim* cliente",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 94,
+   "tipo": "prop:agenda_de_hoje"
+  },
+  {
+   "texto": "quem vem",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 95,
+   "tipo": "prop:agenda_de_hoje"
+  },
+  {
+   "texto": "quem e a proxima",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 95,
+   "tipo": "prop:agenda_de_hoje"
+  },
+  {
+   "texto": "quem e o proximo",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 95,
+   "tipo": "prop:agenda_de_hoje"
+  },
+  {
+   "texto": "quanto atendi",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 95,
+   "tipo": "prop:agenda_de_hoje"
+  },
+  {
+   "texto": "atendido hoje",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 96,
+   "tipo": "prop:agenda_de_hoje"
+  },
+  {
+   "texto": "tem alguem",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 96,
+   "tipo": "prop:agenda_de_hoje"
+  },
+  {
+   "texto": "parou de vir",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 99,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "pararam de vir",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 99,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "nao voltou",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 99,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "nao voltaram",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 99,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "chamar de volta",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 100,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "quem chamar",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 100,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "chamo primeiro",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 100,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "em risco",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 100,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "dinheiro parado",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 101,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "valor parado",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 101,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "passou da hora",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 101,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "passaram da hora",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 101,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "faz tempo que nao",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 101,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "nao aparece",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 101,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "nao aparecem",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 101,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "devendo visita",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 102,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "faz tempo",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 102,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "sem vir",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 102,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "ultima vez",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 105,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "veio pela ultima",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 105,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "quando veio",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 105,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "quando foi",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 105,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "ficha d*",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 105,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "telefone d*",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 106,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "dados d*",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 106,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "quantas vezes",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 106,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "ja veio",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 106,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "quando vem",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 106,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "vem de novo",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 106,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "quanto tempo",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 106,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "nao vem",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 107,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "costuma vir",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 107,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "costume d*",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 107,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "com quem",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 107,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "ser atendid*",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 107,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "e atendid*",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 107,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "de quanto em quanto",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 107,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "faz isso",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 111,
+   "tipo": "prop:chamar_de_volta"
+  },
+  {
+   "texto": "pode fazer",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 111,
+   "tipo": "prop:chamar_de_volta"
+  },
+  {
+   "texto": "pode mandar",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 111,
+   "tipo": "prop:chamar_de_volta"
+  },
+  {
+   "texto": "manda mensagem",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 111,
+   "tipo": "prop:chamar_de_volta"
+  },
+  {
+   "texto": "mandar mensagem",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 111,
+   "tipo": "prop:chamar_de_volta"
+  },
+  {
+   "texto": "chama ela",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 112,
+   "tipo": "prop:chamar_de_volta"
+  },
+  {
+   "texto": "chama ele",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 112,
+   "tipo": "prop:chamar_de_volta"
+  },
+  {
+   "texto": "chamar ela",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 112,
+   "tipo": "prop:chamar_de_volta"
+  },
+  {
+   "texto": "chamar ele",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 112,
+   "tipo": "prop:chamar_de_volta"
+  },
+  {
+   "texto": "manda pra ela",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 112,
+   "tipo": "prop:chamar_de_volta"
+  },
+  {
+   "texto": "manda pra ele",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 112,
+   "tipo": "prop:chamar_de_volta"
+  },
+  {
+   "texto": "de volta",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 113,
+   "tipo": "prop:chamar_de_volta"
+  },
+  {
+   "texto": "quanto entrou",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 116,
+   "tipo": "prop:faturamento"
+  },
+  {
+   "texto": "quanto fiz",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 116,
+   "tipo": "prop:faturamento"
+  },
+  {
+   "texto": "quanto eu fiz",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 116,
+   "tipo": "prop:faturamento"
+  },
+  {
+   "texto": "quanto ganhei",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 117,
+   "tipo": "prop:faturamento"
+  },
+  {
+   "texto": "como foi o mes",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 117,
+   "tipo": "prop:faturamento"
+  },
+  {
+   "texto": "como foi a semana",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 117,
+   "tipo": "prop:faturamento"
+  },
+  {
+   "texto": "ganho liquido",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 120,
+   "tipo": "prop:sobra"
+  },
+  {
+   "texto": "no bolso",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 120,
+   "tipo": "prop:sobra"
+  },
+  {
+   "texto": "depois dos custos",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 120,
+   "tipo": "prop:sobra"
+  },
+  {
+   "texto": "horario vago",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 123,
+   "tipo": "botão"
+  },
+  {
+   "texto": "horario livre",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 123,
+   "tipo": "botão"
+  },
+  {
+   "texto": "horarios vagos",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 123,
+   "tipo": "botão"
+  },
+  {
+   "texto": "horarios livres",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 123,
+   "tipo": "botão"
+  },
+  {
+   "texto": "sobrou horario",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 123,
+   "tipo": "botão"
+  },
+  {
+   "texto": "sobra horario",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 124,
+   "tipo": "botão"
+  },
+  {
+   "texto": "tem horario",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 124,
+   "tipo": "botão"
+  },
+  {
+   "texto": "tem vaga",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 124,
+   "tipo": "botão"
+  },
+  {
+   "texto": "agenda livre",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 124,
+   "tipo": "botão"
+  },
+  {
+   "texto": "agenda cheia",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 124,
+   "tipo": "botão"
+  },
+  {
+   "texto": "buraco na agenda",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 125,
+   "tipo": "botão"
+  },
+  {
+   "texto": "quantos agendamentos",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 125,
+   "tipo": "botão"
+  },
+  {
+   "texto": "cabe mais",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 125,
+   "tipo": "botão"
+  },
+  {
+   "texto": "mais fraco",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 125,
+   "tipo": "botão"
+  },
+  {
+   "texto": "mais parado",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 125,
+   "tipo": "botão"
+  },
+  {
+   "texto": "sem resposta",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 129,
+   "tipo": "prop:orcamentos"
+  },
+  {
+   "texto": "nao respondeu",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 129,
+   "tipo": "prop:orcamentos"
+  },
+  {
+   "texto": "proposta parada",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 129,
+   "tipo": "prop:orcamentos"
+  },
+  {
+   "texto": "perto de vencer",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 132,
+   "tipo": "prop:estoque"
+  },
+  {
+   "texto": "falta produto",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 133,
+   "tipo": "prop:estoque"
+  },
+  {
+   "texto": "agenda a",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 138,
+   "tipo": "prop:agendar"
+  },
+  {
+   "texto": "agenda o",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 138,
+   "tipo": "prop:agendar"
+  },
+  {
+   "texto": "agenda pra",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 138,
+   "tipo": "prop:agendar"
+  },
+  {
+   "texto": "bota na agenda",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 138,
+   "tipo": "prop:agendar"
+  },
+  {
+   "texto": "coloca na agenda",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 138,
+   "tipo": "prop:agendar"
+  },
+  {
+   "texto": "poe na agenda",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 139,
+   "tipo": "prop:agendar"
+  },
+  {
+   "texto": "ja atendi",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 142,
+   "tipo": "prop:concluir_atendimento"
+  },
+  {
+   "texto": "marca como atendid*",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 142,
+   "tipo": "prop:concluir_atendimento"
+  },
+  {
+   "texto": "deu baixa",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 143,
+   "tipo": "prop:concluir_atendimento"
+  },
+  {
+   "texto": "dar baixa",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 143,
+   "tipo": "prop:concluir_atendimento"
+  },
+  {
+   "texto": "fecha o atendimento",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 143,
+   "tipo": "prop:concluir_atendimento"
+  },
+  {
+   "texto": "cliente nova",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 146,
+   "tipo": "prop:cadastrar_cliente"
+  },
+  {
+   "texto": "cliente novo",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 146,
+   "tipo": "prop:cadastrar_cliente"
+  },
+  {
+   "texto": "nova cliente",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 146,
+   "tipo": "prop:cadastrar_cliente"
+  },
+  {
+   "texto": "novo cliente",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 146,
+   "tipo": "prop:cadastrar_cliente"
+  },
+  {
+   "texto": "adiciona* cliente",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 147,
+   "tipo": "prop:cadastrar_cliente"
+  },
+  {
+   "texto": "salva o contato",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 147,
+   "tipo": "prop:cadastrar_cliente"
+  },
+  {
+   "texto": "lanca na conta",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 150,
+   "tipo": "prop:item_na_comanda"
+  },
+  {
+   "texto": "poe na conta",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 150,
+   "tipo": "prop:item_na_comanda"
+  },
+  {
+   "texto": "coloca na conta",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 150,
+   "tipo": "prop:item_na_comanda"
+  },
+  {
+   "texto": "cobra tambem",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 151,
+   "tipo": "prop:item_na_comanda"
+  },
+  {
+   "texto": "nota na ficha",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 154,
+   "tipo": "prop:nota_na_ficha"
+  },
+  {
+   "texto": "escreve na ficha",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 154,
+   "tipo": "prop:nota_na_ficha"
+  },
+  {
+   "texto": "registra na ficha",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 155,
+   "tipo": "prop:nota_na_ficha"
+  },
+  {
+   "texto": "guarda que",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 155,
+   "tipo": "prop:nota_na_ficha"
+  },
+  {
+   "texto": "por que",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 158,
+   "tipo": "prop:por_que"
+  },
+  {
+   "texto": "por qual motivo",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 158,
+   "tipo": "prop:por_que"
+  },
+  {
+   "texto": "e se",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 162,
+   "tipo": "prop:simular"
+  },
+  {
+   "texto": "se eu",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 162,
+   "tipo": "prop:simular"
+  },
+  {
+   "texto": "quanto daria",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 162,
+   "tipo": "prop:simular"
+  },
+  {
+   "texto": "vale a pena",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 162,
+   "tipo": "prop:simular"
+  },
+  {
+   "texto": "o que acontece se",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 163,
+   "tipo": "prop:simular"
+  },
+  {
+   "texto": "e se eu",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 163,
+   "tipo": "prop:simular"
+  },
+  {
+   "texto": "bom dia",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 172,
+   "tipo": "botão"
+  },
+  {
+   "texto": "boa tarde",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 172,
+   "tipo": "botão"
+  },
+  {
+   "texto": "boa noite",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 172,
+   "tipo": "botão"
+  },
+  {
+   "texto": "e ai",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 172,
+   "tipo": "botão"
+  },
+  {
+   "texto": "tudo bem",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 172,
+   "tipo": "botão"
+  },
+  {
+   "texto": "o que voce faz",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 176,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "o que voce sabe",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 176,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "como funciona",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 176,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "o que posso perguntar",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 176,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "o que da pra perguntar",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 177,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "depois de amanha",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 263,
+   "tipo": "texto"
+  },
+  {
+   "texto": "semana que vem",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 264,
+   "tipo": "texto"
+  },
+  {
+   "texto": "semana passada",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 265,
+   "tipo": "texto"
+  },
+  {
+   "texto": "proxima semana",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 266,
+   "tipo": "texto"
+  },
+  {
+   "texto": "esta semana",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 267,
+   "tipo": "texto"
+  },
+  {
+   "texto": "essa semana",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 268,
+   "tipo": "texto"
+  },
+  {
+   "texto": "nesta semana",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 269,
+   "tipo": "texto"
+  },
+  {
+   "texto": "nessa semana",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 270,
+   "tipo": "texto"
+  },
+  {
+   "texto": "da semana",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 271,
+   "tipo": "texto"
+  },
+  {
+   "texto": "na semana",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 272,
+   "tipo": "texto"
+  },
+  {
+   "texto": "mes que vem",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 273,
+   "tipo": "texto"
+  },
+  {
+   "texto": "mes passado",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 274,
+   "tipo": "texto"
+  },
+  {
+   "texto": "proximo mes",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 275,
+   "tipo": "texto"
+  },
+  {
+   "texto": "este mes",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 276,
+   "tipo": "texto"
+  },
+  {
+   "texto": "esse mes",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 277,
+   "tipo": "texto"
+  },
+  {
+   "texto": "neste mes",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 278,
+   "tipo": "texto"
+  },
+  {
+   "texto": "nesse mes",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 279,
+   "tipo": "texto"
+  },
+  {
+   "texto": "do mes",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 280,
+   "tipo": "texto"
+  },
+  {
+   "texto": "no mes",
+   "arquivo": "src/core/inteligencia/entender.ts",
+   "linha": 281,
+   "tipo": "texto"
+  },
+  {
+   "texto": "março",
+   "arquivo": "src/core/inteligencia/explicar.ts",
+   "linha": 22,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{nome} de {inicio.year}",
+   "arquivo": "src/core/inteligencia/explicar.ts",
+   "linha": 26,
+   "tipo": "texto"
+  },
+  {
+   "texto": "1º de {nome}",
+   "arquivo": "src/core/inteligencia/explicar.ts",
+   "linha": 28,
+   "tipo": "texto"
+  },
+  {
+   "texto": "1 a {ultimo.day} de {nome}",
+   "arquivo": "src/core/inteligencia/explicar.ts",
+   "linha": 28,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…} e {nomes[nomes.length - 1]}",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 29,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…} e mais {restantes}",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 35,
+   "tipo": "texto"
+  },
+  {
+   "texto": "na segunda",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 40,
+   "tipo": "texto"
+  },
+  {
+   "texto": "na terça",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 40,
+   "tipo": "texto"
+  },
+  {
+   "texto": "na quarta",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 40,
+   "tipo": "texto"
+  },
+  {
+   "texto": "na quinta",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 40,
+   "tipo": "texto"
+  },
+  {
+   "texto": "na sexta",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 40,
+   "tipo": "texto"
+  },
+  {
+   "texto": "no sábado",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 40,
+   "tipo": "texto"
+  },
+  {
+   "texto": "no domingo",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 40,
+   "tipo": "texto"
+  },
+  {
+   "texto": "hoje ({ddmm(dia)})",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 45,
+   "tipo": "texto"
+  },
+  {
+   "texto": "amanhã ({ddmm(dia)})",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 46,
+   "tipo": "texto"
+  },
+  {
+   "texto": "ontem ({ddmm(dia)})",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 47,
+   "tipo": "texto"
+  },
+  {
+   "texto": "em {ddmm(dia)}",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 49,
+   "tipo": "texto"
+  },
+  {
+   "texto": "1 agendamento marcado",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 52,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{n} agendamentos marcados",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 52,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ninguém falta confirmar hoje. Tudo certo!",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 57,
+   "tipo": "texto"
+  },
+  {
+   "texto": "1 cliente falta confirmar hoje: {lista}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 59,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{pendentes.length} clientes faltam confirmar hoje: {lista}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 59,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Você já atendeu {reais(centavos)} hoje, somando o preço de",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 69,
+   "tipo": "texto"
+  },
+  {
+   "texto": "tabela dos atendimentos concluídos. O que entrou de verdade, já com desconto e gorjeta, está no caixa.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 70,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{comMaiuscula(o.rotulo)} não há expediente cadastrado: a agenda está fechada, não vazia. Dá para cadastrar o horário em Config, Horários.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 86,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sim, {o.rotulo} você tem horário vago: {agendamentos(o.quantidade)}. Não há expediente cadastrado para esse dia.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 88,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sim, {o.rotulo} sua agenda está totalmente livre.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 91,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não, {o.rotulo} sua agenda já está cheia (100% ocupada).",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 92,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sim, {o.rotulo} você tem horário vago: {agendamentos(o.quantidade)}, {pct}% de ocupação.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 93,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ninguém precisa ser chamado agora, a base inteira está em dia.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 97,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Chame primeiro {primeiro.nome}: {reais(primeiro.valorCents)} em risco, ainda na janela de voltar.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 103,
+   "tipo": "texto"
+  },
+  {
+   "texto": "1 dia",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 104,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{primeiro.diasAtrasado} dias",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 104,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Chame primeiro {primeiro.nome}: {reais(primeiro.valorCents)} em risco, {dias} sem voltar.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 105,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ninguém para recuperar agora, toda a base está em dia.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 114,
+   "tipo": "texto"
+  },
+  {
+   "texto": "1 pessoa",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 115,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{quantidade} pessoas",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 115,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Dá para recuperar cerca de {reais(totalCents)}, de {quantas} que",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 117,
+   "tipo": "texto"
+  },
+  {
+   "texto": "estão atrasadas. É estimativa, não promessa: o preço do serviço de cada uma, multiplicado pela chance de voltar.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 118,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ninguém sumiu há mais de {dias} dias.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 125,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…} há mais de {dias} dias: {truncarLista(nomes)}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 126,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Você faturou {reais(centavos)} {periodo}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 131,
+   "tipo": "texto"
+  },
+  {
+   "texto": "taxa da maquininha",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 146,
+   "tipo": "texto"
+  },
+  {
+   "texto": "comissão",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 146,
+   "tipo": "texto"
+  },
+  {
+   "texto": "a hora de cadeira (aluguel e contas)",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 146,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ainda não desconta o custo fixo.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 148,
+   "tipo": "texto"
+  },
+  {
+   "texto": "A maquininha ainda não entra na conta: você não disse quanto ela cobra.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 149,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sobrou {reais(centavos)} {periodo}, já descontado {listarComE(partes)}.{…}",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 151,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nenhum orçamento parado, todos já tiveram resposta.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 155,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…} sem resposta: {truncarLista(nomes)}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 156,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não tem mais ninguém na agenda hoje.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 172,
+   "tipo": "texto"
+  },
+  {
+   "texto": "A próxima pessoa é {o.proximo.nome}, às {o.proximo.hora}",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 176,
+   "tipo": "texto"
+  },
+  {
+   "texto": ", e é a última de hoje.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 177,
+   "tipo": "texto"
+  },
+  {
+   "texto": ", e depois {…}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 177,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Até agora você atendeu {reais(o.atendidoCents)}, a preço de tabela.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 181,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{base} Comece por {…}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 188,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nenhum produto para recomprar nem perto de vencer.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 195,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Para recomprar: {truncarLista(recomprar)}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 197,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Vencido, não use: {truncarLista(vencidos)}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 198,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Perto de vencer: {truncarLista(vencendo)}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 199,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{o.nome} ainda não tem visita registrada.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 205,
+   "tipo": "texto"
+  },
+  {
+   "texto": ", hoje",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 207,
+   "tipo": "texto"
+  },
+  {
+   "texto": ", há 1 dia",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 207,
+   "tipo": "texto"
+  },
+  {
+   "texto": ", há {o.diasDesde} dias",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 207,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{o.nome} veio pela última vez em {o.ultima}{ha}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 208,
+   "tipo": "texto"
+  },
+  {
+   "texto": "São {o.visitas} visitas no total.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 210,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Tem horário marcado {o.proxima}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 211,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{nome} ainda não tem atendimento pago registrado.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 216,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{nome} já deixou {reais(ltvCents)} aqui, em {…}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 217,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{nome} ainda não veio vezes bastante para eu dizer um costume. Com 4 visitas concluídas já dá.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 225,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sobre {nome}: {…}",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 227,
+   "tipo": "texto"
+  },
+  {
+   "texto": "O telefone de {nome} é {formatarTelefone(telefone)}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 231,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{nome} não tem telefone cadastrado.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 231,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Achei mais de uma opção de {oQue}: {truncarLista(opcoes)}. Qual delas?",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 236,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{base} Os que existem: {truncarLista(alternativas)}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 241,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Mensagem pronta{nome ? ` para ${nome}` : ''}. Toque em \"Abrir no meu WhatsApp\" para mandar do seu número. Nada foi enviado ainda.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 249,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{detalhe ? `${detalhe} ` : ''}Confira no cartão e toque em confirmar para {oQue}. Nada foi feito ainda.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 257,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{reais(Math.abs(cents))} a {cents < 0 ? 'menos' : 'mais'}",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 266,
+   "tipo": "texto"
+  },
+  {
+   "texto": "1 atendimento",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 267,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{n} atendimentos",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 267,
+   "tipo": "texto"
+  },
+  {
+   "texto": "menos de 1%",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 271,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não houve comanda fechada de {antes.rotulo} nem de {agora.rotulo}, então não há o que comparar.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 286,
+   "tipo": "texto"
+  },
+  {
+   "texto": "De {agora.rotulo} entraram {reais(agora.receitaCents)} em {…}. De {antes.rotulo} não houve comanda fechada, então não dá para comparar.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 289,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ficou igual: {reais(agora.receitaCents)} de {agora.rotulo} e de {antes.rotulo}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 291,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Caiu",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 293,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Subiu",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 293,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{verbo} {…} ({porcento(o.deltaBps ?? 0)}) de {antes.rotulo} para {agora.rotulo}: {reais(agora.receitaCents)} contra {reais(antes.receitaCents)}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 294,
+   "tipo": "texto"
+  },
+  {
+   "texto": "o número de atendimentos: {agora.atendimentos} contra {antes.atendimentos} ({…})",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 296,
+   "tipo": "texto"
+  },
+  {
+   "texto": "o valor médio por atendimento: {…} contra {…} ({…})",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 297,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Também mexeu {outro}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 304,
+   "tipo": "texto"
+  },
+  {
+   "texto": "O valor médio por atendimento ficou praticamente igual.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 306,
+   "tipo": "texto"
+  },
+  {
+   "texto": "O número de atendimentos ficou praticamente igual.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 307,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{abertura} O que mais pesou foi {principal}.{complemento}",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 308,
+   "tipo": "texto"
+  },
+  {
+   "texto": "1 pessoa que costuma voltar ainda não voltou",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 317,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{quantidade} pessoas que costumam voltar ainda não voltaram",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 317,
+   "tipo": "texto"
+  },
+  {
+   "texto": "E {quem}: dá para recuperar cerca de {reais(totalCents)} (estimativa, não promessa).",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 318,
+   "tipo": "texto"
+  },
+  {
+   "texto": "se todo mundo continuar vindo",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 338,
+   "tipo": "texto"
+  },
+  {
+   "texto": "se não vier ninguém a mais",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 338,
+   "tipo": "texto"
+  },
+  {
+   "texto": "deixar de vir",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 340,
+   "tipo": "texto"
+  },
+  {
+   "texto": "deixarem de vir",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 340,
+   "tipo": "texto"
+  },
+  {
+   "texto": "vier a mais",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 340,
+   "tipo": "texto"
+  },
+  {
+   "texto": "vierem a mais",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 340,
+   "tipo": "texto"
+  },
+  {
+   "texto": "se {n} em cada 10 {verbo}",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 341,
+   "tipo": "texto"
+  },
+  {
+   "texto": "se {…} {verbo}",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 341,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Empata se até {o.empateEmCem} em cada 100 deixarem de vir.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 345,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Para empatar, precisam vir {o.empateEmCem} a mais em cada 100.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 346,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{base} A {reais(o.precoNovoCents)}: {cenarios.join('; ')}. {empate} Quem decide o preço é você: eu não mudo nada.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 347,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nos últimos 30 dias não sobrou nada por atendimento (ou não houve comanda fechada), então por essa conta nenhum volume paga {reais(custoMensalCents)} por mês.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 355,
+   "tipo": "texto"
+  },
+  {
+   "texto": "mais do que o negócio inteiro faz hoje ({o.atendimentosHojePorMes} por mês)",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 359,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…}% do que o negócio faz hoje ({o.atendimentosHojePorMes} por mês)",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 360,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nos últimos 30 dias sobraram {…} por atendimento, depois de material, comissão e o que mais o caixa já desconta.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 362,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Para pagar {reais(o.custoMensalCents)} por mês, a pessoa nova precisa trazer {…} a mais por mês: {comparacao}.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 363,
+   "tipo": "texto"
+  },
+  {
+   "texto": "A conta não inclui o tempo até a agenda dela encher.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 364,
+   "tipo": "texto"
+  },
+  {
+   "texto": "terça",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 368,
+   "tipo": "texto"
+  },
+  {
+   "texto": "sábado",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 368,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nos últimos 30 dias ninguém procurou horário em dia fechado pela sua página de agendamento. Isso não prova que ninguém viria: só que ninguém procurou por lá.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 379,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nos últimos 30 dias ninguém procurou horário {dia} pela sua página de agendamento. Isso não prova que ninguém viria: só que ninguém procurou por lá.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 384,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nos últimos 30 dias, {…} {dia} caíram sem horário na sua página de agendamento.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 387,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Procura não é atendimento, então não viro isso em dinheiro: é o sinal para você pesar junto com o custo de abrir.",
+   "arquivo": "src/core/inteligencia/falar.ts",
+   "linha": 388,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui consultar isso agora. Tente de novo em instantes.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 73,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Isso não está liberado no seu acesso ou no seu plano.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 74,
+   "tipo": "texto"
+  },
+  {
+   "texto": "a agenda de hoje",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 77,
+   "tipo": "prop:agenda_de_hoje"
+  },
+  {
+   "texto": "quem passou da hora de voltar",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 78,
+   "tipo": "prop:quem_sumiu"
+  },
+  {
+   "texto": "o histórico de alguém",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 79,
+   "tipo": "prop:historico_cliente"
+  },
+  {
+   "texto": "quanto faturou",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 80,
+   "tipo": "prop:faturamento"
+  },
+  {
+   "texto": "quanto sobrou",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 81,
+   "tipo": "prop:sobra"
+  },
+  {
+   "texto": "horário vago",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 82,
+   "tipo": "botão"
+  },
+  {
+   "texto": "orçamentos parados",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 83,
+   "tipo": "prop:orcamentos"
+  },
+  {
+   "texto": "o estoque",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 84,
+   "tipo": "prop:estoque"
+  },
+  {
+   "texto": "marcar um horário",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 85,
+   "tipo": "prop:agendar"
+  },
+  {
+   "texto": "concluir um atendimento",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 86,
+   "tipo": "prop:concluir_atendimento"
+  },
+  {
+   "texto": "cadastrar alguém",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 87,
+   "tipo": "prop:cadastrar_cliente"
+  },
+  {
+   "texto": "lançar na comanda",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 88,
+   "tipo": "prop:item_na_comanda"
+  },
+  {
+   "texto": "anotar na ficha",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 89,
+   "tipo": "prop:nota_na_ficha"
+  },
+  {
+   "texto": "chamar alguém de volta",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 90,
+   "tipo": "prop:chamar_de_volta"
+  },
+  {
+   "texto": "o porquê de uma variação",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 91,
+   "tipo": "prop:por_que"
+  },
+  {
+   "texto": "uma simulação",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 92,
+   "tipo": "prop:simular"
+  },
+  {
+   "texto": "quem sumiu",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 99,
+   "tipo": "texto"
+  },
+  {
+   "texto": "como está o dia",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 100,
+   "tipo": "texto"
+  },
+  {
+   "texto": "tem horário vago amanhã",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 101,
+   "tipo": "texto"
+  },
+  {
+   "texto": "quanto faturei este mês",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 102,
+   "tipo": "texto"
+  },
+  {
+   "texto": "quando a Maria veio pela última vez",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 103,
+   "tipo": "texto"
+  },
+  {
+   "texto": "tem orçamento sem resposta",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 104,
+   "tipo": "texto"
+  },
+  {
+   "texto": "o que está acabando no estoque",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 105,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Dá para perguntar, por exemplo: {…}.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 110,
+   "tipo": "texto"
+  },
+  {
+   "texto": "março",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 152,
+   "tipo": "texto"
+  },
+  {
+   "texto": "neste mês, até agora",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 159,
+   "tipo": "texto"
+  },
+  {
+   "texto": "neste mês",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 159,
+   "tipo": "texto"
+  },
+  {
+   "texto": "em {MESES[m! - 1]} de {ano}",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 161,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Por {…} eu ainda não separo, então vai o mês inteiro.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 174,
+   "tipo": "prop:aviso"
+  },
+  {
+   "texto": "Ainda não sei responder isso.{sugestoes(ctx)}",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 186,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Você quer saber {ROTULO[ent.opcoes[0]]} ou {ROTULO[ent.opcoes[1]]}?",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 187,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Por nada.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 194,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Oi! O que você quer saber?{sugestoes(ctx)}",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 194,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Respondo sobre a sua agenda, quem passou da hora de voltar, o caixa e o estoque, e preparo horário, cadastro e anotação para você confirmar.{sugestoes(ctx)}",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 196,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Quanto essa pessoa custaria por mês, com tudo? Por exemplo: \"e se eu contratar alguém por R$ 2.500?\"",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 206,
+   "tipo": "texto"
+  },
+  {
+   "texto": "De qual serviço? Por exemplo: \"e se eu subir o corte para R$ 55?\"",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 212,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Para quanto? Por exemplo: \"e se eu subir {servico} para R$ 55?\" ou \"10% a mais\".",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 215,
+   "tipo": "texto"
+  },
+  {
+   "texto": "A agenda eu resumo por dia. Pergunte por um dia, como \"tem vaga sexta?\".",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 223,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ainda não comparo os dias da semana entre si. Pergunte por um dia, como \"tem vaga sexta?\".",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 228,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Horário vago eu olho por dia. Pergunte por um dia, como \"tem vaga sexta?\".",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 230,
+   "tipo": "texto"
+  },
+  {
+   "texto": "De quem? Me diga o nome.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 250,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Pra quando? Diga o dia e a hora, por exemplo: \"marca a Joana amanhã às 15h pra escova\".",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 256,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Pra quem? Diga o nome e o serviço, por exemplo: \"marca a Joana amanhã às 15h pra escova\".",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 262,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Qual serviço para {primeiro.palavras.join(' ')}?",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 263,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Concluir o atendimento de quem?",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 275,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Qual o nome da pessoa?",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 285,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Qual o telefone de {nome}? Sem ele eu não preparo o cadastro.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 287,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Diga o que lançar e na comanda de quem, por exemplo: \"lança uma hidratação na comanda da Ana\".",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 293,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Chamar quem? Diga o nome, por exemplo \"chama a Maria\", ou pergunte antes \"quem eu chamo primeiro?\" e depois diga \"resolve\".",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 299,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Anotar na ficha de quem?",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 304,
+   "tipo": "texto"
+  },
+  {
+   "texto": "O que eu anoto na ficha de {nome}?",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 306,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Esse mês ainda não começou, então não há o que explicar.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 356,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "O que eu já sei explicar é o faturamento.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 359,
+   "tipo": "texto"
+  },
+  {
+   "texto": "ninguém com o nome",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 406,
+   "tipo": "prop:cliente"
+  },
+  {
+   "texto": "o serviço",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 407,
+   "tipo": "prop:servico"
+  },
+  {
+   "texto": "ninguém da equipe com o nome",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 408,
+   "tipo": "prop:profissional"
+  },
+  {
+   "texto": "atendimento em andamento de",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 409,
+   "tipo": "prop:atendimento"
+  },
+  {
+   "texto": "comanda aberta de",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 410,
+   "tipo": "prop:comanda"
+  },
+  {
+   "texto": "serviço nem produto com o nome",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 411,
+   "tipo": "prop:item"
+  },
+  {
+   "texto": "o produto",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 412,
+   "tipo": "prop:produto"
+  },
+  {
+   "texto": "{base} É só pedir de novo com o nome, por exemplo: \"... com a {(r.opcoes ?? [''])[0]}\".",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 422,
+   "tipo": "texto"
+  },
+  {
+   "texto": "o que você pediu:",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 425,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{base} Se for alguém novo, diga o telefone junto, que eu já preparo o cadastro com o horário.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 427,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Já existe uma ficha com esse telefone: {nome}. Não preparei outra, para o histórico não se partir em dois.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 431,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não há atendimento em andamento para concluir. Primeiro marque que a pessoa chegou, na agenda.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 434,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não há comanda aberta hoje. A comanda abre quando o atendimento é concluído.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 435,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{quemFoi} não está na lista de quem passou da hora de voltar: pode estar em dia, ou ainda sem ritmo medido.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 437,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{quemFoi} pediu para não receber mensagem. Não preparei nada.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 438,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não deu para preparar isso agora.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 439,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{resumo.cliente}, {resumo.servico}, {…} às {…}:{…}",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 450,
+   "tipo": "texto"
+  },
+  {
+   "texto": "com {resumo.profissional}",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 451,
+   "tipo": "texto"
+  },
+  {
+   "texto": "cadastrar e marcar",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 454,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Concluir o atendimento de {resumo.cliente}.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 457,
+   "tipo": "texto"
+  },
+  {
+   "texto": "lançar",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 461,
+   "tipo": "texto"
+  },
+  {
+   "texto": "salvar a anotação",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 463,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Cliente",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 531,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Cliente",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 534,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Ninguém passou da hora de voltar agora. Não há quem chamar.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 563,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{p.servico ?? 'Esse serviço'} não tem um preço fechado (é por hora, diária ou sob orçamento), então não há um preço para simular assim.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 598,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{r.servico} não teve atendimento concluído nos últimos {r.dias} dias, então não há volume para simular.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 602,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{reais(r.precoNovoCents)} já é o preço de hoje de {r.servico}: não há o que simular.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 604,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{base} O mais antigo está parado há {…}.",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 636,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não achei ninguém chamado \"{termo}\".",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 648,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…} às {…}",
+   "arquivo": "src/core/inteligencia/planejar.ts",
+   "linha": 670,
+   "tipo": "prop:proxima"
+  },
+  {
+   "texto": "Quanto entrou no mês",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 23,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "quanto faturei este mês?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 23,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Quanto sobrou no mês",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 24,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "quanto sobrou este mês?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 24,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Quem sumiu",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 25,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "quem sumiu?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 25,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Como está o dia",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 26,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "como está o meu dia?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 26,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Horário vago amanhã",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 27,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "tem horário vago amanhã?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 27,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Orçamentos parados",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 28,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "tem orçamento sem resposta?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 28,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "O que está acabando",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 29,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "o que está acabando no estoque?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 29,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Por quê?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 59,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "por quê?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 59,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "E o mês passado?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 60,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "e no mês passado?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 60,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Quanto dá para recuperar",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 66,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "quanto dá para recuperar?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 66,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Quem eu chamo primeiro",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 67,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "quem eu chamo primeiro?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 67,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Quem falta confirmar",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 70,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "quem eu preciso confirmar hoje?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 70,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "E amanhã?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 74,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "e amanhã?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 74,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "E depois de amanhã?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 75,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "e depois de amanhã?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 75,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Quanto já gastou",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 79,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "quanto {o.nomeDaPessoa} já gastou comigo?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 79,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Qual o telefone",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 80,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "qual o telefone de {o.nomeDaPessoa}?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 80,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "Que dia costuma vir",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 81,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "que dia {o.nomeDaPessoa} costuma vir?",
+   "arquivo": "src/core/inteligencia/proximos.ts",
+   "linha": 81,
+   "tipo": "prop:pergunta"
+  },
+  {
+   "texto": "março",
+   "arquivo": "src/core/legal/versoes.ts",
+   "linha": 19,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{dia} de {MESES[mes! - 1]} de {ano}",
+   "arquivo": "src/core/legal/versoes.ts",
+   "linha": 24,
+   "tipo": "texto"
+  },
+  {
+   "texto": "1x por mês",
+   "arquivo": "src/core/loyalty/motor-de-precificacao.ts",
+   "linha": 64,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "{sessoes}x por mês",
+   "arquivo": "src/core/loyalty/motor-de-precificacao.ts",
+   "linha": 64,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "É por aqui que a confirmação chega.",
+   "arquivo": "src/core/messaging/promessa.ts",
+   "linha": 30,
+   "tipo": "texto"
+  },
+  {
+   "texto": "É por aqui que quem vai te atender fala com você.",
+   "arquivo": "src/core/messaging/promessa.ts",
+   "linha": 34,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Pausado. Nenhuma mensagem para cliente parte do CICLO enquanto estiver assim.",
+   "arquivo": "src/core/messaging/promessa.ts",
+   "linha": 64,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ligado. Lembrete de agendamento e campanha de recuperação saem sozinhos, no horário certo.",
+   "arquivo": "src/core/messaging/promessa.ts",
+   "linha": 66,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Liberado, mas o disparo é seu: a mensagem vai quando você toca em \"Chamar\", pelo seu WhatsApp.",
+   "arquivo": "src/core/messaging/promessa.ts",
+   "linha": 71,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Seu cliente marca pelo seu link, sem baixar app nenhum.",
+   "arquivo": "src/core/onboarding/perfil.ts",
+   "linha": 112,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Você não escolhe prazo de retorno: o CICLO calcula o ritmo de cada cliente pelas visitas.",
+   "arquivo": "src/core/onboarding/perfil.ts",
+   "linha": 113,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…} e {…}",
+   "arquivo": "src/core/onboarding/perfil.ts",
+   "linha": 117,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…}{lista.slice(1)} {verbo} do jeito que você já conhece.",
+   "arquivo": "src/core/onboarding/perfil.ts",
+   "linha": 119,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Advocacia",
+   "arquivo": "src/core/pacotes/advocacia.ts",
+   "linha": 21,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Hoje",
+   "arquivo": "src/core/pacotes/advocacia.ts",
+   "linha": 23,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Casos",
+   "arquivo": "src/core/pacotes/advocacia.ts",
+   "linha": 24,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Agenda",
+   "arquivo": "src/core/pacotes/advocacia.ts",
+   "linha": 25,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Clientes",
+   "arquivo": "src/core/pacotes/advocacia.ts",
+   "linha": 26,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Pendências",
+   "arquivo": "src/core/pacotes/advocacia.ts",
+   "linha": 28,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "pendência",
+   "arquivo": "src/core/pacotes/advocacia.ts",
+   "linha": 32,
+   "tipo": "prop:pendencia"
+  },
+  {
+   "texto": "intimação",
+   "arquivo": "src/core/pacotes/advocacia.ts",
+   "linha": 33,
+   "tipo": "botão"
+  },
+  {
+   "texto": "direção",
+   "arquivo": "src/core/pacotes/advocacia.ts",
+   "linha": 34,
+   "tipo": "prop:direcao"
+  },
+  {
+   "texto": "estágio",
+   "arquivo": "src/core/pacotes/advocacia.ts",
+   "linha": 37,
+   "tipo": "prop:estagio"
+  },
+  {
+   "texto": "Padrão",
+   "arquivo": "src/core/pacotes/base.ts",
+   "linha": 22,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Hoje",
+   "arquivo": "src/core/pacotes/base.ts",
+   "linha": 24,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Agenda",
+   "arquivo": "src/core/pacotes/base.ts",
+   "linha": 25,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Clientes",
+   "arquivo": "src/core/pacotes/base.ts",
+   "linha": 26,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Marcar",
+   "arquivo": "src/core/pacotes/base.ts",
+   "linha": 27,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Recuperar receita",
+   "arquivo": "src/core/pacotes/base.ts",
+   "linha": 29,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Sob orçamento",
+   "arquivo": "src/core/pricing/formatar.ts",
+   "linha": 37,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Consultar",
+   "arquivo": "src/core/pricing/formatar.ts",
+   "linha": 40,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…} (visita) + {formatarCentavos(taxa)}/hora",
+   "arquivo": "src/core/pricing/formatar.ts",
+   "linha": 48,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…} (diária) · {…} (meia diária)",
+   "arquivo": "src/core/pricing/formatar.ts",
+   "linha": 53,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…} (diária)",
+   "arquivo": "src/core/pricing/formatar.ts",
+   "linha": 54,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Domingo",
+   "arquivo": "src/core/recurrence/descrever.ts",
+   "linha": 3,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Segunda-feira",
+   "arquivo": "src/core/recurrence/descrever.ts",
+   "linha": 3,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Terça-feira",
+   "arquivo": "src/core/recurrence/descrever.ts",
+   "linha": 3,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Quarta-feira",
+   "arquivo": "src/core/recurrence/descrever.ts",
+   "linha": 3,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Quinta-feira",
+   "arquivo": "src/core/recurrence/descrever.ts",
+   "linha": 3,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sexta-feira",
+   "arquivo": "src/core/recurrence/descrever.ts",
+   "linha": 3,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sábado",
+   "arquivo": "src/core/recurrence/descrever.ts",
+   "linha": 3,
+   "tipo": "texto"
+  },
+  {
+   "texto": "última",
+   "arquivo": "src/core/recurrence/descrever.ts",
+   "linha": 7,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…}, toda semana",
+   "arquivo": "src/core/recurrence/descrever.ts",
+   "linha": 25,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…}, a cada {regra.intervaloSemanas} semanas",
+   "arquivo": "src/core/recurrence/descrever.ts",
+   "linha": 26,
+   "tipo": "texto"
+  },
+  {
+   "texto": "A cada {regra.intervaloDias} dias",
+   "arquivo": "src/core/recurrence/descrever.ts",
+   "linha": 28,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{…}, {…} do mês",
+   "arquivo": "src/core/recurrence/descrever.ts",
+   "linha": 30,
+   "tipo": "texto"
+  },
+  {
+   "texto": "O sistema foi atualizado e o banco de dados ainda não. Não é a sua internet, e nada do que você salvou foi perdido.",
+   "arquivo": "src/core/schema/causa-da-falha.ts",
+   "linha": 82,
+   "tipo": "prop:schema_defasado"
+  },
+  {
+   "texto": "Não consegui falar com o banco de dados agora. Nada do que você salvou foi perdido.",
+   "arquivo": "src/core/schema/causa-da-falha.ts",
+   "linha": 83,
+   "tipo": "prop:banco_fora"
+  },
+  {
+   "texto": "Pode ter sido a conexão. Nada do que você salvou foi perdido.",
+   "arquivo": "src/core/schema/causa-da-falha.ts",
+   "linha": 84,
+   "tipo": "prop:desconhecida"
+  },
+  {
+   "texto": "{faltando} migration(s) do meio não foram aplicadas",
+   "arquivo": "src/core/schema/versao.ts",
+   "linha": 84,
+   "tipo": "texto"
+  },
+  {
+   "texto": "falta a {ULTIMA_MIGRATION}{…}",
+   "arquivo": "src/core/schema/versao.ts",
+   "linha": 85,
+   "tipo": "texto"
+  },
+  {
+   "texto": "banco ATRÁS do código: {oQue} ({total} aplicadas, {MIGRATIONS_ESPERADAS} esperadas). O código no ar depende delas. Aplicar com `supabase db push` — não existe Action que faça isso sozinha.",
+   "arquivo": "src/core/schema/versao.ts",
+   "linha": 88,
+   "tipo": "prop:detail"
+  },
+  {
+   "texto": "banco à frente do código: {total} aplicadas contra {MIGRATIONS_ESPERADAS} esperadas. É a ordem segura de publicar (migration antes do deploy); vira problema só se o deploy não vier.",
+   "arquivo": "src/core/schema/versao.ts",
+   "linha": 95,
+   "tipo": "prop:detail"
+  },
+  {
+   "texto": "Sunday",
+   "arquivo": "src/core/seo/dados-estruturados.ts",
+   "linha": 36,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Monday",
+   "arquivo": "src/core/seo/dados-estruturados.ts",
+   "linha": 36,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Tuesday",
+   "arquivo": "src/core/seo/dados-estruturados.ts",
+   "linha": 36,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Wednesday",
+   "arquivo": "src/core/seo/dados-estruturados.ts",
+   "linha": 36,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Thursday",
+   "arquivo": "src/core/seo/dados-estruturados.ts",
+   "linha": 36,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Friday",
+   "arquivo": "src/core/seo/dados-estruturados.ts",
+   "linha": 36,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Saturday",
+   "arquivo": "src/core/seo/dados-estruturados.ts",
+   "linha": 36,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Serviços",
+   "arquivo": "src/core/seo/dados-estruturados.ts",
+   "linha": 127,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Offer",
+   "arquivo": "src/core/seo/dados-estruturados.ts",
+   "linha": 129,
+   "tipo": "prop:@type"
+  },
+  {
+   "texto": "Service",
+   "arquivo": "src/core/seo/dados-estruturados.ts",
+   "linha": 130,
+   "tipo": "prop:@type"
+  },
+  {
+   "texto": "R$ {…} - R$ {…}",
+   "arquivo": "src/core/seo/dados-estruturados.ts",
+   "linha": 136,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{diaNoFuso(timezone, quando)}T12:00:00Z",
+   "arquivo": "src/core/tempo/dia.ts",
+   "linha": 45,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Osso",
+   "arquivo": "src/core/text/cor.ts",
+   "linha": 41,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Menta",
+   "arquivo": "src/core/text/cor.ts",
+   "linha": 42,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Coral",
+   "arquivo": "src/core/text/cor.ts",
+   "linha": 43,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Lavanda",
+   "arquivo": "src/core/text/cor.ts",
+   "linha": 44,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Dourado",
+   "arquivo": "src/core/text/cor.ts",
+   "linha": 45,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Rosa",
+   "arquivo": "src/core/text/cor.ts",
+   "linha": 46,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Esse arquivo é uma planilha do Excel, e o importador lê CSV. No Excel: Arquivo, Salvar como, e escolha \"CSV UTF-8\". No Google Planilhas: Arquivo, Fazer download, \"Valores separados por vírgula\". Depois envie o arquivo novo.",
+   "arquivo": "src/core/text/decodificar-texto.ts",
+   "linha": 39,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{origem.replace(/\\/+$/, '')}/storage/v1/object/public/{BUCKET}/{chave}",
+   "arquivo": "src/core/text/vitrine.ts",
+   "linha": 43,
+   "tipo": "texto"
+  },
+  {
+   "texto": "serviço",
+   "arquivo": "src/core/text/vocabulario.ts",
+   "linha": 23,
+   "tipo": "prop:servico"
+  },
+  {
+   "texto": "{palavra.slice(0, -2)}ões",
+   "arquivo": "src/core/text/vocabulario.ts",
+   "linha": 65,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{palavra.slice(0, -3)}veis",
+   "arquivo": "src/core/text/vocabulario.ts",
+   "linha": 67,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{palavra.slice(0, -2)}ais",
+   "arquivo": "src/core/text/vocabulario.ts",
+   "linha": 68,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Atenção",
+   "arquivo": "src/core/vault/anamnese.ts",
+   "linha": 21,
+   "tipo": "texto"
+  }
+ ]
+}

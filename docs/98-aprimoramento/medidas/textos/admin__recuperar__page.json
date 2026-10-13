@@ -1,0 +1,601 @@
+{
+ "rota": "admin/recuperar/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/recuperar/page.tsx",
+  "src/app/admin/recuperar/prestacao.tsx",
+  "src/app/admin/recuperar/recuperar.tsx",
+  "src/components/ui/filter-row.tsx",
+  "src/app/admin/recuperar/fila.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/alert-banner.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/lib/formato.ts",
+  "src/components/ui/icone-anel.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/card.tsx",
+  "src/components/shell/vocabulario.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/chip.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/lib/contato.ts",
+  "src/lib/mensagens.ts",
+  "src/components/ui/skeleton.tsx",
+  "src/components/ui/stat-tile.tsx",
+  "src/components/ui/toast.tsx"
+ ],
+ "total": 87,
+ "textos": [
+  {
+   "texto": "Recuperar receita",
+   "arquivo": "src/app/admin/recuperar/page.tsx",
+   "linha": 23,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Recuperar receita",
+   "arquivo": "src/app/admin/recuperar/page.tsx",
+   "linha": 103,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Quem o Motor de Ciclo identificou em atraso para voltar.",
+   "arquivo": "src/app/admin/recuperar/page.tsx",
+   "linha": 104,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Campanhas",
+   "arquivo": "src/app/admin/recuperar/page.tsx",
+   "linha": 110,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "O Motor de Ciclo trouxe {…} este mês ( {atribuicao.count}",
+   "arquivo": "src/app/admin/recuperar/page.tsx",
+   "linha": 118,
+   "tipo": "texto",
+   "tag": "AlertBanner"
+  },
+  {
+   "texto": "O Motor ainda tem pouco histórico deste negócio: {contas.conferidas} {…} até agora. A taxa de acerto só é afirmada a partir de {MINIMO_PARA_AFIRMAR}.",
+   "arquivo": "src/app/admin/recuperar/prestacao.tsx",
+   "linha": 35,
+   "tipo": "texto"
+  },
+  {
+   "texto": "previsão conferida",
+   "arquivo": "src/app/admin/recuperar/prestacao.tsx",
+   "linha": 37,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "previsões conferidas",
+   "arquivo": "src/app/admin/recuperar/prestacao.tsx",
+   "linha": 37,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "O Motor acertou {percentual}% das {contas.conferidas} previsões já conferidas.",
+   "arquivo": "src/app/admin/recuperar/prestacao.tsx",
+   "linha": 43,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Acerto é a pessoa ter voltado até {TOLERANCIA_DIAS} dias da data prevista. Quem passou de um mês sem voltar conta como erro. Senão a nota subiria justamente quando o Motor errasse mais.",
+   "arquivo": "src/app/admin/recuperar/prestacao.tsx",
+   "linha": 50,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Quem volta costuma aparecer {…} {…} {…} do que o Motor previu.",
+   "arquivo": "src/app/admin/recuperar/prestacao.tsx",
+   "linha": 60,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "se confirmar; não entram na conta.",
+   "arquivo": "src/app/admin/recuperar/prestacao.tsx",
+   "linha": 71,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "previsão ainda pode",
+   "arquivo": "src/app/admin/recuperar/prestacao.tsx",
+   "linha": 71,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "previsões ainda podem",
+   "arquivo": "src/app/admin/recuperar/prestacao.tsx",
+   "linha": 71,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Quem vale mais a pena chamar de volta já leva em conta o histórico real deste salão.",
+   "arquivo": "src/app/admin/recuperar/prestacao.tsx",
+   "linha": 83,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Todas",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 36,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Na hora de voltar",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 37,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Atrasadas",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 38,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Em risco",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 39,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Perdidas",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 40,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Na hora de voltar",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 44,
+   "tipo": "prop:due"
+  },
+  {
+   "texto": "Atrasada",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 45,
+   "tipo": "prop:late"
+  },
+  {
+   "texto": "Em risco",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 46,
+   "tipo": "prop:at_risk"
+  },
+  {
+   "texto": "Perdida",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 47,
+   "tipo": "prop:lost"
+  },
+  {
+   "texto": "Não consegui atualizar a lista",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 105,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente trocar o filtro de novo.",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 105,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Anotado",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 134,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "{primeiroNome(item.name)} não aparece mais para chamar.",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 134,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui gravar",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 137,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente de novo. A pessoa continua na fila até gravar.",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 137,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Anotado",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 154,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Se {primeiro} marcar, a volta conta para o Motor de Ciclo.",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 154,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Já anotado nesta semana",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 157,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "A chamada anterior de {primeiro} continua valendo para o Motor.",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 157,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui anotar a chamada",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 160,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "A mensagem no WhatsApp não muda. Só esta volta pode não aparecer no que o Motor trouxe.",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 160,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Dá para recuperar",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 185,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "{…} de lucro",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 185,
+   "tipo": "prop:apoio"
+  },
+  {
+   "texto": "Estimativa, não promessa: como a conta é feita",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 199,
+   "tipo": "texto",
+   "tag": "summary"
+  },
+  {
+   "texto": "O preço do serviço de cada pessoa, multiplicado pela chance de ela voltar. Quanto mais tempo sem aparecer, menor a chance, e por isso quem sumiu há mais tempo vale menos aqui. A ordem da lista segue o lucro, o que sobra depois da comissão",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 201,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": ", não o preço.",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 203,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "e do produto",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 203,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "sem o custo do material, então a ordem da lista pode estar errada.",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 209,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "1 serviço está",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 209,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{servicosSemMaterial} serviços estão",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 209,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Completar o custo",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 212,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Filtrar por estado do ciclo",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 217,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Ordenar por",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 232,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Filtrar por classe do cliente",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 246,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Filtrar por perfil do cliente",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 253,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Carregando a lista.",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 276,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{lista.count} {…}, {…} para recuperar.{recorte ? ` ${recorte}` : ''}",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 277,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ninguém com esse recorte.",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 318,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Tirar os filtros",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 327,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Começar a fila ({…})",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 333,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "{item.lateDays}d de atraso",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 344,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "na janela",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 344,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{…} · nota {item.nota}{…}",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 348,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sem valor avulso",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 364,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "de lucro",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 368,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Pediu para não receber",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 393,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Chamar",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 406,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Chamar {item.name} pelo seu WhatsApp",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 402,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Não consegui recalcular agora",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 491,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Motor atualizado",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 498,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Nada para calcular ainda",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 498,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Sem conexão",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 505,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Tente de novo quando a internet voltar.",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 505,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Recalcular agora",
+   "arquivo": "src/app/admin/recuperar/recuperar.tsx",
+   "linha": 514,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Fila de chamadas",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 75,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "{feitos + 1} de {chamaveis.length} na fila de hoje",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 78,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{chamaveis.length} de {chamaveis.length} tratados hoje",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 78,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ver a lista",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 81,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "{atual.lateDays}d de atraso",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 90,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "na janela",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 90,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sem valor avulso",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 94,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{…} · {…} de lucro",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 95,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Chamar pelo WhatsApp",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 114,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Já falei",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 125,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Pular hoje",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 128,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Confirmar não chamar mais",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 133,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "{atual.name} sai da fila e do Chamar. Dá para desfazer na ficha.",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 135,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Confirmar",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 148,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 151,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Pediu para não ser chamado",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 157,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Fila de hoje concluída.",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 163,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Quem você chamou aparece em &ldquo;O Motor de Ciclo trouxe&rdquo; quando marcar pelo link.",
+   "arquivo": "src/app/admin/recuperar/fila.tsx",
+   "linha": 165,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

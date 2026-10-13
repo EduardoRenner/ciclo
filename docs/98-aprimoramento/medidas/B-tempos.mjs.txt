@@ -1,0 +1,190 @@
+// Agente B · tempo por rota no navegador (Playwright, build de produção local em :3200, banco LOCAL).
+// Perfis: celular (390×844, toque, CPU 4× mais lenta, rede 1,6 Mb/s / 150 ms) e computador (1280×800, sem limite).
+// Por rota: 1ª carga FRIA (contexto novo, cache HTTP vazio) + 4 QUENTES (mesmo contexto) = 5 repetições.
+// Mede: TTFB (responseStart), FCP, LCP, "conteúdo útil" (predicado da tela, ver ROTAS), CLS, tarefas longas
+// (> 50 ms), JS transferido (só na fria; na quente vem do cache), requisições.
+// Uso: node B-tempos.mjs <saida.json> [celular|computador|ambos] [filtro-de-rota]
+import { createHmac } from 'node:crypto';
+import { readFileSync, writeFileSync } from 'node:fs';
+
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs';
+
+const BASE = 'http://localhost:3200';
+const ESTADO = 'C:/temp/ciclo-medicao/estado-B-dono.json';
+const [, , arqSaida, perfilArg = 'ambos', filtro = ''] = process.argv;
+
+function chaveLocal() {
+  const env = readFileSync('C:/Users/Usuario/.claude/code/ciclo-aprimoramento/.env.local', 'utf8');
+  const get = (k) => new RegExp(`^${k}=(.*)$`, 'm').exec(env)?.[1]?.trim().replace(/^"|"$/g, '');
+  return get('PUBLIC_LINK_SIGNING_KEY') || get('CRON_SECRET');
+}
+function tokenConfirmacao(id) {
+  const exp = Date.now() + 72 * 3_600_000;
+  const payload = `confirmacao_agendamento.${id}.${exp}`;
+  const ass = createHmac('sha256', chaveLocal()).update(payload, 'utf8').digest('hex');
+  return Buffer.from(`${payload}.${ass}`, 'utf8').toString('base64url');
+}
+
+// Predicado de "conteúdo útil" (a CSP do app proíbe eval, então o predicado é uma função fixa + spec).
+// tipo: 'h2' (algum h2 casa), 'texto' (innerText do <main> casa), 'sel' (seletor existe), 'botao' (algum botão casa).
+const H2 = (re) => ({ tipo: 'h2', re });
+const TEXTO = (re) => ({ tipo: 'texto', re });
+const SEL = (sel) => ({ tipo: 'sel', sel });
+const BOTAO = (re) => ({ tipo: 'botao', re });
+function predicado(spec) {
+  const re = spec.re ? new RegExp(spec.re, 'i') : null;
+  let ok = false;
+  if (spec.tipo === 'h2') ok = [...document.querySelectorAll('h2')].some((h) => re.test(h.textContent || ''));
+  else if (spec.tipo === 'texto') ok = re.test((document.querySelector('main') || document.body).innerText || '');
+  else if (spec.tipo === 'sel') ok = !!document.querySelector(spec.sel);
+  else if (spec.tipo === 'botao') ok = [...document.querySelectorAll('button')].some((b) => re.test(b.textContent || ''));
+  return ok ? performance.now() : false;
+}
+const ROTAS = [
+  { nome: 'Hoje', path: '/admin/hoje', util: H2('A seguir|Vale a pena') },
+  { nome: 'Agenda', path: '/admin/agenda', util: TEXTO('ocupação do dia') },
+  { nome: 'Novo agendamento', path: '/admin/agenda/novo', util: SEL('main select') },
+  { nome: 'Caixa', path: '/admin/caixa', util: TEXTO('entrou no dia') },
+  { nome: 'Mês', path: '/admin/mes', util: TEXTO('sobrou') },
+  { nome: 'Clientes', path: '/admin/clientes', util: SEL('main li') },
+  { nome: 'Ficha do cliente', path: '/admin/clientes/b5a85dd1-6bb6-4393-b416-0c39f4ecc224', util: H2('Como atender') },
+  { nome: 'Recuperar', path: '/admin/recuperar', util: TEXTO('dá para recuperar') },
+  { nome: 'Campanhas', path: '/admin/campanhas', util: H2('Resultados') },
+  { nome: 'Config/serviços', path: '/admin/config/servicos', util: SEL('main li') },
+  { nome: 'Comanda (fechada)', path: '/admin/comanda/d549578a-64fe-40de-9f5e-8e1419817e55', util: TEXTO('comanda fechada') },
+  { nome: 'Comanda via agendamento (redirect)', path: '/admin/comanda/agendamento/acf0a230-3a9b-419d-bafc-881ceed00f14', util: TEXTO('comanda fechada') },
+  { nome: 'Página pública', path: '/demo-salao-encanto', anon: true, util: H2('Serviços') },
+  { nome: 'Agendar (público)', path: '/demo-salao-encanto/agendar', anon: true, util: BOTAO('Corte feminino') },
+  { nome: 'Confirmar por link', path: () => `/confirmar/${tokenConfirmacao('902e7636-83bd-4810-b4b7-d3e333994245')}`, anon: true, util: BOTAO('Vou sim|confirmad') },
+  { nome: 'Entrar', path: '/entrar', anon: true, util: SEL('input[name=email]') },
+].filter((r) => !filtro || r.nome.toLowerCase().includes(filtro.toLowerCase()));
+
+const PERFIS = {
+  celular: { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3, cpu: 4, rede: { latency: 150, downloadThroughput: (1.6e6 / 8) | 0, uploadThroughput: (0.75e6 / 8) | 0 } },
+  computador: { viewport: { width: 1280, height: 800 }, hasTouch: false, isMobile: false, deviceScaleFactor: 1, cpu: 1, rede: null },
+};
+
+const INIT = () => {
+  window.__m = { cls: 0, longas: [], lcp: 0 };
+  try {
+    new PerformanceObserver((l) => {
+      for (const e of l.getEntries()) if (!e.hadRecentInput) window.__m.cls += e.value;
+    }).observe({ type: 'layout-shift', buffered: true });
+  } catch {}
+  try {
+    new PerformanceObserver((l) => {
+      for (const e of l.getEntries()) window.__m.longas.push(Math.round(e.duration));
+    }).observe({ type: 'longtask', buffered: true });
+  } catch {}
+  try {
+    new PerformanceObserver((l) => {
+      for (const e of l.getEntries()) window.__m.lcp = e.startTime;
+    }).observe({ type: 'largest-contentful-paint', buffered: true });
+  } catch {}
+};
+
+async function prepararPagina(ctx, perfil) {
+  const page = await ctx.newPage();
+  const cdp = await ctx.newCDPSession(page);
+  if (perfil.cpu > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: perfil.cpu });
+  if (perfil.rede) {
+    await cdp.send('Network.enable');
+    await cdp.send('Network.emulateNetworkConditions', { offline: false, ...perfil.rede });
+  }
+  return page;
+}
+
+async function medirUma(page, url, util) {
+  const t0 = Date.now();
+  await page.goto(url, { waitUntil: 'commit', timeout: 120000 });
+  let utilMs = null;
+  try {
+    // Sonda pelo CDP (evaluate de função não passa por eval, então a CSP do app não bloqueia).
+    const fim = Date.now() + 60000;
+    while (Date.now() < fim) {
+      const v = await page.evaluate(predicado, util).catch(() => false);
+      if (v) {
+        utilMs = Math.round(v);
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 25));
+    }
+  } catch (e) {
+    if (process.env.DEBUG) console.log('util falhou:', String(e).slice(0, 200));
+  }
+  await page.waitForLoadState('networkidle', { timeout: 60000 }).catch(() => {});
+  await page.waitForTimeout(300);
+  const r = await page.evaluate(() => {
+    const nav = performance.getEntriesByType('navigation')[0];
+    const fcp = performance.getEntriesByName('first-contentful-paint')[0]?.startTime ?? null;
+    const res = performance.getEntriesByType('resource');
+    const js = res.filter((e) => e.initiatorType === 'script' || /\.js(\?|$)/.test(e.name));
+    return {
+      url: location.pathname,
+      ttfb: nav ? Math.round(nav.responseStart) : null,
+      docTransfer: nav ? nav.transferSize : null,
+      fcp: fcp && Math.round(fcp),
+      lcp: Math.round(window.__m?.lcp || 0),
+      cls: Math.round((window.__m?.cls || 0) * 1000) / 1000,
+      longas: window.__m?.longas || [],
+      jsTransferB: js.reduce((s, e) => s + (e.transferSize || 0), 0),
+      jsDecodedB: js.reduce((s, e) => s + (e.decodedBodySize || 0), 0),
+      jsArquivos: js.length,
+      requisicoes: res.length + 1,
+      carga: nav ? Math.round(nav.loadEventEnd) : null,
+    };
+  });
+  return { ...r, utilMs, paredeMs: Date.now() - t0 };
+}
+
+const mediana = (v) => {
+  const a = v.filter((x) => x != null).sort((x, y) => x - y);
+  if (!a.length) return null;
+  const m = Math.floor(a.length / 2);
+  return a.length % 2 ? a[m] : Math.round((a[m - 1] + a[m]) / 2);
+};
+const pior = (v) => (v.filter((x) => x != null).length ? Math.max(...v.filter((x) => x != null)) : null);
+
+const browser = await chromium.launch({ channel: 'chrome' });
+const saida = { quando: new Date().toISOString(), perfis: {} };
+const perfis = perfilArg === 'ambos' ? ['celular', 'computador'] : [perfilArg];
+try {
+  for (const nomePerfil of perfis) {
+    const perfil = PERFIS[nomePerfil];
+    saida.perfis[nomePerfil] = [];
+    for (const rota of ROTAS) {
+      const path = typeof rota.path === 'function' ? rota.path() : rota.path;
+      const ctx = await browser.newContext({ storageState: rota.anon ? undefined : ESTADO, viewport: perfil.viewport, hasTouch: perfil.hasTouch, isMobile: perfil.isMobile, deviceScaleFactor: perfil.deviceScaleFactor, locale: 'pt-BR', timezoneId: 'America/Sao_Paulo' });
+      await ctx.addInitScript(INIT);
+      const page = await prepararPagina(ctx, perfil);
+      const reps = [];
+      for (let i = 0; i < 5; i++) {
+        reps.push(await medirUma(page, BASE + path, rota.util));
+      }
+      await ctx.close();
+      const quentes = reps.slice(1);
+      const res = {
+        rota: rota.nome,
+        path: path.startsWith('/confirmar/') ? '/confirmar/<token>' : path,
+        urlFinal: reps[0].url.startsWith('/confirmar/') ? '/confirmar/<token>' : reps[0].url,
+        ttfb: { mediana: mediana(reps.map((r) => r.ttfb)), pior: pior(reps.map((r) => r.ttfb)), fria: reps[0].ttfb, quentes: quentes.map((r) => r.ttfb) },
+        util: { mediana: mediana(reps.map((r) => r.utilMs)), pior: pior(reps.map((r) => r.utilMs)), fria: reps[0].utilMs, quentes: quentes.map((r) => r.utilMs) },
+        fcp: { mediana: mediana(reps.map((r) => r.fcp)), fria: reps[0].fcp },
+        lcp: { mediana: mediana(reps.map((r) => r.lcp)), fria: reps[0].lcp },
+        cls: { pior: pior(reps.map((r) => r.cls)), todas: reps.map((r) => r.cls) },
+        tarefasLongas: { fria: reps[0].longas, quentes: quentes.map((r) => r.longas), maiorMs: pior(reps.flatMap((r) => r.longas)), totalFriaMs: reps[0].longas.reduce((s, x) => s + x, 0) },
+        jsFriaKB: Math.round(reps[0].jsTransferB / 102.4) / 10,
+        jsDecodificadoKB: Math.round(reps[0].jsDecodedB / 102.4) / 10,
+        jsArquivos: reps[0].jsArquivos,
+        docKB: Math.round((reps[0].docTransfer || 0) / 102.4) / 10,
+        requisicoesFria: reps[0].requisicoes,
+        utilNaoAchado: reps.filter((r) => r.utilMs == null).length,
+      };
+      saida.perfis[nomePerfil].push(res);
+      console.log(`${nomePerfil.padEnd(10)} ${rota.nome.padEnd(34)} ttfb med=${res.ttfb.mediana} pior=${res.ttfb.pior} | útil med=${res.util.mediana} pior=${res.util.pior} fria=${res.util.fria} | cls=${res.cls.pior} | longas fria=${res.tarefasLongas.fria.length}(${res.tarefasLongas.totalFriaMs}ms) maior=${res.tarefasLongas.maiorMs} | js=${res.jsFriaKB}KB doc=${res.docKB}KB`);
+    }
+  }
+} finally {
+  await browser.close();
+  writeFileSync(arqSaida, JSON.stringify(saida, null, 2));
+}

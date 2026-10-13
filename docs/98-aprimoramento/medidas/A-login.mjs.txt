@@ -1,0 +1,23 @@
+// Agente A · login real pela tela /entrar (SÓ banco local) e salva storageState FORA do repo.
+// Uso: CICLO_DEMO_EMAIL=... CICLO_DEMO_SENHA=... node A-login.mjs
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs';
+
+const BASE = 'http://localhost:3200';
+const email = process.env.CICLO_DEMO_EMAIL;
+const senha = process.env.CICLO_DEMO_SENHA;
+if (!email || !senha) throw new Error('defina CICLO_DEMO_EMAIL e CICLO_DEMO_SENHA');
+if (!BASE.includes('localhost')) throw new Error('só local');
+
+const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || 'chrome' });
+const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+const page = await ctx.newPage();
+await page.goto(`${BASE}/entrar`, { waitUntil: 'networkidle' });
+await page.fill('input[name=email]', email);
+await page.fill('input[name=password]', senha);
+await Promise.all([
+  page.waitForURL((u) => !u.pathname.startsWith('/entrar'), { timeout: 30000 }),
+  page.click('button[type=submit]'),
+]);
+console.log('logado, url =', page.url());
+await ctx.storageState({ path: 'C:/temp/ciclo-medicao/estado-A-dono.json' });
+await browser.close();

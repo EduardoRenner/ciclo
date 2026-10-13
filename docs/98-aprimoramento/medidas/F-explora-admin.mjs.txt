@@ -1,0 +1,17 @@
+// Exploração (sem throttle) de telas do painel com a sessão local salva fora do repositório.
+// Uso: node F-explora-admin.mjs <rotulo> <rota> [textoDoBotaoParaClicar]
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs'
+const [rotulo, rota, clicar] = process.argv.slice(2)
+const browser = await chromium.launch({ channel: 'chrome' })
+const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, locale: 'pt-BR', storageState: `C:/temp/ciclo-medicao/estado-F-${rotulo}.json` })
+const page = await ctx.newPage()
+await page.goto(`http://localhost:3200${rota}`, { waitUntil: 'networkidle' })
+if (clicar) { await page.getByRole('button', { name: clicar }).or(page.getByRole('link', { name: clicar })).first().click(); await page.waitForTimeout(1500) }
+const info = await page.evaluate(() => ({
+  url: location.href,
+  texto: (document.querySelector('main') ?? document.body).innerText.replace(/\n{2,}/g, '\n').slice(0, 2500),
+  campos: [...document.querySelectorAll('input, select, textarea, button, a[href]')].filter((e) => e.getBoundingClientRect().height > 0).map((e) => `${e.tagName.toLowerCase()}[${e.type ?? ''}] ${e.labels?.[0]?.innerText?.trim() ?? ''} | ${(e.innerText || e.getAttribute('aria-label') || e.getAttribute('placeholder') || e.value || '').trim().replace(/\s+/g, ' ').slice(0, 50)}`).slice(0, 70),
+}))
+console.log(info.url + '\n' + info.texto + '\n--- CAMPOS\n' + info.campos.join('\n'))
+await page.screenshot({ path: `C:/Users/Usuario/AppData/Local/Temp/claude/C--Users-Usuario--claude-code/e8b292ff-31ba-449f-a161-f42677840433/scratchpad/admin-${rota.replace(/\W+/g, '_')}.png`, fullPage: true })
+await browser.close()

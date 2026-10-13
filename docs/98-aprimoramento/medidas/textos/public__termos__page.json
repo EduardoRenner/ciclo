@@ -1,0 +1,550 @@
+{
+ "rota": "(public)/termos/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(public)/termos/page.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/lib/contato.ts",
+  "src/lib/mensagens.ts"
+ ],
+ "total": 77,
+ "textos": [
+  {
+   "texto": "Termos de uso",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 62,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "As regras de uso do CICLO: o que a gente entrega, o que você garante, como funciona o pagamento e como cancelar.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 63,
+   "tipo": "metadata/description"
+  },
+  {
+   "texto": "CICLO, início",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 82,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Entrar",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 90,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Termos de uso",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 94,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Atualizado em {ATUALIZADO_EM}",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 95,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "1. Quem somos e o que é o CICLO",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 99,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "O CICLO é um sistema de agenda e gestão para quem atende com hora marcada: barbearia, unhas, cílios, estética e profissões parecidas. Ele é oferecido pela internet, por assinatura, e você acessa pelo navegador do celular ou do computador.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 101,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ao criar uma conta, você concorda com estes termos. Se não concordar, não use o serviço.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 106,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "2. Sua conta",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 112,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Você é responsável pelo que acontece na sua conta e por manter sua senha em segredo. Se desconfiar que alguém entrou sem sua autorização, troque a senha e fale com a gente.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 114,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Você precisa ter 18 anos ou mais para criar uma conta, e as informações que você cadastrar precisam ser verdadeiras.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 118,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "3. Os dados dos seus clientes são seus",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 124,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Tudo que você cadastra no CICLO (clientes, agendamentos, histórico, valores) continua sendo seu. A gente guarda e processa esses dados para fazer o sistema funcionar para você, e não usamos a sua base para nada mais: não vendemos, não cedemos e não usamos para anunciar nada a ninguém.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 126,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Em relação aos dados dos seus clientes, quem decide o que coletar e por quê é você; a gente só processa o que você mandou guardar. Isso significa que cabe a você ter a autorização das pessoas que você cadastra. Os detalhes estão na",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 132,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "você",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 133,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Política de Privacidade",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 137,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "4. O que você não pode fazer",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 144,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Usar o CICLO para mandar mensagem para quem não quer receber, ou para spam.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 146,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Cadastrar dados de pessoas sem autorização delas.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 147,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Tentar invadir, sobrecarregar ou copiar o sistema.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 148,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Revender o acesso à sua conta para outra pessoa ou negócio.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 149,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Usar o serviço para qualquer coisa ilegal.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 150,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "5. Planos e pagamento",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 155,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Há dois planos: o {NOME_DO_PLANO.essencial}, para {…} profissional, a",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 157,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "por mês, e o {NOME_DO_PLANO.equipe}, até {…} profissionais, a",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 158,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "por mês. O produto é o mesmo nos dois; o que muda é o tamanho da equipe. Acima de {…} profissionais, o plano é combinado à parte. Os valores de hoje estão na",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 159,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "página de preços",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 163,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Período de uso sem cobrança. Quem cria a conta até",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 168,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "usa o CICLO inteiro, sem pagar e sem cartão, até",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 169,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": ". Quem cria a conta depois disso tem {PRELANCAMENTO.diasDoTeste} dias nas mesmas condições. A data de fim de cada conta aparece no painel desde o primeiro dia. Nada é cobrado quando esse período acaba: a cobrança só começa se você escolher um plano.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 170,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Período de uso sem cobrança.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 168,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Quando o período acaba sem plano escolhido. Você ainda tem {PRELANCAMENTO.diasDeGraca} dias com tudo funcionando. Depois disso a conta fica pausada por até {PRELANCAMENTO.diasDePausa} dias: você vê e exporta tudo, mas não cria nada novo, e escolher um plano reativa a conta na hora. Antes de a pausa terminar, a gente avisa {…} e {…} dias antes; passado esse prazo, a conta pode ser eliminada.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 176,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Quando o período acaba sem plano escolhido.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 176,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Como se paga. A assinatura é feita pelo Mercado Pago, dentro do app, em Config e depois Meu plano, com cobrança mensal recorrente. A gente nunca vê nem guarda número de cartão. Nada é cobrado antes de você assinar, e você é avisado antes de qualquer mudança de valor.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 185,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Como se paga.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 185,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "A cobrança automática ainda não está no ar. Hoje, se você quiser um plano, a gente combina direto e o pagamento é feito por fora do sistema. Quando existir assinatura automática, você será avisado antes de qualquer cobrança começar.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 192,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "A cobrança automática ainda não está no ar.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 192,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Se o preço de um plano mudar, a gente avisa com pelo menos 30 dias de antecedência, e a mudança nunca vale para um período já pago.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 199,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "6. Cancelar",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 205,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Você pode parar de usar quando quiser, sem multa e sem fidelidade.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 207,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Você continua com o acesso até o fim do período já pago. Nos primeiros 7 dias depois de uma cobrança, o valor volta integral, como manda o Código de Defesa do Consumidor.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 210,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Para cancelar a assinatura, é um toque em Meu plano.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 209,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Para cancelar um plano pago, é só avisar.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 210,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Cair de plano nunca apaga nem esconde seus dados. Seus clientes, o histórico e a agenda continuam à vista; o que o plano libera é criar mais e usar os recursos de cada faixa.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 215,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Cair de plano nunca apaga nem esconde seus dados.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 215,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Se quiser apagar a conta de vez, peça e a gente apaga. Você também pode levar seus dados embora: cada ficha de cliente tem exportação dentro do próprio sistema, e a base de clientes inteira pode ser baixada em planilha.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 220,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "7. Disponibilidade e limites",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 227,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "A gente cuida para o CICLO ficar no ar, mas não promete funcionamento sem nenhuma interrupção: atualização, manutenção e problema de serviço de terceiros acontecem.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 229,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O CICLO é uma ferramenta de apoio: as decisões do seu negócio continuam sendo suas. A gente não se responsabiliza por lucro que você deixou de ter, nem por decisão tomada com base no que o sistema mostrou.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 233,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "A gente pode suspender uma conta que esteja quebrando o item 4, e avisa o motivo quando fizer isso.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 238,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "8. Propriedade do sistema",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 244,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "O CICLO (o software, o código, o nome, a marca e o design das telas) é propriedade de quem mantém o sistema. Ao criar uma conta, você recebe uma licença para usar o serviço enquanto durar sua assinatura, não a compra do sistema.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 246,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Isso não muda o que o item 3 já disse: o que você cadastra (clientes, agendamentos, histórico) continua seu. A licença aqui é sobre o SOFTWARE que exibe e processa esses dados, não sobre os dados em si.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 251,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "9. O que a gente não garante",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 258,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "O CICLO é entregue como está, funcionando do jeito que você pode ver e testar hoje. A gente não promete que ele nunca vai ter um erro, nem que serve para um uso que a gente não descreveu aqui ou na página de preços.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 260,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Nossa responsabilidade por qualquer problema com o serviço fica limitada ao que você pagou pelo CICLO nos últimos 12 meses. A gente não responde por lucro deixado de ganhar, por dano indireto, nem por prejuízo causado por mau uso do sistema ou por sua senha vazada por descuido seu. Nada aqui tira o direito que a lei brasileira já garante e que este contrato não pode afastar; essa limitação vale só para o que a lei permite limitar.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 265,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "10. Serviços de terceiros",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 274,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "O CICLO depende de serviços de outras empresas para funcionar por completo: envio de mensagem por WhatsApp, processamento de pagamento (quando estiver ligado), hospedagem e banco de dados. Se um desses serviços parar, mudar as regras dele ou ficar fora do ar, o CICLO pode ficar limitado até a gente ajustar. Não é algo que controlamos sozinhos, e avisamos quando descobrirmos um problema desses.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 276,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "11. Se o uso da sua conta gerar problema com terceiro",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 285,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "O item 3 já disse: você decide o que cadastrar sobre seus clientes, e a autorização deles é responsabilidade sua. Se esse cadastro, uma mensagem que você mandou pelo sistema, ou qualquer outro uso que você fez da sua conta gerar reclamação, multa ou processo de terceiro contra a gente, você assume essa responsabilidade, porque a gente só processa o que você mandou guardar.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 287,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "12. Fora do nosso controle",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 296,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Queda de internet em larga escala, decisão de governo, greve, ou falha geral de um serviço de terceiro que usamos (item 10) podem atrasar ou impedir o CICLO de funcionar sem que isso seja quebra deste contrato da nossa parte. Assim que o motivo passar, a gente retoma.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 298,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "13. Mudanças nestes termos",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 306,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Se estes termos mudarem, a data no topo muda junto e a gente avisa dentro do sistema. Continuar usando depois disso significa que você concorda com a versão nova.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 308,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "14. Se alguma parte deste contrato virar inválida",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 314,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Se algum destes itens for considerado inválido por um juiz, os outros continuam valendo normalmente: a invalidade de um item não derruba o contrato inteiro.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 316,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "A gente pode transferir este contrato para outra empresa se o CICLO for vendido ou passar a ser mantido por outra empresa do mesmo grupo; avisamos antes de isso valer. Sua conta é sua, e transferir o acesso dela para outra pessoa ou negócio sem combinar com a gente já é o que o item 4 proíbe.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 320,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "15. Lei e foro",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 328,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Estes termos seguem a lei brasileira. Qualquer discussão que não der para resolver conversando fica no foro do domicílio do assinante, como manda o Código de Defesa do Consumidor.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 330,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "16. Falar com a gente",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 337,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Dúvida sobre estes termos, sobre cobrança ou sobre seus dados:",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 344,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": ". A gente responde.",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 352,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "fale com a gente por aqui",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 347,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "responda o e-mail que você recebeu ao criar a conta",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 350,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Política de Privacidade",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 359,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Preços",
+   "arquivo": "src/app/(public)/termos/page.tsx",
+   "linha": 365,
+   "tipo": "link",
+   "tag": "Link"
+  }
+ ]
+}

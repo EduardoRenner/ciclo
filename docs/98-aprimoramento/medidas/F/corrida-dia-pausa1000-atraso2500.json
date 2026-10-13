@@ -1,0 +1,42 @@
+{
+  "divergencias": 0,
+  "de": 3,
+  "resultados": [
+    {
+      "i": 0,
+      "pausaMs": 1000,
+      "atrasoForcadoMs": 2500,
+      "diaTocado": "quinta-feira, dia 15",
+      "horaTocada": "09:00",
+      "resumoNaTela": "quinta-feira, 15 de outubro às 09:00 · 45min",
+      "anuncioLeitorDeTela": "35 horários livres em quinta-feira, 15 de outubro.",
+      "startsAtEnviado": "2026-10-15T12:00:00Z",
+      "diaEnviado": "quinta-feira, 15 de outubro",
+      "divergiu": false
+    },
+    {
+      "i": 1,
+      "pausaMs": 1000,
+      "atrasoForcadoMs": 2500,
+      "diaTocado": "quinta-feira, dia 15",
+      "horaTocada": "09:00",
+      "resumoNaTela": "quinta-feira, 15 de outubro às 09:00 · 45min",
+      "anuncioLeitorDeTela": "35 horários livres em quinta-feira, 15 de outubro.",
+      "startsAtEnviado": "2026-10-15T12:00:00Z",
+      "diaEnviado": "quinta-feira, 15 de outubro",
+      "divergiu": false
+    },
+    {
+      "i": 2,
+      "pausaMs": 1000,
+      "atrasoForcadoMs": 2500,
+      "diaTocado": "quinta-feira, dia 15",
+      "horaTocada": "09:00",
+      "resumoNaTela": "quinta-feira, 15 de outubro às 09:00 · 45min",
+      "anuncioLeitorDeTela": "35 horários livres em quinta-feira, 15 de outubro.",
+      "startsAtEnviado": "2026-10-15T12:00:00Z",
+      "diaEnviado": "quinta-feira, 15 de outubro",
+      "divergiu": false
+    }
+  ]
+}

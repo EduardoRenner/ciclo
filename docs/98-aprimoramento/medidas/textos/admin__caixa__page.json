@@ -1,0 +1,297 @@
+{
+ "rota": "admin/caixa/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/caixa/page.tsx",
+  "src/app/admin/caixa/caixa.tsx",
+  "src/app/admin/caixa/seletor-de-dia.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/alert-banner.tsx",
+  "src/components/ui/section-header.tsx",
+  "src/components/ui/stat-tile.tsx",
+  "src/lib/formato.ts",
+  "src/components/ui/icone-anel.tsx"
+ ],
+ "total": 42,
+ "textos": [
+  {
+   "texto": "Caixa",
+   "arquivo": "src/app/admin/caixa/page.tsx",
+   "linha": 40,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Caixa",
+   "arquivo": "src/app/admin/caixa/page.tsx",
+   "linha": 59,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Você não tem acesso ao caixa",
+   "arquivo": "src/app/admin/caixa/page.tsx",
+   "linha": 63,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Só quem cuida do financeiro do negócio vê o fechamento. Peça ao dono se precisar.",
+   "arquivo": "src/app/admin/caixa/page.tsx",
+   "linha": 64,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Voltar para Hoje",
+   "arquivo": "src/app/admin/caixa/page.tsx",
+   "linha": 65,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Hoje",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 82,
+   "tipo": "prop:overline"
+  },
+  {
+   "texto": "Caixa",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 83,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Voltar para hoje",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 91,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Trocar de dia",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 97,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Dia anterior",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 98,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Próximo dia",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 114,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Nenhuma comanda fechada nesse dia",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 124,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Você concluiu {…} em atendimentos, mas o caixa só conta o que passou pela comanda: é ela que sabe material e comissão.",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 127,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "O caixa soma o que foi cobrado nas comandas. Feche a comanda do atendimento e o valor aparece aqui.",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 128,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Ver a agenda",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 130,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Entrou no dia",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 138,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Sobrou",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 145,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Material",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 169,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "falta o custo de {servicosSemMaterial} {…}",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 173,
+   "tipo": "prop:apoio"
+  },
+  {
+   "texto": "Taxa",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 177,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Comissão",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 178,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Aluguel",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 184,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Informar",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 193,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "O Sobrou ainda não desconta a maquininha: você não disse quanto ela cobra.",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 198,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sobrou",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 198,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Entrou no mês {…}",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 209,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Entrou no mês",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 209,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Sobrou no mês {…}",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 213,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Sobrou no mês",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 213,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Comandas {mensal.ticketsCount}",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 217,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Comandas",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 217,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "De quem depende o que sobra",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 235,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "{…}% do que sobrou em",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 238,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "veio de {…}.",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 239,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "profissional removido",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 240,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "itens sem profissional",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 240,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Profissional removido",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 248,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Sem profissional",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 248,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Comissão do mês por profissional",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 267,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Vale o percentual que estava valendo quando cada comanda fechou.",
+   "arquivo": "src/app/admin/caixa/caixa.tsx",
+   "linha": 283,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ir para",
+   "arquivo": "src/app/admin/caixa/seletor-de-dia.tsx",
+   "linha": 16,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Escolher o dia do caixa",
+   "arquivo": "src/app/admin/caixa/seletor-de-dia.tsx",
+   "linha": 31,
+   "tipo": "aria-label"
+  }
+ ]
+}

@@ -1,0 +1,80 @@
+{
+ "rota": "admin/config/modulos/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/modulos/page.tsx",
+  "src/app/admin/config/modulos/modulos.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/card.tsx",
+  "src/lib/app-url.ts"
+ ],
+ "total": 10,
+ "textos": [
+  {
+   "texto": "Módulos",
+   "arquivo": "src/app/admin/config/modulos/page.tsx",
+   "linha": 14,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Módulos",
+   "arquivo": "src/app/admin/config/modulos/page.tsx",
+   "linha": 39,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Ligue só o que você usa. Desligar esconde da interface, e nunca apaga nada.",
+   "arquivo": "src/app/admin/config/modulos/page.tsx",
+   "linha": 40,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Não deu para salvar agora. Tente de novo.",
+   "arquivo": "src/app/admin/config/modulos/modulos.tsx",
+   "linha": 37,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Sem conexão agora. O que você mudou não foi salvo.",
+   "arquivo": "src/app/admin/config/modulos/modulos.tsx",
+   "linha": 43,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Faz parte do {NOME_DO_PLANO[precisaDo]}. Gerencie seu plano em {APP_HOST}.",
+   "arquivo": "src/app/admin/config/modulos/modulos.tsx",
+   "linha": 75,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Faz parte do",
+   "arquivo": "src/app/admin/config/modulos/modulos.tsx",
+   "linha": 78,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sempre ligado: é a base do produto",
+   "arquivo": "src/app/admin/config/modulos/modulos.tsx",
+   "linha": 86,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{m.label} faz parte do produto e não pode ser desligado.",
+   "arquivo": "src/app/admin/config/modulos/modulos.tsx",
+   "linha": 104,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "{m.label} faz parte do produto e não pode ser desligado.",
+   "arquivo": "src/app/admin/config/modulos/modulos.tsx",
+   "linha": 111,
+   "tipo": "title"
+  }
+ ]
+}

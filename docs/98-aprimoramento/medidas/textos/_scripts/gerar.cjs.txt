@@ -1,0 +1,56 @@
+// Gera _classificacao.json (todos os textos com classe) e a tabela de ACHADOS + números para o D-copy.md.
+const fs = require('fs')
+const path = require('path')
+const OUT = process.argv[2] // docs/98-aprimoramento/medidas/textos
+const c = require('./classificacao.json') // visíveis, com flags (analisar.cjs)
+const todos = require('./todos-textos-unicos.json')
+const achados = require('./achados.cjs')
+
+const INTERNO_EXTRA = /src\/server\/providers\/|src\/server\/services\/health\.ts|src\/core\/schema\/versao\.ts|src\/server\/crypto\/|src\/server\/db\/|src\/server\/services\/token-assinado\.ts|src\/server\/services\/rate-limit\.ts|src\/server\/services\/captcha\.ts|src\/server\/billing\/mercado-pago\.ts|src\/server\/advocacia\/djen\.ts|src\/lib\/offline\/api-client\.ts|src\/components\/ui\/toast\.tsx|src\/app\/admin\/config\/sair\.tsx:80$|editor-expediente\.tsx:160$|profissionais\/lista\.tsx:178$/
+const ehSql = (s) => /^[a-z_]+(\s*,\s*[a-z_!.()]+)+/.test(s) || /\b(tenant_id|client_id|starts_at|_fkey)\b/.test(s)
+const ehCss = (t) => /^prop:(padding|fontFamily|border|--acc|media|content-disposition|cache-control|Authorization|x-)/i.test(t.tipo)
+
+const porLocal = new Map()
+for (const a of achados) for (const o of a.onde) porLocal.set(o, a)
+
+const visiveis = new Set(c.map((t) => `${t.arquivo}:${t.linha}:${t.texto}`))
+const saida = []
+const cont = { total_extraido: todos.length, interno: 0, ok: 0, a_revisar: 0, reescrever: 0, remover: 0 }
+const FLAGS_FORTES = /^(jargao|canal|beleza|parentese|emoji|travessao|botaoGenerico|erroSemAcao|vazioSemPasso|erroGenerico|ingles|genero:(?!(ele|ela|eles|elas|Ele|Ela|Eles|Elas)$))/
+for (const t of todos) {
+  const chave = `${t.arquivo}:${t.linha}`
+  const vis = visiveis.has(`${t.arquivo}:${t.linha}:${t.texto}`)
+  const reg = c.find((x) => x.arquivo === t.arquivo && x.linha === t.linha && x.texto === t.texto)
+  let classe, motivo, achado
+  if (!vis || INTERNO_EXTRA.test(t.arquivo) || INTERNO_EXTRA.test(chave) || ehSql(t.texto) || ehCss(t)) {
+    classe = 'interno'
+    motivo = 'não chega a quem usa (log, operador, SQL, CSS, NLU do assistente, prompt, webhook ou /dev)'
+  } else if (porLocal.has(chave)) {
+    achado = porLocal.get(chave)
+    classe = achado.classe
+    motivo = achado.problema.slice(0, 160)
+  } else if (reg && reg.flags.some((f) => FLAGS_FORTES.test(f))) {
+    classe = 'a revisar'
+    motivo = 'sinal automático: ' + reg.flags.join(', ')
+  } else {
+    classe = 'OK'
+    motivo = 'sem sinal automático'
+  }
+  cont[classe === 'a revisar' ? 'a_revisar' : classe === 'interno' ? 'interno' : classe === 'OK' ? 'ok' : classe]++
+  saida.push({ ...t, classe, ...(achado ? { achado: achado.id, severidade: achado.sev } : {}), motivo, flags: reg ? reg.flags : [] })
+}
+fs.writeFileSync(path.join(OUT, '_classificacao.json'), JSON.stringify({
+  descricao: 'Todo texto extraído do código, com classe. OK/a revisar = heurística (analisar.cjs); reescrever/remover = revisado à mão (achados D-xx em agentes/D-copy.md); interno = não chega a quem usa.',
+  contagem: cont,
+  textos: saida,
+}, null, 1))
+
+// tabela
+const esc = (s) => String(s).replace(/\|/g, '\\|').replace(/\n/g, ' ')
+const linhas = achados.map((a) => `| ${a.id} | ${esc(a.rota)} | ${esc(a.elemento)} | ${esc(a.atual)} | ${esc(a.problema)} | ${esc(a.proposta)} | ${esc(a.regra)} | **${a.sev}** | ${a.onde.map((o) => '`' + o.replace(/^src\//, '') + '`').join(', ')} | ${a.rotulo === 'FATO' ? 'FATO' : '[' + a.rotulo + ']'} |`)
+const tabela = ['| # | Rota | Elemento | Texto atual | Problema | Proposta | Regra | Sev. | Arquivo:linha | Rótulo |', '|---|---|---|---|---|---|---|---|---|---|', ...linhas].join('\n')
+const porSev = achados.reduce((m, a) => ((m[a.sev] = (m[a.sev] || 0) + 1), m), {})
+const textosNosAchados = saida.filter((t) => t.achado).length
+fs.writeFileSync(path.join(__dirname, 'tabela.md'), tabela)
+fs.writeFileSync(path.join(__dirname, 'numeros.json'), JSON.stringify({ cont, porSev, textosNosAchados, achados: achados.length, locais: porLocal.size }, null, 1))
+console.log(JSON.stringify({ cont, porSev, textosNosAchados, achados: achados.length, locais: porLocal.size }))

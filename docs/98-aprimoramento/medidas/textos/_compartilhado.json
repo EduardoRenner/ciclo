@@ -1,0 +1,344 @@
+{
+ "descricao": "arquivos alcançados por >= 6 entradas de rota",
+ "arquivos": [
+  {
+   "arquivo": "src/components/shell/selo.tsx",
+   "rotas": 9
+  },
+  {
+   "arquivo": "src/components/shell/tela-publica.tsx",
+   "rotas": 9
+  },
+  {
+   "arquivo": "src/components/ui/toast.tsx",
+   "rotas": 43
+  },
+  {
+   "arquivo": "src/components/ui/button.tsx",
+   "rotas": 53
+  },
+  {
+   "arquivo": "src/components/ui/input.tsx",
+   "rotas": 27
+  },
+  {
+   "arquivo": "src/components/ui/phone-input.tsx",
+   "rotas": 7
+  },
+  {
+   "arquivo": "src/lib/utils.ts",
+   "rotas": 116
+  },
+  {
+   "arquivo": "src/lib/formato.ts",
+   "rotas": 30
+  },
+  {
+   "arquivo": "src/components/ui/card.tsx",
+   "rotas": 101
+  },
+  {
+   "arquivo": "src/lib/mensagens.ts",
+   "rotas": 15
+  },
+  {
+   "arquivo": "src/components/ui/chip.tsx",
+   "rotas": 10
+  },
+  {
+   "arquivo": "src/components/ui/money-input.tsx",
+   "rotas": 7
+  },
+  {
+   "arquivo": "src/components/ui/textarea.tsx",
+   "rotas": 12
+  },
+  {
+   "arquivo": "src/lib/contato.ts",
+   "rotas": 7
+  },
+  {
+   "arquivo": "src/components/ui/select.tsx",
+   "rotas": 13
+  },
+  {
+   "arquivo": "src/components/ui/badge.tsx",
+   "rotas": 14
+  },
+  {
+   "arquivo": "src/components/ui/icone-anel.tsx",
+   "rotas": 23
+  },
+  {
+   "arquivo": "src/components/ui/skeleton.tsx",
+   "rotas": 51
+  },
+  {
+   "arquivo": "src/components/ui/esqueleto-tela.tsx",
+   "rotas": 32
+  },
+  {
+   "arquivo": "src/components/ui/page-header.tsx",
+   "rotas": 45
+  },
+  {
+   "arquivo": "src/components/shell/vocabulario.tsx",
+   "rotas": 8
+  },
+  {
+   "arquivo": "src/components/ui/empty-state.tsx",
+   "rotas": 23
+  },
+  {
+   "arquivo": "src/components/ui/sheet.tsx",
+   "rotas": 11
+  },
+  {
+   "arquivo": "src/components/ui/stat-tile.tsx",
+   "rotas": 10
+  },
+  {
+   "arquivo": "src/components/ui/alert-banner.tsx",
+   "rotas": 10
+  },
+  {
+   "arquivo": "src/components/ui/section-header.tsx",
+   "rotas": 14
+  },
+  {
+   "arquivo": "src/components/ui/bloqueio-plano.tsx",
+   "rotas": 12
+  },
+  {
+   "arquivo": "src/lib/app-url.ts",
+   "rotas": 23
+  },
+  {
+   "arquivo": "src/lib/advocacia/escrever.ts",
+   "rotas": 7
+  }
+ ],
+ "total": 36,
+ "textos": [
+  {
+   "texto": "useToast precisa estar dentro de <ToastProvider>",
+   "arquivo": "src/components/ui/toast.tsx",
+   "linha": 18,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Ocultar senha",
+   "arquivo": "src/components/ui/input.tsx",
+   "linha": 85,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Mostrar senha",
+   "arquivo": "src/components/ui/input.tsx",
+   "linha": 85,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Telefone",
+   "arquivo": "src/components/ui/phone-input.tsx",
+   "linha": 26,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nome de quem é atendido",
+   "arquivo": "src/lib/mensagens.ts",
+   "linha": 20,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Serviço",
+   "arquivo": "src/lib/mensagens.ts",
+   "linha": 21,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Data",
+   "arquivo": "src/lib/mensagens.ts",
+   "linha": 22,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Hora",
+   "arquivo": "src/lib/mensagens.ts",
+   "linha": 23,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Valor",
+   "arquivo": "src/lib/mensagens.ts",
+   "linha": 24,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Nome do negócio",
+   "arquivo": "src/lib/mensagens.ts",
+   "linha": 25,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Link de indicação",
+   "arquivo": "src/lib/mensagens.ts",
+   "linha": 26,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Falar no WhatsApp",
+   "arquivo": "src/lib/mensagens.ts",
+   "linha": 108,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Ligar para {nomeDoSalao}",
+   "arquivo": "src/lib/mensagens.ts",
+   "linha": 109,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Oi, {primeiro}!",
+   "arquivo": "src/lib/mensagens.ts",
+   "linha": 121,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Oi!",
+   "arquivo": "src/lib/mensagens.ts",
+   "linha": 121,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{base} É só escolher o horário aqui: {link}",
+   "arquivo": "src/lib/mensagens.ts",
+   "linha": 127,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Valor",
+   "arquivo": "src/components/ui/money-input.tsx",
+   "linha": 24,
+   "tipo": "texto"
+  },
+  {
+   "texto": "R$",
+   "arquivo": "src/components/ui/money-input.tsx",
+   "linha": 33,
+   "tipo": "prop:prefixo"
+  },
+  {
+   "texto": "Falar no WhatsApp",
+   "arquivo": "src/lib/contato.ts",
+   "linha": 58,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Mandar um e-mail",
+   "arquivo": "src/lib/contato.ts",
+   "linha": 61,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Oi! Uso o CICLO no plano {planoAtual} e quero falar sobre mudar de plano.",
+   "arquivo": "src/lib/contato.ts",
+   "linha": 68,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Oi! O Motor de Ciclo do meu CICLO não está recalculando as previsões.",
+   "arquivo": "src/lib/contato.ts",
+   "linha": 77,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Oi! Preciso transferir a titularidade do meu negócio no CICLO.",
+   "arquivo": "src/lib/contato.ts",
+   "linha": 80,
+   "tipo": "texto"
+  },
+  {
+   "texto": "O Grátis não expira e não vira cobrança sem você pedir. Para assinar, escolha um plano abaixo: leva um toque, o pagamento é recorrente pelo Mercado Pago e cancelar leva outro toque, aqui mesmo.",
+   "arquivo": "src/lib/contato.ts",
+   "linha": 99,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nada é cobrado sem você assinar. Para mudar de plano ou cancelar, use os botões desta tela: cada um leva um toque.",
+   "arquivo": "src/lib/contato.ts",
+   "linha": 100,
+   "tipo": "texto"
+  },
+  {
+   "texto": "O Grátis não expira e não vira cobrança sem você pedir. A cobrança automática ainda não está no ar, então subir de plano é uma conversa rápida: a gente ajusta na hora e você já usa.",
+   "arquivo": "src/lib/contato.ts",
+   "linha": 104,
+   "tipo": "texto"
+  },
+  {
+   "texto": "O Grátis não expira e não vira cobrança sem você pedir. A cobrança automática ainda não está no ar, então nenhum plano muda sozinho.",
+   "arquivo": "src/lib/contato.ts",
+   "linha": 105,
+   "tipo": "texto"
+  },
+  {
+   "texto": "A cobrança automática ainda não está no ar, então nada é debitado sozinho. Para mudar ou encerrar o plano, é só chamar: a gente resolve na conversa.",
+   "arquivo": "src/lib/contato.ts",
+   "linha": 108,
+   "tipo": "texto"
+  },
+  {
+   "texto": "A cobrança automática ainda não está no ar, então nada é debitado sozinho e nenhum plano muda sozinho.",
+   "arquivo": "src/lib/contato.ts",
+   "linha": 109,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Recurso do plano {nome}",
+   "arquivo": "src/components/ui/bloqueio-plano.tsx",
+   "linha": 79,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": ", somando {…}",
+   "arquivo": "src/components/ui/bloqueio-plano.tsx",
+   "linha": 97,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Para {acao}, é preciso o {nome}.",
+   "arquivo": "src/components/ui/bloqueio-plano.tsx",
+   "linha": 104,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "No {nome} você pode {acao}.",
+   "arquivo": "src/components/ui/bloqueio-plano.tsx",
+   "linha": 110,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Gerencie seu plano em {APP_HOST}.",
+   "arquivo": "src/components/ui/bloqueio-plano.tsx",
+   "linha": 119,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ver o {nome} por",
+   "arquivo": "src/components/ui/bloqueio-plano.tsx",
+   "linha": 130,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Não consegui salvar. Tente de novo.",
+   "arquivo": "src/lib/advocacia/escrever.ts",
+   "linha": 13,
+   "tipo": "texto"
+  }
+ ]
+}

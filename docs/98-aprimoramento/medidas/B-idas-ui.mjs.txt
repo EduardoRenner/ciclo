@@ -1,0 +1,131 @@
+// Agente B · idas ao banco por CLIQUE REAL na interface (inclui router.refresh / push / RSC que a ação dispara).
+// Mesma contagem de B-lib-log.mjs, mas a "requisição" é um toque no navegador. Banco LOCAL, log ligado só durante.
+// Uso: CICLO_DEMO_SENHA=... node B-idas-ui.mjs <saida.json>
+import { randomUUID } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
+
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs';
+
+import { cookieHeader, execucoesEntre, idas, logsDesde, marca, ondas, parse, psql, sleep } from './B-lib-log.mjs';
+
+const BASE = 'http://localhost:3200';
+const IDS = { userId: '6dbcfc89-aca4-4a6e-adcd-29f9d590400a', tenantId: '320d83de-611f-48e1-9761-570863fbb10b' };
+const SERVICO = '083649fa-03b0-4ed3-86c1-77f39b978aee';
+const PROF = 'd5047e62-6b51-434c-b4a2-457904a69e15';
+const CLIENTE = '3a27a6d8-c442-4674-a9b4-2e952342a228';
+const [, , arqSaida] = process.argv;
+const cookie = cookieHeader();
+
+async function api(method, path, body) {
+  const r = await fetch(BASE + path, { method, headers: { cookie, 'content-type': 'application/json', origin: BASE, 'idempotency-key': randomUUID() }, body: body ? JSON.stringify(body) : undefined });
+  return { status: r.status, json: await r.json().catch(() => null) };
+}
+
+const browser = await chromium.launch({ channel: 'chrome' });
+const ctx = await browser.newContext({ storageState: 'C:/temp/ciclo-medicao/estado-B-dono.json', viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+const page = await ctx.newPage();
+const reqs = [];
+page.on('request', (r) => {
+  const u = new URL(r.url());
+  if (u.origin === BASE && (r.method() !== 'GET' || r.headers()['rsc'] || r.resourceType() === 'document' || u.pathname.startsWith('/api/'))) reqs.push(`${r.method()} ${u.pathname.replace(/[0-9a-f-]{36}/g, ':id')}${r.headers()['rsc'] ? ' (RSC)' : ''}`);
+});
+
+const passos = [];
+let n = 0;
+async function passo(nome, fn, espera = 4000) {
+  n++;
+  const tag = `BU${n}`;
+  const i0 = reqs.length;
+  marca(`${tag}-INI`);
+  const t0 = Date.now();
+  await fn();
+  await page.waitForLoadState('networkidle').catch(() => {});
+  await sleep(espera);
+  marca(`${tag}-FIM`);
+  passos.push({ tag, nome, ms: Date.now() - t0, http: reqs.slice(i0) });
+  console.log(nome, reqs.slice(i0));
+}
+
+// preparação: agendamento pendente no dia 16 com profissional/cliente próprios deste script
+const prep = await api('POST', '/api/v1/appointments', { clientId: CLIENTE, serviceId: SERVICO, professionalId: PROF, startsAt: `2026-10-16T18:${Math.random() < 0.5 ? '00' : '30'}:00-03:00` });
+const apId = prep.json?.data?.appointment?.id;
+const tk = await (async () => {
+  const p = await api('POST', '/api/v1/appointments', { clientId: CLIENTE, serviceId: SERVICO, professionalId: PROF, startsAt: `2026-10-13T${10 + Math.floor(Math.random() * 4)}:${Math.random() < 0.5 ? '00' : '30'}:00-03:00` });
+  const id = p.json?.data?.appointment?.id;
+  if (!id) return null;
+  await api('POST', `/api/v1/appointments/${id}/confirm`);
+  await api('POST', `/api/v1/appointments/${id}/arrive`);
+  const c = await api('POST', `/api/v1/appointments/${id}/complete`);
+  const t = c.json?.data?.ticket?.id;
+  await api('POST', `/api/v1/tickets/${t}/items`, { serviceId: SERVICO, professionalId: PROF, qty: 1 });
+  return t;
+})();
+
+await page.goto(BASE + '/admin/hoje');
+await page.waitForLoadState('networkidle');
+psql('alter system set log_min_duration_statement = 0', 'supabase_admin');
+psql('select pg_reload_conf()', 'supabase_admin');
+const desde = new Date(Date.now() - 3000).toISOString();
+await sleep(1500);
+try {
+  await passo('Trocar de tela Hoje → Agenda (navegação suave)', async () => {
+    await page.locator('nav[aria-label="Navegação principal"] a[href="/admin/agenda"]').tap();
+    await page.waitForURL(/\/admin\/agenda/);
+  });
+  await page.goto(BASE + '/admin/agenda?date=2026-10-16');
+  await page.waitForLoadState('networkidle');
+  if (apId) {
+    await page.locator('main button').filter({ hasText: /Aguardando/ }).first().tap();
+    await passo('Agenda: Confirmar (mutação + router.refresh)', async () => {
+      await page.locator('[role=dialog] button', { hasText: /^Confirmar$/ }).tap();
+      await page.getByText('Agendamento confirmado').first().waitFor({ timeout: 30000 }).catch(() => {});
+    });
+  }
+  if (tk) {
+    await page.goto(BASE + `/admin/comanda/${tk}`);
+    await page.waitForLoadState('networkidle');
+    await passo('Comanda: Adicionar item (POST + GET do ticket)', async () => {
+      await page.locator('main button', { hasText: /^Adicionar$/ }).tap();
+    });
+    await page.locator('main button', { hasText: /^Pix$/ }).tap();
+    await passo('Comanda: Fechar comanda (POST close + router.refresh)', async () => {
+      await page.locator('main button', { hasText: /^Fechar comanda$/ }).tap();
+      await page.getByText('Comanda fechada').first().waitFor({ timeout: 30000 }).catch(() => {});
+    });
+  }
+  // Login pela tela real (contexto novo, sem cookie): push + refresh
+  if (process.env.CICLO_DEMO_SENHA) {
+    const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const p2 = await ctx2.newPage();
+    p2.on('request', (r) => {
+      const u = new URL(r.url());
+      if (u.origin === BASE && (r.method() !== 'GET' || r.headers()['rsc'] || r.resourceType() === 'document')) reqs.push(`${r.method()} ${u.pathname}${r.headers()['rsc'] ? ' (RSC)' : ''}`);
+    });
+    await p2.goto(BASE + '/entrar');
+    await p2.waitForLoadState('networkidle');
+    await p2.fill('input[name=email]', 'dono-demo-salao-encanto@ciclo.app');
+    await p2.fill('input[name=password]', process.env.CICLO_DEMO_SENHA);
+    await passo('Entrar pela tela (POST login + push + refresh)', async () => {
+      await p2.click('button[type=submit]');
+      await p2.waitForURL(/\/admin\//, { timeout: 30000 });
+      await p2.waitForLoadState('networkidle');
+    });
+    await ctx2.close();
+  }
+} finally {
+  await sleep(800);
+  psql('alter system reset log_min_duration_statement', 'supabase_admin');
+  psql('select pg_reload_conf()', 'supabase_admin');
+  await browser.close();
+}
+
+const entradas = parse(logsDesde(desde));
+const saida = passos.map((p) => {
+  const ex = execucoesEntre(entradas, `${p.tag}-INI`, `${p.tag}-FIM`);
+  const r = idas(ex, { ...IDS, extras: [apId, tk, 'login:'].filter(Boolean) });
+  const nossos = r.rest.filter((x) => x.dono === 'nos');
+  const on = ondas([...nossos, ...r.auth.map((a) => ({ ...a, consultas: ['auth.getUser'] }))]);
+  return { nome: p.nome, http: p.http, idasRest: nossos.length, idasAuth: r.auth.length, idasTotal: nossos.length + r.auth.length, ondas: on.length, porOnda: on.map((o) => o.itens.map((i) => (i.consultas || []).join(',') + (i.papel && i.papel !== 'authenticated' ? `[${i.papel}]` : ''))) };
+});
+writeFileSync(arqSaida, JSON.stringify(saida, null, 2));
+for (const s of saida) console.log(`${s.nome.padEnd(56)} http=${s.http.length} rest=${s.idasRest} auth=${s.idasAuth} total=${s.idasTotal} ondas=${s.ondas}`);

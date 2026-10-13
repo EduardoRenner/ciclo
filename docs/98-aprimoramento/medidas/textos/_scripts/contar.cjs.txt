@@ -1,0 +1,25 @@
+const c=require('./classificacao.json')
+const vis=c.filter(t=>!/src\/app\/api\/webhooks|src\/server\/providers|health\.ts|versao\.ts/.test(t.arquivo))
+const grupos={
+ voz_naoConsegui:/\bn[ãa]o consegui\b/i, voz_naoConseguimos:/\bn[ãa]o conseguimos\b/i, voz_naoFoiPossivel:/n[ãa]o foi poss[íi]vel/i, voz_erroAo:/\berro ao\b/i, voz_aGente:/\ba gente\b/i, voz_nos:/\b(n[óo]s|vamos|enviamos|mandamos|encontramos|avisamos)\b/i,
+ pra:/\bpra\b/i, para:/\bpara\b/i,
+ apagar:/\bapag(ar|a|ue|ou)\b/i, excluir:/\bexclu(ir|a|i|iu|ída|ído)\b/i, remover:/\bremov(er|e|a|ido|ida)\b/i, deletar:/\bdelet/i,
+ agendamento:/\bagendamentos?\b/i, horario:/\bhor[áa]rios?\b/i, atendimento:/\batendimentos?\b/i, visita:/\bvisitas?\b/i,
+ comanda:/\bcomandas?\b/i, conta_comanda:/\bfechar (a )?conta\b/i,
+ sumiu:/\bsumi(u|ram|do|da|dos|das)\b/i, parou_de_voltar:/parou de voltar|pararam de voltar|pararam de vir/i, atrasad:/\batrasad[oa]s?\b/i, em_risco:/\bem risco\b/i, passou_da_hora:/passou d[ao] (hora|tempo|ponto)/i,
+ recuperar:/\brecuper(ar|a|ação|ados?)\b/i, chamar_de_volta:/chamar de volta/i,
+ negocio:/\bneg[óo]cio\b/i, salao:/\bsal[ãa]o\b/i, estabelecimento:/\bestabelecimento\b/i, empresa:/\bempresa\b/i, escritorio:/\bescrit[óo]rio\b/i,
+ profissional:/\bprofissiona(l|is)\b/i, equipe:/\bequipe\b/i, colaborador:/\bcolaborador/i, membro:/\bmembros?\b/i,
+ plano:/\bplanos?\b/i, assinatura:/\bassinatura/i,
+ falta:/\bfalt(a|ou|aram)\b/i, noshow:/no-?show/i,
+ cliente:/\bclientes?\b/i, pessoa:/\bpessoas?\b/i, quem_e_atendido:/quem (é|foi|vai ser) atendid/i,
+ config:/\bconfig\b/i, configuracoes:/\bconfigura[çc][õo]es\b/i, ajustes:/\bajustes\b/i,
+ whatsapp:/\bwhats ?app\b/i, zap:/\bzap\b/i,
+ caixa:/\bcaixa\b/i, financeiro:/\bfinanceiro\b/i,
+ pacote:/\bpacotes?\b/i, combo:/\bcombos?\b/i,
+ encaixe:/\bencaixes?\b/i, lista_espera:/lista de espera/i,
+ sinal:/\bsinal\b/i, entrada_sinal:/\badiantamento\b/i,
+ motor:/\bMotor de Ciclo\b/, motor_solto:/\bo Motor\b(?! de)/,
+}
+const r={};for(const [k,re] of Object.entries(grupos)){r[k]=vis.filter(t=>re.test(t.texto)).length}
+console.log(r)

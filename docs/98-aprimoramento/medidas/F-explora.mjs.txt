@@ -1,0 +1,17 @@
+﻿// ExploraÃ§Ã£o rÃ¡pida (sem throttle) para conhecer as telas antes de medir. Uso: node F-explora.mjs <url...>
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs'
+const BASE = 'http://localhost:3200'
+const browser = await chromium.launch({ channel: 'chrome' })
+const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, locale: 'pt-BR' })
+const page = await ctx.newPage()
+for (const u of process.argv.slice(2)) {
+  const r = await page.goto(BASE + u, { waitUntil: 'networkidle' }).catch((e) => ({ status: () => 'ERR ' + e.message }))
+  const info = await page.evaluate(() => ({
+    title: document.title,
+    texto: document.body.innerText.replace(/\n{2,}/g, '\n').slice(0, 2500),
+    botoes: [...document.querySelectorAll('button, a[href], input, select, textarea')].filter((e) => e.getBoundingClientRect().height > 0).map((e) => `${e.tagName.toLowerCase()}${e.type ? '[' + e.type + ']' : ''}${e.name ? '{' + e.name + '}' : ''} ${(e.innerText || e.getAttribute('aria-label') || e.getAttribute('placeholder') || e.getAttribute('href') || '').trim().replace(/\s+/g, ' ').slice(0, 60)}`).slice(0, 80),
+  }))
+  console.log(`\n===== ${u} â†’ ${r?.status?.()} Â· ${page.url()}\nTITLE: ${info.title}\n--- TEXTO\n${info.texto}\n--- INTERATIVOS\n${info.botoes.join('\n')}`)
+}
+await browser.close()
+

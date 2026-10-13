@@ -1,0 +1,193 @@
+{
+ "rota": "(public)/orcamento/[token]/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(public)/orcamento/[token]/page.tsx",
+  "src/app/(public)/orcamento/[token]/orcamento.tsx",
+  "src/components/ui/erro-publico.tsx",
+  "src/components/ui/titulo-de-estado.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/textarea.tsx",
+  "src/lib/formato.ts",
+  "src/lib/utils.ts"
+ ],
+ "total": 26,
+ "textos": [
+  {
+   "texto": "Orçamento",
+   "arquivo": "src/app/(public)/orcamento/[token]/page.tsx",
+   "linha": 3,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Não encontramos esse orçamento.",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 85,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor.",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 94,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui aprovar esse orçamento.",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 107,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor.",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 116,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui recusar esse orçamento.",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 133,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor.",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 142,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não deu certo",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 156,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Carregando orçamento…",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 166,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Orçamento vencido",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 173,
+   "tipo": "texto",
+   "tag": "TituloDeEstado"
+  },
+  {
+   "texto": "Esse orçamento não vale mais. Fale com {dados.businessName} pra pedir um novo.",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 174,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Orçamento aprovado",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 183,
+   "tipo": "texto",
+   "tag": "TituloDeEstado"
+  },
+  {
+   "texto": "{dados.businessName} já foi avisado. Combine o horário por lá.",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 184,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Orçamento recusado",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 193,
+   "tipo": "texto",
+   "tag": "TituloDeEstado"
+  },
+  {
+   "texto": "Tudo bem, {dados.businessName} foi avisado.",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 194,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Orçamento",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 202,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Total {…}",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 217,
+   "tipo": "texto",
+   "tag": "Card"
+  },
+  {
+   "texto": "Total",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 217,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Vale até",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 224,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Por quê? (opcional)",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 230,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Confirmar recusa",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 232,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 235,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Aprovar orçamento",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 241,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Recusar",
+   "arquivo": "src/app/(public)/orcamento/[token]/orcamento.tsx",
+   "linha": 244,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Tentar de novo",
+   "arquivo": "src/components/ui/erro-publico.tsx",
+   "linha": 69,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Chame quem vai te atender pelo WhatsApp: por lá dá para resolver na hora.",
+   "arquivo": "src/components/ui/erro-publico.tsx",
+   "linha": 73,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

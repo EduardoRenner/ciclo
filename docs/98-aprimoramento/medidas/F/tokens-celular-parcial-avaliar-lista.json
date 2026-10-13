@@ -1,0 +1,58 @@
+[
+  {
+    "caso": "avaliar-valido",
+    "perfil": "celular",
+    "status": 200,
+    "utilMs": 2922,
+    "textoInicial": "Como foi seu Progressiva?\nEspaço Vitória\nEnviar avaliação\nEscolha de 1 a 5 estrelas para poder enviar.",
+    "seo": {
+      "title": "Avaliar atendimento · CICLO",
+      "description": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogTitle": "Avaliar atendimento · CICLO",
+      "ogDescription": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Como foi seu Progressiva?"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "toques": 2,
+    "msToqueAteResultado": 463,
+    "resultado": "Pronto, avaliação enviada!\nA equipe da Espaço Vitória agradece.\nIndique alguém\nEla agenda o primeiro horário sem esperar resposta, e Espaço Vitória fica sabendo que foi você.\nMandar no WhatsApp",
+    "reabertoMostra": "Pronto, avaliação enviada!\nA equipe da Espaço Vitória agradece.",
+    "consoleErros": []
+  },
+  {
+    "caso": "lista-espera-valido",
+    "perfil": "celular",
+    "status": 200,
+    "utilMs": 3308,
+    "textoInicial": "Encaixe garantido!\nSeu horário está reservado. Até lá!",
+    "seo": {
+      "title": "Vaga na agenda · CICLO",
+      "description": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogTitle": "Vaga na agenda · CICLO",
+      "ogDescription": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Encaixe garantido!"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "resultado": "Encaixe garantido!\nSeu horário está reservado. Até lá!",
+    "reabertoMostra": "Não consegui reservar\nEsse encaixe já foi usado.\nChame quem vai te atender pelo WhatsApp: por lá dá para resolver na hora.",
+    "consoleErros": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+  }
+]

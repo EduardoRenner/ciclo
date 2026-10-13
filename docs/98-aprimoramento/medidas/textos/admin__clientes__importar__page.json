@@ -1,0 +1,370 @@
+{
+ "rota": "admin/clientes/importar/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/clientes/importar/page.tsx",
+  "src/app/admin/clientes/importar/importador.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 52,
+ "textos": [
+  {
+   "texto": "Importar clientes",
+   "arquivo": "src/app/admin/clientes/importar/page.tsx",
+   "linha": 13,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Importar clientes",
+   "arquivo": "src/app/admin/clientes/importar/page.tsx",
+   "linha": 34,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Envie a planilha em CSV, diga qual coluna é qual e confira antes de importar de verdade.",
+   "arquivo": "src/app/admin/clientes/importar/page.tsx",
+   "linha": 34,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Não consegui processar o arquivo.",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 63,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Importação concluída",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 139,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "A importação falhou",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 141,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Escolher o arquivo CSV",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 170,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Até 5 MB, 5.000 linhas.",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 171,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Não consegui ler o arquivo. {erroDoArquivo}",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 187,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Não consegui ler o arquivo.",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 187,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Qual coluna é qual",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 195,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "Nome (obrigatório)",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 200,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Telefone",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 201,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "E-mail",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 202,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Etiquetas",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 203,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "lastVisit",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 204,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Última visita (opcional, ex.: 15/08/2026)",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 204,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Nenhuma",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 216,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Se a sua planilha tiver a data do último atendimento de cada cliente, mapeie essa coluna: assim que a importação terminar, o CICLO já mostra quem está atrasado para voltar.",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 232,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Use o formato 15/08/2026. Quem ficar com a data ilegível entra mesmo, mas sem a última visita.",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 247,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Não consegui ler nenhuma data desta coluna nas primeiras linhas (ex.: \"{exemplo}\").",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 244,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Nas primeiras linhas, 1 de {preenchidas} datas não foi reconhecida (ex.: \"{exemplo}\").",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 246,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Nas primeiras linhas, {ilegiveis} de {preenchidas} datas não foram reconhecidas (ex.: \"{exemplo}\").",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 247,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Que serviço essas pessoas fazem com você?",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 268,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "É por ele que o Motor sabe de quanto em quanto tempo essas pessoas voltam. Dá para ajustar cliente por cliente depois; agora vale o que a maioria faz.",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 280,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "{s.nome} · volta a cada {s.cycleDays} dias",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 276,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "É por ele que o Motor sabe de quanto em quanto tempo essas pessoas voltam. Dá para ajustar cliente por cliente depois; agora vale o que a maioria faz.",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 281,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Prévia (primeiras linhas)",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 290,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "1 cliente já passou da hora de voltar",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 351,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{p.jaDevendoVoltar} clientes já passaram da hora de voltar",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 352,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "De {p.comDataInformada} com data de última visita informada.",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 355,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Já está no Motor de Ciclo. Ver quem é →",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 364,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Já estão no Motor de Ciclo. Ver quem são →",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 364,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Para o Motor acompanhar",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 367,
+   "tipo": "texto"
+  },
+  {
+   "texto": ", diga o serviço em",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 367,
+   "tipo": "texto"
+  },
+  {
+   "texto": ". Importar de novo não resolve: quem já tem ficha é pulado.",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 371,
+   "tipo": "texto"
+  },
+  {
+   "texto": "essa pessoa",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 367,
+   "tipo": "texto"
+  },
+  {
+   "texto": "essas pessoas",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 367,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Quem você já atende",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 369,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "cliente importado",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 416,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "clientes importados",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 416,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{resultado.skipped.length} não importadas (duplicata)",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 419,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Dá para informar a data",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 425,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "1 cliente entrou sem a última visita: a data da planilha não estava num formato que eu reconheço.",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 424,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{…} clientes entraram sem a última visita: a data da planilha não estava num formato que eu reconheço.",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 425,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "dessa pessoa",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 431,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "dessas pessoas",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 431,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Quem você já atende",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 433,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "{resultado.errors.length} linha(s) com erro:",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 440,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Linha {e.linha}: {e.motivo}",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 444,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Importar",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 460,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escolha acima qual coluna do arquivo tem o nome.",
+   "arquivo": "src/app/admin/clientes/importar/importador.tsx",
+   "linha": 457,
+   "tipo": "prop:motivoDesabilitado"
+  }
+ ]
+}

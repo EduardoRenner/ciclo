@@ -1,0 +1,152 @@
+// Agente B · biblioteca: conta idas ao banco por requisição lendo o log do Postgres LOCAL.
+// Pré-condição: log_min_duration_statement = 0 ligado SÓ durante a medição (ver B-idas.mjs).
+//
+// Como uma "ida" é reconhecida no log:
+// - PostgREST (usuário `authenticator`): cada requisição HTTP é uma transação num pid:
+//   BEGIN → select set_config(... request.jwt.claims ...) → consulta → COMMIT. Os claims dizem de
+//   quem é (sub = user_id) ou se é service_role. 1 transação = 1 ida de rede do app ao Supabase.
+// - GoTrue (usuário `supabase_auth_admin`): cada `auth.getUser()` faz 5 SELECTs internos
+//   (users, mfa_factors, identities, sessions, mfa_amr_claims). Contamos 1 ida por SELECT em
+//   `users` com o nosso user_id (é a primeira consulta de cada getUser).
+// Requisições de service_role são atribuídas a nós quando os parâmetros contêm o nosso tenant/ids.
+import * as cp from 'node:child_process';
+import { readFileSync } from 'node:fs';
+
+export const BASE = 'http://localhost:3200';
+if (!BASE.includes('localhost')) throw new Error('só local');
+
+export function cookieHeader(estado = 'C:/temp/ciclo-medicao/estado-B-dono.json') {
+  const s = JSON.parse(readFileSync(estado, 'utf8'));
+  return s.cookies.map((c) => `${c.name}=${c.value}`).join('; ');
+}
+
+export function psql(sql, usuario = 'postgres') {
+  return cp
+    .execFileSync('docker', ['exec', 'supabase_db_ciclo', 'psql', '-U', usuario, '-d', 'postgres', '-Atc', sql], { encoding: 'utf8' })
+    .trim();
+}
+
+export function marca(nome) {
+  psql(`select 'MARCA-${nome}'`);
+}
+
+export function logsDesde(desdeIso) {
+  const r = cp.spawnSync('docker', ['logs', 'supabase_db_ciclo', '--since', desdeIso], { encoding: 'utf8', maxBuffer: 1024 * 1024 * 1024 });
+  return (r.stdout || '') + (r.stderr || '');
+}
+
+const PREFIXO = /^(\S*) (\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d+) UTC \[(\d+)\] (\S*)@(\S*) (LOG|DETAIL|ERROR|STATEMENT|WARNING|NOTICE|HINT|CONTEXT):\s+(.*)$/;
+
+export function parse(texto) {
+  const entradas = [];
+  for (const linha of texto.split(/\r?\n/)) {
+    const m = PREFIXO.exec(linha);
+    if (m) entradas.push({ ts: Date.parse(m[2].replace(' ', 'T') + 'Z'), pid: m[3], user: m[4], db: m[5], nivel: m[6], msg: m[7] });
+    else if (entradas.length && linha.length) entradas[entradas.length - 1].msg += '\n' + linha;
+  }
+  return entradas;
+}
+
+/** Execuções (statement/execute) do banco `postgres` entre duas marcas, com parâmetros. */
+export function execucoesEntre(entradas, marcaIni, marcaFim) {
+  const iIni = entradas.findIndex((e) => e.msg.includes(`'MARCA-${marcaIni}'`));
+  const iFim = entradas.findIndex((e, i) => i > iIni && e.msg.includes(`'MARCA-${marcaFim}'`));
+  if (iIni < 0 || iFim < 0) throw new Error(`marcas não achadas: ${marcaIni}/${marcaFim}`);
+  const fatia = entradas.slice(iIni + 1, iFim);
+  const execs = [];
+  for (let i = 0; i < fatia.length; i++) {
+    const e = fatia[i];
+    if (e.db !== 'postgres' || e.nivel !== 'LOG') continue;
+    const m = /^duration: ([\d.]+) ms\s+(statement|execute [^:]*):\s*([\s\S]*)$/.exec(e.msg);
+    if (!m) continue;
+    if (/MARCA-/.test(m[3])) continue;
+    let params = '';
+    for (let j = i + 1; j < Math.min(fatia.length, i + 4); j++) {
+      const p = fatia[j];
+      if (p.pid === e.pid && p.nivel === 'DETAIL' && /^Parameters:/i.test(p.msg)) {
+        params = p.msg;
+        break;
+      }
+      if (p.pid === e.pid && p.nivel === 'LOG') break;
+    }
+    execs.push({ ts: e.ts, pid: e.pid, user: e.user, dur: Number(m[1]), sql: m[3], params });
+  }
+  return execs;
+}
+
+export function resumirSql(sql) {
+  const s = sql.replace(/\s+/g, ' ').trim();
+  const rpc = /LATERAL \(SELECT [^)]*\) pgrst_body|FROM "public"\."([a-z_0-9]+)"\(/.exec(s);
+  const ins = /INSERT INTO "public"\."([a-z_0-9]+)"/.exec(s)?.[1];
+  if (ins) return `insert:${ins}`;
+  const fn = /"public"\."([a-z_0-9]+)"\(/.exec(s)?.[1];
+  if (fn) return `rpc:${fn}`;
+  const verbo = /^WITH pgrst_source AS \( ?(INSERT|UPDATE|DELETE|SELECT)/i.exec(s)?.[1] || /^(INSERT|UPDATE|DELETE|SELECT|WITH)/i.exec(s)?.[1] || '?';
+  const tabelas = [...s.matchAll(/"public"\."([a-z_0-9]+)"/g)].map((m) => m[1]);
+  void rpc;
+  return `${verbo.toLowerCase()}:${[...new Set(tabelas)].slice(0, 3).join('+') || s.slice(0, 50)}`;
+}
+
+/**
+ * Agrupa em idas. Devolve { rest: [...], auth: [...] } só com o que é nosso (ou indefinido).
+ */
+export function idas(execs, ids) {
+  const nossos = [ids.userId, ids.tenantId, ...(ids.extras || [])].filter(Boolean);
+  // PostgREST
+  const abertas = new Map();
+  const rest = [];
+  for (const x of execs.filter((e) => e.user === 'authenticator')) {
+    const sql = x.sql.trim();
+    if (/^SET client_/i.test(sql)) continue;
+    let r = abertas.get(x.pid);
+    if (/^BEGIN/i.test(sql) || !r) {
+      r = { pid: x.pid, ini: x.ts, fim: x.ts, execs: [], claims: '' };
+      abertas.set(x.pid, r);
+      rest.push(r);
+    }
+    r.execs.push(x);
+    r.fim = x.ts;
+    if (/set_config\('request\.jwt\.claims'/.test(sql)) r.claims = x.params;
+    if (/^(COMMIT|ROLLBACK)/i.test(sql)) abertas.delete(x.pid);
+  }
+  for (const r of rest) {
+    const texto = r.execs.map((x) => x.sql + ' ' + x.params).join('\n');
+    const papel = /\$\d+ = '(authenticated|anon|service_role)'/.exec(r.claims)?.[1] || '?';
+    r.papel = papel;
+    if (papel === 'authenticated') r.dono = r.claims.includes(ids.userId) ? 'nos' : 'outro';
+    else r.dono = nossos.some((id) => texto.includes(id)) ? 'nos' : 'indefinido';
+    r.consultas = r.execs.filter((x) => !/^(BEGIN|COMMIT|ROLLBACK|select set_config)/i.test(x.sql.trim())).map((x) => resumirSql(x.sql));
+    r.dur = Math.round(r.execs.reduce((s, x) => s + x.dur, 0) * 100) / 100;
+  }
+  // GoTrue
+  const authExecs = execs.filter((e) => e.user === 'supabase_auth_admin');
+  const auth = [];
+  for (const x of authExecs) {
+    const nosso = nossos.some((id) => x.params.includes(id) || x.sql.includes(id));
+    const ehUsers = /FROM users AS users|FROM "users"|FROM auth\.users|users\.aud/i.test(x.sql);
+    if (ehUsers && nosso) auth.push({ ini: x.ts, fim: x.ts, tipo: 'getUser/users', execs: [x] });
+    else if (auth.length && nosso) {
+      const u = auth[auth.length - 1];
+      u.execs.push(x);
+      u.fim = x.ts;
+    }
+  }
+  const authOutros = authExecs.filter((x) => /refresh_tokens|INSERT INTO|UPDATE/i.test(x.sql) && nossos.some((id) => x.params.includes(id)));
+  return { rest, auth, authOutros };
+}
+
+/** Ondas = grupos de idas que se sobrepõem no tempo (série × paralelo medido no relógio do banco). */
+export function ondas(lista) {
+  const ord = [...lista].sort((a, b) => a.ini - b.ini);
+  const out = [];
+  for (const r of ord) {
+    const ult = out[out.length - 1];
+    if (ult && r.ini <= ult.fim) {
+      ult.itens.push(r);
+      ult.fim = Math.max(ult.fim, r.fim);
+    } else out.push({ ini: r.ini, fim: r.fim, itens: [r] });
+  }
+  return out;
+}
+
+export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

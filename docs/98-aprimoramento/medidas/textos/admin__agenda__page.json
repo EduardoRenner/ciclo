@@ -1,0 +1,451 @@
+{
+ "rota": "admin/agenda/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/agenda/page.tsx",
+  "src/app/admin/agenda/agenda.tsx",
+  "src/components/ui/appointment-row.tsx",
+  "src/components/ui/filter-row.tsx",
+  "src/lib/atualizar-depois.ts",
+  "src/app/admin/agenda/detalhe.tsx",
+  "src/lib/haptics.ts"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/shell/vocabulario.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/chip.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/sheet.tsx",
+  "src/components/ui/stat-tile.tsx",
+  "src/lib/formato.ts",
+  "src/components/ui/button.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/toast.tsx"
+ ],
+ "total": 67,
+ "textos": [
+  {
+   "texto": "Agenda",
+   "arquivo": "src/app/admin/agenda/page.tsx",
+   "linha": 12,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Agenda",
+   "arquivo": "src/app/admin/agenda/page.tsx",
+   "linha": 47,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Dom",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 28,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Seg",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 28,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Ter",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 28,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Qua",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 28,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Qui",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 28,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sex",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 28,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Sáb",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 28,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Dias da semana",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 122,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Filtrar por {vocabulario.profissional}",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 155,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Todos",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 157,
+   "tipo": "texto",
+   "tag": "Chip"
+  },
+  {
+   "texto": "Ocupação do dia",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 172,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Previsto",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 176,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Nada marcado nesse dia",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 192,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Toque no botão + para criar o primeiro agendamento.",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 193,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Novo agendamento",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 194,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Cliente",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 204,
+   "tipo": "prop:clienteNome"
+  },
+  {
+   "texto": "Serviço",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 205,
+   "tipo": "prop:servicoNome"
+  },
+  {
+   "texto": "Agendamento",
+   "arquivo": "src/app/admin/agenda/agenda.tsx",
+   "linha": 217,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Aguardando",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 36,
+   "tipo": "prop:pending"
+  },
+  {
+   "texto": "Confirmado",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 37,
+   "tipo": "confirmação"
+  },
+  {
+   "texto": "Chegou",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 38,
+   "tipo": "prop:arrived"
+  },
+  {
+   "texto": "Concluído",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 39,
+   "tipo": "prop:done"
+  },
+  {
+   "texto": "Faltou",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 40,
+   "tipo": "prop:no_show"
+  },
+  {
+   "texto": "Cancelado",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 41,
+   "tipo": "prop:canceled"
+  },
+  {
+   "texto": "Vencido",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 42,
+   "tipo": "prop:expired"
+  },
+  {
+   "texto": "Risco alto de falta",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 109,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Risco alto de falta",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 107,
+   "tipo": "title"
+  },
+  {
+   "texto": "Atenção na ficha de saúde",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 115,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Atenção na ficha de saúde",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 113,
+   "tipo": "title"
+  },
+  {
+   "texto": "Tem observação",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 121,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Tem observação",
+   "arquivo": "src/components/ui/appointment-row.tsx",
+   "linha": 119,
+   "tipo": "title"
+  },
+  {
+   "texto": "Confirmar",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 20,
+   "tipo": "confirmação"
+  },
+  {
+   "texto": "Chegou",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 21,
+   "tipo": "prop:arrived"
+  },
+  {
+   "texto": "Concluir",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 22,
+   "tipo": "prop:done"
+  },
+  {
+   "texto": "Marcar falta",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 23,
+   "tipo": "prop:no_show"
+  },
+  {
+   "texto": "Agendamento confirmado",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 35,
+   "tipo": "confirmação"
+  },
+  {
+   "texto": "Chegada registrada",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 36,
+   "tipo": "prop:arrived"
+  },
+  {
+   "texto": "Atendimento concluído",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 37,
+   "tipo": "prop:done"
+  },
+  {
+   "texto": "Falta registrada",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 38,
+   "tipo": "prop:no_show"
+  },
+  {
+   "texto": "Não consegui completar a ação.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 44,
+   "tipo": "erro"
+  },
+  {
+   "texto": "{d.getFullYear()}-{pad(d.getMonth() + 1)}-{pad(d.getDate())}T{pad(d.getHours())}:{pad(d.getMinutes())}",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 51,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Feito",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 102,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui cancelar.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 121,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Agendamento cancelado",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 127,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 132,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui remarcar.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 150,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Agendamento remarcado",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 153,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 156,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Sinal de {…}",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 189,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": ". Quem marcou viu esse valor ao agendar.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 190,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": ". Ainda não avisamos quem marcou.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 190,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Remarcar",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 246,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cancelar",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 251,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Ver comanda",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 259,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Pedir avaliação",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 271,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Esse agendamento não tem mais ação disponível.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 275,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Novo horário",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 283,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Confirmar novo horário",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 290,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 293,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cancelar esse agendamento?",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 300,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Motivo (opcional)",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 302,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Fica no histórico de quem ia ser atendido.",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 305,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Sim, cancelar",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 308,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 311,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Fechar",
+   "arquivo": "src/app/admin/agenda/detalhe.tsx",
+   "linha": 317,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

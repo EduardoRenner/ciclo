@@ -1,0 +1,192 @@
+{
+ "rota": "admin/campanhas/nova/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/campanhas/nova/page.tsx",
+  "src/app/admin/campanhas/nova/nova.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/bloqueio-plano.tsx",
+  "src/lib/formato.ts",
+  "src/lib/app-url.ts",
+  "src/lib/utils.ts",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/section-header.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/mensagens.ts"
+ ],
+ "total": 26,
+ "textos": [
+  {
+   "texto": "Nova campanha",
+   "arquivo": "src/app/admin/campanhas/nova/page.tsx",
+   "linha": 17,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "mandar a mesma mensagem para todo mundo de uma vez",
+   "arquivo": "src/app/admin/campanhas/nova/page.tsx",
+   "linha": 60,
+   "tipo": "prop:acao"
+  },
+  {
+   "texto": "pessoa esperando no maior grupo",
+   "arquivo": "src/app/admin/campanhas/nova/page.tsx",
+   "linha": 65,
+   "tipo": "prop:substantivo"
+  },
+  {
+   "texto": "pessoas esperando no maior grupo",
+   "arquivo": "src/app/admin/campanhas/nova/page.tsx",
+   "linha": 65,
+   "tipo": "prop:substantivo"
+  },
+  {
+   "texto": "Avisar uma de cada vez, de graça",
+   "arquivo": "src/app/admin/campanhas/nova/page.tsx",
+   "linha": 69,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Não consegui registrar a campanha",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 73,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 74,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Campanha registrada",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 78,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 85,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 85,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Nova campanha",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 93,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Para quem",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 97,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Ninguém se encaixa nesse grupo agora.",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 109,
+   "tipo": "title"
+  },
+  {
+   "texto": "Ninguém se encaixa nesse grupo agora.",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 123,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O que mandar",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 138,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Nenhum modelo serve para disparo em lote.",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 144,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Todos os seus modelos falam de data, hora ou serviço, e isso só existe quando há um horário marcado.",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 146,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Criar um modelo sem data",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 149,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Cliente",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 162,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Enviar ({enviados.size}/{publico.length})",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 176,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Cada toque abre o WhatsApp com a mensagem já escrita para aquela pessoa. Volte aqui e siga para a próxima.",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 179,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sem telefone válido para WhatsApp",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 222,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{…} em atendimentos",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 224,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "ainda sem atendimento",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 225,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sem telefone válido para WhatsApp. Corrija o telefone dessa pessoa para incluir no disparo.",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 249,
+   "tipo": "title"
+  },
+  {
+   "texto": "Registrar campanha ({enviados.size}",
+   "arquivo": "src/app/admin/campanhas/nova/nova.tsx",
+   "linha": 260,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

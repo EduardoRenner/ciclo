@@ -1,0 +1,192 @@
+{
+ "rota": "admin/casos/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/casos/page.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/badge.tsx",
+  "src/components/ui/bloqueio-plano.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/icone-anel.tsx",
+  "src/lib/utils.ts",
+  "src/lib/formato.ts",
+  "src/lib/app-url.ts"
+ ],
+ "total": 26,
+ "textos": [
+  {
+   "texto": "Casos",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 22,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "organizar os casos do escritório",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 45,
+   "tipo": "prop:acao"
+  },
+  {
+   "texto": "Ver os clientes",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 46,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Casos",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 80,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Os casos do escritório, com prazos, pendências e documentos.",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 83,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Novo caso",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 91,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Filtrar casos",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 96,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Em andamento",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 98,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Encerrados",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 101,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Só os meus",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 104,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "1 caso restrito à equipe dele",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 111,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{restritos} casos restritos à equipe de cada um",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 111,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Nenhum caso encerrado",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 118,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Nenhum caso com você como responsável",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 118,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Nenhum caso ainda",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 118,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Quando um caso for concluído ou arquivado, ele aparece aqui.",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 119,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Todo caso pertence a um cliente e já nasce com as pendências do modelo.",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 119,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Abrir um caso",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 120,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Sigiloso",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 131,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Próximo passo: {c.proximo.texto}",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 145,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Próximo passo:",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 145,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "· do cliente",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 147,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· atrasado",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 148,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Nada pendente neste caso.",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 151,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "pendência aberta",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 155,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "pendências abertas",
+   "arquivo": "src/app/admin/casos/page.tsx",
+   "linha": 155,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

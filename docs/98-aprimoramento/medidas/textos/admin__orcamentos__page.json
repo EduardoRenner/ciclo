@@ -1,0 +1,147 @@
+{
+ "rota": "admin/orcamentos/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/orcamentos/page.tsx",
+  "src/app/admin/orcamentos/lista.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/bloqueio-plano.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/lib/formato.ts",
+  "src/lib/app-url.ts",
+  "src/lib/utils.ts",
+  "src/components/ui/badge.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/icone-anel.tsx"
+ ],
+ "total": 20,
+ "textos": [
+  {
+   "texto": "Orçamentos",
+   "arquivo": "src/app/admin/orcamentos/page.tsx",
+   "linha": 14,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Orçamentos",
+   "arquivo": "src/app/admin/orcamentos/page.tsx",
+   "linha": 38,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "montar um orçamento e mandar o link para quem pediu responder",
+   "arquivo": "src/app/admin/orcamentos/page.tsx",
+   "linha": 44,
+   "tipo": "prop:acao"
+  },
+  {
+   "texto": "Aguardando resposta",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 20,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Aprovado",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 21,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Recusado",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 22,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Vencido",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 23,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Virou agendamento",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 24,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Rascunho",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 25,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Pedido novo",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 32,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Aguardando resposta",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 34,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Copiar link do orçamento",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 79,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Copiado!",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 80,
+   "tipo": "title"
+  },
+  {
+   "texto": "Copiar link",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 80,
+   "tipo": "title"
+  },
+  {
+   "texto": "Marcar horário",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 97,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Nenhum orçamento ainda",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 119,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Monte um orçamento, mande o link e acompanhe a resposta por aqui.",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 120,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Gerencie seu plano em {APP_HOST}.",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 130,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ver os planos",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 132,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Criar orçamento",
+   "arquivo": "src/app/admin/orcamentos/lista.tsx",
+   "linha": 135,
+   "tipo": "link",
+   "tag": "Link"
+  }
+ ]
+}

@@ -1,0 +1,18 @@
+[
+  {"nome":"aquecer /admin/hoje","path":"/admin/hoje"},
+  {"nome":"/admin/hoje","path":"/admin/hoje"},
+  {"nome":"/admin/agenda","path":"/admin/agenda"},
+  {"nome":"/admin/agenda/novo","path":"/admin/agenda/novo"},
+  {"nome":"/admin/caixa","path":"/admin/caixa"},
+  {"nome":"/admin/mes","path":"/admin/mes"},
+  {"nome":"/admin/clientes","path":"/admin/clientes"},
+  {"nome":"/admin/clientes/[id] (ficha)","path":"/admin/clientes/b5a85dd1-6bb6-4393-b416-0c39f4ecc224","extras":["b5a85dd1-6bb6-4393-b416-0c39f4ecc224"]},
+  {"nome":"/admin/recuperar","path":"/admin/recuperar"},
+  {"nome":"/admin/campanhas","path":"/admin/campanhas"},
+  {"nome":"/admin/config/servicos","path":"/admin/config/servicos"},
+  {"nome":"/admin/comanda/agendamento/[id]","path":"/admin/comanda/agendamento/25dd6398-53df-4a40-8207-41ec368561be","extras":["25dd6398-53df-4a40-8207-41ec368561be"]},
+  {"nome":"/demo-salao-encanto (público)","path":"/demo-salao-encanto","anon":true,"extras":["demo-salao-encanto"]},
+  {"nome":"/demo-salao-encanto/agendar","path":"/demo-salao-encanto/agendar","anon":true,"extras":["demo-salao-encanto"]},
+  {"nome":"GET availability (público)","path":"/api/v1/public/demo-salao-encanto/availability?serviceId=083649fa-03b0-4ed3-86c1-77f39b978aee&date=2026-10-15","anon":true,"extras":["demo-salao-encanto"]},
+  {"nome":"/entrar","path":"/entrar","anon":true}
+]

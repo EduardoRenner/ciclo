@@ -1,0 +1,57 @@
+{
+ "rota": "global-error.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/global-error.tsx"
+ ],
+ "componentes_compartilhados_usados": [],
+ "total": 7,
+ "textos": [
+  {
+   "texto": "0 20px",
+   "arquivo": "src/app/global-error.tsx",
+   "linha": 45,
+   "tipo": "prop:padding"
+  },
+  {
+   "texto": "system-ui, sans-serif",
+   "arquivo": "src/app/global-error.tsx",
+   "linha": 55,
+   "tipo": "prop:fontFamily"
+  },
+  {
+   "texto": "O CICLO não conseguiu abrir",
+   "arquivo": "src/app/global-error.tsx",
+   "linha": 68,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Foi uma falha ao carregar a tela, não nos seus dados. Nada do que você salvou foi perdido.",
+   "arquivo": "src/app/global-error.tsx",
+   "linha": 70,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Tentar de novo",
+   "arquivo": "src/app/global-error.tsx",
+   "linha": 74,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Ir para o início",
+   "arquivo": "src/app/global-error.tsx",
+   "linha": 81,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "1px solid #2b2927",
+   "arquivo": "src/app/global-error.tsx",
+   "linha": 80,
+   "tipo": "prop:border"
+  }
+ ]
+}

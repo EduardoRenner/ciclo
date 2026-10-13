@@ -1,0 +1,218 @@
+{
+ "rota": "admin/config/mensagens/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/mensagens/page.tsx",
+  "src/app/admin/config/mensagens/editor.tsx",
+  "src/app/admin/config/mensagens/pausar-envios.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/sheet.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/mensagens.ts",
+  "src/lib/utils.ts"
+ ],
+ "total": 31,
+ "textos": [
+  {
+   "texto": "Mensagens prontas",
+   "arquivo": "src/app/admin/config/mensagens/page.tsx",
+   "linha": 14,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Mensagens prontas",
+   "arquivo": "src/app/admin/config/mensagens/page.tsx",
+   "linha": 27,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Escreva uma vez, mande com um toque. Use as variáveis para o texto sair com o nome de cada cliente.",
+   "arquivo": "src/app/admin/config/mensagens/page.tsx",
+   "linha": 27,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Bruno Almeida",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 17,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Corte + barba",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 18,
+   "tipo": "prop:servico"
+  },
+  {
+   "texto": "Não consegui salvar.",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 73,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Modelo criado",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 78,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Modelo atualizado",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 78,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 83,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui apagar",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 96,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Modelo apagado",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 100,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 103,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 103,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Criar modelo",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 113,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Nenhum modelo salvo",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 121,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Modelos são mensagens prontas com o nome e a data já no lugar. Você só revisa e envia.",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 122,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Criar modelo",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 123,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Novo modelo",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 146,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Editar modelo",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 146,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Nome do modelo",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 150,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Lembrete de amanhã",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 154,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Mensagem",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 160,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Oi {{nome}}, tudo bem?",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 166,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Como quem recebe vê",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 188,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Salvar modelo",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 203,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Apagar modelo",
+   "arquivo": "src/app/admin/config/mensagens/editor.tsx",
+   "linha": 213,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "Não deu para salvar agora. Tente de novo.",
+   "arquivo": "src/app/admin/config/mensagens/pausar-envios.tsx",
+   "linha": 36,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Sem conexão agora. O que você mudou não foi salvo.",
+   "arquivo": "src/app/admin/config/mensagens/pausar-envios.tsx",
+   "linha": 41,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Lembretes e campanhas",
+   "arquivo": "src/app/admin/config/mensagens/pausar-envios.tsx",
+   "linha": 61,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Retomar envios",
+   "arquivo": "src/app/admin/config/mensagens/pausar-envios.tsx",
+   "linha": 77,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Pausar envios",
+   "arquivo": "src/app/admin/config/mensagens/pausar-envios.tsx",
+   "linha": 77,
+   "tipo": "texto",
+   "tag": "span"
+  }
+ ]
+}

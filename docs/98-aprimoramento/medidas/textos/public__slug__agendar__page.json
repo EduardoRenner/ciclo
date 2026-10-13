@@ -1,0 +1,532 @@
+{
+ "rota": "(public)/[slug]/agendar/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(public)/[slug]/agendar/page.tsx",
+  "src/app/(public)/[slug]/agendar/agendar.tsx",
+  "src/app/(public)/[slug]/agendar/alternador-de-exemplo.tsx",
+  "src/app/(public)/[slug]/agendar/painel-do-dono-exemplo.tsx",
+  "src/components/ui/filter-row.tsx",
+  "src/lib/reconhecimento-local.ts"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/lib/utils.ts",
+  "src/lib/mensagens.ts",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/chip.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/phone-input.tsx",
+  "src/lib/formato.ts"
+ ],
+ "total": 78,
+ "textos": [
+  {
+   "texto": "Agendar em {perfil.name}",
+   "arquivo": "src/app/(public)/[slug]/agendar/page.tsx",
+   "linha": 24,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Escolha o serviço, o dia e o horário na {perfil.name}. Sem ligar, sem esperar resposta.",
+   "arquivo": "src/app/(public)/[slug]/agendar/page.tsx",
+   "linha": 25,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Agendar em {perfil.name}",
+   "arquivo": "src/app/(public)/[slug]/agendar/page.tsx",
+   "linha": 79,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Negócio de exemplo. Ele não existe: dá para percorrer o agendamento inteiro, mas nenhum horário marcado será atendido.",
+   "arquivo": "src/app/(public)/[slug]/agendar/page.tsx",
+   "linha": 99,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Negócio de exemplo.",
+   "arquivo": "src/app/(public)/[slug]/agendar/page.tsx",
+   "linha": 99,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Manhã",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 118,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Tarde",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 119,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Noite",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 120,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Trocar",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 176,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Confirmar agendamento",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 226,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Tanto faz",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 427,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Tanto faz",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 428,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui buscar horários.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 484,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e toque no dia de novo.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 497,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Esse horário acabou de ser reservado. Escolha outro.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 635,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui confirmar. Tente de novo.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 640,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo. Se o horário já tiver sido marcado, ele aparece ao escolher o dia outra vez.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 652,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Oi! Acabei de marcar um horário pelo site da {nomeDoSalao} e queria confirmar.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 678,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Agendamento enviado!",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 694,
+   "tipo": "título-h2",
+   "tag": "h2"
+  },
+  {
+   "texto": "às",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 709,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "com {profissional}",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 714,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Seu pedido chegou e já apareceu para a equipe. A confirmação vem de quem vai te atender, e pode não ser na hora.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 738,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Se não tiver retorno em algumas horas, fale direto:",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 741,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Se não tiver retorno em algumas horas, é só chamar por telefone.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 743,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Adicionar à minha agenda",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 790,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Voltar para {nomeDoSalao}",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 797,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Manhã",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 825,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Tarde",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 825,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Noite",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 825,
+   "tipo": "texto"
+  },
+  {
+   "texto": "{indicadaPor} indicou este lugar pra você",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 870,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Marque seu primeiro horário abaixo, e {nomeDoSalao} vai saber que foi {indicadaPor} quem te trouxe.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 873,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Oi, {reconhecimento.primeiroNome}!",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 888,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Da última vez foi {…}{…}. Quer marcar de novo?",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 892,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Que bom te ver de novo por aqui.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 897,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Marcar de novo",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 901,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Agora não",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 906,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Tanto faz",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 988,
+   "tipo": "texto",
+   "tag": "Chip"
+  },
+  {
+   "texto": "Dia",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1027,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Escolher o dia",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1028,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "{nomeDoDia}, dia {data.getUTCDate()}{fechado ? \", fechado\" : \"\"}",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1045,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Buscando horários.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1125,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Nesse dia o atendimento não abre.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1128,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sem horários livres nesse dia.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1129,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{…} {…} em {…}.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1130,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Nesse dia o atendimento não abre. Escolha outra data no trilho acima.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1137,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sem horários livres nesse dia. Tente outra data.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1138,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{grupo.itens.length} {…} · a partir de {primeiro}",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1165,
+   "tipo": "botão",
+   "tag": "button"
+  },
+  {
+   "texto": "· a partir de {primeiro}",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1166,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "horário",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1166,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "horários",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1166,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Buscando horários…",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1192,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "às",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1207,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Este horário pede um sinal de {…} . Quem te atende combina o pagamento com você depois de confirmar.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1229,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Aproveitar que vou fazer",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1261,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "e levar {…} {…} · combinado com quem te atende, no dia",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1261,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "· combinado com quem te atende, no dia",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1264,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Seu nome",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1278,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Seu telefone (WhatsApp)",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1285,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "E-mail (opcional)",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1297,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Onde vai ser (opcional)",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1317,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Só preencha se não for no nosso endereço.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1320,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Não preencha este campo",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1330,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Preencha seu nome e seu telefone para confirmar.",
+   "arquivo": "src/app/(public)/[slug]/agendar/agendar.tsx",
+   "linha": 1351,
+   "tipo": "prop:motivoBloqueio"
+  },
+  {
+   "texto": "Visão de quem agenda",
+   "arquivo": "src/app/(public)/[slug]/agendar/alternador-de-exemplo.tsx",
+   "linha": 31,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Visão de quem atende",
+   "arquivo": "src/app/(public)/[slug]/agendar/alternador-de-exemplo.tsx",
+   "linha": 32,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Visão de quem agenda",
+   "arquivo": "src/app/(public)/[slug]/agendar/alternador-de-exemplo.tsx",
+   "linha": 51,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Visão de quem atende",
+   "arquivo": "src/app/(public)/[slug]/agendar/alternador-de-exemplo.tsx",
+   "linha": 54,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Hoje",
+   "arquivo": "src/app/(public)/[slug]/agendar/painel-do-dono-exemplo.tsx",
+   "linha": 26,
+   "tipo": "prop:hoje"
+  },
+  {
+   "texto": "Recuperar",
+   "arquivo": "src/app/(public)/[slug]/agendar/painel-do-dono-exemplo.tsx",
+   "linha": 26,
+   "tipo": "prop:recuperar"
+  },
+  {
+   "texto": "Clientes",
+   "arquivo": "src/app/(public)/[slug]/agendar/painel-do-dono-exemplo.tsx",
+   "linha": 26,
+   "tipo": "prop:clientes"
+  },
+  {
+   "texto": "Quem passou da hora de voltar, pelo nome, com quanto cada um costuma deixar. É daqui que você chama de volta.",
+   "arquivo": "src/app/(public)/[slug]/agendar/painel-do-dono-exemplo.tsx",
+   "linha": 33,
+   "tipo": "prop:recuperar"
+  },
+  {
+   "texto": "O dia num relance: quem vem a seguir, quanto já entrou e o que pede atenção.",
+   "arquivo": "src/app/(public)/[slug]/agendar/painel-do-dono-exemplo.tsx",
+   "linha": 34,
+   "tipo": "prop:hoje"
+  },
+  {
+   "texto": "Cada cliente com o histórico de visitas e o ticket médio, e quem está sumindo.",
+   "arquivo": "src/app/(public)/[slug]/agendar/painel-do-dono-exemplo.tsx",
+   "linha": 35,
+   "tipo": "prop:clientes"
+  },
+  {
+   "texto": "Trocar de tela",
+   "arquivo": "src/app/(public)/[slug]/agendar/painel-do-dono-exemplo.tsx",
+   "linha": 62,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Tela \"{ROTULO[aba]}\" do painel do CICLO, aberta numa conta de demonstração",
+   "arquivo": "src/app/(public)/[slug]/agendar/painel-do-dono-exemplo.tsx",
+   "linha": 74,
+   "tipo": "alt"
+  },
+  {
+   "texto": "Dados fictícios, tela real do CICLO.",
+   "arquivo": "src/app/(public)/[slug]/agendar/painel-do-dono-exemplo.tsx",
+   "linha": 95,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "A data é a do dia em que a tela foi capturada.",
+   "arquivo": "src/app/(public)/[slug]/agendar/painel-do-dono-exemplo.tsx",
+   "linha": 96,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Criar minha conta",
+   "arquivo": "src/app/(public)/[slug]/agendar/painel-do-dono-exemplo.tsx",
+   "linha": 104,
+   "tipo": "link",
+   "tag": "Link"
+  }
+ ]
+}

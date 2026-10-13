@@ -1,0 +1,43 @@
+{
+ "rota": "not-found.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/not-found.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/shell/selo.tsx",
+  "src/components/shell/tela-publica.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/utils.ts"
+ ],
+ "total": 4,
+ "textos": [
+  {
+   "texto": "Página não encontrada",
+   "arquivo": "src/app/not-found.tsx",
+   "linha": 36,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Página não encontrada",
+   "arquivo": "src/app/not-found.tsx",
+   "linha": 43,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "O endereço não existe ou mudou de lugar.",
+   "arquivo": "src/app/not-found.tsx",
+   "linha": 44,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Voltar ao início",
+   "arquivo": "src/app/not-found.tsx",
+   "linha": 50,
+   "tipo": "link",
+   "tag": "Link"
+  }
+ ]
+}

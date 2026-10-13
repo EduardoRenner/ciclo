@@ -1,0 +1,27 @@
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs'
+const [arquivo, ...combos] = process.argv.slice(2)
+const base = 'file:///C:/Users/Usuario/.claude/code/ciclo-aprimoramento/docs/98-aprimoramento/prototipos/'
+const capt = 'C:/Users/Usuario/.claude/code/ciclo-aprimoramento/docs/98-aprimoramento/capturas/'
+const b = await chromium.launch({ channel: 'chrome' })
+const p = await b.newPage({ viewport: { width: 1400, height: 1000 } })
+const erros = []
+p.on('pageerror', (e) => erros.push(e.message)); p.on('console', (m) => { if (m.type() === 'error') erros.push(m.text()) })
+for (const combo of combos) {
+  const [aparelho, largura, tema, estado] = combo.split(',')
+  await p.goto(`${base}${arquivo}.html#aparelho=${aparelho}&largura=${largura}&tema=${tema}&estado=${estado}&regua=1`)
+  await p.reload()
+  await p.waitForTimeout(200)
+  const ap = p.locator('.aparelho')
+  // medida simples: y do primeiro elemento marcado como resposta da tela, relativo ao topo do aparelho
+  const medida = await p.evaluate(() => {
+    const ap = document.querySelector('.aparelho').getBoundingClientRect()
+    const alvo = [...document.querySelectorAll('[data-resposta]')].find((e) => e.offsetParent !== null)
+    const inter = [...document.querySelectorAll('.aparelho a, .aparelho button, .aparelho input, .aparelho select')].filter((e) => { const r = e.getBoundingClientRect(); return e.offsetParent !== null && r.top - ap.top < ap.height && r.bottom > ap.top })
+    return { yResposta: alvo ? Math.round(alvo.getBoundingClientRect().top - ap.top) : null, interativosNaTela: inter.length, larguraRolagemLateral: Math.max(0, ...[...document.querySelectorAll('.aparelho .area, .aparelho .rolagem')].map((e) => e.scrollWidth - e.clientWidth)) }
+  })
+  const nome = `proto-${arquivo}-${estado}-${aparelho === 'computador' ? 1280 : largura}-${tema}.png`
+  await ap.screenshot({ path: capt + nome })
+  console.log(nome, JSON.stringify(medida))
+}
+if (erros.length) console.log('ERROS', erros)
+await b.close()

@@ -1,0 +1,372 @@
+// Agente A · varredura de interface (SÓ local, http://localhost:3200).
+// Para cada rota × largura × tema: captura, axe, rolagem lateral, alvos de toque (sondagem com
+// elementFromPoint ao longo das linhas centrais, como manda o CLAUDE.md sobre `toque-48`), menor
+// fonte, foco nos 10 primeiros Tab, inventário da 1ª tela, aproveitamento no computador.
+// Uso: node A-varredura.mjs [filtroRegex]
+// Saída: ../capturas/<rota>-<largura>-<tema>.png e A-varredura.json (sem cookie/token).
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs';
+import AxeBuilder from 'file:///C:/temp/ciclo-medicao/node_modules/@axe-core/playwright/dist/index.mjs';
+import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+const BASE = 'http://localhost:3200';
+if (!/^http:\/\/localhost:/.test(BASE)) throw new Error('só local');
+const ESTADO = 'C:/temp/ciclo-medicao/estado-A-dono.json';
+const ids = JSON.parse(readFileSync(new URL('./A-ids.json', import.meta.url), 'utf8'));
+const CAP = new URL('../capturas/', import.meta.url);
+mkdirSync(CAP, { recursive: true });
+const SAIDA = new URL('./A-varredura.json', import.meta.url);
+
+const CLIENTE = 'cf3e5831-4a82-4fe0-8398-0f060d41ec95';
+const PROF = 'e5cdc8c3-ac6e-4842-ac0b-24538498a0ba';
+const APPT = '07bce881-65e9-4597-bb44-98c4c4a0796f';
+const FICHA = ids.servicoFicha[0];
+const CASO = '36bebc78-4cd6-479c-93cf-c912d5754d3a';
+const INTIM = 'a59f285a-ac6c-483c-b254-bd5a28bdbbbc';
+const UUID_FALSO = '00000000-0000-4000-8000-000000000000';
+const TOKEN_FALSO = 'token-de-medicao-inexistente';
+
+// [rota, logado, importante]
+const ROTAS = [
+  ['/admin', true, false],
+  ['/admin/hoje', true, true],
+  ['/admin/agenda', true, true],
+  ['/admin/agenda/novo', true, true],
+  ['/admin/caixa', true, true],
+  ['/admin/campanhas', true, true],
+  ['/admin/campanhas/nova', true, false],
+  ['/admin/casos', true, false],
+  ['/admin/casos/novo', true, false],
+  [`/admin/casos/${CASO}`, true, false],
+  ['/admin/clientes', true, true],
+  [`/admin/clientes/${CLIENTE}`, true, true],
+  [`/admin/clientes/${CLIENTE}/estrutura`, true, false],
+  ['/admin/clientes/exportar', true, false],
+  ['/admin/clientes/importar', true, false],
+  ['/admin/clientes/ja-atendo', true, false],
+  ['/admin/clientes/nova', true, false],
+  ['/admin/clientes/vindo-de-outro-sistema', true, false],
+  [`/admin/comanda/${UUID_FALSO}`, true, false],
+  [`/admin/comanda/agendamento/${APPT}`, true, true],
+  ['/admin/comissao', true, false],
+  ['/admin/estoque', true, false],
+  ['/admin/experimentos', true, false],
+  [`/admin/intimacoes/${INTIM}`, true, false],
+  ['/admin/mes', true, true],
+  ['/admin/orcamentos', true, true],
+  ['/admin/orcamentos/novo', true, false],
+  ['/admin/pendencias', true, false],
+  ['/admin/recuperar', true, true],
+  ['/admin/series', true, false],
+  ['/admin/config', true, true],
+  ['/admin/config/advocacia', true, false],
+  ['/admin/config/automacoes', true, false],
+  ['/admin/config/cofre', true, false],
+  ['/admin/config/custo-fixo', true, false],
+  ['/admin/config/excluir-conta', true, false],
+  ['/admin/config/horarios', true, false],
+  ['/admin/config/mensagens', true, false],
+  ['/admin/config/meu-plano', true, false],
+  ['/admin/config/modulos', true, false],
+  ['/admin/config/negocio', true, false],
+  ['/admin/config/notificacoes', true, false],
+  ['/admin/config/planos', true, false],
+  ['/admin/config/profissionais', true, false],
+  [`/admin/config/profissionais/${PROF}`, true, false],
+  ['/admin/config/seguranca', true, false],
+  ['/admin/config/servicos', true, false],
+  [FICHA, true, false],
+  ['/admin/config/taxas', true, false],
+  ['/onboarding', true, false],
+  ['/onboarding/perfil', true, false],
+  ['/dev/ui', true, false],
+  ['/', false, false],
+  ['/demo-dom-estilo', false, true],
+  ['/demo-dom-estilo/agendar', false, true],
+  ['/demo-dom-estilo/orcamento', false, false],
+  [`/avaliar/${TOKEN_FALSO}`, false, false],
+  ['/calculadora', false, false],
+  [`/confirmar/${TOKEN_FALSO}`, false, true],
+  ['/links', false, false],
+  [`/lista-espera/${TOKEN_FALSO}`, false, false],
+  [`/orcamento/${TOKEN_FALSO}`, false, false],
+  ['/precos', false, false],
+  ['/privacidade', false, false],
+  ['/termos', false, false],
+  ['/cadastro', false, false],
+  ['/entrar', false, false],
+  ['/nova-senha', false, false],
+  ['/recuperar-senha', false, false],
+  ['/verificar', false, false],
+];
+
+const nomeDaRota = (r) =>
+  (r === '/' ? 'landing' : r.slice(1))
+    .replace(CLIENTE, 'ID').replace(PROF, 'ID').replace(APPT, 'ID').replace(CASO, 'ID').replace(INTIM, 'ID')
+    .replace(UUID_FALSO, 'ID-FALSO').replace(TOKEN_FALSO, 'TOKEN-FALSO')
+    .replace(/[0-9a-f]{8}-[0-9a-f-]{27}/, 'ID')
+    .replace(/\//g, '_');
+
+// ---------- medições dentro da página ----------
+function medirNaPagina(vw) {
+  const visivel = (el) => {
+    const s = getComputedStyle(el);
+    if (s.visibility === 'hidden' || s.display === 'none' || Number(s.opacity) === 0) return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  };
+  const SEL = 'a[href],button,input:not([type=hidden]),select,textarea,summary,[role=button],[role=link],[role=tab],[role=switch],[role=checkbox],[role=radio],[role=menuitem],[tabindex]:not([tabindex="-1"])';
+  const de = document.documentElement;
+  // rolagem lateral
+  const sw = Math.max(de.scrollWidth, document.body.scrollWidth);
+  const vazamentos = [];
+  const carrosseis = [];
+  for (const el of document.body.querySelectorAll('*')) {
+    if (!visivel(el)) continue;
+    const s = getComputedStyle(el);
+    if ((s.overflowX === 'auto' || s.overflowX === 'scroll') && el.scrollWidth > el.clientWidth + 1) {
+      carrosseis.push({ el: descr(el), largura: el.clientWidth, conteudo: el.scrollWidth });
+    }
+    const r = el.getBoundingClientRect();
+    if (r.right > vw + 1 && s.position !== 'fixed') {
+      let p = el.parentElement, dentroDeRolagem = false;
+      while (p) { const ps = getComputedStyle(p); if (ps.overflowX !== 'visible' && ps.overflowX !== 'clip' ? true : ps.overflowX === 'clip') { if (ps.overflowX !== 'visible') { dentroDeRolagem = true; break; } } p = p.parentElement; }
+      if (!dentroDeRolagem && vazamentos.length < 8) vazamentos.push({ el: descr(el), direita: Math.round(r.right) });
+    }
+  }
+  function descr(el) {
+    const id = el.id ? '#' + el.id : '';
+    const cls = (el.getAttribute('class') || '').split(/\s+/).slice(0, 3).join('.');
+    const txt = (el.innerText || el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.value || '').trim().replace(/\s+/g, ' ').slice(0, 50);
+    return `${el.tagName.toLowerCase()}${id}${cls ? '.' + cls : ''}${txt ? ` "${txt}"` : ''}`;
+  }
+  // fontes
+  const tamanhos = {};
+  let menorFonte = 999, menorFonteEl = null;
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  let n;
+  while ((n = walker.nextNode())) {
+    if (!n.textContent.trim()) continue;
+    const el = n.parentElement;
+    if (!el || !visivel(el) || el.closest('[aria-hidden=true],script,style,noscript,.sr-only')) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2) continue;
+    const fs = parseFloat(getComputedStyle(el).fontSize);
+    tamanhos[fs] = (tamanhos[fs] || 0) + 1;
+    if (fs < menorFonte) { menorFonte = fs; menorFonteEl = descr(el); }
+  }
+  // interativos
+  const interativos = [...document.querySelectorAll(SEL)].filter(visivel);
+  const primarios = interativos.filter((el) => /\bbg-acc\b/.test(el.getAttribute('class') || '') && /text-on-acc/.test(el.getAttribute('class') || ''));
+  const naDobra = interativos.filter((el) => { const r = el.getBoundingClientRect(); return r.top + window.scrollY < innerHeight && r.bottom > 0; });
+  const iconeSemRotulo = interativos.filter((el) => !(el.innerText || '').trim() && !['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName))
+    .map((el) => ({ el: descr(el), nomeAcessivel: el.getAttribute('aria-label') || el.getAttribute('title') || (el.getAttribute('aria-labelledby') ? 'labelledby' : '') }));
+  return {
+    rolagemLateral: { scrollWidth: sw, clientWidth: de.clientWidth, sobra: sw - de.clientWidth, vazamentos, carrosseis: carrosseis.slice(0, 6) },
+    fontes: { menor: menorFonte === 999 ? null : menorFonte, menorEl: menorFonteEl, distribuicao: tamanhos },
+    totalInterativos: interativos.length,
+    interativosNaDobra: naDobra.length,
+    primarios: primarios.map(descr),
+    primariosNaDobra: primarios.filter((el) => el.getBoundingClientRect().top < innerHeight).map(descr),
+    iconeSemRotulo,
+    alturaPagina: de.scrollHeight,
+  };
+}
+
+// inventário da 1ª tela (para as 15)
+function inventarioDobra() {
+  const vh = innerHeight;
+  const out = [];
+  const visivel = (el) => { const s = getComputedStyle(el); const r = el.getBoundingClientRect(); return s.visibility !== 'hidden' && s.display !== 'none' && Number(s.opacity) > 0 && r.width > 0 && r.height > 0 && r.top < vh && r.bottom > 0; };
+  const SEL = 'h1,h2,h3,h4,p,a[href],button,input:not([type=hidden]),select,textarea,label,[role=button],[role=tab],[role=status],[role=alert],li,dt,dd,span,div,svg,img';
+  const vistos = new Set();
+  for (const el of document.querySelectorAll(SEL)) {
+    if (!visivel(el)) continue;
+    if (el.closest('[aria-hidden=true]') && el.tagName !== 'svg') continue;
+    const tag = el.tagName.toLowerCase();
+    const interativo = el.matches('a[href],button,input,select,textarea,[role=button],[role=tab]');
+    // texto "folha": só pega elemento cujo texto direto não está vazio
+    const textoDireto = [...el.childNodes].filter((c) => c.nodeType === 3).map((c) => c.textContent).join('').trim();
+    if (!interativo && !/^h[1-4]$/.test(tag) && !textoDireto && tag !== 'img' && tag !== 'input') continue;
+    if ([...vistos].some((v) => v.contains(el) && v !== el && v.matches('a[href],button'))) continue;
+    if (interativo) vistos.add(el);
+    const r = el.getBoundingClientRect();
+    const cs = getComputedStyle(el);
+    const cls = el.getAttribute('class') || '';
+    out.push({
+      tipo: interativo ? (tag === 'a' ? 'link' : tag === 'button' || el.getAttribute('role') === 'button' ? 'botão' : tag) : /^h[1-4]$/.test(tag) ? 'título ' + tag : tag === 'img' ? 'imagem' : 'texto',
+      texto: ((interativo ? el.innerText : textoDireto) || el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('alt') || '').trim().replace(/\s+/g, ' ').slice(0, 80),
+      aria: el.getAttribute('aria-label') || '',
+      href: el.getAttribute('href') || '',
+      primario: /\bbg-acc\b/.test(cls) && /text-on-acc/.test(cls),
+      fonte: parseFloat(cs.fontSize), peso: cs.fontWeight,
+      y: Math.round(r.top), x: Math.round(r.left), w: Math.round(r.width), h: Math.round(r.height),
+    });
+  }
+  return out;
+}
+
+// alvos de toque: rola cada alvo para o centro e sonda pixel a pixel nas linhas centrais
+async function medirAlvos(page) {
+  const total = await page.evaluate(() => {
+    const SEL = 'a[href],button,input:not([type=hidden]),select,textarea,summary,[role=button],[role=link],[role=tab],[role=switch],[role=checkbox],[role=radio],[tabindex]:not([tabindex="-1"])';
+    const els = [...document.querySelectorAll(SEL)].filter((el) => { const s = getComputedStyle(el); const r = el.getBoundingClientRect(); return s.visibility !== 'hidden' && s.display !== 'none' && r.width > 0 && r.height > 0; });
+    els.forEach((el, i) => el.setAttribute('data-medir-alvo', String(i)));
+    return els.length;
+  });
+  const lim = Math.min(total, 160);
+  const res = [];
+  for (let i = 0; i < lim; i++) {
+    const m = await page.evaluate((i) => {
+      const el = document.querySelector(`[data-medir-alvo="${i}"]`);
+      if (!el) return null;
+      el.scrollIntoView({ block: 'center', inline: 'center' });
+      const r = el.getBoundingClientRect();
+      const cx = Math.round(r.left + r.width / 2), cy = Math.round(r.top + r.height / 2);
+      const acerta = (x, y) => { if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) return false; const h = document.elementFromPoint(x, y); return !!h && (h === el || el.contains(h)); };
+      const corrida = (eixo) => {
+        if (!acerta(cx, cy)) return 0;
+        let a = 0, b = 0;
+        while (a < 60 + (eixo === 'x' ? r.width : r.height) && acerta(eixo === 'x' ? cx - a - 1 : cx, eixo === 'x' ? cy : cy - a - 1)) a++;
+        while (b < 60 + (eixo === 'x' ? r.width : r.height) && acerta(eixo === 'x' ? cx + b + 1 : cx, eixo === 'x' ? cy : cy + b + 1)) b++;
+        return a + b + 1;
+      };
+      const efW = corrida('x'), efH = corrida('y');
+      const coberto = !acerta(cx, cy);
+      let cobertoPor = '';
+      if (coberto) { const h = document.elementFromPoint(cx, cy); cobertoPor = h ? h.tagName.toLowerCase() + '.' + (h.getAttribute('class') || '').split(/\s+/).slice(0, 2).join('.') : 'fora da tela'; }
+      const s = getComputedStyle(el);
+      const inline = s.display === 'inline';
+      const txt = (el.innerText || el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('name') || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+      return { el: `${el.tagName.toLowerCase()} "${txt}"`, visW: Math.round(r.width), visH: Math.round(r.height), efW, efH, coberto, cobertoPor, inline, toque48: /toque-48/.test(el.getAttribute('class') || ''), tipo: el.getAttribute('type') || '' };
+    }, i);
+    if (m) res.push(m);
+  }
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const pequenos = res.filter((m) => !m.coberto && (m.efW < 48 || m.efH < 48));
+  const cobertos = res.filter((m) => m.coberto);
+  return { medidos: res.length, totalInterativos: total, pequenos, cobertos };
+}
+
+async function medirFoco(page) {
+  await page.evaluate(() => { window.scrollTo(0, 0); document.activeElement?.blur?.(); });
+  await page.mouse.click(1, 1).catch(() => {});
+  const passos = [];
+  for (let i = 0; i < 10; i++) {
+    await page.keyboard.press('Tab');
+    const f = await page.evaluate(() => {
+      const el = document.activeElement;
+      if (!el || el === document.body) return { el: 'body' };
+      const s = getComputedStyle(el);
+      const outline = s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0;
+      const sombra = s.boxShadow && s.boxShadow !== 'none' && s.boxShadow.replace(/rgba\(0, 0, 0, 0\)[^,]*(,|$)/g, '').trim() !== '';
+      const r = el.getBoundingClientRect();
+      const noViewport = r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+      const txt = (el.innerText || el.getAttribute('aria-label') || el.getAttribute('placeholder') || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+      return { el: `${el.tagName.toLowerCase()} "${txt}"`, visivel: outline || !!sombra, outline: outline ? `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor}` : '', sombra: sombra ? s.boxShadow.slice(0, 60) : '', noViewport };
+    });
+    passos.push(f);
+  }
+  return passos;
+}
+
+function medirComputador() {
+  const vw = innerWidth, vh = innerHeight;
+  const main = document.querySelector('main') || document.body;
+  const mr = main.getBoundingClientRect();
+  let l = Infinity, r = -Infinity;
+  const walker = document.createTreeWalker(main, NodeFilter.SHOW_ELEMENT);
+  let n;
+  while ((n = walker.nextNode())) {
+    const s = getComputedStyle(n);
+    if (s.display === 'none' || s.visibility === 'hidden') continue;
+    const temConteudo = [...n.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim()) || ['IMG', 'SVG', 'INPUT', 'BUTTON', 'SELECT', 'TEXTAREA', 'CANVAS'].includes(n.tagName.toUpperCase()) || (s.backgroundColor !== 'rgba(0, 0, 0, 0)' && s.backgroundColor !== 'transparent') || (s.borderTopWidth !== '0px' && s.borderTopStyle !== 'none');
+    if (!temConteudo) continue;
+    const b = n.getBoundingClientRect();
+    if (b.width < 1 || b.height < 1 || b.top > 4000) continue;
+    l = Math.min(l, b.left); r = Math.max(r, b.right);
+  }
+  const lateral = document.querySelector('aside, nav[aria-label]');
+  const ar = lateral ? lateral.getBoundingClientRect() : null;
+  const larguraLateral = ar && ar.left < 5 && ar.height > vh * 0.8 ? Math.round(ar.width) : 0;
+  const util = vw - larguraLateral;
+  const largConteudo = Math.max(0, Math.round(r - l));
+  const primario = [...document.querySelectorAll('a,button')].find((el) => /\bbg-acc\b/.test(el.getAttribute('class') || '') && /text-on-acc/.test(el.getAttribute('class') || '') && el.getBoundingClientRect().width > 0);
+  const pr = primario ? primario.getBoundingClientRect() : null;
+  return {
+    larguraLateral, larguraUtil: util, larguraConteudo: largConteudo, conteudoEsq: Math.round(l), conteudoDir: Math.round(r),
+    vazioHorizontalPct: util ? Math.round((1 - largConteudo / util) * 100) : null,
+    alturaPagina: document.documentElement.scrollHeight,
+    primario: primario ? { texto: (primario.innerText || '').trim().slice(0, 40), topo: Math.round(pr.top), semRolar: pr.top >= 0 && pr.bottom <= vh } : null,
+  };
+}
+
+// ---------- execução ----------
+const filtro = process.argv[2] ? new RegExp(process.argv[2]) : null;
+const resultados = existsSync(SAIDA) ? JSON.parse(readFileSync(SAIDA, 'utf8')) : {};
+const browser = await chromium.launch({ channel: 'chrome' });
+
+const PERFIS = [];
+for (const [rota, logado, imp] of ROTAS) {
+  PERFIS.push({ rota, logado, imp, w: 390, h: 844, tema: 'claro' });
+  PERFIS.push({ rota, logado, imp, w: 1280, h: 800, tema: 'claro' });
+  if (imp) {
+    PERFIS.push({ rota, logado, imp, w: 360, h: 640, tema: 'claro' });
+    PERFIS.push({ rota, logado, imp, w: 390, h: 844, tema: 'escuro' });
+    PERFIS.push({ rota, logado, imp, w: 1280, h: 800, tema: 'escuro' });
+  }
+}
+
+for (const p of PERFIS) {
+  const chave = `${p.rota} @${p.w} ${p.tema}`;
+  if (filtro && !filtro.test(chave)) continue;
+  const mobile = p.w < 768;
+  const ctx = await browser.newContext({
+    viewport: { width: p.w, height: p.h },
+    deviceScaleFactor: 1,
+    hasTouch: mobile,
+    isMobile: false,
+    colorScheme: p.tema === 'escuro' ? 'dark' : 'light',
+    locale: 'pt-BR',
+    timezoneId: 'America/Sao_Paulo',
+    ...(p.logado ? { storageState: ESTADO } : {}),
+  });
+  if (p.tema === 'escuro') await ctx.addCookies([{ name: 'ciclo-tema', value: 'escuro', domain: 'localhost', path: '/' }]);
+  const page = await ctx.newPage();
+  const erros = [];
+  page.on('console', (m) => { if (m.type() === 'error') erros.push(m.text().slice(0, 160)); });
+  page.on('pageerror', (e) => erros.push('pageerror: ' + String(e.message).slice(0, 160)));
+  const r = { rota: p.rota, largura: p.w, tema: p.tema, logado: p.logado };
+  try {
+    const t0 = Date.now();
+    const resp = await page.goto(BASE + p.rota, { waitUntil: 'networkidle', timeout: 60000 });
+    r.status = resp ? resp.status() : null;
+    r.urlFinal = page.url().replace(BASE, '');
+    r.msCarga = Date.now() - t0;
+    await page.waitForTimeout(400);
+    r.titulo = await page.title();
+    r.h1 = await page.$$eval('h1', (hs) => hs.map((h) => h.innerText.trim().slice(0, 60)));
+    r.temaResolvido = await page.evaluate(() => document.getElementById('raiz-do-tema')?.getAttribute('data-theme') || document.querySelector('[data-theme]')?.getAttribute('data-theme') || document.documentElement.className);
+    const arquivo = `${nomeDaRota(p.rota)}-${p.w}-${p.tema}.png`;
+    const altura = await page.evaluate(() => document.documentElement.scrollHeight);
+    await page.screenshot({ path: fileURLToPath(new URL(arquivo, CAP)), fullPage: altura <= 5000, animations: 'disabled' });
+    r.captura = `capturas/${arquivo}`;
+    Object.assign(r, await page.evaluate(medirNaPagina, p.w));
+    if (p.imp && p.w === 390) r.dobra = await page.evaluate(inventarioDobra);
+    if (p.w >= 1280) r.computador = await page.evaluate(medirComputador);
+    const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
+    r.axe = axe.violations.map((v) => ({ id: v.id, impacto: v.impact, nos: v.nodes.length, exemplo: v.nodes.slice(0, 3).map((n) => ({ alvo: n.target.join(' '), resumo: (n.failureSummary || '').replace(/\s+/g, ' ').slice(0, 220) })) }));
+    if (p.tema === 'claro' || p.imp) {
+      if (p.w !== 1280 || p.tema === 'claro') r.alvos = mobile ? await medirAlvos(page) : undefined;
+      r.foco = await medirFoco(page);
+    }
+  } catch (e) {
+    r.erro = String(e.message).slice(0, 300);
+  }
+  r.errosConsole = erros.slice(0, 6);
+  resultados[chave] = r;
+  writeFileSync(SAIDA, JSON.stringify(resultados, null, 1));
+  console.log(chave, r.status, r.urlFinal, r.erro ? 'ERRO ' + r.erro.slice(0, 80) : `axe=${(r.axe || []).length} sobra=${r.rolagemLateral?.sobra} alvosPeq=${r.alvos?.pequenos?.length ?? '-'} cob=${r.alvos?.cobertos?.length ?? '-'} fonteMin=${r.fontes?.menor}`);
+  await ctx.close();
+}
+await browser.close();

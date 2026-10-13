@@ -1,0 +1,64 @@
+// Agente A · resume A-varredura.json em tabelas markdown (A-resumo.md) para colar no relatório.
+import { readFileSync, writeFileSync } from 'node:fs';
+const j = JSON.parse(readFileSync(new URL('./A-varredura.json', import.meta.url), 'utf8'));
+const L = [];
+const rows = Object.values(j);
+const curto = (s) => String(s ?? '').replace(/\|/g, '/').slice(0, 70);
+
+L.push('## Tabela M1 · por rota e perfil (mobile/computador, claro/escuro)\n');
+L.push('| Rota | Perfil | HTTP → final | axe (regra×nós) | Sobra lateral px | Alvos <48 (efetivo) | Cobertos | Menor fonte px | Foco visível (10 Tab) | Interativos na dobra | Primários (dobra/total) |');
+L.push('|---|---|---|---|---|---|---|---|---|---|---|');
+for (const r of rows) {
+  if (r.erro) { L.push(`| ${r.rota} | ${r.largura} ${r.tema} | ERRO | ${curto(r.erro)} |||||||| `); continue; }
+  const axe = (r.axe || []).map((v) => `${v.id}×${v.nos}`).join(', ') || '0';
+  const foco = r.foco ? `${r.foco.filter((f) => f.visivel).length}/${r.foco.filter((f) => f.el !== 'body').length}` : '-';
+  const peq = r.alvos ? r.alvos.pequenos.length : '-';
+  const cob = r.alvos ? r.alvos.cobertos.length : '-';
+  L.push(`| ${r.rota} | ${r.largura} ${r.tema} | ${r.status} → ${r.urlFinal === r.rota ? '=' : r.urlFinal} | ${axe} | ${r.rolagemLateral?.sobra ?? '-'} | ${peq} | ${cob} | ${r.fontes?.menor ?? '-'} | ${foco} | ${r.interativosNaDobra ?? '-'} | ${(r.primariosNaDobra || []).length}/${(r.primarios || []).length} |`);
+}
+
+L.push('\n## Tabela M2 · computador 1280×800 (claro)\n');
+L.push('| Rota | Lateral px | Largura útil | Largura do conteúdo | Vazio horizontal | Altura da página | Primário (texto) | Primário visível sem rolar? |');
+L.push('|---|---|---|---|---|---|---|---|');
+for (const r of rows.filter((r) => r.largura === 1280 && r.tema === 'claro' && r.computador)) {
+  const c = r.computador;
+  L.push(`| ${r.rota} | ${c.larguraLateral} | ${c.larguraUtil} | ${c.larguraConteudo} (${c.conteudoEsq}→${c.conteudoDir}) | ${c.vazioHorizontalPct}% | ${c.alturaPagina} | ${curto(c.primario?.texto) || '—'} | ${c.primario ? (c.primario.semRolar ? 'sim' : `não (topo ${c.primario.topo})`) : 'sem primário'} |`);
+}
+
+L.push('\n## Tabela M3 · alvos de toque abaixo de 48 px efetivos e alvos cobertos (celular)\n');
+L.push('| Rota | Perfil | Elemento | Visual LxA | Efetivo LxA | inline? | toque-48? | Coberto por |');
+L.push('|---|---|---|---|---|---|---|---|');
+for (const r of rows.filter((r) => r.alvos)) {
+  for (const a of [...r.alvos.pequenos, ...r.alvos.cobertos]) {
+    L.push(`| ${r.rota} | ${r.largura} ${r.tema} | ${curto(a.el)} | ${a.visW}×${a.visH} | ${a.coberto ? '0 (coberto)' : `${a.efW}×${a.efH}`} | ${a.inline ? 'sim' : ''} | ${a.toque48 ? 'sim' : ''} | ${curto(a.cobertoPor)} |`);
+  }
+}
+
+L.push('\n## Tabela M4 · violações axe (detalhe)\n');
+L.push('| Rota | Perfil | Regra | Impacto | Nós | Exemplo |');
+L.push('|---|---|---|---|---|---|');
+for (const r of rows) for (const v of r.axe || []) L.push(`| ${r.rota} | ${r.largura} ${r.tema} | ${v.id} | ${v.impacto} | ${v.nos} | ${curto(v.exemplo?.[0]?.alvo)} — ${curto(v.exemplo?.[0]?.resumo)} |`);
+
+L.push('\n## Tabela M5 · foco sem indicador visível nos 10 primeiros Tab\n');
+L.push('| Rota | Perfil | Elemento | Contorno |');
+L.push('|---|---|---|---|');
+for (const r of rows) for (const f of r.foco || []) if (f.el !== 'body' && !f.visivel) L.push(`| ${r.rota} | ${r.largura} ${r.tema} | ${curto(f.el)} | ${curto(f.outline || f.sombra || 'nenhum')} |`);
+
+L.push('\n## Tabela M6 · rolagem lateral, vazamentos e carrosséis\n');
+L.push('| Rota | Perfil | Sobra | Vazamentos (elemento → borda direita) | Carrosséis (largura/conteúdo) |');
+L.push('|---|---|---|---|---|');
+for (const r of rows) {
+  const rl = r.rolagemLateral; if (!rl) continue;
+  if (rl.sobra > 0 || rl.vazamentos.length || rl.carrosseis.length) L.push(`| ${r.rota} | ${r.largura} ${r.tema} | ${rl.sobra} | ${rl.vazamentos.map((v) => curto(v.el) + '→' + v.direita).join('; ')} | ${rl.carrosseis.map((c) => curto(c.el) + ` ${c.largura}/${c.conteudo}`).join('; ')} |`);
+}
+
+L.push('\n## Tabela M7 · erros de console\n');
+for (const r of rows) if ((r.errosConsole || []).length) L.push(`- ${r.rota} @${r.largura} ${r.tema}: ${r.errosConsole.map(curto).join(' · ')}`);
+
+L.push('\n## Tabela M8 · menor fonte por rota (390 claro)\n');
+L.push('| Rota | Menor | Elemento | Distribuição (px:qtd) |');
+L.push('|---|---|---|---|');
+for (const r of rows.filter((r) => r.largura === 390 && r.tema === 'claro' && r.fontes)) L.push(`| ${r.rota} | ${r.fontes.menor} | ${curto(r.fontes.menorEl)} | ${Object.entries(r.fontes.distribuicao).sort((a, b) => a[0] - b[0]).map(([k, v]) => `${k}:${v}`).join(' ')} |`);
+
+writeFileSync(new URL('./A-resumo.md', import.meta.url), L.join('\n'));
+console.log('linhas', L.length, 'perfis', rows.length);

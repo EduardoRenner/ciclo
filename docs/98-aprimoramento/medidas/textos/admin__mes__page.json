@@ -1,0 +1,274 @@
+{
+ "rota": "admin/mes/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/mes/page.tsx",
+  "src/app/admin/mes/mapa-de-vazamento.tsx",
+  "src/app/admin/mes/resumo.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/section-header.tsx",
+  "src/components/ui/stat-tile.tsx"
+ ],
+ "total": 39,
+ "textos": [
+  {
+   "texto": "O mês",
+   "arquivo": "src/app/admin/mes/page.tsx",
+   "linha": 26,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "O mês",
+   "arquivo": "src/app/admin/mes/page.tsx",
+   "linha": 48,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Você não tem acesso ao resumo do mês",
+   "arquivo": "src/app/admin/mes/page.tsx",
+   "linha": 52,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Só quem cuida do financeiro do negócio vê o fechamento. Peça ao dono se precisar.",
+   "arquivo": "src/app/admin/mes/page.tsx",
+   "linha": 53,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Voltar para Hoje",
+   "arquivo": "src/app/admin/mes/page.tsx",
+   "linha": 54,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "O mês",
+   "arquivo": "src/app/admin/mes/page.tsx",
+   "linha": 116,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "O que entrou, o que sobrou, de quem depende, o que está parado e o quanto o Motor acertou.",
+   "arquivo": "src/app/admin/mes/page.tsx",
+   "linha": 117,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Testar antes de decidir",
+   "arquivo": "src/app/admin/mes/page.tsx",
+   "linha": 130,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Mude uma coisa por alguns dias e compare com os mesmos dias de antes.",
+   "arquivo": "src/app/admin/mes/page.tsx",
+   "linha": 131,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Onde o dinheiro está escapando",
+   "arquivo": "src/app/admin/mes/mapa-de-vazamento.tsx",
+   "linha": 22,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "{nome} de {ano}",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 32,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Nenhuma comanda fechada este mês ainda. Assim que a primeira fechar, os cinco números aparecem aqui.",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 84,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ver a agenda",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 87,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Entrou",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 99,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Sobrou",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 108,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Você ainda não disse quanto a maquininha cobra: o &ldquo;Sobrou&rdquo; acima não desconta a taxa de pagamento.",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 131,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Responder agora",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 133,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "O que a maquininha levou",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 139,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "em taxa este mês, sobre",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 141,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "passados na máquina.",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 141,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Se tudo fosse {…} ({percentualDeBps(c.feeBps)}) {…}",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 149,
+   "tipo": "texto",
+   "tag": "li"
+  },
+  {
+   "texto": "Se tudo fosse",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 150,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Ver ou mudar a taxa configurada",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 159,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "De quem depende",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 172,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "só o dono e quem cuida do financeiro veem esta linha",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 176,
+   "tipo": "prop:apoio"
+  },
+  {
+   "texto": "do lucro do mês veio de {nomeDoMaior}",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 178,
+   "tipo": "prop:apoio"
+  },
+  {
+   "texto": "ainda não há equipe suficiente para essa conta dizer algo",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 179,
+   "tipo": "prop:apoio"
+  },
+  {
+   "texto": "Parado em quem sumiu",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 187,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "ninguém em atraso hoje",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 191,
+   "tipo": "prop:apoio"
+  },
+  {
+   "texto": "de lucro, em {clientesParados} {…}",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 192,
+   "tipo": "prop:apoio"
+  },
+  {
+   "texto": "O que sobra de cada atendimento {…} {…}% desde",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 212,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "guardados. A partir de {MINIMO_DE_MESES} dá para dizer se o que sobra de cada atendimento está subindo.",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 220,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "1 mês fechado",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 220,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{serie.pontos.length} meses fechados",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 220,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O Motor acertou",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 228,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "ainda sem previsão conferida{…}",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 232,
+   "tipo": "prop:apoio"
+  },
+  {
+   "texto": "de {motor.conferidas} {…}",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 233,
+   "tipo": "prop:apoio"
+  },
+  {
+   "texto": "O dia mais parado",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 248,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "vazio nas últimas {…} semanas, de {diaOcioso.semanasObservadas} observadas",
+   "arquivo": "src/app/admin/mes/resumo.tsx",
+   "linha": 251,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

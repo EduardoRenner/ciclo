@@ -1,0 +1,574 @@
+[
+  {
+    "nome": "criar agendamento (POST /appointments)",
+    "method": "POST",
+    "path": "/api/v1/appointments",
+    "status": 200,
+    "ttfbMs": 518,
+    "totalMs": 522,
+    "idasRest": 12,
+    "idasAuth": 1,
+    "idasTotal": 13,
+    "ondasMedidas": 12,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:tenants"
+      ],
+      [
+        "rpc:idempotency_keys[?]"
+      ],
+      [
+        "select:services",
+        "select:professionals"
+      ],
+      [
+        "select:clients"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "select:client_subscriptions"
+      ],
+      [
+        "rpc:appointments"
+      ],
+      [
+        "rpc:audit_log[?]"
+      ],
+      [
+        "update:idempotency_keys[?]"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 22.7
+  },
+  {
+    "nome": "criar agendamento 2",
+    "method": "POST",
+    "path": "/api/v1/appointments",
+    "status": 200,
+    "ttfbMs": 1061,
+    "totalMs": 1061,
+    "idasRest": 12,
+    "idasAuth": 1,
+    "idasTotal": 13,
+    "ondasMedidas": 13,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:tenants"
+      ],
+      [
+        "rpc:idempotency_keys[?]"
+      ],
+      [
+        "select:services"
+      ],
+      [
+        "select:professionals"
+      ],
+      [
+        "select:clients"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "select:client_subscriptions"
+      ],
+      [
+        "rpc:appointments"
+      ],
+      [
+        "rpc:audit_log[?]"
+      ],
+      [
+        "update:idempotency_keys[?]"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 1,
+    "depoisDaResposta": [],
+    "dbMsTotal": 175.6
+  },
+  {
+    "nome": "confirmar (POST /confirm)",
+    "method": "POST",
+    "path": "/api/v1/appointments/8f431c0a-e96f-4980-bf99-8a321ca00dc7/confirm",
+    "status": 200,
+    "ttfbMs": 859,
+    "totalMs": 859,
+    "idasRest": 6,
+    "idasAuth": 1,
+    "idasTotal": 7,
+    "ondasMedidas": 7,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "rpc:idempotency_keys[?]"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "update:appointments"
+      ],
+      [
+        "rpc:audit_log[?]"
+      ],
+      [
+        "update:idempotency_keys[?]"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 95
+  },
+  {
+    "nome": "chegou (POST /arrive)",
+    "method": "POST",
+    "path": "/api/v1/appointments/8f431c0a-e96f-4980-bf99-8a321ca00dc7/arrive",
+    "status": 200,
+    "ttfbMs": 1366,
+    "totalMs": 1367,
+    "idasRest": 6,
+    "idasAuth": 1,
+    "idasTotal": 7,
+    "ondasMedidas": 7,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "rpc:idempotency_keys[?]"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "update:appointments"
+      ],
+      [
+        "rpc:audit_log[?]"
+      ],
+      [
+        "update:idempotency_keys[?]"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 7,
+    "depoisDaResposta": [],
+    "dbMsTotal": 187.5
+  },
+  {
+    "nome": "concluir/abrir comanda (POST /complete)",
+    "method": "POST",
+    "path": "/api/v1/appointments/8f431c0a-e96f-4980-bf99-8a321ca00dc7/complete",
+    "status": 200,
+    "ttfbMs": 1143,
+    "totalMs": 1144,
+    "idasRest": 23,
+    "idasAuth": 1,
+    "idasTotal": 24,
+    "ondasMedidas": 20,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "rpc:idempotency_keys[?]"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "update:appointments"
+      ],
+      [
+        "select:tickets"
+      ],
+      [
+        "select:tenants"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "select:services",
+        "select:client_subscriptions",
+        "select:packages",
+        "select:appointments"
+      ],
+      [
+        "select:service_products+products"
+      ],
+      [
+        "select:professionals",
+        "select:professional_services"
+      ],
+      [
+        "rpc:client_cycles"
+      ],
+      [
+        "select:tenants+professions"
+      ],
+      [
+        "select:tenant_modules"
+      ],
+      [
+        "select:tenants"
+      ],
+      [
+        "select:clients"
+      ],
+      [
+        "rpc:loyalty_entries"
+      ],
+      [
+        "rpc:tickets"
+      ],
+      [
+        "rpc:audit_log[?]"
+      ],
+      [
+        "update:idempotency_keys[?]"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 78.6
+  },
+  {
+    "nome": "abrir comanda (GET /admin/comanda/[id])",
+    "method": "GET",
+    "path": "/admin/comanda/3d0cc52a-ec4b-45de-873d-f4b0a5eff02c",
+    "status": 200,
+    "ttfbMs": 1606,
+    "totalMs": 1856,
+    "idasRest": 7,
+    "idasAuth": 2,
+    "idasTotal": 9,
+    "ondasMedidas": 6,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:ticket_items",
+        "select:products",
+        "select:tickets",
+        "select:tenants+professions"
+      ],
+      [
+        "select:services"
+      ],
+      [
+        "select:tenant_modules"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 10.6
+  },
+  {
+    "nome": "adicionar item (POST /tickets/[id]/items)",
+    "method": "POST",
+    "path": "/api/v1/tickets/3d0cc52a-ec4b-45de-873d-f4b0a5eff02c/items",
+    "status": 422,
+    "ttfbMs": 2214,
+    "totalMs": 2215,
+    "erro": "{\"error\":{\"code\":\"VALIDATION_ERROR\",\"message\":\"\\\"Ácido (peeling)\\\" é insumo de uso interno, não produto de revenda: ele já entra no custo do serviço. Para vender assim mesmo, informe o preço.\",\"details\":{\"fields\":{\"productId\":\"\\\"Ácido (peeling)\\\" é insumo de uso interno, não produto de revenda: ele ",
+    "idasRest": 7,
+    "idasAuth": 1,
+    "idasTotal": 8,
+    "ondasMedidas": 8,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "select:tenants+professions"
+      ],
+      [
+        "select:tenant_modules"
+      ],
+      [
+        "rpc:idempotency_keys[?]"
+      ],
+      [
+        "select:tickets"
+      ],
+      [
+        "select:products"
+      ],
+      [
+        "delete:idempotency_keys[?]"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 7,
+    "depoisDaResposta": [],
+    "dbMsTotal": 75.5
+  },
+  {
+    "nome": "receber (POST /tickets/[id]/close)",
+    "method": "POST",
+    "path": "/api/v1/tickets/3d0cc52a-ec4b-45de-873d-f4b0a5eff02c/close",
+    "status": 422,
+    "ttfbMs": 1150,
+    "totalMs": 1151,
+    "erro": "{\"error\":{\"code\":\"VALIDATION_ERROR\",\"message\":\"Confira os campos destacados e tente de novo.\",\"details\":{\"fields\":{\"items\":\"Adicione pelo menos um item antes de fechar.\"}}},\"meta\":{\"requestId\":\"req_efd3a9f2d14d4e32b56c9c6ebbfc9aa2\"}}",
+    "idasRest": 5,
+    "idasAuth": 1,
+    "idasTotal": 6,
+    "ondasMedidas": 6,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "rpc:idempotency_keys[?]"
+      ],
+      [
+        "select:ticket_items"
+      ],
+      [
+        "select:tickets"
+      ],
+      [
+        "delete:idempotency_keys[?]"
+      ]
+    ],
+    "restIndefinidas": [
+      "?:rpc:consumir_rate_limit",
+      "?:rpc:consumir_rate_limit",
+      "?:rpc:consumir_rate_limit",
+      "?:select:tenants+professions",
+      "?:select:services",
+      "?:select:professionals",
+      "?:select:clients",
+      "?:rpc:clients",
+      "?:select:appointments",
+      "?:select:appointments",
+      "?:select:client_subscriptions",
+      "?:rpc:appointments",
+      "?:"
+    ],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 88.4
+  },
+  {
+    "nome": "faltou (POST /no-show)",
+    "method": "POST",
+    "path": "/api/v1/appointments/f1d92fef-5243-4400-b90b-a2e257d5a2c4/no-show",
+    "status": 422,
+    "ttfbMs": 1142,
+    "totalMs": 1142,
+    "erro": "{\"error\":{\"code\":\"INVALID_TRANSITION\",\"message\":\"Esse agendamento não pode ir de \\\"pending\\\" para \\\"no_show\\\".\"},\"meta\":{\"requestId\":\"req_e18cbce4477c48999f75600d0c20ca2d\"}}",
+    "idasRest": 4,
+    "idasAuth": 1,
+    "idasTotal": 5,
+    "ondasMedidas": 5,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "rpc:idempotency_keys[?]"
+      ],
+      [
+        "select:appointments"
+      ],
+      [
+        "delete:idempotency_keys[?]"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 25.2
+  },
+  {
+    "nome": "chamar cliente (POST /cycle/recover/manual)",
+    "method": "POST",
+    "path": "/api/v1/cycle/recover/manual",
+    "status": 200,
+    "ttfbMs": 2055,
+    "totalMs": 2055,
+    "idasRest": 9,
+    "idasAuth": 1,
+    "idasTotal": 10,
+    "ondasMedidas": 10,
+    "porOnda": [
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants+professions"
+      ],
+      [
+        "rpc:idempotency_keys[?]"
+      ],
+      [
+        "select:client_cycles"
+      ],
+      [
+        "select:clients"
+      ],
+      [
+        "rpc:messages"
+      ],
+      [
+        "update:client_cycles"
+      ],
+      [
+        "rpc:product_events"
+      ],
+      [
+        "rpc:audit_log[?]"
+      ],
+      [
+        "update:idempotency_keys[?]"
+      ]
+    ],
+    "restIndefinidas": [
+      "?:select:health_records",
+      "?:select:media+portfolio_photos"
+    ],
+    "restDeOutroUsuario": 26,
+    "depoisDaResposta": [],
+    "dbMsTotal": 291
+  },
+  {
+    "nome": "agendar público (POST /public/[slug]/book)",
+    "method": "POST",
+    "path": "/api/v1/public/demo-salao-encanto/book",
+    "status": 200,
+    "ttfbMs": 718,
+    "totalMs": 719,
+    "idasRest": 10,
+    "idasAuth": 0,
+    "idasTotal": 10,
+    "ondasMedidas": 10,
+    "porOnda": [
+      [
+        "select:tenants+professions[?]"
+      ],
+      [
+        "select:services[?]"
+      ],
+      [
+        "select:professionals[?]"
+      ],
+      [
+        "select:clients[?]"
+      ],
+      [
+        "rpc:clients[?]"
+      ],
+      [
+        "select:appointments[?]"
+      ],
+      [
+        "select:appointments[?]"
+      ],
+      [
+        "select:client_subscriptions[?]"
+      ],
+      [
+        "rpc:appointments[?]"
+      ],
+      [
+        "select:push_subscriptions[?]"
+      ]
+    ],
+    "restIndefinidas": [
+      "?:rpc:consumir_rate_limit",
+      "?:rpc:consumir_rate_limit",
+      "?:rpc:consumir_rate_limit"
+    ],
+    "restDeOutroUsuario": 1,
+    "depoisDaResposta": [],
+    "dbMsTotal": 22.2
+  },
+  {
+    "nome": "entrar (POST /auth/login)",
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "status": 200,
+    "ttfbMs": 1147,
+    "totalMs": 1147,
+    "idasRest": 3,
+    "idasAuth": 1,
+    "idasTotal": 4,
+    "ondasMedidas": 4,
+    "porOnda": [
+      [
+        "rpc:consumir_rate_limit[?]"
+      ],
+      [
+        "rpc:consumir_rate_limit[?]"
+      ],
+      [
+        "auth.getUser"
+      ],
+      [
+        "select:memberships+tenants"
+      ]
+    ],
+    "restIndefinidas": [],
+    "restDeOutroUsuario": 0,
+    "depoisDaResposta": [],
+    "dbMsTotal": 29
+  }
+]

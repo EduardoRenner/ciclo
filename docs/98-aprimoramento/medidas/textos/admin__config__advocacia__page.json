@@ -1,0 +1,221 @@
+{
+ "rota": "admin/config/advocacia/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/advocacia/page.tsx",
+  "src/app/admin/config/advocacia/formularios.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/card.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/section-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/button.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/select.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/advocacia/escrever.ts"
+ ],
+ "total": 30,
+ "textos": [
+  {
+   "texto": "Escritório",
+   "arquivo": "src/app/admin/config/advocacia/page.tsx",
+   "linha": 19,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Escritório",
+   "arquivo": "src/app/admin/config/advocacia/page.tsx",
+   "linha": 47,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "OAB da equipe, regras de contagem de prazo e a captura de intimações.",
+   "arquivo": "src/app/admin/config/advocacia/page.tsx",
+   "linha": 47,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Equipe e OAB",
+   "arquivo": "src/app/admin/config/advocacia/page.tsx",
+   "linha": 51,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "1 pessoa da advocacia sem OAB válida: as intimações dela não são capturadas.",
+   "arquivo": "src/app/admin/config/advocacia/page.tsx",
+   "linha": 57,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{semOab.length} pessoas da advocacia sem OAB válida: as intimações delas não são capturadas.",
+   "arquivo": "src/app/admin/config/advocacia/page.tsx",
+   "linha": 58,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Regras de contagem de prazo",
+   "arquivo": "src/app/admin/config/advocacia/page.tsx",
+   "linha": 66,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Captura de intimações",
+   "arquivo": "src/app/admin/config/advocacia/page.tsx",
+   "linha": 77,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Só a direção vê a saúde da captura.",
+   "arquivo": "src/app/admin/config/advocacia/page.tsx",
+   "linha": 81,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "A captura ainda não rodou para este escritório.",
+   "arquivo": "src/app/admin/config/advocacia/page.tsx",
+   "linha": 81,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{s.count_gravado} de {s.count_fonte}",
+   "arquivo": "src/app/admin/config/advocacia/page.tsx",
+   "linha": 93,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Conferir",
+   "arquivo": "src/app/admin/config/advocacia/page.tsx",
+   "linha": 93,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Advocacia",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 18,
+   "tipo": "prop:advogado"
+  },
+  {
+   "texto": "Estágio",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 18,
+   "tipo": "prop:estagio"
+  },
+  {
+   "texto": "Sem papel jurídico",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 50,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· OAB {pessoa.oab}/{pessoa.uf ?? ''}",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 51,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Papel",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 61,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Sem papel jurídico",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 62,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Advocacia",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 63,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Estágio",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 64,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Número da OAB",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 66,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Salvar",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 93,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Nada mudou nesta pessoa.",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 80,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "{pessoa.nome}: salvo",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 88,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Enquanto uma regra não estiver confirmada, a sugestão de prazo mostra a conta mas não preenche a data: quem tria digita.",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 116,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· validada na origem",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 140,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Só a direção confirma as regras.",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 147,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Salvar regras",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 170,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Nada mudou nas regras.",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 159,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Regras salvas",
+   "arquivo": "src/app/admin/config/advocacia/formularios.tsx",
+   "linha": 165,
+   "tipo": "metadata/titulo"
+  }
+ ]
+}

@@ -1,0 +1,243 @@
+{
+ "rota": "(auth)/cadastro/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(auth)/cadastro/page.tsx",
+  "src/app/(auth)/login-social.tsx",
+  "src/app/(auth)/cadastro/formulario.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/shell/selo.tsx",
+  "src/components/shell/tela-publica.tsx",
+  "src/components/ui/toast.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/phone-input.tsx",
+  "src/lib/utils.ts",
+  "src/lib/formato.ts"
+ ],
+ "total": 34,
+ "textos": [
+  {
+   "texto": "Criar conta",
+   "arquivo": "src/app/(auth)/cadastro/page.tsx",
+   "linha": 12,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Vamos achar quem sumiu, pelo nome",
+   "arquivo": "src/app/(auth)/cadastro/page.tsx",
+   "linha": 37,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Criar sua conta",
+   "arquivo": "src/app/(auth)/cadastro/page.tsx",
+   "linha": 37,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Você começa com",
+   "arquivo": "src/app/(auth)/cadastro/page.tsx",
+   "linha": 50,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Crie a conta, escreva quem você lembra e o CICLO mostra quem passou da hora de voltar.",
+   "arquivo": "src/app/(auth)/cadastro/page.tsx",
+   "linha": 48,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Leva menos de um minuto.",
+   "arquivo": "src/app/(auth)/cadastro/page.tsx",
+   "linha": 49,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": ". Sem prazo por enquanto.",
+   "arquivo": "src/app/(auth)/cadastro/page.tsx",
+   "linha": 52,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": ": o último dia é {oferta.fim}.",
+   "arquivo": "src/app/(auth)/cadastro/page.tsx",
+   "linha": 52,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Não consegui abrir o login. Tente de novo.",
+   "arquivo": "src/app/(auth)/login-social.tsx",
+   "linha": 47,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Sem conexão agora. Tente de novo.",
+   "arquivo": "src/app/(auth)/login-social.tsx",
+   "linha": 51,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Aguarde o login que já começou terminar.",
+   "arquivo": "src/app/(auth)/login-social.tsx",
+   "linha": 68,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Continuar com Google",
+   "arquivo": "src/app/(auth)/login-social.tsx",
+   "linha": 92,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Continuar com Apple",
+   "arquivo": "src/app/(auth)/login-social.tsx",
+   "linha": 93,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Não consegui criar sua conta.",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 52,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Tente de novo.",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 58,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui reenviar agora",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 80,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira sua conexão e tente de novo.",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 80,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "E-mail reenviado",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 83,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 85,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira sua conexão e tente de novo.",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 85,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Quase lá! Mandamos um link de confirmação para {emailEnviado}. Abra a mensagem e clique nele para continuar.",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 98,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Abrir o {caixa.nome}",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 108,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Não chegou? Confira também a caixa de spam ou lixo eletrônico.",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 111,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Reenviar e-mail",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 113,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Nome completo",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 140,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "E-mail",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 141,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Telefone com DDD",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 142,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Senha",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 151,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Criar conta",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 158,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Ao criar a conta você aceita:",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 187,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Termos de uso",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 190,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Política de Privacidade",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 194,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Já tem conta? Entrar",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 199,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Entrar",
+   "arquivo": "src/app/(auth)/cadastro/formulario.tsx",
+   "linha": 199,
+   "tipo": "texto",
+   "tag": "span"
+  }
+ ]
+}

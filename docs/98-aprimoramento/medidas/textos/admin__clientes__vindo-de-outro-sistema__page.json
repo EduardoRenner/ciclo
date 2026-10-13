@@ -1,0 +1,140 @@
+{
+ "rota": "admin/clientes/vindo-de-outro-sistema/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/card.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/section-header.tsx",
+  "src/lib/contato.ts",
+  "src/lib/utils.ts",
+  "src/lib/mensagens.ts"
+ ],
+ "total": 18,
+ "textos": [
+  {
+   "texto": "Vindo de outro sistema",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 15,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Oi! Estou vindo de outro sistema para o CICLO e quero ajuda para importar minha base de clientes.",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 23,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Vindo de outro sistema",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 62,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Sem chamado, sem esperar dias úteis. Você decide como trazer sua base, e o Motor de Ciclo já mostra quem passou do tempo de voltar assim que ela chegar.",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 63,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Não sabe onde pedir a exportação?",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 67,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Copie e mande esta mensagem para o suporte do seu sistema atual:",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 69,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "&ldquo;Olá! Quero receber a lista dos meus clientes numa planilha (Excel ou CSV), com nome, telefone e a data do último atendimento de cada um. Pode me enviar por e-mail?&rdquo;",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 72,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Como você quer trazer sua base",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 77,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Traga agora",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 81,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Sem chamado, sem esperar. Assim que terminar, o Motor de Ciclo já mostra quem passou do tempo de voltar e quanto isso vale.",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 83,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Já tenho a planilha: importar agora",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 88,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Ainda não tenho planilha: trazer de memória",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 92,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Use o CICLO junto com seu sistema atual, por enquanto",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 99,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Não precisa trocar hoje. Continue marcando horário do jeito que já faz: o CICLO fica só de olho em quem está sumindo, para você chamar de volta pelo seu WhatsApp. Quando alguém voltar, marque &ldquo;alguém que você já atende voltou&rdquo; para o Motor continuar certo.",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 101,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ver quem já atendo",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 106,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Me manda que eu faço",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 113,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Prefere não mexer em planilha nenhuma? Manda sua lista de clientes pelo WhatsApp que a gente importa para você, sem custo.",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 115,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "O que muda por aqui",
+   "arquivo": "src/app/admin/clientes/vindo-de-outro-sistema/page.tsx",
+   "linha": 130,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  }
+ ]
+}

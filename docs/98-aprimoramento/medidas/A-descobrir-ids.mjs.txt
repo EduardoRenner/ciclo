@@ -1,0 +1,32 @@
+// Agente A · descobre IDs reais do seed navegando como dono (SÓ local). Saída: medidas/A-ids.json
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs';
+import { writeFileSync } from 'node:fs';
+
+const BASE = 'http://localhost:3200';
+const browser = await chromium.launch({ channel: 'chrome' });
+const ctx = await browser.newContext({ storageState: 'C:/temp/ciclo-medicao/estado-A-dono.json', viewport: { width: 1280, height: 800 } });
+const page = await ctx.newPage();
+const fontes = ['/admin/hoje', '/admin/agenda', '/admin/clientes', '/admin/config/profissionais', '/admin/config/servicos', '/admin/caixa', '/admin/orcamentos', '/admin/casos', '/admin/pendencias', '/admin/recuperar', '/admin/mes'];
+const hrefs = new Set();
+for (const f of fontes) {
+  const r = await page.goto(BASE + f, { waitUntil: 'networkidle' }).catch((e) => ({ status: () => 'ERR ' + e.message }));
+  const lista = await page.$$eval('a[href]', (as) => as.map((a) => a.getAttribute('href')));
+  console.log(f, r.status(), page.url().replace(BASE, ''), lista.length);
+  lista.forEach((h) => hrefs.add(h));
+}
+const todos = [...hrefs].filter((h) => h && h.startsWith('/'));
+const pega = (re) => todos.filter((h) => re.test(h));
+const out = {
+  cliente: pega(/^\/admin\/clientes\/[0-9a-f-]{36}$/),
+  comanda: pega(/^\/admin\/comanda\/[0-9a-f-]{36}$/),
+  comandaAgendamento: pega(/^\/admin\/comanda\/agendamento\/[0-9a-f-]{36}/),
+  profissional: pega(/^\/admin\/config\/profissionais\/[0-9a-f-]{36}/),
+  servicoFicha: pega(/^\/admin\/config\/servicos\/[0-9a-f-]{36}\/ficha/),
+  caso: pega(/^\/admin\/casos\/[0-9a-f-]{36}/),
+  intimacao: pega(/^\/admin\/intimacoes\//),
+  outros: todos.filter((h) => !/[0-9a-f-]{36}/.test(h)).sort(),
+};
+for (const k of Object.keys(out)) if (k !== 'outros') out[k] = out[k].slice(0, 5);
+writeFileSync(new URL('./A-ids.json', import.meta.url), JSON.stringify(out, null, 2));
+console.log(JSON.stringify(out, null, 2));
+await browser.close();

@@ -1,0 +1,58 @@
+// Agente F — páginas públicas sem token: carga (5× celular 4×CPU/4G lenta, 3× computador), SEO, axe,
+// alvos de toque, rolagem lateral e captura. Uso: node F-publicas.mjs <perfil> [repeticoes]
+import { writeFileSync, mkdirSync } from 'node:fs'
+import { abrir, CAPTURAS, MEDIDAS, medirCarga, seo, axe, alvosPequenos, rolagemLateral, BASE } from './F-lib.mjs'
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs'
+
+const perfilNome = process.argv[2] ?? 'celular'
+const reps = Number(process.argv[3] ?? (perfilNome === 'celular' ? 5 : 3))
+const PAGINAS = [
+  ['landing', '/', 'h1'],
+  ['precos', '/precos', 'h1'],
+  ['calculadora', '/calculadora', 'h1'],
+  ['links', '/links', 'h1'],
+  ['salao-vitoria', '/demo-espaco-vitoria', 'a:has-text("Agendar horário")'],
+  ['salao-dom-estilo', '/demo-dom-estilo', 'a:has-text("Agendar horário")'],
+  ['agendar-vitoria', '/demo-espaco-vitoria/agendar', 'button:has-text("R$")'],
+  ['termos', '/termos', 'h1'],
+  ['privacidade', '/privacidade', 'h1'],
+  ['entrar', '/entrar', 'button[type=submit]'],
+  ['cadastro', '/cadastro', 'button[type=submit]'],
+  ['recuperar-senha', '/recuperar-senha', 'button[type=submit]'],
+  ['nova-senha-sem-sessao', '/nova-senha', 'h1'],
+  ['slug-inexistente', '/salao-que-nao-existe-123', 'h1'],
+]
+const mediana = (xs) => { const v = xs.filter((x) => typeof x === 'number').sort((a, b) => a - b); return v.length ? v[Math.floor(v.length / 2)] : null }
+const pior = (xs) => { const v = xs.filter((x) => typeof x === 'number'); return v.length ? Math.max(...v) : null }
+
+const browser = await chromium.launch({ channel: 'chrome' })
+const saida = []
+for (const [nome, url, util] of PAGINAS) {
+  const medidas = []
+  let extra = {}
+  for (let i = 0; i < reps; i++) {
+    const { context, page, consoleErros } = await abrir(perfilNome, { browser })
+    const m = await medirCarga(page, BASE + url, util)
+    medidas.push(m)
+    if (i === reps - 1) {
+      extra = { finalUrl: page.url(), seo: await seo(page), axe: await axe(page), alvosPequenos: await alvosPequenos(page), rolagemLateral: await rolagemLateral(page), consoleErros }
+      await page.screenshot({ path: `${CAPTURAS}/F-${nome}-${perfilNome}.png`, fullPage: true })
+    }
+    await context.close()
+  }
+  const r = {
+    pagina: nome, url, perfil: perfilNome, reps, status: medidas[0].status,
+    utilMs: { mediana: mediana(medidas.map((m) => m.utilMs)), pior: pior(medidas.map((m) => m.utilMs)), todas: medidas.map((m) => m.utilMs) },
+    ttfb: { mediana: mediana(medidas.map((m) => m.ttfb)), pior: pior(medidas.map((m) => m.ttfb)) },
+    fcp: { mediana: mediana(medidas.map((m) => m.fcp)) },
+    lcp: { mediana: mediana(medidas.map((m) => m.lcp)), pior: pior(medidas.map((m) => m.lcp)) },
+    cls: { pior: pior(medidas.map((m) => m.cls)) },
+    jsKB: mediana(medidas.map((m) => m.jsKB)), totalKB: mediana(medidas.map((m) => m.totalKB)), requisicoes: mediana(medidas.map((m) => m.requisicoes)),
+    ...extra,
+  }
+  saida.push(r)
+  console.log(`${nome}: util med=${r.utilMs.mediana} pior=${r.utilMs.pior} LCP=${r.lcp.mediana} CLS=${r.cls.pior} JS=${r.jsKB}KB axe=${(r.axe ?? []).map((a) => a.id).join(',')} alvos<48=${(r.alvosPequenos ?? []).length}`)
+}
+await browser.close()
+mkdirSync(`${MEDIDAS}/F`, { recursive: true })
+writeFileSync(`${MEDIDAS}/F/publicas-${perfilNome}.json`, JSON.stringify(saida, null, 2))

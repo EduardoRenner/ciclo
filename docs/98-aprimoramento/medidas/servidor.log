@@ -1,0 +1,196 @@
+
+> ciclo@0.1.0 start C:\Users\Usuario\.claude\code\ciclo-aprimoramento
+> next start
+
+   ▲ Next.js 15.5.27
+   - Local:        http://localhost:3200
+   - Network:      http://192.168.56.1:3200
+
+ ✓ Starting...
+ ✓ Ready in 3.2s
+{"level":"warn","request_id":"req_feb0028bab2d43d08ed9217da76b1419","tenant_id":null,"method":"GET","path":"/api/v1/public/reviews/xyz","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_2d17b02ce7ff489f8b1b1a8aa6b6b41f","tenant_id":null,"method":"GET","path":"/api/v1/public/quotes/xyz","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_4d0f718b174445e68f0f8ac052d6c3af","tenant_id":null,"method":"POST","path":"/api/v1/public/waitlist/claim/xyz","code":"NOT_FOUND","status":404}
+{"level":"warn","event":"hcaptcha_nao_configurado"}
+{"level":"warn","request_id":"req_d67b52b6e0f94ca897679e280c22a750","tenant_id":null,"method":"POST","path":"/api/v1/tickets/3d0cc52a-ec4b-45de-873d-f4b0a5eff02c/items","code":"VALIDATION_ERROR","status":422}
+{"level":"warn","request_id":"req_efd3a9f2d14d4e32b56c9c6ebbfc9aa2","tenant_id":null,"method":"POST","path":"/api/v1/tickets/3d0cc52a-ec4b-45de-873d-f4b0a5eff02c/close","code":"VALIDATION_ERROR","status":422}
+{"level":"warn","event":"hcaptcha_nao_configurado"}
+{"level":"warn","request_id":"req_e18cbce4477c48999f75600d0c20ca2d","tenant_id":null,"method":"POST","path":"/api/v1/appointments/f1d92fef-5243-4400-b90b-a2e257d5a2c4/no-show","code":"INVALID_TRANSITION","status":422}
+{"level":"warn","event":"hcaptcha_nao_configurado"}
+{"level":"warn","event":"hcaptcha_nao_configurado"}
+{"level":"warn","event":"hcaptcha_nao_configurado"}
+ ⨯ Error [AppError]: Não encontramos o que você procura.
+    at r (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\4944.js:1:1816) {
+  code: 'NOT_FOUND',
+  status: 404,
+  publicMessage: 'Não encontramos o que você procura.',
+  details: undefined,
+  headers: undefined,
+  digest: '3505708605'
+}
+{"level":"warn","event":"hcaptcha_nao_configurado"}
+ ⨯ Error [AppError]: Não encontramos o que você procura.
+    at r (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\4944.js:1:1816) {
+  code: 'NOT_FOUND',
+  status: 404,
+  publicMessage: 'Não encontramos o que você procura.',
+  details: undefined,
+  headers: undefined,
+  digest: '3505708605'
+}
+{"level":"warn","request_id":"req_4ea54f76fa544bd59d9d99ff247c9689","tenant_id":null,"method":"POST","path":"/api/v1/public/demo-espaco-vitoria/book","code":"VALIDATION_ERROR","status":422}
+{"level":"warn","event":"hcaptcha_nao_configurado"}
+{"level":"warn","request_id":"req_3b719c8b3a024b7588f1f55e28b50123","tenant_id":null,"method":"GET","path":"/api/v1/account","code":"MFA_REQUIRED","status":401}
+{"level":"warn","request_id":"req_1c3d72816c6e4a73b891d2bdf2409354","tenant_id":null,"method":"GET","path":"/api/v1/account","code":"MFA_REQUIRED","status":401}
+{"level":"warn","request_id":"req_a9a2ffb9b9b24b028d593ba7a4ac6f6c","tenant_id":null,"method":"GET","path":"/api/v1/public/reviews/token-de-medicao-inexistente","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_bc7ddf5adf6544b781d45c791b34dbbe","tenant_id":null,"method":"GET","path":"/api/v1/public/reviews/token-de-medicao-inexistente","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_bf7b82f0c96248a7b805a2f157530d82","tenant_id":null,"method":"POST","path":"/api/v1/public/waitlist/claim/token-de-medicao-inexistente","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_748c28cbab3a40dab1ca0de4301d49a1","tenant_id":null,"method":"POST","path":"/api/v1/public/waitlist/claim/token-de-medicao-inexistente","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_bea31067b58d418b87d33513b89b9d66","tenant_id":null,"method":"GET","path":"/api/v1/public/quotes/token-de-medicao-inexistente","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_815d8c3f24e64b0f99aa3dd428c8c528","tenant_id":null,"method":"GET","path":"/api/v1/public/quotes/token-de-medicao-inexistente","code":"NOT_FOUND","status":404}
+ ⨯ Error [AppError]: Não encontramos o que você procura.
+    at r (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\4944.js:1:1816) {
+  code: 'NOT_FOUND',
+  status: 404,
+  publicMessage: 'Não encontramos o que você procura.',
+  details: undefined,
+  headers: undefined,
+  digest: '3505708605'
+}
+{"level":"warn","request_id":"req_1a964585752c42c9bd1585af77275755","tenant_id":null,"method":"GET","path":"/api/v1/account","code":"MFA_REQUIRED","status":401}
+{"level":"warn","request_id":"req_ec1a7ba380ca4139aea418d2ecc7efae","tenant_id":null,"method":"GET","path":"/api/v1/public/reviews/token-de-medicao-inexistente","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_ea0292c7e3fa4c30b30676971de45860","tenant_id":null,"method":"POST","path":"/api/v1/public/waitlist/claim/token-de-medicao-inexistente","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_c7256d15597049b58c5dda8900ae5920","tenant_id":null,"method":"GET","path":"/api/v1/public/quotes/token-de-medicao-inexistente","code":"NOT_FOUND","status":404}
+{"level":"warn","event":"hcaptcha_nao_configurado"}
+ ⨯ Error [AppError]: Não encontramos o que você procura.
+    at r (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\4944.js:1:1816) {
+  code: 'NOT_FOUND',
+  status: 404,
+  publicMessage: 'Não encontramos o que você procura.',
+  details: undefined,
+  headers: undefined,
+  digest: '3505708605'
+}
+{"level":"warn","request_id":"req_038829d5b9dd4fbdbaadcb5ce974e294","tenant_id":null,"method":"GET","path":"/api/v1/account","code":"MFA_REQUIRED","status":401}
+{"level":"warn","event":"hcaptcha_nao_configurado"}
+{"level":"warn","request_id":"req_9aff04e58ac64057af2ff4a9f1b8c749","tenant_id":null,"method":"GET","path":"/api/v1/public/reviews/token-de-medicao-inexistente","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_b34f2ead58b14f29aa94cf3ee35ff750","tenant_id":null,"method":"POST","path":"/api/v1/public/waitlist/claim/token-de-medicao-inexistente","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_58f87e52e3a54b9ebfeaeed40a48c18a","tenant_id":null,"method":"GET","path":"/api/v1/public/quotes/token-de-medicao-inexistente","code":"NOT_FOUND","status":404}
+{"level":"warn","event":"hcaptcha_nao_configurado"}
+{"level":"warn","event":"hcaptcha_nao_configurado"}
+{"level":"warn","request_id":"req_ee83b74123c949d98641573ed36cae71","tenant_id":null,"method":"POST","path":"/api/v1/public/demo-espaco-vitoria/book","code":"SLOT_TAKEN","status":409}
+{"level":"warn","request_id":"req_e91de926d2704926a0b93c1371e3fbc3","tenant_id":null,"method":"POST","path":"/api/v1/appointments","code":"SLOT_TAKEN","status":409}
+ ⨯ Error [AppError]: Algo deu errado do nosso lado. Tente de novo em instantes.
+    at e (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\72.js:1:228)
+    at async r (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\5973.js:1:6745)
+    at async p (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\app\admin\config\servicos\page.js:1:28183) {
+  code: 'INTERNAL',
+  status: 500,
+  publicMessage: 'Algo deu errado do nosso lado. Tente de novo em instantes.',
+  details: undefined,
+  headers: undefined,
+  digest: '3235029902',
+  [cause]: [Object]
+}
+ ⨯ Error [AppError]: Algo deu errado do nosso lado. Tente de novo em instantes.
+    at e (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\72.js:1:228)
+    at async r (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\5973.js:1:6745)
+    at async Q (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\app\admin\mes\page.js:2:25040) {
+  code: 'INTERNAL',
+  status: 500,
+  publicMessage: 'Algo deu errado do nosso lado. Tente de novo em instantes.',
+  details: undefined,
+  headers: undefined,
+  digest: '3318211990',
+  [cause]: [Object]
+}
+ ⨯ Error [AppError]: Algo deu errado do nosso lado. Tente de novo em instantes.
+    at e (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\72.js:1:228)
+    at async r (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\5973.js:1:6745)
+    at async p (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\app\admin\config\servicos\page.js:1:28183) {
+  code: 'INTERNAL',
+  status: 500,
+  publicMessage: 'Algo deu errado do nosso lado. Tente de novo em instantes.',
+  details: undefined,
+  headers: undefined,
+  digest: '3235029902',
+  [cause]: [Object]
+}
+{"level":"warn","request_id":"req_362669dd12a247429f45c013f576d1d3","tenant_id":null,"method":"POST","path":"/api/v1/public/appointments/confirm/Y29uZmlybWFjYW9fYWdlbmRhbWVudG8uMjlkMWQ3ZGUtNWMyNS00Zjg2LWFiMWEtYzg5MjI0YWU2MDkwLjE3OTE4NjQ0MDU4ODkuNDk0OTZkNTI5ZjVjNGMxN2VhMjUzY2VjYTkyMjI3MDM2OGY1ZGNjY2JjNGU4NzQ5NWY2ZmUwYjM2YTkwZmRlZg","code":"NOT_FOUND","status":404}
+ ⨯ Error [AppError]: Algo deu errado do nosso lado. Tente de novo em instantes.
+    at e (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\72.js:1:228)
+    at async r (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\5973.js:1:6745)
+    at async Q (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\app\admin\mes\page.js:2:25040) {
+  code: 'INTERNAL',
+  status: 500,
+  publicMessage: 'Algo deu errado do nosso lado. Tente de novo em instantes.',
+  details: undefined,
+  headers: undefined,
+  digest: '3318211990',
+  [cause]: [Object]
+}
+{"level":"warn","request_id":"req_b9dee7dc1d38496b82c753eec684225b","tenant_id":null,"method":"POST","path":"/api/v1/public/appointments/confirm/YXZhbGlhY2FvX2F0ZW5kaW1lbnRvLjFjZjA2YjUyLTZhNDItNDkyMy1iMTA3LWRjYTcwMDg1OTc4Yi4xNzkxOTU0NDA1ODg5LjllZjcwMWQwYjdkMDUyNGRkMDBlOTIwYjUyMjJiMzBiNTg2YjBmMDJjNWM2ODMxMmYxMjY4YzJiNzg1MjAwZDY","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_bae39964ead94cbfa82d1ce738ca72d0","tenant_id":null,"method":"GET","path":"/api/v1/public/reviews/YXZhbGlhY2FvX2F0ZW5kaW1lbnRvLjFjZjA2YjUyLTZhNDItNDkyMy1iMTA3LWRjYTcwMDg1OTc4Yi4xNzkxODY0NDA1ODg5LmM4ODYyM2NhZWNlM2ExNjk1MDQ1ZjI4NTdlMGE3YTA0YzJkMzQ4YzMzNWE5ZGQ3NTQwOTA2ZGY4MWY3Nzk3YzE","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_fd60946abcf9400389b9840f8dd83f0a","tenant_id":null,"method":"GET","path":"/api/v1/public/quotes/b3JjYW1lbnRvLjJhZGE0YmZhLWUzOTMtNGZhMi05NDFkLWQwZjRmMDZkMzlhYS4xNzkxODY0NDA1ODg5LmEzM2FkNGFiM2JiMTZhMmRkOWRkOTUzNGM2Yzg4M2UzNmE5ZWY5ZjM4YWNlMDRmNWMzZWI3NTkzOWVmMTBmMDE","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_02f82c06e65a484795ebb50cc5302418","tenant_id":null,"method":"POST","path":"/api/v1/public/waitlist/claim/bGlzdGFfZXNwZXJhLmV5SjNZV2wwYkdsemRFbGtJam9pTlRNek5HTTJNelV0Tm1FME55MDBNelJtTFRsak5XSXROREV6WTJGa05Ea3pOems1SWl3aWRHVnVZVzUwU1dRaU9pSmlZak0zWlRoallTMW1NVFExTFRRMVpXVXRPVEF4TUMweU5ERm1abU5oTkRneE5UY2lMQ0p6WlhKMmFXTmxTV1FpT2lJMk1qUXpNek5tT1MweU5qaGlMVFEwTW1ZdFlUWTVaaTB6Tnpaak1HVTBaVEkyTXpJaUxDSndjbTltWlhOemFXOXVZV3hKWkNJNklqTm1ZalEzWTJGbUxUSmhNVFF0TkdKbVpTMWlPREUzTFRZeVltUm1ZekF4TURCa09TSXNJbk4wWVhKMGMwRjBJam9pTWpBeU5pMHhNQzB4TkZReE16b3dNRG93TUM0d01EQmFJaXdpZEdsdFpYcHZibVVpT2lKQmJXVnlhV05oTDFOaGIxOVFZWFZzYnlKOS4xNzkxODY5MjA1ODg5LjMzMTExNjBmMTc5ZTkwY2M2ZDYyMjE0Nzk0ZDE0MDdhYmMxOGYxZjk0YTQ2MjJkNDdjYjMwNDJiNzc5YjU2YTY","code":"SLOT_TAKEN","status":409}
+{"level":"warn","request_id":"req_45a110bbfcec45f19f4ff2947ac085d3","tenant_id":null,"method":"POST","path":"/api/v1/public/waitlist/claim/bGlzdGFfZXNwZXJhLmV5SjNZV2wwYkdsemRFbGtJam9pTlRNek5HTTJNelV0Tm1FME55MDBNelJtTFRsak5XSXROREV6WTJGa05Ea3pOems1SWl3aWRHVnVZVzUwU1dRaU9pSmlZak0zWlRoallTMW1NVFExTFRRMVpXVXRPVEF4TUMweU5ERm1abU5oTkRneE5UY2lMQ0p6WlhKMmFXTmxTV1FpT2lJMk1qUXpNek5tT1MweU5qaGlMVFEwTW1ZdFlUWTVaaTB6Tnpaak1HVTBaVEkyTXpJaUxDSndjbTltWlhOemFXOXVZV3hKWkNJNklqTm1ZalEzWTJGbUxUSmhNVFF0TkdKbVpTMWlPREUzTFRZeVltUm1ZekF4TURCa09TSXNJbk4wWVhKMGMwRjBJam9pTWpBeU5pMHhNQzB4TkZReE16b3dNRG93TUM0d01EQmFJaXdpZEdsdFpYcHZibVVpT2lKQmJXVnlhV05oTDFOaGIxOVFZWFZzYnlKOS4xNzkxODY5MjA1ODg5LjMzMTExNjBmMTc5ZTkwY2M2ZDYyMjE0Nzk0ZDE0MDdhYmMxOGYxZjk0YTQ2MjJkNDdjYjMwNDJiNzc5YjU2YTY","code":"SLOT_TAKEN","status":409}
+{"level":"warn","request_id":"req_b4cb3987e003431bbf1dfe6392dd74c7","tenant_id":null,"method":"POST","path":"/api/v1/public/waitlist/claim/bGlzdGFfZXNwZXJhLmV5SjNZV2wwYkdsemRFbGtJam9pTlRNek5HTTJNelV0Tm1FME55MDBNelJtTFRsak5XSXROREV6WTJGa05Ea3pOems1SWl3aWRHVnVZVzUwU1dRaU9pSmlZak0zWlRoallTMW1NVFExTFRRMVpXVXRPVEF4TUMweU5ERm1abU5oTkRneE5UY2lMQ0p6WlhKMmFXTmxTV1FpT2lJMk1qUXpNek5tT1MweU5qaGlMVFEwTW1ZdFlUWTVaaTB6Tnpaak1HVTBaVEkyTXpJaUxDSndjbTltWlhOemFXOXVZV3hKWkNJNklqTm1ZalEzWTJGbUxUSmhNVFF0TkdKbVpTMWlPREUzTFRZeVltUm1ZekF4TURCa09TSXNJbk4wWVhKMGMwRjBJam9pTWpBeU5pMHhNQzB4TkZReE16b3dNRG93TUM0d01EQmFJaXdpZEdsdFpYcHZibVVpT2lKQmJXVnlhV05oTDFOaGIxOVFZWFZzYnlKOS4xNzkxODY0NDA1ODg5LjJiYmZiNDA1ZjIwMWEzMmViNWY3OTQ4YmMzMjIxYTJmOGZjOGY1NjNhZjQxOTkwZmY1OTRiN2MxYTgwMjQzM2U","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_f75ae5b2a9b640b3bbb03ac538bd1c10","tenant_id":null,"method":"POST","path":"/api/v1/public/waitlist/claim/bGlzdGFfZXNwZXJhLmV5SjNZV2wwYkdsemRFbGtJam9pTm1Oa05tUm1PRFF0WVRKaU5DMDBNamt6TFRoaFlqTXROamd4TlRjMU5qWTJaRGsySWl3aWRHVnVZVzUwU1dRaU9pSmlZak0zWlRoallTMW1NVFExTFRRMVpXVXRPVEF4TUMweU5ERm1abU5oTkRneE5UY2lMQ0p6WlhKMmFXTmxTV1FpT2lJMk1qUXpNek5tT1MweU5qaGlMVFEwTW1ZdFlUWTVaaTB6Tnpaak1HVTBaVEkyTXpJaUxDSndjbTltWlhOemFXOXVZV3hKWkNJNklqTm1ZalEzWTJGbUxUSmhNVFF0TkdKbVpTMWlPREUzTFRZeVltUm1ZekF4TURCa09TSXNJbk4wWVhKMGMwRjBJam9pTWpBeU5pMHhNQzB5TWxReE56b3dNRG93TUZvaUxDSjBhVzFsZW05dVpTSTZJa0Z0WlhKcFkyRXZVMkZ2WDFCaGRXeHZJbjAuMTc5MTg2OTM5NTE0Mi5iZjBkNTI5ODBkNDVlZDEyYmQ1MGFlMGVkNzY3NDVhZGViOTBiOWJjMzQ5MjBlYTUwODBlYmFjZDM5MmZhZjQz","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_2fb637b8ca6d4354a7bb0a6b031e3bd7","tenant_id":null,"method":"POST","path":"/api/v1/appointments","code":"SLOT_TAKEN","status":409}
+{"level":"warn","request_id":"req_1ab9b934df714413b4d60ee64f068b4f","tenant_id":null,"method":"POST","path":"/api/v1/public/appointments/confirm/Y29uZmlybWFjYW9fYWdlbmRhbWVudG8uMGU1ZjE5NzUtNmE3OS00ZTA5LWJlYjItZmY0ZjRlYWQ3M2RjLjE3OTE4NjQ2MzY5MzIuY2RlZmI2MjIzMWFhYjBmZjc4Yjg2NjdhZDg0OTJhM2NlMTEyZjRhYTJjZDQ4NGVjMWYyZTVkZWFhNDg5ZWY4NA","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_159f13b2fafd4ac097ce04e637380cef","tenant_id":null,"method":"POST","path":"/api/v1/public/appointments/confirm/YXZhbGlhY2FvX2F0ZW5kaW1lbnRvLjhhN2IzYTY0LTBiZTctNDZkYy1iYWUzLWM1YmZkZDgyYThkZC4xNzkxOTU0NjM2OTMyLjU3NTJlZDdhZmFiNmU5ZDM1Mjc1NTYxNTdlZWJlOGJmY2VkZGViZDE2OTUwNTJkYzQ5NWFiM2YzODYwMGZiZjk","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_3827b6964e9d4d828f400a8977f0cd1d","tenant_id":null,"method":"GET","path":"/api/v1/public/reviews/YXZhbGlhY2FvX2F0ZW5kaW1lbnRvLjhhN2IzYTY0LTBiZTctNDZkYy1iYWUzLWM1YmZkZDgyYThkZC4xNzkxODY0NjM2OTMxLjc5MmYxODkyM2JmMzgxOTY0ZWNkMWE4Mjk0OWY3NjA3Y2JhNWMwNjE2YmI4MGNlMTU1N2UxMzZiMTQ0NmQ3Yjg","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_d757f685331749469c39c6d1945074a1","tenant_id":null,"method":"GET","path":"/api/v1/public/quotes/b3JjYW1lbnRvLjBlNGNkZTQ3LWJiZTgtNGVkZi04Nzg5LTI4NDFmMjJiMGRmNi4xNzkxODY0NjM2OTMyLjdiNTdlMjk0ODlhMzRlZWI2OTZmYjMyODFkZTJkOGRkNDM3MTQ3ZDM4ZTdlMGI5YWYzNWI0NjQ1NmQ5MjAxNjU","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_6d7dbe96d74741ddbe0609e537856fbf","tenant_id":null,"method":"POST","path":"/api/v1/public/waitlist/claim/bGlzdGFfZXNwZXJhLmV5SjNZV2wwYkdsemRFbGtJam9pTmpKbU1qY3hPRFV0TkRRME55MDBZemt4TFRrME16WXRObVV5T0RobE9Ua3hObVU1SWl3aWRHVnVZVzUwU1dRaU9pSmlZak0zWlRoallTMW1NVFExTFRRMVpXVXRPVEF4TUMweU5ERm1abU5oTkRneE5UY2lMQ0p6WlhKMmFXTmxTV1FpT2lJMk1qUXpNek5tT1MweU5qaGlMVFEwTW1ZdFlUWTVaaTB6Tnpaak1HVTBaVEkyTXpJaUxDSndjbTltWlhOemFXOXVZV3hKWkNJNklqTm1ZalEzWTJGbUxUSmhNVFF0TkdKbVpTMWlPREUzTFRZeVltUm1ZekF4TURCa09TSXNJbk4wWVhKMGMwRjBJam9pTWpBeU5pMHhNQzB5TTFReE56b3dNRG93TUZvaUxDSjBhVzFsZW05dVpTSTZJa0Z0WlhKcFkyRXZVMkZ2WDFCaGRXeHZJbjAuMTc5MTg2OTQzODQ3My4yYjUzMDUwYjkxZTQ5MWNjZDE3NDUzZWE5YWNmOTFhOGZhMDQxMDI3MDk0ZTE0ZmVlNzRhZDJhMzE0ZGFmODNk","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_e0d26d7ad32545d4ad8461c18d9a7fd0","tenant_id":null,"method":"POST","path":"/api/v1/public/waitlist/claim/bGlzdGFfZXNwZXJhLmV5SjNZV2wwYkdsemRFbGtJam9pWkdRNU5qa3dOVGd0WVRaaVppMDBZalV6TFRrM05HTXROREE1TVRWak5HTTFNV1E0SWl3aWRHVnVZVzUwU1dRaU9pSmlZak0zWlRoallTMW1NVFExTFRRMVpXVXRPVEF4TUMweU5ERm1abU5oTkRneE5UY2lMQ0p6WlhKMmFXTmxTV1FpT2lJMk1qUXpNek5tT1MweU5qaGlMVFEwTW1ZdFlUWTVaaTB6Tnpaak1HVTBaVEkyTXpJaUxDSndjbTltWlhOemFXOXVZV3hKWkNJNklqTm1ZalEzWTJGbUxUSmhNVFF0TkdKbVpTMWlPREUzTFRZeVltUm1ZekF4TURCa09TSXNJbk4wWVhKMGMwRjBJam9pTWpBeU5pMHhNQzB4TkZReE16b3dNRG93TUM0d01EQmFJaXdpZEdsdFpYcHZibVVpT2lKQmJXVnlhV05oTDFOaGIxOVFZWFZzYnlKOS4xNzkxODY0NjM2OTMyLmRkYjJjZjM4ZmVjMThlNjhkZTI1ZTFiZTBhZDhiNGRhMjIyNmIzM2MzZGJjMGFkMjBhNTAxYjMwNTc3ZjI3MWE","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_af28e9981f514c12b212efb5155cabd8","tenant_id":null,"method":"POST","path":"/api/v1/public/appointments/confirm/Y29uZmlybWFjYW9fYWdlbmRhbWVudG8uMGU1ZjE5NzUtNmE3OS00ZTA5LWJlYjItZmY0ZjRlYWQ3M2RjLjE3OTE4NjQ2MzY5MzIuY2RlZmI2MjIzMWFhYjBmZjc4Yjg2NjdhZDg0OTJhM2NlMTEyZjRhYTJjZDQ4NGVjMWYyZTVkZWFhNDg5ZWY4NA","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_580fe8486d2a4b629900808e4d0e147a","tenant_id":null,"method":"POST","path":"/api/v1/public/appointments/confirm/YXZhbGlhY2FvX2F0ZW5kaW1lbnRvLjhhN2IzYTY0LTBiZTctNDZkYy1iYWUzLWM1YmZkZDgyYThkZC4xNzkxOTU0NjM2OTMyLjU3NTJlZDdhZmFiNmU5ZDM1Mjc1NTYxNTdlZWJlOGJmY2VkZGViZDE2OTUwNTJkYzQ5NWFiM2YzODYwMGZiZjk","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_911d6f9c2b1d4992993aa7c0f4c20632","tenant_id":null,"method":"POST","path":"/api/v1/appointments","code":"SLOT_TAKEN","status":409}
+{"level":"warn","request_id":"req_c7a9819c682a455f9316c9e945606113","tenant_id":null,"method":"GET","path":"/api/v1/public/reviews/YXZhbGlhY2FvX2F0ZW5kaW1lbnRvLjhhN2IzYTY0LTBiZTctNDZkYy1iYWUzLWM1YmZkZDgyYThkZC4xNzkxODY0NjM2OTMxLjc5MmYxODkyM2JmMzgxOTY0ZWNkMWE4Mjk0OWY3NjA3Y2JhNWMwNjE2YmI4MGNlMTU1N2UxMzZiMTQ0NmQ3Yjg","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_15b79e357460406e9ac5631b10d3d035","tenant_id":null,"method":"GET","path":"/api/v1/public/quotes/b3JjYW1lbnRvLjBlNGNkZTQ3LWJiZTgtNGVkZi04Nzg5LTI4NDFmMjJiMGRmNi4xNzkxODY0NjM2OTMyLjdiNTdlMjk0ODlhMzRlZWI2OTZmYjMyODFkZTJkOGRkNDM3MTQ3ZDM4ZTdlMGI5YWYzNWI0NjQ1NmQ5MjAxNjU","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_f080c617537f40c88d770f8d31d991b6","tenant_id":null,"method":"POST","path":"/api/v1/public/waitlist/claim/bGlzdGFfZXNwZXJhLmV5SjNZV2wwYkdsemRFbGtJam9pTmpKbU1qY3hPRFV0TkRRME55MDBZemt4TFRrME16WXRObVV5T0RobE9Ua3hObVU1SWl3aWRHVnVZVzUwU1dRaU9pSmlZak0zWlRoallTMW1NVFExTFRRMVpXVXRPVEF4TUMweU5ERm1abU5oTkRneE5UY2lMQ0p6WlhKMmFXTmxTV1FpT2lJMk1qUXpNek5tT1MweU5qaGlMVFEwTW1ZdFlUWTVaaTB6Tnpaak1HVTBaVEkyTXpJaUxDSndjbTltWlhOemFXOXVZV3hKWkNJNklqTm1ZalEzWTJGbUxUSmhNVFF0TkdKbVpTMWlPREUzTFRZeVltUm1ZekF4TURCa09TSXNJbk4wWVhKMGMwRjBJam9pTWpBeU5pMHhNQzB5TTFReE56b3dNRG93TUZvaUxDSjBhVzFsZW05dVpTSTZJa0Z0WlhKcFkyRXZVMkZ2WDFCaGRXeHZJbjAuMTc5MTg2OTQzODQ3My4yYjUzMDUwYjkxZTQ5MWNjZDE3NDUzZWE5YWNmOTFhOGZhMDQxMDI3MDk0ZTE0ZmVlNzRhZDJhMzE0ZGFmODNk","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_4b5d87dee758433c8f779524c0426edd","tenant_id":null,"method":"POST","path":"/api/v1/public/waitlist/claim/bGlzdGFfZXNwZXJhLmV5SjNZV2wwYkdsemRFbGtJam9pTmpKbU1qY3hPRFV0TkRRME55MDBZemt4TFRrME16WXRObVV5T0RobE9Ua3hObVU1SWl3aWRHVnVZVzUwU1dRaU9pSmlZak0zWlRoallTMW1NVFExTFRRMVpXVXRPVEF4TUMweU5ERm1abU5oTkRneE5UY2lMQ0p6WlhKMmFXTmxTV1FpT2lJMk1qUXpNek5tT1MweU5qaGlMVFEwTW1ZdFlUWTVaaTB6Tnpaak1HVTBaVEkyTXpJaUxDSndjbTltWlhOemFXOXVZV3hKWkNJNklqTm1ZalEzWTJGbUxUSmhNVFF0TkdKbVpTMWlPREUzTFRZeVltUm1ZekF4TURCa09TSXNJbk4wWVhKMGMwRjBJam9pTWpBeU5pMHhNQzB5TTFReE56b3dNRG93TUZvaUxDSjBhVzFsZW05dVpTSTZJa0Z0WlhKcFkyRXZVMkZ2WDFCaGRXeHZJbjAuMTc5MTg2OTQzODQ3My4yYjUzMDUwYjkxZTQ5MWNjZDE3NDUzZWE5YWNmOTFhOGZhMDQxMDI3MDk0ZTE0ZmVlNzRhZDJhMzE0ZGFmODNk","code":"NOT_FOUND","status":404}
+{"level":"warn","request_id":"req_def8c6e77b764813ac1675cb15fcf3ee","tenant_id":null,"method":"POST","path":"/api/v1/public/waitlist/claim/bGlzdGFfZXNwZXJhLmV5SjNZV2wwYkdsemRFbGtJam9pWkdRNU5qa3dOVGd0WVRaaVppMDBZalV6TFRrM05HTXROREE1TVRWak5HTTFNV1E0SWl3aWRHVnVZVzUwU1dRaU9pSmlZak0zWlRoallTMW1NVFExTFRRMVpXVXRPVEF4TUMweU5ERm1abU5oTkRneE5UY2lMQ0p6WlhKMmFXTmxTV1FpT2lJMk1qUXpNek5tT1MweU5qaGlMVFEwTW1ZdFlUWTVaaTB6Tnpaak1HVTBaVEkyTXpJaUxDSndjbTltWlhOemFXOXVZV3hKWkNJNklqTm1ZalEzWTJGbUxUSmhNVFF0TkdKbVpTMWlPREUzTFRZeVltUm1ZekF4TURCa09TSXNJbk4wWVhKMGMwRjBJam9pTWpBeU5pMHhNQzB4TkZReE16b3dNRG93TUM0d01EQmFJaXdpZEdsdFpYcHZibVVpT2lKQmJXVnlhV05oTDFOaGIxOVFZWFZzYnlKOS4xNzkxODY0NjM2OTMyLmRkYjJjZjM4ZmVjMThlNjhkZTI1ZTFiZTBhZDhiNGRhMjIyNmIzM2MzZGJjMGFkMjBhNTAxYjMwNTc3ZjI3MWE","code":"NOT_FOUND","status":404}
+{"level":"warn","event":"hcaptcha_nao_configurado"}
+{"level":"warn","request_id":"req_d1a6fe2ed9b84b6e8eb49e0d7312e5f9","tenant_id":null,"method":"POST","path":"/api/v1/appointments","code":"SLOT_TAKEN","status":409}
+{"level":"warn","request_id":"req_0b51966175fc4074a8591f89ba6d8c51","tenant_id":null,"method":"POST","path":"/api/v1/tickets/5eeec014-88ad-4143-8e72-61dbaea4144e/close","code":"INVALID_TRANSITION","status":422}
+{"level":"warn","request_id":"req_31983adc72a4416d9beeab466833b9ea","tenant_id":null,"method":"POST","path":"/api/v1/appointments","code":"SLOT_TAKEN","status":409}
+{"level":"warn","request_id":"req_97b6c31db57e40e79d1830e6f494cb62","tenant_id":null,"method":"POST","path":"/api/v1/clients/import/preview","code":"VALIDATION_ERROR","status":422}
+{"level":"warn","request_id":"req_dd6d8feacf7d495ab5a560a55a7117a0","tenant_id":null,"method":"POST","path":"/api/v1/auth/login","code":"UNAUTHENTICATED","status":401}
+{"level":"warn","request_id":"req_3829bfd011574421b81603397cc2a0b0","tenant_id":null,"method":"POST","path":"/api/v1/auth/login","code":"UNAUTHENTICATED","status":401}
+{"level":"warn","event":"signup_recusado","status":422}
+{"level":"warn","request_id":"req_3aff3f7682864440833ce5fbb30787d8","tenant_id":null,"method":"POST","path":"/api/v1/auth/login","code":"UNAUTHENTICATED","status":401}
+{"level":"warn","request_id":"req_985fc8b5945e4353aff6c6e1e0164a34","tenant_id":null,"method":"POST","path":"/api/v1/auth/login","code":"UNAUTHENTICATED","status":401}
+{"level":"warn","event":"signup_recusado","status":422}
+{"level":"warn","request_id":"req_7c6c7e23f85f4edfa98cb36066d59313","tenant_id":null,"method":"POST","path":"/api/v1/auth/signup","code":"VALIDATION_ERROR","status":422}
+{"level":"error","request_id":"req_b43e5353802a4dffa6fae3b14bacfe9b","tenant_id":null,"method":"POST","path":"/api/v1/auth/password/reset","code":"INTERNAL","status":500} Error [AuthWeakPasswordError]: Password should be at least 10 characters.
+    at ch (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\8055.js:11:46866)
+    at async cj (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\8055.js:11:48217)
+    at async ci (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\8055.js:11:47644)
+    at async (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\8055.js:24:16581)
+    at async c3._useSession (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\8055.js:24:13094)
+    at async c3._updateUser (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\8055.js:24:16347)
+    at async c3.updateUser (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\8055.js:24:16271)
+    at async (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\app\api\v1\auth\password\reset\route.js:1:1218)
+    at async (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\5773.js:1:3723) {
+  __isAuthError: true,
+  status: 422,
+  code: 'weak_password',
+  reasons: [Array]
+}
+{"level":"warn","event":"hcaptcha_nao_configurado"}
+{"level":"warn","event":"central_de_acoes_indisponivel"} Error [AppError]: Algo deu errado do nosso lado. Tente de novo em instantes.
+    at I (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\6801.js:1:21173)
+    at async _ (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\app\admin\hoje\page.js:1:33640) {
+  code: 'INTERNAL',
+  status: 500,
+  publicMessage: 'Algo deu errado do nosso lado. Tente de novo em instantes.',
+  details: undefined,
+  headers: undefined,
+  [cause]: [Object]
+}
+{"level":"warn","event":"hcaptcha_nao_configurado"}
+{"level":"warn","event":"hcaptcha_nao_configurado"}
+{"level":"warn","request_id":"req_0174b67ce6a34ab6a092b205033a8679","tenant_id":null,"method":"POST","path":"/api/v1/public/demo-dom-estilo/book","code":"SLOT_TAKEN","status":409}
+{"level":"warn","request_id":"req_5452b20b019c4989b3d97e9029d7407d","tenant_id":null,"method":"POST","path":"/api/v1/appointments","code":"VALIDATION_ERROR","status":422}
+{"level":"warn","request_id":"req_68c8020604f94040b4ecbe3747292762","tenant_id":null,"method":"POST","path":"/api/v1/appointments","code":"VALIDATION_ERROR","status":422}

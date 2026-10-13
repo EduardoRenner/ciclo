@@ -1,0 +1,101 @@
+{
+ "rota": "admin/clientes/exportar/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/clientes/exportar/page.tsx",
+  "src/app/admin/clientes/exportar/formulario.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/toast.tsx"
+ ],
+ "total": 13,
+ "textos": [
+  {
+   "texto": "Baixar meus clientes",
+   "arquivo": "src/app/admin/clientes/exportar/page.tsx",
+   "linha": 11,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Baixar meus clientes",
+   "arquivo": "src/app/admin/clientes/exportar/page.tsx",
+   "linha": 27,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Uma planilha com todos os seus clientes, do jeito que você trouxe: para levar quando quiser.",
+   "arquivo": "src/app/admin/clientes/exportar/page.tsx",
+   "linha": 28,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Não consegui gerar a planilha",
+   "arquivo": "src/app/admin/clientes/exportar/formulario.tsx",
+   "linha": 36,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Planilha gerada",
+   "arquivo": "src/app/admin/clientes/exportar/formulario.tsx",
+   "linha": 50,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Todos os seus clientes, prontos para abrir no Excel ou reimportar em outro lugar.",
+   "arquivo": "src/app/admin/clientes/exportar/formulario.tsx",
+   "linha": 50,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui falar com o servidor",
+   "arquivo": "src/app/admin/clientes/exportar/formulario.tsx",
+   "linha": 54,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/exportar/formulario.tsx",
+   "linha": 54,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Só quem é dono do negócio pode baixar a base inteira de clientes.",
+   "arquivo": "src/app/admin/clientes/exportar/formulario.tsx",
+   "linha": 62,
+   "tipo": "texto",
+   "tag": "Card"
+  },
+  {
+   "texto": "Baixe nome, telefone, e-mail e a data da última visita de cada cliente numa planilha CSV: a mesma que você pode subir de volta no importador, aqui ou em qualquer outro lugar. Isso exige confirmação em duas etapas e tem um limite de uma vez por mês.",
+   "arquivo": "src/app/admin/clientes/exportar/formulario.tsx",
+   "linha": 70,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Antes disso, ligue a verificação em duas etapas na sua conta:",
+   "arquivo": "src/app/admin/clientes/exportar/formulario.tsx",
+   "linha": 77,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Configurações · Segurança",
+   "arquivo": "src/app/admin/clientes/exportar/formulario.tsx",
+   "linha": 79,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Baixar clientes em planilha",
+   "arquivo": "src/app/admin/clientes/exportar/formulario.tsx",
+   "linha": 87,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

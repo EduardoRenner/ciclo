@@ -1,0 +1,24 @@
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs'
+const b = await chromium.launch({ channel: 'chrome' })
+const out = []
+for (let i = 0; i < 5; i++) {
+  const ctx = await b.newContext({ storageState: 'C:/temp/ciclo-medicao/estado-A-dono.json', timezoneId: 'America/Sao_Paulo', viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
+  const p = await ctx.newPage()
+  const cdp = await ctx.newCDPSession(p)
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 })
+  await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 150, downloadThroughput: 200000, uploadThroughput: 200000 })
+  const t0 = Date.now(); let viuErrada = null, viuCerta = null
+  const nav = p.goto('http://localhost:3201/admin/agenda?date=2026-10-14', { waitUntil: 'commit' })
+  await nav
+  while (Date.now() - t0 < 15000 && viuCerta === null) {
+    const t = await p.evaluate(() => document.body ? document.body.innerText : '').catch(() => '')
+    if (viuErrada === null && /12:11/.test(t)) viuErrada = Date.now() - t0
+    if (/09:11/.test(t)) viuCerta = Date.now() - t0
+    await p.waitForTimeout(25)
+  }
+  if (i === 0) {}
+  out.push({ viuHoraErradaEm: viuErrada, viuHoraCertaEm: viuCerta, janelaErradaMs: viuErrada && viuCerta ? viuCerta - viuErrada : null })
+  await ctx.close()
+}
+console.log(JSON.stringify(out))
+await b.close()

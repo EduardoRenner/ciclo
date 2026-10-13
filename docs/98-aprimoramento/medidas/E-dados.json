@@ -1,0 +1,78 @@
+{
+  "agente": "E · Dados e banco",
+  "data": "2026-10-13",
+  "banco": "supabase_db_ciclo (local, PostgreSQL 17.6), somente leitura via docker exec psql",
+  "migrations_locais": { "aplicadas": 116, "ultima": "0117", "lacuna": "0101" },
+  "rls_custo_por_chamada": {
+    "metodo": "begin read only; set local role authenticated; request.jwt.claims = dono de demo-dom-estilo; 1000 chamadas com argumento variável (case when g>0)",
+    "has_tenant_1000x_ms": 16.5,
+    "tenant_role_1000x_ms": 20.6,
+    "can_see_appointment_1000x_ms": 450.9,
+    "auth_uid_1000x_ms": 0.5
+  },
+  "rls_custo_em_consulta_real": {
+    "count_appointments_105_linhas_authenticated_ms": [75.6, 89.9, 63.1],
+    "count_clients_22_linhas_authenticated_ms": [9.0, 3.0],
+    "mesma_contagem_com_semi_join_em_memberships_sem_politica_ms": 0.84,
+    "hoje_comparacao_56d_30_linhas": { "authenticated_ms": 15.49, "postgres_sem_rls_ms": 0.053 },
+    "atribuicao_105_linhas_authenticated_ms": 42.4
+  },
+  "pg_stat_statements_mais_lentas": [
+    { "consulta": "appointments done por created_at + clients(name) (atribuicao.ts:150)", "chamadas": 20, "media_ms": 173.7, "max_ms": 573.0 },
+    { "consulta": "rpc resumo_central_de_acoes", "chamadas": 17, "media_ms": 95.4, "max_ms": 183.3 },
+    { "consulta": "appointments done 56 dias (resumo-hoje.ts:127)", "chamadas": 17, "media_ms": 94.2, "max_ms": 461.1 },
+    { "consulta": "rpc consumir_rate_limit", "chamadas": 11, "media_ms": 18.1, "max_ms": 66.8 }
+  ],
+  "postgrest_max_rows": 1000,
+  "tenant_grande_local": {
+    "slug": "ciclo-328f57e3",
+    "criado_em": "2026-10-13T04:18Z",
+    "membros": 0,
+    "clientes": 10013,
+    "agendamentos_done": 10013,
+    "client_cycles_on_track": 10003,
+    "client_cycles_late": 9
+  },
+  "seed_demo": {
+    "tenants_demo_com_agenda": 6,
+    "agendamentos_por_cliente": { "media": 4.8, "min": 0, "max": 6, "mediana": 5 },
+    "status_passados": { "done": "100%", "no_show": 0, "canceled": 0 },
+    "dia_da_semana_terca_pct": 57.4,
+    "inicio_as_9h_pct": 80.8,
+    "agendamentos_por_profissional_dia": { "min": 1.20, "max": 1.58 },
+    "demo_dom_estilo": {
+      "profissionais": 3,
+      "atendimentos_30d": 12,
+      "receita_30d_reais": 745.0,
+      "ticket_medio_reais": 66.35,
+      "hoje_atendido_dia_10_10_centavos": 7000,
+      "caixa_entrou_dia_10_10_centavos": 0,
+      "atendido_outubro_centavos": 20500,
+      "caixa_entrou_outubro_centavos": 0,
+      "soma_ltv_clientes_centavos": 690000,
+      "tickets": 0,
+      "client_cycles": 0,
+      "v_recover_revenue_linhas": 0
+    },
+    "tickets_todos_os_demo": 1,
+    "payments": 0,
+    "client_cycles_demo": 1,
+    "cycle_predictions_demo": 0
+  },
+  "explain_resumo": [
+    { "id": "Q01", "consulta": "Hoje/Agenda do dia", "plano": "Index Scan appointments_tenant_id_starts_at_idx", "ms": 0.60 },
+    { "id": "Q02", "consulta": "Hoje 56 dias done (tenant 10k)", "plano": "Seq Scan (tenant = 94% da tabela)", "ms": 49.98, "linhas": 10011 },
+    { "id": "Q04", "consulta": "Atribuição por created_at (tenant 10k)", "plano": "Seq Scan, sem índice (tenant_id, created_at)", "ms": 67.31 },
+    { "id": "Q06", "consulta": "messages campaign sent por janela", "plano": "Seq Scan, sem índice por tenant/kind/sent_at", "ms": 0.06 },
+    { "id": "Q09", "consulta": "v_recover_revenue (tenant 10k)", "plano": "Index Scan client_cycles_lucro_em_risco_idx", "ms": 0.35 },
+    { "id": "Q10", "consulta": "client_cycles on_track (tenant 10k)", "plano": "Seq Scan", "ms": 4.44, "linhas": 10003 },
+    { "id": "Q12", "consulta": "busca de cliente por nome", "plano": "Bitmap Index Scan clients_name_busca_trgm", "ms": 6.28 },
+    { "id": "Q16", "consulta": "resumo_central_de_acoes (tenant 10k)", "plano": "Seq Scan appointments + clients (contagens)", "ms": 8.79 },
+    { "id": "Q18", "consulta": "v_carteira_resumo (tenant 10k)", "plano": "Seq Scan clients", "ms": 11.19 }
+  ],
+  "indices": {
+    "clients_name_trgm": { "idx_scan": 0, "tamanho": "5016 kB", "leitor_no_codigo": "nenhum desde a 0047" },
+    "tickets_appointment_id_idx": "redundante com tickets_um_por_agendamento (mesma coluna)",
+    "messages_status_scheduled_for_idx": { "idx_scan": 0, "coluna_scheduled_for_escritores": 0 }
+  }
+}

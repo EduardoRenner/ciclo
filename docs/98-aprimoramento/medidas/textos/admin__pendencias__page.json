@@ -1,0 +1,357 @@
+{
+ "rota": "admin/pendencias/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/pendencias/page.tsx",
+  "src/app/admin/pendencias/fila.tsx",
+  "src/components/advocacia/atalhos-da-fila.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/bloqueio-plano.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/lib/formato.ts",
+  "src/lib/app-url.ts",
+  "src/lib/utils.ts",
+  "src/components/ui/badge.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/textarea.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/advocacia/escrever.ts",
+  "src/components/ui/icone-anel.tsx"
+ ],
+ "total": 51,
+ "textos": [
+  {
+   "texto": "Pendências",
+   "arquivo": "src/app/admin/pendencias/page.tsx",
+   "linha": 22,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "cobrar o que falta de cada cliente",
+   "arquivo": "src/app/admin/pendencias/page.tsx",
+   "linha": 45,
+   "tipo": "prop:acao"
+  },
+  {
+   "texto": "Ver os clientes",
+   "arquivo": "src/app/admin/pendencias/page.tsx",
+   "linha": 46,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Pendências",
+   "arquivo": "src/app/admin/pendencias/page.tsx",
+   "linha": 59,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "O que falta de cada cliente, e há quantos dias.",
+   "arquivo": "src/app/admin/pendencias/page.tsx",
+   "linha": 62,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "{total} {…} de {grupos.length} {…}{…}",
+   "arquivo": "src/app/admin/pendencias/page.tsx",
+   "linha": 63,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Nenhuma pendência aberta",
+   "arquivo": "src/app/admin/pendencias/page.tsx",
+   "linha": 71,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Ao abrir um caso, as pendências do modelo aparecem aqui, agrupadas por cliente.",
+   "arquivo": "src/app/admin/pendencias/page.tsx",
+   "linha": 72,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Ver casos",
+   "arquivo": "src/app/admin/pendencias/page.tsx",
+   "linha": 73,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Aprovar",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 20,
+   "tipo": "prop:aprovar"
+  },
+  {
+   "texto": "Recebi",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 21,
+   "tipo": "prop:receber"
+  },
+  {
+   "texto": "Conferi",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 22,
+   "tipo": "prop:concluir"
+  },
+  {
+   "texto": "Devolver",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 23,
+   "tipo": "prop:devolver"
+  },
+  {
+   "texto": "Pendência aprovada",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 27,
+   "tipo": "prop:aprovar"
+  },
+  {
+   "texto": "Marcada como recebida",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 28,
+   "tipo": "prop:receber"
+  },
+  {
+   "texto": "Pendência concluída",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 29,
+   "tipo": "prop:concluir"
+  },
+  {
+   "texto": "Devolvida ao cliente",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 30,
+   "tipo": "prop:devolver"
+  },
+  {
+   "texto": "Rascunho",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 35,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Aguardando",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 36,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Devolvida",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 37,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Recebida",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 38,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "Em conferência",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 39,
+   "tipo": "mensagem/texto"
+  },
+  {
+   "texto": "pendência",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 97,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "pendências",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 97,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· a mais antiga há {g.diasEmAberto} {…}",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 98,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· aberta hoje",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 98,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "1 atrasada",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 101,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "{g.atrasados} atrasadas",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 101,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "Passou de 10 dias sem resposta: vale ligar.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 107,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Dia de avisar o que falta.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 109,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Dia de lembrar: {g.lembrete.marco} dias sem resposta.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 110,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ligar",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 120,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "Liguei",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 123,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Cobrar pelo WhatsApp",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 139,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "j k",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 151,
+   "tipo": "aria-keyshortcuts"
+  },
+  {
+   "texto": "· com a equipe",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 157,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· até {dataCurta(i.venceEm)}",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 158,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· {i.rodada}ª rodada",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 159,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Devolvida: {i.motivoDaDevolucao}",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 162,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Atrasada",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 165,
+   "tipo": "texto",
+   "tag": "Badge"
+  },
+  {
+   "texto": "O que precisa ser corrigido",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 171,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Fica no histórico da pendência e abre uma nova rodada de lembretes.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 172,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Devolver",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 187,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Escreva o motivo com pelo menos 5 letras.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 183,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 190,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Salvando a ação anterior.",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 203,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Ver mais",
+   "arquivo": "src/app/admin/pendencias/fila.tsx",
+   "linha": 222,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Atalhos: j e k andam pela fila,",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 44,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Enter abre o item.",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 47,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Enter",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 47,
+   "tipo": "texto",
+   "tag": "kbd"
+  },
+  {
+   "texto": "c faz a primeira ação do item.",
+   "arquivo": "src/components/advocacia/atalhos-da-fila.tsx",
+   "linha": 51,
+   "tipo": "texto"
+  }
+ ]
+}

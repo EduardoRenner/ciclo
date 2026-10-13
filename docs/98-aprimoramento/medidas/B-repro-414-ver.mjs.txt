@@ -1,0 +1,11 @@
+// Agente B · abre as telas no navegador e diz se caiu no boundary de erro do painel (admin/error.tsx).
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs';
+const b = await chromium.launch({ channel: 'chrome' });
+const ctx = await b.newContext({ storageState: 'C:/temp/ciclo-medicao/estado-B-dono.json', viewport: { width: 390, height: 844 } });
+const p = await ctx.newPage();
+for (const r of ['/admin/config/servicos', '/admin/mes', '/admin/caixa']) {
+  await p.goto('http://localhost:3200' + r, { waitUntil: 'networkidle' });
+  const txt = await p.locator('main').innerText().catch(() => '');
+  console.log(r, /Não consegui carregar esta tela/.test(txt) ? 'CAIU NO ERRO: "Não consegui carregar esta tela"' : 'abriu normal');
+}
+await b.close();

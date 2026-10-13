@@ -1,0 +1,85 @@
+// Agente A · verificações pontuais no navegador (confere antes de afirmar defeito visual).
+// Uso: node A-verifica.mjs <caso>
+import { chromium } from 'file:///C:/temp/ciclo-medicao/node_modules/playwright/index.mjs';
+import { fileURLToPath } from 'node:url';
+
+const BASE = 'http://localhost:3200';
+const caso = process.argv[2];
+const cap = (n) => fileURLToPath(new URL(`../capturas/verifica-${n}.png`, import.meta.url));
+const browser = await chromium.launch({ channel: 'chrome' });
+const novo = async (w, h, extra = {}) => {
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: w < 768, colorScheme: 'light', locale: 'pt-BR', timezoneId: 'America/Sao_Paulo', storageState: 'C:/temp/ciclo-medicao/estado-A-dono.json', ...extra });
+  return ctx.newPage();
+};
+
+async function focoEm(page, rota, tabs, nome) {
+  await page.goto(BASE + rota, { waitUntil: 'networkidle' });
+  await page.mouse.click(1, 1);
+  for (let i = 0; i < tabs; i++) await page.keyboard.press('Tab');
+  const info = await page.evaluate(() => { const el = document.activeElement; const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return { el: el.tagName + ' ' + (el.innerText || el.getAttribute('aria-label') || '').trim().slice(0, 40), x: r.x, y: r.y, w: r.width, h: r.height, outline: `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor} offset ${s.outlineOffset}`, fundoPai: getComputedStyle(el.parentElement).backgroundColor }; });
+  await page.screenshot({ path: cap(nome), clip: { x: Math.max(0, info.x - 24), y: Math.max(0, info.y - 24), width: Math.min(info.w + 48, page.viewportSize().width), height: info.h + 48 } });
+  console.log(nome, JSON.stringify(info));
+}
+
+if (caso === 'foco-hoje') {
+  const page = await novo(390, 844);
+  await focoEm(page, '/admin/hoje', 9, 'foco-hoje-tab9-390-claro');
+}
+if (caso === 'rotulos') {
+  // inputs pequenos: o alvo real inclui o <label> associado?
+  const page = await novo(390, 844);
+  for (const rota of process.argv.slice(3)) {
+    await page.goto(BASE + rota, { waitUntil: 'networkidle' });
+    const r = await page.evaluate(() => [...document.querySelectorAll('input[type=checkbox],input[type=radio],input[type=date],input[type=time],input[type=color]')].filter((el) => el.getBoundingClientRect().width > 0).map((el) => {
+      const r = el.getBoundingClientRect();
+      const labs = [...(el.labels || [])].map((l) => { const b = l.getBoundingClientRect(); return `${Math.round(b.width)}x${Math.round(b.height)} "${l.innerText.trim().slice(0, 30)}"`; });
+      return `${el.type} ${Math.round(r.width)}x${Math.round(r.height)} labels=[${labs.join('; ')}]`;
+    }));
+    console.log(rota, JSON.stringify(r));
+  }
+}
+if (caso === 'shot') {
+  // node A-verifica.mjs shot <rota> <w> <h> <nome> [scrollY]
+  const [rota, w, h, nome, sy] = process.argv.slice(3);
+  const page = await novo(+w, +h);
+  await page.goto(BASE + rota, { waitUntil: 'networkidle' });
+  if (sy) await page.evaluate((y) => window.scrollTo(0, y), +sy);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: cap(nome) });
+  console.log('ok', nome);
+}
+if (caso === 'focos') {
+  const page = await novo(390, 844);
+  for (const [rota, n, nome] of [['/admin/caixa', 6, 'foco-caixa-data'], ['/admin/config/horarios', 7, 'foco-horarios-hora'], ['/admin/clientes/nova', 7, 'foco-clientes-nova-campo7'], ['/admin/experimentos', 8, 'foco-experimentos-campo8']]) {
+    await focoEm(page, rota, n, nome + '-390-claro');
+  }
+}
+if (caso === 'foco-input') {
+  const page = await novo(390, 844);
+  for (const [rota, sel, nome] of [['/admin/caixa', 'input[type=date]', 'foco-caixa-data'], ['/admin/config/horarios', 'input[type=time]', 'foco-horarios-hora'], ['/admin/clientes/nova', 'input[type=date]', 'foco-clientes-nova-data']]) {
+    await page.goto(BASE + rota, { waitUntil: 'networkidle' });
+    const loc = page.locator(sel).first();
+    await loc.scrollIntoViewIfNeeded();
+    await page.keyboard.press('Tab');
+    await loc.focus();
+    await page.keyboard.press('ArrowRight').catch(() => {});
+    const info = await loc.evaluate((el) => { const s = getComputedStyle(el); const p = el.parentElement; const ps = getComputedStyle(p); return { foco: document.activeElement === el, outline: s.outlineStyle + ' ' + s.outlineWidth + ' ' + s.outlineColor, borda: s.borderColor + ' ' + s.borderWidth, sombra: s.boxShadow.slice(0, 80), paiSombra: ps.boxShadow.slice(0, 80), paiOutline: ps.outlineStyle + ' ' + ps.outlineWidth }; });
+    const b = await loc.boundingBox();
+    await page.screenshot({ path: cap(nome + '-390-claro'), clip: { x: Math.max(0, b.x - 30), y: Math.max(0, b.y - 30), width: Math.min(b.width + 60, 390), height: b.height + 60 } });
+    console.log(nome, JSON.stringify(info));
+  }
+}
+if (caso === 'aria-live') {
+  const rotas = ['/admin/hoje','/admin/agenda','/admin/agenda/novo','/admin/comanda/agendamento/07bce881-65e9-4597-bb44-98c4c4a0796f','/admin/caixa','/admin/clientes','/admin/clientes/cf3e5831-4a82-4fe0-8398-0f060d41ec95','/admin/recuperar','/admin/campanhas','/admin/mes','/admin/config','/admin/orcamentos','/demo-dom-estilo','/demo-dom-estilo/agendar','/confirmar/token-de-medicao-inexistente'];
+  const page = await novo(390, 844, { reducedMotion: 'reduce' });
+  for (const r of rotas) {
+    await page.goto(BASE + r, { waitUntil: 'networkidle' });
+    const info = await page.evaluate(() => {
+      const vivos = [...document.querySelectorAll('[aria-live],[role=status],[role=alert]')];
+      const anim = [...document.querySelectorAll('*')].filter((el) => { const s = getComputedStyle(el); return (s.animationName && s.animationName !== 'none' && s.animationPlayState === 'running' && parseFloat(s.animationDuration) > 0.01); }).length;
+      return { regioesVivas: vivos.length, exemplos: vivos.slice(0, 4).map((v) => (v.getAttribute('aria-live') || v.getAttribute('role')) + ':' + (v.textContent || '').trim().slice(0, 40)), animacoesRodandoComReduce: anim };
+    });
+    console.log(r, JSON.stringify(info));
+  }
+}
+await browser.close();

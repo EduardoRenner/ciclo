@@ -1,0 +1,160 @@
+{
+ "rota": "admin/campanhas/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/campanhas/page.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/bloqueio-plano.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/section-header.tsx",
+  "src/components/ui/stat-tile.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/lib/formato.ts",
+  "src/lib/app-url.ts",
+  "src/lib/utils.ts"
+ ],
+ "total": 21,
+ "textos": [
+  {
+   "texto": "Campanhas",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 25,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Campanhas",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 111,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Quem voltou depois de receber mensagem, e quanto isso trouxe.",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 111,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Voltaram este mês",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 114,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "de {atribuicao.mensagensNaJanela}",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 120,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "no período",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 121,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "mensagem enviada",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 121,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "mensagens enviadas",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 121,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "mandar a mesma mensagem para todos de uma vez",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 132,
+   "tipo": "prop:acao"
+  },
+  {
+   "texto": "cliente na sua base",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 134,
+   "tipo": "prop:substantivo"
+  },
+  {
+   "texto": "clientes na sua base",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 134,
+   "tipo": "prop:substantivo"
+  },
+  {
+   "texto": "Avisar uma de cada vez, de graça",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 136,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Nova campanha",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 142,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Resultados",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 148,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "Nenhuma campanha ainda",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 154,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Escolha um grupo de clientes, mande a mesma mensagem para todos e veja quantos voltaram.",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 155,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Avisar uma de cada vez",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 163,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Criar a primeira",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 165,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "pessoa voltou",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 192,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "pessoas voltaram",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 192,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ninguém voltou por aqui ainda.",
+   "arquivo": "src/app/admin/campanhas/page.tsx",
+   "linha": 196,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}

@@ -1,0 +1,27 @@
+// Agente F — nova oferta de lista de espera num horário que a API pública diz estar LIVRE (banco local).
+// Atualiza tokens.listaEsperaValido em C:\temp\ciclo-medicao\F-tokens.json.
+import { execFileSync } from 'node:child_process'
+import { createHmac } from 'node:crypto'
+import { readFileSync, writeFileSync } from 'node:fs'
+
+const ENV = readFileSync('C:/Users/Usuario/.claude/code/ciclo-aprimoramento/.env.local', 'utf8')
+const segredo = (ENV.match(/^PUBLIC_LINK_SIGNING_KEY=(.+)$/m) ?? ENV.match(/^CRON_SECRET=(.+)$/m))[1].trim().replace(/^"|"$/g, '')
+const token = (escopo, id, h) => { const exp = Date.now() + h * 3_600_000; const p = `${escopo}.${id}.${exp}`; return Buffer.from(`${p}.${createHmac('sha256', segredo).update(p, 'utf8').digest('hex')}`, 'utf8').toString('base64url') }
+const sql = (q) => execFileSync('docker', ['exec', 'supabase_db_ciclo', 'psql', '-U', 'postgres', '-At', '-F', '|', '-c', q], { encoding: 'utf8' }).trim()
+
+const SLUG = 'demo-espaco-vitoria'
+const [tenantId, tz] = sql(`select id, timezone from tenants where slug='${SLUG}'`).split('|')
+const [svcId] = sql(`select id from services where tenant_id='${tenantId}' and name='Manicure simples'`).split('|')
+const clientId = sql(`select client_id from appointments where tenant_id='${tenantId}' and status='done' and client_id is not null order by starts_at desc limit 1 offset 3`)
+const data = process.argv[2] ?? '2026-10-22'
+const r = await fetch(`http://localhost:3200/api/v1/public/${SLUG}/availability?serviceId=${svcId}&date=${data}`)
+const slots = (await r.json()).data.slots
+const livre = slots.find((s) => new Date(s.startsAt).getUTCHours() >= 17) ?? slots.at(-1) // tarde, longe dos testes da manhã
+const waitlistId = sql(`insert into waitlist (tenant_id, client_id, service_id, professional_id, notified_at) values ('${tenantId}', '${clientId}', '${svcId}', '${livre.professionalId}', now()) returning id`).split('\n')[0]
+const oferta = Buffer.from(JSON.stringify({ waitlistId, tenantId, serviceId: svcId, professionalId: livre.professionalId, startsAt: livre.startsAt, timezone: tz }), 'utf8').toString('base64url')
+const arq = JSON.parse(readFileSync('C:/temp/ciclo-medicao/F-tokens.json', 'utf8'))
+arq.tokens.listaEsperaValido = token('lista_espera', oferta, 20 / 60)
+arq.ids.waitlistId2 = waitlistId
+arq.ids.oferta2 = livre.startsAt
+writeFileSync('C:/temp/ciclo-medicao/F-tokens.json', JSON.stringify(arq, null, 2))
+console.log({ waitlistId, startsAt: livre.startsAt, professionalId: livre.professionalId })

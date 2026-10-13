@@ -1,0 +1,779 @@
+[
+  {
+    "pagina": "landing",
+    "url": "/",
+    "perfil": "celular",
+    "reps": 5,
+    "status": 200,
+    "utilMs": {
+      "mediana": 546,
+      "pior": 574,
+      "todas": [
+        574,
+        492,
+        546,
+        477,
+        563
+      ]
+    },
+    "ttfb": {
+      "mediana": 17,
+      "pior": 30
+    },
+    "fcp": {
+      "mediana": 1264
+    },
+    "lcp": {
+      "mediana": 1312,
+      "pior": 1652
+    },
+    "cls": {
+      "pior": 0
+    },
+    "jsKB": 148,
+    "totalKB": 221,
+    "requisicoes": 25,
+    "finalUrl": "http://localhost:3200/",
+    "seo": {
+      "title": "CICLO · a agenda que avisa quem parou de voltar",
+      "description": "Agenda e site de agendamento para quem atende com hora marcada. O CICLO calcula de quanto em quanto tempo cada cliente volta, mostra quem atrasou e te dá a mensagem pronta para chamar.",
+      "ogTitle": "CICLO · a agenda que avisa quem parou de voltar",
+      "ogDescription": "Para qualquer trabalho que dependa de cliente que volta. O CICLO mostra quem sumiu, há quanto tempo, e quanto vale chamar de volta.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Quantos clientes pararam de voltar sem você notar?"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": []
+  },
+  {
+    "pagina": "precos",
+    "url": "/precos",
+    "perfil": "celular",
+    "reps": 5,
+    "status": 200,
+    "utilMs": {
+      "mediana": 490,
+      "pior": 528,
+      "todas": [
+        508,
+        528,
+        472,
+        457,
+        490
+      ]
+    },
+    "ttfb": {
+      "mediana": 16,
+      "pior": 20
+    },
+    "fcp": {
+      "mediana": 1104
+    },
+    "lcp": {
+      "mediana": 1104,
+      "pior": 1244
+    },
+    "cls": {
+      "pior": 0.0038
+    },
+    "jsKB": 148,
+    "totalKB": 218,
+    "requisicoes": 22,
+    "finalUrl": "http://localhost:3200/precos",
+    "seo": {
+      "title": "Preços · CICLO",
+      "description": "Tudo liberado, sem cartão. Depois, dois planos: Solo a R$ 49 por mês e Equipe a R$ 99, com o produto inteiro nos dois.",
+      "ogTitle": "Preços · CICLO",
+      "ogDescription": "Tudo liberado, sem cartão. Dois planos, com preço na tela e sem letra miúda.",
+      "ogImage": null,
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Tudo liberado, sem cartão. Sem prazo por enquanto."
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [
+      {
+        "id": "link-name",
+        "impacto": "serious",
+        "n": 1,
+        "alvo": [
+          ".toque-48.items-center[href=\"/\"]"
+        ],
+        "resumo": "Links must have discernible text"
+      }
+    ],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": []
+  },
+  {
+    "pagina": "calculadora",
+    "url": "/calculadora",
+    "perfil": "celular",
+    "reps": 5,
+    "status": 200,
+    "utilMs": {
+      "mediana": 462,
+      "pior": 518,
+      "todas": [
+        431,
+        518,
+        462,
+        466,
+        365
+      ]
+    },
+    "ttfb": {
+      "mediana": 12,
+      "pior": 18
+    },
+    "fcp": {
+      "mediana": 1000
+    },
+    "lcp": {
+      "mediana": 1000,
+      "pior": 1052
+    },
+    "cls": {
+      "pior": 0
+    },
+    "jsKB": 151,
+    "totalKB": 217,
+    "requisicoes": 22,
+    "finalUrl": "http://localhost:3200/calculadora",
+    "seo": {
+      "title": "Quanto você perde com cliente que parou de voltar · CICLO",
+      "description": "Calculadora grátis para salão e barbearia: quanto deixou de entrar com os clientes que pararam de vir, pelo ritmo de retorno do seu negócio. Sem cadastro.",
+      "ogTitle": "Quanto você perde com cliente que parou de voltar · CICLO",
+      "ogDescription": "Três números que você sabe de cabeça e a conta aparece. Grátis, sem cadastro.",
+      "ogImage": null,
+      "canonical": "http://localhost:3000/calculadora",
+      "robots": null,
+      "h1": [
+        "Quanto deixou de entrar com quem parou de voltar?"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [
+      {
+        "id": "link-name",
+        "impacto": "serious",
+        "n": 1,
+        "alvo": [
+          "a[href=\"/\"]"
+        ],
+        "resumo": "Links must have discernible text"
+      }
+    ],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": []
+  },
+  {
+    "pagina": "links",
+    "url": "/links",
+    "perfil": "celular",
+    "reps": 5,
+    "status": 200,
+    "utilMs": {
+      "mediana": 472,
+      "pior": 637,
+      "todas": [
+        477,
+        637,
+        438,
+        459,
+        472
+      ]
+    },
+    "ttfb": {
+      "mediana": 15,
+      "pior": 18
+    },
+    "fcp": {
+      "mediana": 1056
+    },
+    "lcp": {
+      "mediana": 1056,
+      "pior": 1188
+    },
+    "cls": {
+      "pior": 0.0011
+    },
+    "jsKB": 148,
+    "totalKB": 224,
+    "requisicoes": 30,
+    "finalUrl": "http://localhost:3200/links",
+    "seo": {
+      "title": "Retenção de clientes para quem tem agenda · CICLO",
+      "description": "Mostra quem parou de voltar, pelo nome, e deixa o texto pronto pra chamar de volta. Faça a conta do que você deixou de faturar.",
+      "ogTitle": "CICLO · Retenção de clientes",
+      "ogDescription": "Quanto você deixou de faturar com quem parou de voltar? A conta sai em um minuto.",
+      "ogImage": null,
+      "canonical": "http://localhost:3000/links",
+      "robots": null,
+      "h1": [
+        "Seu sistema de retenção de clientes"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": []
+  },
+  {
+    "pagina": "salao-vitoria",
+    "url": "/demo-espaco-vitoria",
+    "perfil": "celular",
+    "reps": 5,
+    "status": 200,
+    "utilMs": {
+      "mediana": 580,
+      "pior": 989,
+      "todas": [
+        989,
+        852,
+        546,
+        415,
+        580
+      ]
+    },
+    "ttfb": {
+      "mediana": 231,
+      "pior": 671
+    },
+    "fcp": {
+      "mediana": 1164
+    },
+    "lcp": {
+      "mediana": 1164,
+      "pior": 1608
+    },
+    "cls": {
+      "pior": 0.001
+    },
+    "jsKB": 149,
+    "totalKB": 215,
+    "requisicoes": 20,
+    "finalUrl": "http://localhost:3200/demo-espaco-vitoria",
+    "seo": {
+      "title": "Espaço Vitória · CICLO",
+      "description": "Agende seu horário na Espaço Vitória.",
+      "ogTitle": "Espaço Vitória",
+      "ogDescription": "Agende seu horário na Espaço Vitória.",
+      "ogImage": "http://localhost:3000/demo-espaco-vitoria/previa",
+      "canonical": "http://localhost:3000/demo-espaco-vitoria",
+      "robots": "noindex, nofollow",
+      "h1": [
+        "Espaço Vitória"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": []
+  },
+  {
+    "pagina": "salao-dom-estilo",
+    "url": "/demo-dom-estilo",
+    "perfil": "celular",
+    "reps": 5,
+    "status": 200,
+    "utilMs": {
+      "mediana": 490,
+      "pior": 585,
+      "todas": [
+        457,
+        414,
+        526,
+        585,
+        490
+      ]
+    },
+    "ttfb": {
+      "mediana": 104,
+      "pior": 174
+    },
+    "fcp": {
+      "mediana": 1076
+    },
+    "lcp": {
+      "mediana": 1076,
+      "pior": 1096
+    },
+    "cls": {
+      "pior": 0.0014
+    },
+    "jsKB": 149,
+    "totalKB": 211,
+    "requisicoes": 20,
+    "finalUrl": "http://localhost:3200/demo-dom-estilo",
+    "seo": {
+      "title": "Barbearia Dom Estilo · CICLO",
+      "description": "Agende seu horário na Barbearia Dom Estilo.",
+      "ogTitle": "Barbearia Dom Estilo",
+      "ogDescription": "Agende seu horário na Barbearia Dom Estilo.",
+      "ogImage": "http://localhost:3000/demo-dom-estilo/previa",
+      "canonical": "http://localhost:3000/demo-dom-estilo",
+      "robots": "noindex, nofollow",
+      "h1": [
+        "Barbearia Dom Estilo"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": []
+  },
+  {
+    "pagina": "agendar-vitoria",
+    "url": "/demo-espaco-vitoria/agendar",
+    "perfil": "celular",
+    "reps": 5,
+    "status": 200,
+    "utilMs": {
+      "mediana": 1089,
+      "pior": 1230,
+      "todas": [
+        950,
+        1230,
+        1194,
+        1089,
+        600
+      ]
+    },
+    "ttfb": {
+      "mediana": 56,
+      "pior": 101
+    },
+    "fcp": {
+      "mediana": 1104
+    },
+    "lcp": {
+      "mediana": 1104,
+      "pior": 1256
+    },
+    "cls": {
+      "pior": 0.0008
+    },
+    "jsKB": 162,
+    "totalKB": 270,
+    "requisicoes": 22,
+    "finalUrl": "http://localhost:3200/demo-espaco-vitoria/agendar",
+    "seo": {
+      "title": "Agendar em Espaço Vitória · CICLO",
+      "description": "Escolha o serviço, o dia e o horário na Espaço Vitória. Sem ligar, sem esperar resposta.",
+      "ogTitle": "Agendar em Espaço Vitória",
+      "ogDescription": "Escolha o serviço, o dia e o horário na Espaço Vitória. Sem ligar, sem esperar resposta.",
+      "ogImage": null,
+      "canonical": "http://localhost:3000/demo-espaco-vitoria/agendar",
+      "robots": null,
+      "h1": [
+        "Agendar em Espaço Vitória"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": []
+  },
+  {
+    "pagina": "termos",
+    "url": "/termos",
+    "perfil": "celular",
+    "reps": 5,
+    "status": 200,
+    "utilMs": {
+      "mediana": 647,
+      "pior": 1161,
+      "todas": [
+        647,
+        1161,
+        709,
+        580,
+        562
+      ]
+    },
+    "ttfb": {
+      "mediana": 11,
+      "pior": 13
+    },
+    "fcp": {
+      "mediana": 1152
+    },
+    "lcp": {
+      "mediana": 1152,
+      "pior": 1472
+    },
+    "cls": {
+      "pior": 0
+    },
+    "jsKB": 147,
+    "totalKB": 223,
+    "requisicoes": 23,
+    "finalUrl": "http://localhost:3200/termos",
+    "seo": {
+      "title": "Termos de uso · CICLO",
+      "description": "As regras de uso do CICLO: o que a gente entrega, o que você garante, como funciona o pagamento e como cancelar.",
+      "ogTitle": "Termos de uso · CICLO",
+      "ogDescription": "As regras de uso do CICLO: o que a gente entrega, o que você garante, como funciona o pagamento e como cancelar.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Termos de uso"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [
+      {
+        "texto": "Política de Privacidade",
+        "w": 167,
+        "h": 17,
+        "hEfetiva": 17
+      },
+      {
+        "texto": "página de preços",
+        "w": 126,
+        "h": 17,
+        "hEfetiva": 17
+      }
+    ],
+    "rolagemLateral": 0,
+    "consoleErros": []
+  },
+  {
+    "pagina": "privacidade",
+    "url": "/privacidade",
+    "perfil": "celular",
+    "reps": 5,
+    "status": 200,
+    "utilMs": {
+      "mediana": 640,
+      "pior": 742,
+      "todas": [
+        640,
+        606,
+        638,
+        680,
+        742
+      ]
+    },
+    "ttfb": {
+      "mediana": 13,
+      "pior": 18
+    },
+    "fcp": {
+      "mediana": 1208
+    },
+    "lcp": {
+      "mediana": 1208,
+      "pior": 1284
+    },
+    "cls": {
+      "pior": 0.0031
+    },
+    "jsKB": 147,
+    "totalKB": 216,
+    "requisicoes": 22,
+    "finalUrl": "http://localhost:3200/privacidade",
+    "seo": {
+      "title": "Política de Privacidade · CICLO",
+      "description": "Que dados o CICLO guarda, por quê, por quanto tempo, e o que você pode pedir a qualquer momento.",
+      "ogTitle": "Política de Privacidade · CICLO",
+      "ogDescription": "Que dados o CICLO guarda, por quê, por quanto tempo, e o que você pode pedir a qualquer momento.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Política de Privacidade"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": []
+  },
+  {
+    "pagina": "entrar",
+    "url": "/entrar",
+    "perfil": "celular",
+    "reps": 5,
+    "status": 200,
+    "utilMs": {
+      "mediana": 504,
+      "pior": 593,
+      "todas": [
+        504,
+        482,
+        489,
+        581,
+        593
+      ]
+    },
+    "ttfb": {
+      "mediana": 16,
+      "pior": 21
+    },
+    "fcp": {
+      "mediana": 1328
+    },
+    "lcp": {
+      "mediana": 1328,
+      "pior": 1412
+    },
+    "cls": {
+      "pior": 0.0003
+    },
+    "jsKB": 153,
+    "totalKB": 226,
+    "requisicoes": 23,
+    "finalUrl": "http://localhost:3200/entrar",
+    "seo": {
+      "title": "Entrar · CICLO",
+      "description": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogTitle": "Entrar · CICLO",
+      "ogDescription": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Que bom te ver de novo"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": []
+  },
+  {
+    "pagina": "cadastro",
+    "url": "/cadastro",
+    "perfil": "celular",
+    "reps": 5,
+    "status": 200,
+    "utilMs": {
+      "mediana": 573,
+      "pior": 648,
+      "todas": [
+        573,
+        648,
+        641,
+        527,
+        514
+      ]
+    },
+    "ttfb": {
+      "mediana": 17,
+      "pior": 22
+    },
+    "fcp": {
+      "mediana": 1316
+    },
+    "lcp": {
+      "mediana": 1316,
+      "pior": 1352
+    },
+    "cls": {
+      "pior": 0.0003
+    },
+    "jsKB": 154,
+    "totalKB": 227,
+    "requisicoes": 26,
+    "finalUrl": "http://localhost:3200/cadastro",
+    "seo": {
+      "title": "Criar conta · CICLO",
+      "description": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogTitle": "Criar conta · CICLO",
+      "ogDescription": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Criar sua conta"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": []
+  },
+  {
+    "pagina": "recuperar-senha",
+    "url": "/recuperar-senha",
+    "perfil": "celular",
+    "reps": 5,
+    "status": 200,
+    "utilMs": {
+      "mediana": 505,
+      "pior": 609,
+      "todas": [
+        402,
+        609,
+        530,
+        505,
+        502
+      ]
+    },
+    "ttfb": {
+      "mediana": 17,
+      "pior": 21
+    },
+    "fcp": {
+      "mediana": 1316
+    },
+    "lcp": {
+      "mediana": 1316,
+      "pior": 1356
+    },
+    "cls": {
+      "pior": 0.0007
+    },
+    "jsKB": 151,
+    "totalKB": 223,
+    "requisicoes": 21,
+    "finalUrl": "http://localhost:3200/recuperar-senha",
+    "seo": {
+      "title": "Recuperar senha · CICLO",
+      "description": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogTitle": "Recuperar senha · CICLO",
+      "ogDescription": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Esqueceu a senha?"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": []
+  },
+  {
+    "pagina": "nova-senha-sem-sessao",
+    "url": "/nova-senha",
+    "perfil": "celular",
+    "reps": 5,
+    "status": 200,
+    "utilMs": {
+      "mediana": 754,
+      "pior": 924,
+      "todas": [
+        749,
+        924,
+        754,
+        722,
+        834
+      ]
+    },
+    "ttfb": {
+      "mediana": 201,
+      "pior": 218
+    },
+    "fcp": {
+      "mediana": 1508
+    },
+    "lcp": {
+      "mediana": 1508,
+      "pior": 1668
+    },
+    "cls": {
+      "pior": 0.0007
+    },
+    "jsKB": 151,
+    "totalKB": 223,
+    "requisicoes": 21,
+    "finalUrl": "http://localhost:3200/recuperar-senha?erro=link_expirado",
+    "seo": {
+      "title": "Recuperar senha · CICLO",
+      "description": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogTitle": "Recuperar senha · CICLO",
+      "ogDescription": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": null,
+      "h1": [
+        "Esqueceu a senha?"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": []
+  },
+  {
+    "pagina": "slug-inexistente",
+    "url": "/salao-que-nao-existe-123",
+    "perfil": "celular",
+    "reps": 5,
+    "status": 404,
+    "utilMs": {
+      "mediana": 2625,
+      "pior": 2835,
+      "todas": [
+        2598,
+        2584,
+        2770,
+        2835,
+        2625
+      ]
+    },
+    "ttfb": {
+      "mediana": 62,
+      "pior": 358
+    },
+    "fcp": {
+      "mediana": 2436
+    },
+    "lcp": {
+      "mediana": 2452,
+      "pior": 2808
+    },
+    "cls": {
+      "pior": 0.0005
+    },
+    "jsKB": 149,
+    "totalKB": 219,
+    "requisicoes": 23,
+    "finalUrl": "http://localhost:3200/salao-que-nao-existe-123",
+    "seo": {
+      "title": "CICLO",
+      "description": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogTitle": "CICLO",
+      "ogDescription": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
+      "ogImage": "http://localhost:3000/opengraph-image?c6146f3cb2b25817",
+      "canonical": null,
+      "robots": "noindex",
+      "h1": [
+        "Página não encontrada"
+      ],
+      "lang": "pt-BR"
+    },
+    "axe": [],
+    "alvosPequenos": [],
+    "rolagemLateral": 0,
+    "consoleErros": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+  }
+]

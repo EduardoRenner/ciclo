@@ -1,0 +1,417 @@
+{
+ "rota": "admin/clientes/nova/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/clientes/nova/page.tsx",
+  "src/app/admin/clientes/nova/formulario.tsx",
+  "src/lib/preferencias.ts"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/shell/vocabulario.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/phone-input.tsx",
+  "src/components/ui/textarea.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/utils.ts",
+  "src/lib/formato.ts"
+ ],
+ "total": 65,
+ "textos": [
+  {
+   "texto": "Novo cliente",
+   "arquivo": "src/app/admin/clientes/nova/page.tsx",
+   "linha": 10,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Não consegui cadastrar.",
+   "arquivo": "src/app/admin/clientes/nova/formulario.tsx",
+   "linha": 71,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/clientes/nova/formulario.tsx",
+   "linha": 81,
+   "tipo": "erro"
+  },
+  {
+   "texto": "{…} novo",
+   "arquivo": "src/app/admin/clientes/nova/formulario.tsx",
+   "linha": 89,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Nome",
+   "arquivo": "src/app/admin/clientes/nova/formulario.tsx",
+   "linha": 92,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Aniversário",
+   "arquivo": "src/app/admin/clientes/nova/formulario.tsx",
+   "linha": 97,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Como atender (opcional)",
+   "arquivo": "src/app/admin/clientes/nova/formulario.tsx",
+   "linha": 114,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Etiquetas",
+   "arquivo": "src/app/admin/clientes/nova/formulario.tsx",
+   "linha": 135,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Separe por vírgula.",
+   "arquivo": "src/app/admin/clientes/nova/formulario.tsx",
+   "linha": 139,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Observações",
+   "arquivo": "src/app/admin/clientes/nova/formulario.tsx",
+   "linha": 142,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Autorizou receber promoções e lembretes Só marque se o cliente disse que pode.",
+   "arquivo": "src/app/admin/clientes/nova/formulario.tsx",
+   "linha": 154,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Só marque se o cliente disse que pode.",
+   "arquivo": "src/app/admin/clientes/nova/formulario.tsx",
+   "linha": 155,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Cadastrar cliente",
+   "arquivo": "src/app/admin/clientes/nova/formulario.tsx",
+   "linha": 167,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Digite o nome do cliente primeiro.",
+   "arquivo": "src/app/admin/clientes/nova/formulario.tsx",
+   "linha": 166,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Máquina",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 12,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Barba",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 13,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "navalha, máquina, não faz",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 13,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Bebida de sempre",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 14,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "cerveja, café...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 14,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 15,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "redemoinho, alergia...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 15,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Formato",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 18,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "quadrada, bailarina...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 18,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Cor favorita",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 19,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "nude, vermelho...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 19,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Alergia",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 20,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "acetona, resina...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 20,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 21,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "unha fraca, cutícula sensível...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 21,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Química",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 24,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "progressiva, coloração...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 24,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Cor/tom",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 25,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "7.1, acaju...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 25,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Alergia",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 26,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "amônia, PPD...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 26,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 27,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Curvatura",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 30,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "C, D, L...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 30,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Espessura",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 31,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Alergia",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 32,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "cola, cianoacrilato...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 32,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 33,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "olho sensível, lacrimeja...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 33,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Formato",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 36,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "reta, arqueada...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 36,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Cor da henna",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 37,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "castanho médio...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 37,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Alergia",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 38,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 39,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "falha na cauda, cicatriz...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 39,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Cera",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 42,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "quente, fria, egípcia...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 42,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Sensibilidade",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 43,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "pele muito sensível?",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 43,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Alergia",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 44,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 45,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Tipo de pele",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 48,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "oleosa, seca, mista...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 48,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Ativos em uso",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 49,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "ácido, retinol...",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 49,
+   "tipo": "prop:dica"
+  },
+  {
+   "texto": "Alergia",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 50,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 51,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Preferência",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 56,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Alergia / restrição",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 57,
+   "tipo": "rótulo"
+  },
+  {
+   "texto": "Detalhe importante",
+   "arquivo": "src/lib/preferencias.ts",
+   "linha": 58,
+   "tipo": "rótulo"
+  }
+ ]
+}

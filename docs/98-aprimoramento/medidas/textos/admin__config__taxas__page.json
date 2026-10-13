@@ -1,0 +1,97 @@
+{
+ "rota": "admin/config/taxas/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/taxas/page.tsx",
+  "src/app/admin/config/taxas/editor.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/alert-banner.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/toast.tsx",
+  "src/components/ui/icone-anel.tsx"
+ ],
+ "total": 12,
+ "textos": [
+  {
+   "texto": "Taxa da maquininha",
+   "arquivo": "src/app/admin/config/taxas/page.tsx",
+   "linha": 12,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Taxa da maquininha",
+   "arquivo": "src/app/admin/config/taxas/page.tsx",
+   "linha": 22,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Quanto a máquina fica de cada forma de pagamento. É o que falta para o CICLO saber quanto sobrou de verdade.",
+   "arquivo": "src/app/admin/config/taxas/page.tsx",
+   "linha": 23,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Não consegui salvar.",
+   "arquivo": "src/app/admin/config/taxas/editor.tsx",
+   "linha": 49,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Taxa salva",
+   "arquivo": "src/app/admin/config/taxas/editor.tsx",
+   "linha": 53,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/taxas/editor.tsx",
+   "linha": 57,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Enquanto você não disser quanto a máquina cobra, o CICLO calcula o que sobrou sem descontar a maquininha, e o número fica maior do que a verdade. Se você só recebe em dinheiro e Pix, deixe tudo em zero e salve mesmo assim.",
+   "arquivo": "src/app/admin/config/taxas/editor.tsx",
+   "linha": 67,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "sem descontar a maquininha",
+   "arquivo": "src/app/admin/config/taxas/editor.tsx",
+   "linha": 67,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Quanto a máquina fica",
+   "arquivo": "src/app/admin/config/taxas/editor.tsx",
+   "linha": 73,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Está na fatura da sua adquirente, por forma de pagamento. Vale a partir da próxima comanda fechada; as antigas não mudam.",
+   "arquivo": "src/app/admin/config/taxas/editor.tsx",
+   "linha": 75,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Taxa de {NOME_DA_FORMA[forma]}, em porcentagem",
+   "arquivo": "src/app/admin/config/taxas/editor.tsx",
+   "linha": 91,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Salvar",
+   "arquivo": "src/app/admin/config/taxas/editor.tsx",
+   "linha": 109,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

@@ -1,0 +1,156 @@
+{
+ "rota": "(public)/[slug]/orcamento/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/(public)/[slug]/orcamento/page.tsx",
+  "src/app/(public)/[slug]/orcamento/pedido.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/button.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/phone-input.tsx",
+  "src/components/ui/select.tsx",
+  "src/components/ui/textarea.tsx",
+  "src/lib/mensagens.ts",
+  "src/lib/utils.ts",
+  "src/lib/formato.ts"
+ ],
+ "total": 21,
+ "textos": [
+  {
+   "texto": "Pedir orçamento · {perfil.name}",
+   "arquivo": "src/app/(public)/[slug]/orcamento/page.tsx",
+   "linha": 17,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Conte o que você precisa e {perfil.name} responde com um orçamento.",
+   "arquivo": "src/app/(public)/[slug]/orcamento/page.tsx",
+   "linha": 18,
+   "tipo": "metadata/description"
+  },
+  {
+   "texto": "Pedir orçamento",
+   "arquivo": "src/app/(public)/[slug]/orcamento/page.tsx",
+   "linha": 42,
+   "tipo": "título-h1",
+   "tag": "h1"
+  },
+  {
+   "texto": "Negócio de exemplo. Ele não existe e nenhum pedido enviado aqui será respondido.",
+   "arquivo": "src/app/(public)/[slug]/orcamento/page.tsx",
+   "linha": 52,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Negócio de exemplo.",
+   "arquivo": "src/app/(public)/[slug]/orcamento/page.tsx",
+   "linha": 52,
+   "tipo": "texto",
+   "tag": "strong"
+  },
+  {
+   "texto": "Oi! Acabei de pedir um orçamento pelo site da {nomeDoSalao}.",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 31,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Não consegui enviar seu pedido.",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 62,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 69,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Seu pedido chegou",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 79,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ele está na lista de {nomeDoSalao}. Se quiser adiantar, fale direto.",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 90,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Falar no WhatsApp",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 101,
+   "tipo": "link",
+   "tag": "a"
+  },
+  {
+   "texto": "O que você precisa",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 111,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Conte o que precisa ser feito, o tamanho do lugar, se tem prazo…",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 115,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "{…} (opcional)",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 126,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Não sei ainda",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 130,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Seu nome",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 139,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Seu telefone",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 142,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "É por onde a resposta volta.",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 145,
+   "tipo": "prop:ajuda"
+  },
+  {
+   "texto": "Onde vai ser (opcional)",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 152,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Site",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 160,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Enviar pedido",
+   "arquivo": "src/app/(public)/[slug]/orcamento/pedido.tsx",
+   "linha": 171,
+   "tipo": "botão",
+   "tag": "Button"
+  }
+ ]
+}

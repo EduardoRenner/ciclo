@@ -1,0 +1,83 @@
+{
+  "perfil": "celular",
+  "slug": "demo-espaco-vitoria",
+  "modo": "normal",
+  "telefone": "•••••••0012",
+  "totalMs": 8774,
+  "pausaFotoMs": 435,
+  "toques": 7,
+  "camposDigitados": 2,
+  "pedidosBook": 1,
+  "ok": true,
+  "horaEscolhida": "09:00",
+  "passos": [
+    {
+      "passo": "servicos visiveis (conteudo util)",
+      "msDesdeInicio": 923
+    },
+    {
+      "passo": "load",
+      "msDesdeInicio": 2354
+    },
+    {
+      "passo": "toca servico",
+      "msDesdeInicio": 2861,
+      "respostaMs": 355
+    },
+    {
+      "passo": "toca Tanto faz",
+      "msDesdeInicio": 3009,
+      "respostaMs": null
+    },
+    {
+      "passo": "toca dia +3 (sexta-feira, dia 16)",
+      "msDesdeInicio": 4093,
+      "respostaMs": null
+    },
+    {
+      "passo": "horarios do dia visiveis",
+      "msDesdeInicio": 4581,
+      "esperaMs": 488
+    },
+    {
+      "passo": "toca horario 09:00",
+      "msDesdeInicio": 4821,
+      "respostaMs": 231
+    },
+    {
+      "passo": "toca campo nome",
+      "msDesdeInicio": 5004,
+      "respostaMs": null
+    },
+    {
+      "passo": "toca campo telefone",
+      "msDesdeInicio": 5222,
+      "respostaMs": null
+    },
+    {
+      "passo": "formulario preenchido",
+      "msDesdeInicio": 6626
+    },
+    {
+      "passo": "toca Confirmar (2x em 80 ms)",
+      "msDesdeInicio": 7414,
+      "estadoBotaoApos80ms": {
+        "disabled": true,
+        "ariaBusy": "true",
+        "ariaDisabled": null,
+        "texto": "Confirmar agendamento"
+      }
+    },
+    {
+      "passo": "SUCESSO visivel",
+      "msDesdeInicio": 9219,
+      "msDoToqueAteResultado": 2148
+    }
+  ],
+  "alertas": [],
+  "textoFinalTrecho": "Agendar em Espaço Vitória\nNegócio de exemplo. Ele não existe: dá para percorrer o agendamento inteiro, mas nenhum horário marcado será atendido.\nVisão de quem agenda\nVisão de quem atende\nAgendamento enviado!\nManicure simples\nsexta-feira, 16 de outubro às 09:00\ncom Larissa Pinto\nSeu pedido chegou e já apareceu para a equipe. A confirmação vem de quem vai te atender, e pode não ser na hora. Se não tiver retorno em algumas horas, fale direto:\nLigar para Espaço Vitória\nAdicionar à minha agenda\nVoltar para Espaço Vitória",
+  "rolagemLateral": 0,
+  "alvosPequenos": [],
+  "axeFinal": [],
+  "consoleErros": []
+}

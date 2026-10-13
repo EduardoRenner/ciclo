@@ -1,0 +1,267 @@
+{
+ "rota": "admin/config/servicos/[id]/ficha/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/servicos/[id]/ficha/page.tsx",
+  "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+  "src/app/admin/config/servicos/[id]/ficha/sugestao.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/lib/utils.ts",
+  "src/components/ui/alert-banner.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/formato.ts",
+  "src/components/ui/select.tsx",
+  "src/components/ui/icone-anel.tsx"
+ ],
+ "total": 37,
+ "textos": [
+  {
+   "texto": "Ficha de consumo",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/page.tsx",
+   "linha": 17,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Ficha de consumo",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/page.tsx",
+   "linha": 38,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "O que {servico.data.name} gasta de produto a cada atendimento.",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/page.tsx",
+   "linha": 39,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Voltar",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/page.tsx",
+   "linha": 42,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Nao consegui salvar a ficha.",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 75,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Ficha salva",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 78,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Nao consegui falar com o servidor. Confira a conexao e tente de novo.",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 82,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Nenhum produto cadastrado ainda",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 92,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "A ficha diz quanto de cada produto este serviço gasta. Cadastre os produtos no estoque primeiro, com o quanto você pagou por eles.",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 93,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Ir para o estoque",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 94,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Este serviço ainda não gasta produto nenhum. Enquanto for assim, o custo de material dele é zero, e o &quot;Sobrou&quot; do caixa conta só a comissão e a taxa.",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 105,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Produto removido",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 115,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{…} por {produto.unit}",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 118,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "sem custo registrado",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 119,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Quanto de {produto?.name ?? 'produto'} por atendimento",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 123,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Quanto de",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 123,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "por atendimento",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 123,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Tirar {produto?.name ?? 'produto'} da ficha",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 139,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Adicionar produto",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 155,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Custo de produto por atendimento {…}",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 167,
+   "tipo": "texto",
+   "tag": "Card"
+  },
+  {
+   "texto": "Custo de produto por atendimento",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 167,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Registrar compra",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 173,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "1 produto da ficha não tem custo registrado, então ele entra como zero nesta conta.",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 176,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{previsao.produtosSemCusto} produtos da ficha não têm custo registrado, então eles entram como zero nesta conta.",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 177,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Salvar ficha",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/editor.tsx",
+   "linha": 189,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Não consegui salvar a sugestão.",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/sugestao.tsx",
+   "linha": 51,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Sugestão salva",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/sugestao.tsx",
+   "linha": 54,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Sugestão removida",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/sugestao.tsx",
+   "linha": 54,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/sugestao.tsx",
+   "linha": 57,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Nenhum produto de revenda ainda",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/sugestao.tsx",
+   "linha": 67,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Cadastre um produto de revenda (com preço) no estoque para poder oferecê-lo junto com este serviço.",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/sugestao.tsx",
+   "linha": 68,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Ir para o estoque",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/sugestao.tsx",
+   "linha": 69,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Leva junto",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/sugestao.tsx",
+   "linha": 78,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Quem marcar este serviço vê esse produto na hora de agendar. Ninguém é cobrado aqui: é o profissional quem lança na comanda, se a cliente quiser mesmo.",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/sugestao.tsx",
+   "linha": 80,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Produto oferecido",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/sugestao.tsx",
+   "linha": 86,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Nenhum",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/sugestao.tsx",
+   "linha": 91,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "· sem estoque",
+   "arquivo": "src/app/admin/config/servicos/[id]/ficha/sugestao.tsx",
+   "linha": 95,
+   "tipo": "texto",
+   "tag": "option"
+  }
+ ]
+}

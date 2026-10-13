@@ -1,0 +1,329 @@
+{
+ "rota": "admin/agenda/novo/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/agenda/novo/page.tsx",
+  "src/app/admin/agenda/novo/formulario.tsx",
+  "src/lib/offline/api-client.ts",
+  "src/lib/offline/db.ts"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/page-header.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/chip.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/phone-input.tsx",
+  "src/components/ui/select.tsx",
+  "src/components/ui/toast.tsx",
+  "src/lib/formato.ts",
+  "src/lib/utils.ts"
+ ],
+ "total": 47,
+ "textos": [
+  {
+   "texto": "Novo agendamento",
+   "arquivo": "src/app/admin/agenda/novo/page.tsx",
+   "linha": 13,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Novo agendamento",
+   "arquivo": "src/app/admin/agenda/novo/page.tsx",
+   "linha": 42,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Sem conexão",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 158,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Agendamento entrou na fila e será enviado quando a conexão voltar.",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 158,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Agendamento criado",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 185,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui criar o agendamento.",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 196,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 200,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Série criada",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 244,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "{total - puladas} de {total} horários marcados, {puladas} pulados por folga ou conflito.",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 247,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "{total} horários marcados.",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 248,
+   "tipo": "metadata/descricao"
+  },
+  {
+   "texto": "Não consegui criar a série.",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 254,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 256,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Nome",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 319,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Já é cliente?",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 325,
+   "tipo": "texto",
+   "tag": "div"
+  },
+  {
+   "texto": "Já é cliente?",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 324,
+   "tipo": "aria-label"
+  },
+  {
+   "texto": "Data e horário",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 348,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Repetir este horário {…}",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 370,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Repetir este horário",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 371,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Repetir é do",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 374,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": ". Marcar este horário continua funcionando normalmente.",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 374,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "plano de cima",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 374,
+   "tipo": "texto",
+   "tag": "span"
+  },
+  {
+   "texto": "Repete",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 383,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Toda semana (no dia escolhido acima)",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 384,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "A cada X dias",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 385,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Todo mês, na mesma posição do dia (ex.: 1ª segunda)",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 386,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "A cada quantas semanas",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 390,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Toda semana",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 391,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "A cada 2 semanas",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 392,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "A cada 4 semanas",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 393,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Intervalo em dias",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 399,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Qual ocorrência do mês",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 409,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "1ª do mês",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 410,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "2ª do mês",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 411,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "3ª do mês",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 412,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "4ª do mês",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 413,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Última do mês",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 414,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Termina",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 418,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Depois de um número de vezes",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 419,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Numa data",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 420,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Sem data para terminar",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 421,
+   "tipo": "opção",
+   "tag": "option"
+  },
+  {
+   "texto": "Número de vezes",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 426,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Última data",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 436,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Cadastre pelo menos um serviço em Configurações para poder agendar.",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 465,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Cadastre pelo menos um profissional em Configurações para poder agendar.",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 466,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Criar série",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 469,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Confirmar agendamento",
+   "arquivo": "src/app/admin/agenda/novo/formulario.tsx",
+   "linha": 469,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "escrita jurídica não entra na fila offline: {url}",
+   "arquivo": "src/lib/offline/api-client.ts",
+   "linha": 139,
+   "tipo": "erro"
+  }
+ ]
+}

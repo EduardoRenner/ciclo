@@ -1,0 +1,436 @@
+{
+ "rota": "admin/config/planos/page.tsx",
+ "gerado": "extraído do código por AST (scratchpad/extrair.cjs), 2026-10-13",
+ "arquivos_proprios": [
+  "src/app/admin/config/planos/page.tsx",
+  "src/app/admin/config/planos/fidelidade-config.tsx",
+  "src/app/admin/config/planos/editor.tsx",
+  "src/app/admin/config/planos/margem-do-clube.tsx",
+  "src/app/admin/config/planos/raio-x-recorrencia.tsx",
+  "src/app/admin/config/planos/receita-contratada.tsx"
+ ],
+ "componentes_compartilhados_usados": [
+  "src/components/ui/bloqueio-plano.tsx",
+  "src/components/ui/page-header.tsx",
+  "src/lib/formato.ts",
+  "src/lib/app-url.ts",
+  "src/lib/utils.ts",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/toast.tsx",
+  "src/components/ui/empty-state.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/money-input.tsx",
+  "src/components/ui/sheet.tsx",
+  "src/components/ui/textarea.tsx",
+  "src/components/ui/alert-banner.tsx",
+  "src/components/ui/section-header.tsx",
+  "src/components/ui/icone-anel.tsx"
+ ],
+ "total": 61,
+ "textos": [
+  {
+   "texto": "Fidelidade e assinatura",
+   "arquivo": "src/app/admin/config/planos/page.tsx",
+   "linha": 23,
+   "tipo": "metadata/title"
+  },
+  {
+   "texto": "Fidelidade e assinatura",
+   "arquivo": "src/app/admin/config/planos/page.tsx",
+   "linha": 66,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Como o cliente ganha pontos e os planos mensais que pode assinar.",
+   "arquivo": "src/app/admin/config/planos/page.tsx",
+   "linha": 66,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "creditar os pontos sozinho, a cada atendimento concluído",
+   "arquivo": "src/app/admin/config/planos/page.tsx",
+   "linha": 73,
+   "tipo": "prop:acao"
+  },
+  {
+   "texto": "Continuar dando desconto na mão",
+   "arquivo": "src/app/admin/config/planos/page.tsx",
+   "linha": 74,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Planos mensais",
+   "arquivo": "src/app/admin/config/planos/page.tsx",
+   "linha": 82,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "vender assinatura mensal de atendimento, com cobrança recorrente do cliente",
+   "arquivo": "src/app/admin/config/planos/page.tsx",
+   "linha": 88,
+   "tipo": "prop:acao"
+  },
+  {
+   "texto": "Continuar cobrando por atendimento avulso",
+   "arquivo": "src/app/admin/config/planos/page.tsx",
+   "linha": 89,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Não consegui salvar.",
+   "arquivo": "src/app/admin/config/planos/fidelidade-config.tsx",
+   "linha": 50,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Fidelidade atualizada",
+   "arquivo": "src/app/admin/config/planos/fidelidade-config.tsx",
+   "linha": 53,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/planos/fidelidade-config.tsx",
+   "linha": 57,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Como pontuar automaticamente",
+   "arquivo": "src/app/admin/config/planos/fidelidade-config.tsx",
+   "linha": 64,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "A cada atendimento concluído, o cliente ganha pontos sozinho, sem ninguém precisar lançar na mão.",
+   "arquivo": "src/app/admin/config/planos/fidelidade-config.tsx",
+   "linha": 66,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Pontos por real gasto",
+   "arquivo": "src/app/admin/config/planos/fidelidade-config.tsx",
+   "linha": 71,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Bônus por indicação",
+   "arquivo": "src/app/admin/config/planos/fidelidade-config.tsx",
+   "linha": 82,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Pontos por real: 0 desliga a pontuação automática. Bônus por indicação: dado aos dois lados quando o indicado conclui a primeira visita.",
+   "arquivo": "src/app/admin/config/planos/fidelidade-config.tsx",
+   "linha": 94,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Pontos até o prêmio",
+   "arquivo": "src/app/admin/config/planos/fidelidade-config.tsx",
+   "linha": 100,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Nome do prêmio",
+   "arquivo": "src/app/admin/config/planos/fidelidade-config.tsx",
+   "linha": 111,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Corte grátis",
+   "arquivo": "src/app/admin/config/planos/fidelidade-config.tsx",
+   "linha": 115,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Salvar",
+   "arquivo": "src/app/admin/config/planos/fidelidade-config.tsx",
+   "linha": 135,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Pontos automáticos são do plano Equipe. Veja o caminho no aviso acima desta tela.",
+   "arquivo": "src/app/admin/config/planos/fidelidade-config.tsx",
+   "linha": 131,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "Não consegui salvar.",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 55,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Plano criado",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 59,
+   "tipo": "metadata/titulo"
+  },
+  {
+   "texto": "Não consegui falar com o servidor. Confira a conexão e tente de novo.",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 66,
+   "tipo": "erro"
+  },
+  {
+   "texto": "Criar plano",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 74,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Nenhum plano ainda",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 81,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Crie um plano mensal. Ele aparece na ficha de cada cliente para assinar.",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 82,
+   "tipo": "prop:descricao"
+  },
+  {
+   "texto": "Criar o primeiro",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 83,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "{p.sessions_per_month}x por mês",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 96,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Atendimentos ilimitados",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 96,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Novo plano",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 105,
+   "tipo": "prop:titulo"
+  },
+  {
+   "texto": "Nome do plano",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 108,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Corte ilimitado",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 111,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Preço mensal",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 113,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Atendimentos ilimitados por mês",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 122,
+   "tipo": "rótulo",
+   "tag": "label"
+  },
+  {
+   "texto": "Quantos por mês",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 127,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Outros benefícios (opcional)",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 139,
+   "tipo": "prop:rotulo"
+  },
+  {
+   "texto": "Desconto em produto, prioridade na agenda...",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 143,
+   "tipo": "placeholder"
+  },
+  {
+   "texto": "Criar plano",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 159,
+   "tipo": "botão",
+   "tag": "Button"
+  },
+  {
+   "texto": "Assinatura e clube fazem parte do plano Avançado.",
+   "arquivo": "src/app/admin/config/planos/editor.tsx",
+   "linha": 156,
+   "tipo": "prop:motivoDesabilitado"
+  },
+  {
+   "texto": "{dia(desde)} a {dia(ate)}",
+   "arquivo": "src/app/admin/config/planos/margem-do-clube.tsx",
+   "linha": 15,
+   "tipo": "texto"
+  },
+  {
+   "texto": "Margem do clube",
+   "arquivo": "src/app/admin/config/planos/margem-do-clube.tsx",
+   "linha": 35,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "1 assinante está custando mais do que paga neste ciclo.",
+   "arquivo": "src/app/admin/config/planos/margem-do-clube.tsx",
+   "linha": 41,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{noVermelho.length} assinantes estão custando mais do que pagam neste ciclo.",
+   "arquivo": "src/app/admin/config/planos/margem-do-clube.tsx",
+   "linha": 42,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{m.planName} · paga",
+   "arquivo": "src/app/admin/config/planos/margem-do-clube.tsx",
+   "linha": 63,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "1 atendimento",
+   "arquivo": "src/app/admin/config/planos/margem-do-clube.tsx",
+   "linha": 63,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{m.visitas} atendimentos",
+   "arquivo": "src/app/admin/config/planos/margem-do-clube.tsx",
+   "linha": 63,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "· passou das {m.limiteSessoes} do plano",
+   "arquivo": "src/app/admin/config/planos/margem-do-clube.tsx",
+   "linha": 65,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "sem o custo de produto: falta a ficha de consumo do serviço, ou falta registrar quanto você pagou no produto dela. A margem acima está mais otimista do que a real.",
+   "arquivo": "src/app/admin/config/planos/margem-do-clube.tsx",
+   "linha": 84,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "1 atendimento entrou",
+   "arquivo": "src/app/admin/config/planos/margem-do-clube.tsx",
+   "linha": 84,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "{semMaterial} atendimentos entraram",
+   "arquivo": "src/app/admin/config/planos/margem-do-clube.tsx",
+   "linha": 84,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Completar o custo",
+   "arquivo": "src/app/admin/config/planos/margem-do-clube.tsx",
+   "linha": 87,
+   "tipo": "link",
+   "tag": "Link"
+  },
+  {
+   "texto": "Quem já dá pra virar assinante",
+   "arquivo": "src/app/admin/config/planos/raio-x-recorrencia.tsx",
+   "linha": 19,
+   "tipo": "texto",
+   "tag": "SectionHeader"
+  },
+  {
+   "texto": "a cada 45 dias ou menos",
+   "arquivo": "src/app/admin/config/planos/raio-x-recorrencia.tsx",
+   "linha": 22,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "cliente volta",
+   "arquivo": "src/app/admin/config/planos/raio-x-recorrencia.tsx",
+   "linha": 22,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "clientes voltam",
+   "arquivo": "src/app/admin/config/planos/raio-x-recorrencia.tsx",
+   "linha": 22,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Ticket médio de",
+   "arquivo": "src/app/admin/config/planos/raio-x-recorrencia.tsx",
+   "linha": 24,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "por visita.",
+   "arquivo": "src/app/admin/config/planos/raio-x-recorrencia.tsx",
+   "linha": 24,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Se {c.adocaoPercentual}% assinar",
+   "arquivo": "src/app/admin/config/planos/raio-x-recorrencia.tsx",
+   "linha": 29,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Receita contratada este mês",
+   "arquivo": "src/app/admin/config/planos/receita-contratada.tsx",
+   "linha": 12,
+   "tipo": "texto",
+   "tag": "p"
+  },
+  {
+   "texto": "Soma das assinaturas ativas do clube, sem depender da agenda encher.",
+   "arquivo": "src/app/admin/config/planos/receita-contratada.tsx",
+   "linha": 14,
+   "tipo": "texto",
+   "tag": "p"
+  }
+ ]
+}
