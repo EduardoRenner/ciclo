@@ -18,6 +18,7 @@ import { custoFixoEstaConfigurado } from '@/core/comanda/custo-fixo'
 import { taxaEstaConfigurada } from '@/core/comanda/taxa-de-pagamento'
 import { avaliarPermissao } from '@/server/auth/rbac'
 
+import { entrouCents } from '@/core/caixa/entrou'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { acaoDoMotor } from '@/core/ciclo/acao-do-motor'
 import { quandoVolta } from '@/core/ciclo/primeira-volta'
@@ -60,6 +61,11 @@ export type FichaCliente = {
     createdAt: string
   }
   metricas: {
+    /**
+     * APR-036b: o valor que a ficha mostra. "Entrou" (a MESMA conta do Caixa e da Hoje,
+     * `entrouCents`) quando a pessoa tem comanda; "Valor atendido" (preço de tabela) quando não tem.
+     */
+    valorDaFicha: { rotulo: 'Entrou' | 'Valor atendido'; cents: number }
     ltvCents: number
     visitas: number
     faltas: number
@@ -174,6 +180,7 @@ export async function fichaDoCliente(
     rotuloDoCofre,
     servicosBruto,
     comandasBruto,
+    comandasDoEntrou,
     equipeBruto,
   ] = await Promise.all([
     db
@@ -271,6 +278,17 @@ export async function fichaDoCliente(
             .order('id'),
         )
       : Promise.resolve(null),
+    // APR-036b: o "Entrou" da pessoa, para todo mundo que vê a ficha — SEM `profit_cents`, que só sai
+    // na consulta de cima, condicionada. Estornada vem junto: sai do "Entrou" e conta como uso de comanda.
+    buscarTudoPaginado(() =>
+      db
+        .from('tickets')
+        .select('status, total_cents')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', clientId)
+        .in('status', ['closed', 'paid', 'canceled'])
+        .order('id'),
+    ),
     // P4: "sempre com a dona" no negócio de uma pessoa só é ruído — só conta quem atende hoje.
     db.from('professionals').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('active', true).is('deleted_at', null),
   ])
@@ -310,6 +328,10 @@ export async function fichaDoCliente(
   )
   const nomePorServico = new Map((servicosBruto.data ?? []).map((s) => [s.id, s.name]))
 
+  const comandasPagas = comandasDoEntrou.filter((t) => t.status === 'closed' || t.status === 'paid')
+  const usaComanda = comandasDoEntrou.length > 0
+  const entrouDaPessoa = entrouCents(comandasDoEntrou.map((t) => ({ status: t.status, totalCents: t.total_cents })))
+
   return {
     cliente: {
       id: cliente.id,
@@ -333,11 +355,19 @@ export async function fichaDoCliente(
       createdAt: cliente.created_at,
     },
     metricas: {
+      valorDaFicha: usaComanda ? { rotulo: 'Entrou', cents: entrouDaPessoa } : { rotulo: 'Valor atendido', cents: ltvCents },
       ltvCents,
       visitas,
       faltas,
-      // Ticket médio sobre visitas concluídas — dividir por 0 na cliente que nunca veio daria NaN na tela.
-      ticketMedioCents: visitas > 0 ? Math.round(ltvCents / visitas) : 0,
+      // Ticket médio na MESMA base do valor mostrado: por comanda paga quando há comanda, por visita
+      // concluída quando não há. Dividir por 0 na cliente que nunca veio daria NaN na tela.
+      ticketMedioCents: usaComanda
+        ? comandasPagas.length > 0
+          ? Math.round(entrouDaPessoa / comandasPagas.length)
+          : 0
+        : visitas > 0
+          ? Math.round(ltvCents / visitas)
+          : 0,
       ultimaVisita,
       lucro: comandasBruto
         ? lucroDoCliente({

@@ -515,7 +515,7 @@ export default function Ficha({
               tela. Mesma palavra de "Atendido hoje", na tela Hoje, de propósito: no CICLO
               "atendido" é preço de tabela e "entrou" é dinheiro no caixa.
             */}
-            <StatTile rotulo="Valor atendido" valor={dinheiro.format(metricas.ltvCents / 100)} />
+            <StatTile rotulo={metricas.valorDaFicha.rotulo} valor={dinheiro.format(metricas.valorDaFicha.cents / 100)} />
             {/*
               `docs/48` C2. "Valor atendido" é a soma dos preços — o mesmo número que o `docs/47`
               P01 acusa o setor inteiro de confundir com ganho. Ao lado dele, o que de fato SOBROU.

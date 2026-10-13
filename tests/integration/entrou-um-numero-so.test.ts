@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { fechamentoDiario, resumoMensal } from '@/server/services/caixa'
 import { adicionarItemComanda, atualizarDescontoEGorjeta, cancelarComandaFechada, fecharComanda } from '@/server/services/comanda'
+import { fichaDoCliente } from '@/server/services/crm'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { resumoDeHoje } from '@/server/services/resumo-hoje'
 
@@ -22,7 +23,7 @@ const svc = createClient<Database>(SUPABASE_URL, SERVICE_KEY, { auth: { persistS
 const TZ = 'America/Sao_Paulo'
 
 /*
- * APR-036a (achados C-26, G-28): o cenário único do plano — corte de R$ 100, −R$ 10 de desconto,
+ * APR-036a/b (achados C-26, G-28): o cenário único do plano — corte de R$ 100, −R$ 10 de desconto,
  * +R$ 5 de gorjeta. As telas mostravam R$ 100 (Hoje), 95, 90 e 85; e o estorno mudava o Caixa e não
  * a Hoje. Agora Hoje, Caixa do dia e Mês dizem o mesmo, e o estorno muda os três juntos.
  */
@@ -60,12 +61,13 @@ describe('"quanto entrou" é um número só (APR-036a)', () => {
         hoje: (await resumoDeHoje(svc, tenantId, TZ)).numeroDoDia,
         caixa: (await fechamentoDiario(svc, tenantId, TZ, hoje.toString())).revenueCents,
         mes: (await resumoMensal(svc, tenantId, TZ, mes)).revenueCents,
+        ficha: (await fichaDoCliente(svc, tenantId, cliente, TZ, { podeVerLucro: false })).metricas.valorDaFicha,
       })
 
-      expect(await telas()).toEqual({ hoje: { rotulo: 'Entrou hoje', cents: 9_500 }, caixa: 9_500, mes: 9_500 })
+      expect(await telas()).toEqual({ hoje: { rotulo: 'Entrou hoje', cents: 9_500 }, caixa: 9_500, mes: 9_500, ficha: { rotulo: 'Entrou', cents: 9_500 } })
 
       await cancelarComandaFechada(svc, tenantId, ticket)
-      expect(await telas()).toEqual({ hoje: { rotulo: 'Entrou hoje', cents: 0 }, caixa: 0, mes: 0 })
+      expect(await telas()).toEqual({ hoje: { rotulo: 'Entrou hoje', cents: 0 }, caixa: 0, mes: 0, ficha: { rotulo: 'Entrou', cents: 0 } })
     },
     60_000,
   )

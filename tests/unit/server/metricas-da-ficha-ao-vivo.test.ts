@@ -62,6 +62,10 @@ describe('as metricas da ficha sao do agora, nao do cron de ontem', () => {
   it('o rotulo nao promete que a cliente GASTOU aquilo', () => {
     expect(FICHA, 'voltou a prometer gasto sobre preco de tabela').not.toContain('rotulo="Ja gastou"')
     expect(FICHA).not.toMatch(/rotulo="Já gastou"/)
-    expect(FICHA, 'o rotulo honesto sumiu').toContain('rotulo="Valor atendido"')
+    // APR-036b: o rótulo vem do servidor (`valorDaFicha`): "Entrou" com comanda, "Valor atendido" sem.
+    // Os dois nomes honestos têm que estar no tipo, e nenhum deles promete gasto.
+    const crm = readFileSync('src/server/services/crm.ts', 'utf8')
+    expect(crm, 'o rotulo honesto sumiu').toMatch(/valorDaFicha: \{ rotulo: 'Entrou' \| 'Valor atendido'/)
+    expect(FICHA).toContain('rotulo={metricas.valorDaFicha.rotulo}')
   })
 })
