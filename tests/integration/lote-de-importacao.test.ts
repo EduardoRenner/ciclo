@@ -122,10 +122,14 @@ describe('lote de importação (CNV-020) — contra o banco local', () => {
     expect(await fichasDoLote(lote.id)).toBe(0)
   })
 
-  it('quem vem com a última visita ganha ciclo: o Motor já sabe quem está sumido', async () => {
+  it('quem vem com a última visita ganha ciclo GRAVADO no serviço escolhido: o Motor passa a acompanhar', async () => {
+    const { data: servico } = await svc.from('services').select('id').eq('tenant_id', tenantId).gt('cycle_days', 0).limit(1).single()
     const { lote } = await abrir(1)
-    const r = await gravarPedaco(svc, tenantId, lote.id, { linhas: [{ linha: 1, nome: 'Iara', ultimaVisita: '2026-06-01', etiquetas: [] }], ultimo: true })
-    expect(r.previsao?.comDataInformada).toBe(1)
+    const r = await gravarPedaco(svc, tenantId, lote.id, { linhas: [{ linha: 1, nome: 'Iara', ultimaVisita: '2026-06-01', etiquetas: [] }], ultimo: true, servicoId: servico!.id })
+    expect(r.previsao).toMatchObject({ comDataInformada: 1, cyclesGravados: 1 })
+    const { data: ficha } = await svc.from('clients').select('id').eq('import_batch_id', lote.id).single()
+    const { count } = await svc.from('client_cycles').select('client_id', { count: 'exact', head: true }).eq('client_id', ficha!.id)
+    expect(count).toBe(1)
     const { data } = await svc.from('clients').select('last_visit_at, source').eq('import_batch_id', lote.id).single()
     expect(data?.last_visit_at?.slice(0, 10)).toBe('2026-06-01')
     expect(data?.source).toBe('csv_import')

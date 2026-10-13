@@ -32,7 +32,12 @@
 | CNV-014b | 95e09218 | lista livre (uma pessoa por linha) vira tabela; E3 mais firme |
 | CNV-018 | acdef820 | print e foto por OCR NO APARELHO (tesseract.js 7 + português, servidos de `/ocr`); modo escuro invertido; tudo de imagem para conferir, nível ≤ N1; imagem truncada não derruba mais o processo |
 
-**Ondas A, B e C concluídas.** Pendente de prova no navegador (junto com a tela nova, CNV-023, a 390 px): o Worker, o OCR baixando de `/ocr` e o cartão "Tudo do seu negócio".
+| CNV-018b | baef7275 | PDF escaneado: cada página vira imagem (OffscreenCanvas no Worker) e passa no mesmo OCR, teto de 10 páginas |
+| CNV-019 | 7bc08e99 | 0128: `import_batches` (RLS forçada, sem DELETE, mesmo arquivo não abre dois lotes vivos) + `clients.import_batch_id/import_row` únicos |
+| CNV-020 | d274dc81 + teste | `POST /api/v1/imports` e `/imports/{id}/rows`: pedaços de 500, idempotente pela linha (D5), contagem do banco e "concluído" só no último (D6), alcance `own` recusado |
+| CNV-022 | bba5886b | 0129 `desfazer_lote_de_importacao` + `/undo`: tira o que ninguém usou, mantém o usado e diz quantas; 7 dias, uma vez |
+
+**Ondas A, B e C concluídas; Onda D com o servidor pronto.** 0128 e 0129 aplicadas só no banco LOCAL. Pendente de prova no navegador (junto com a tela nova, CNV-023, a 390 px): o Worker, o OCR baixando de `/ocr` e o cartão "Tudo do seu negócio".
 
 ## Próximos
-CNV-018b PDF escaneado (renderizar página e passar no OCR). Onda D: CNV-019 lotes de importação (migration), 020 carga em lotes, 021 prévia com R$, 022 desfazer, 023 tela nova sobre `rodarEsteira`, 024 funil.
+Onda D: CNV-021 prévia com R$ e CNV-023 tela nova sobre `rodarEsteira` (juntos: a prévia mora na tela), 024 funil. Depois Onda E.

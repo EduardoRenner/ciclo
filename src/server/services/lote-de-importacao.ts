@@ -60,6 +60,11 @@ export const EsquemaPedaco = z.object({
   linhas: z.array(EsquemaLinha).min(1).max(LINHAS_POR_PEDACO),
   /** O último pedaço fecha o lote: `concluido`. */
   ultimo: z.boolean().default(false),
+  /**
+   * O serviço que essas pessoas fazem: dele saem o ritmo e o preço do ciclo. Sem ele o Motor só
+   * calcula e NÃO grava `client_cycles` (`preverEPersistirCiclos`): a ficha entra e não é acompanhada.
+   */
+  servicoId: z.string().uuid().nullish(),
 })
 
 export type Lote = { id: string; status: string; rowsExpected: number; rowsWritten: number }
@@ -227,7 +232,7 @@ export async function gravarPedaco(db: Db, tenantId: string, loteId: string, ped
     const dia = porLinha.get(c.linha)?.ultimaVisita
     return dia ? [{ clientId: c.id, ultimaVisita: Temporal.PlainDate.from(dia) }] : []
   })
-  const previsao = await preverEPersistirCiclos(db, tenantId, comData, null)
+  const previsao = await preverEPersistirCiclos(db, tenantId, comData, pedaco.servicoId ?? null)
 
   // 5. Estado honesto: recontado do banco, e "concluído" só no último pedaço.
   const { count, error: erroConta } = await db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('import_batch_id', loteId)

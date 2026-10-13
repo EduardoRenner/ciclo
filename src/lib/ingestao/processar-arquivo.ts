@@ -11,7 +11,7 @@ import type { Formato } from '@/core/ingestao/formato'
 export type PedidoDaEsteira = { bytes: Uint8Array; nome: string; contexto: ContextoDaEsteira; aba?: number }
 
 export type RespostaDaEsteira =
-  | { ok: true; formato: Formato; abas: string[]; aba: number; grade: string[][]; resultado: ResultadoDaEsteira; avisos: string[] }
+  | { ok: true; formato: Formato; abas: string[]; aba: number; grade: string[][]; resultado: ResultadoDaEsteira; avisos: string[]; lidoDeImagem: boolean }
   | { ok: false; mensagem: string }
 
 export async function processarArquivo(pedido: PedidoDaEsteira): Promise<RespostaDaEsteira> {
@@ -28,7 +28,7 @@ export async function processarArquivo(pedido: PedidoDaEsteira): Promise<Respost
   const grade = lido.abas[aba]?.grade ?? []
   try {
     const resultado = processarGrade(grade, lido.lidoDeImagem ? { ...pedido.contexto, lidoDeImagem: true } : pedido.contexto)
-    return { ok: true, formato: lido.formato, abas: lido.abas.map((a) => a.nome), aba, grade: resultado.gradeLida, resultado, avisos: lido.avisos }
+    return { ok: true, formato: lido.formato, abas: lido.abas.map((a) => a.nome), aba, grade: resultado.gradeLida, resultado, avisos: lido.avisos, lidoDeImagem: Boolean(lido.lidoDeImagem) }
   } catch {
     // A invariante não fechou (erro da esteira, não do arquivo): melhor parar do que mostrar
     // uma prévia com linha sumida.
