@@ -1,0 +1,50 @@
+import { chromium } from "playwright";
+// APR-003: a resposta velha de disponibilidade (dia de hoje) chega DEPOIS da do dia tocado.
+// O resumo e o POST têm que falar do MESMO dia. POST /book é abortado: nada é gravado.
+const [BASE = "http://localhost:3201", REP = "20", ATRASO = "2500", PAUSA = "1000", ESPERA = "3000"] = process.argv.slice(2);
+const b = await chromium.launch({ channel: "chrome" });
+const resultados = [];
+for (let i = 0; i < Number(REP); i++) {
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, timezoneId: "America/Sao_Paulo", locale: "pt-BR" });
+  const page = await ctx.newPage();
+  let corpo = null;
+  let n = 0;
+  await page.route("**/availability**", async (route) => {
+    n++;
+    if (n === 2) await new Promise((r) => setTimeout(r, Number(ATRASO)));
+    await route.continue();
+  });
+  await page.route("**/book", async (route) => {
+    corpo = JSON.parse(route.request().postData() ?? "{}");
+    await route.abort();
+  });
+  await page.goto(`${BASE}/demo-espaco-vitoria/agendar`, { waitUntil: "load" });
+  const servico = page.getByRole("button", { name: /^Manicure simples/ });
+  await servico.waitFor({ timeout: 60000 });
+  await servico.click();
+  await page.waitForTimeout(Number(PAUSA));
+  const alvo = page.locator("button", { hasText: /^(DOM|SEG|TER|QUA|QUI|SEX|SÁB)\.?\s*\d{1,2}$/i }).nth(2);
+  const rotuloDia = (await alvo.getAttribute("aria-label")) ?? (await alvo.innerText());
+  const diaTocado = Number(rotuloDia.match(/\d{1,2}/)?.[0]);
+  await alvo.click();
+  const chip = page.locator("button", { hasText: /^\d\d:\d\d$/ }).first();
+  await chip.waitFor({ timeout: 30000 });
+  await page.waitForTimeout(Number(ESPERA)); // deixa a resposta velha chegar antes de escolher
+  await chip.click();
+  await page.getByLabel("Seu nome").waitFor({ timeout: 10000 });
+  await page.waitForTimeout(Number(ATRASO) + 500);
+  const resumo = await page.evaluate(() => [...document.querySelectorAll("p")].find((p) => / às \d\d:\d\d · /.test(p.innerText))?.innerText ?? null);
+  await page.getByLabel("Seu nome").fill("Corrida APR-003");
+  await page.getByLabel(/Seu telefone/).fill("11987658888");
+  await page.getByRole("button", { name: /Confirmar agendamento/ }).click();
+  await page.waitForTimeout(1500);
+  const diaEnviado = corpo?.startsAt
+    ? new Date(corpo.startsAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "2-digit", month: "long" })
+    : null;
+  const diaDoPost = corpo?.startsAt ? Number(new Date(corpo.startsAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit" })) : null;
+  const divergiu = diaDoPost !== diaTocado || !!(resumo && diaEnviado && !resumo.toLowerCase().startsWith(diaEnviado.toLowerCase()));
+  resultados.push({ i, rotuloDia, diaTocado, diaDoPost, resumo, diaEnviado, divergiu, semResumoOuPost: !resumo || !diaEnviado });
+  await ctx.close();
+}
+console.log(JSON.stringify({ base: BASE, divergencias: resultados.filter((r) => r.divergiu).length, incompletas: resultados.filter((r) => r.semResumoOuPost).length, de: resultados.length, exemplo: resultados[0] }, null, 1));
+await b.close();

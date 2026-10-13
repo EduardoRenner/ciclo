@@ -1,0 +1,26 @@
+import { chromium } from "playwright";
+// APR-010: Mês e Serviços com 230+ comandas em 90 dias — 3200 (main antiga) × 3201 (branch).
+const SENHA = process.env.SEED_SENHA ?? "DemoCiclo#2026";
+const b = await chromium.launch({ channel: "chrome" });
+const res = {};
+for (const base of ["http://localhost:3200", "http://localhost:3201"]) {
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
+  const p = await ctx.newPage();
+  await p.goto(base + "/entrar");
+  await p.fill('input[type="email"]', "dono-demo-salao-encanto@ciclo.app");
+  await p.fill('input[type="password"]', SENHA);
+  await Promise.all([p.waitForURL(/admin/, { timeout: 60000 }), p.press('input[type="password"]', "Enter")]);
+  res[base] = {};
+  for (const r of ["/admin/config/servicos", "/admin/mes"]) {
+    const resp = await p.goto(base + r, { waitUntil: "networkidle", timeout: 90000 });
+    const txt = await p.locator("main").innerText().catch(() => "");
+    res[base][r] = {
+      status: resp?.status(),
+      caiu: /Não consegui carregar esta tela/.test(txt),
+      avisoDeMargem: /Não consegui conferir a margem/.test(txt),
+    };
+  }
+  await ctx.close();
+}
+console.log(JSON.stringify(res, null, 1));
+await b.close();

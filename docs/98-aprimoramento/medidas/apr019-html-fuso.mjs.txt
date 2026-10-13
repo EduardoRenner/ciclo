@@ -1,0 +1,24 @@
+import { chromium } from "playwright";
+import { execFileSync } from "node:child_process";
+// APR-019: horas no HTML do servidor (TZ=UTC na porta 3201) = horas do banco no fuso do negócio.
+const B = process.argv[2] ?? "http://localhost:3201";
+const SENHA = process.env.SEED_SENHA ?? "DemoCiclo#2026";
+const sql = `select to_char(a.starts_at at time zone 'America/Sao_Paulo','HH24:MI') from appointments a join tenants t on t.id=a.tenant_id
+ where t.slug='demo-dom-estilo' and (a.starts_at at time zone 'America/Sao_Paulo')::date=(now() at time zone 'America/Sao_Paulo')::date
+ and a.status not in ('canceled') order by 1`;
+const doBanco = execFileSync("docker", ["exec", "supabase_db_ciclo", "psql", "-U", "postgres", "-At", "-c", sql], { encoding: "utf8" }).trim().split(/\r?\n/).filter(Boolean);
+const b = await chromium.launch({ channel: "chrome" });
+const ctx = await b.newContext({ timezoneId: "America/Sao_Paulo" });
+const p = await ctx.newPage();
+await p.goto(B + "/entrar");
+await p.fill('input[type="email"]', "dono-demo-dom-estilo@ciclo.app");
+await p.fill('input[type="password"]', SENHA);
+await Promise.all([p.waitForURL(/admin/, { timeout: 60000 }), p.press('input[type="password"]', "Enter")]);
+const res = { doBanco };
+for (const rota of ["/admin/agenda", "/admin/hoje"]) {
+  const html = await (await ctx.request.get(B + rota)).text();
+  const horas = [...html.matchAll(/>(\s*(?:[01]\d|2[0-3]):[0-5]\d\s*)</g)].map((m) => m[1].trim());
+  res[rota] = { horas, foraDoBanco: horas.filter((h) => !doBanco.includes(h)) };
+}
+console.log(JSON.stringify(res, null, 1));
+await b.close();

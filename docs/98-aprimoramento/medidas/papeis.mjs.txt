@@ -1,0 +1,29 @@
+import { chromium } from "playwright";
+// APR-037: login por papel do seed abre a Hoje com o que cabe a cada papel.
+const B = "http://localhost:3200", OUT = "C:/Users/Usuario/.claude/code/ciclo-aprimoramento/docs/98-aprimoramento/capturas/";
+const SENHA = process.env.SEED_SENHA ?? "DemoCiclo#2026";
+const b = await chromium.launch({ channel: "chrome" });
+const res = {};
+for (const papel of ["dono", "profissional", "recepcao"]) {
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const p = await ctx.newPage();
+  await p.goto(B + "/entrar");
+  await p.fill('input[type="email"]', `${papel}-demo-dom-estilo@ciclo.app`);
+  await p.fill('input[type="password"]', SENHA);
+  await Promise.all([p.waitForURL(/admin/, { timeout: 60000 }), p.press('input[type="password"]', "Enter")]);
+  await p.goto(B + "/admin/hoje", { waitUntil: "networkidle", timeout: 60000 });
+  const txt = await p.locator("main").innerText().catch(() => "");
+  await p.screenshot({ path: OUT + `apr037-hoje-${papel}-390.png`, fullPage: true });
+  res[papel] = {
+    url: p.url(),
+    diego: (txt.match(/Diego/g) ?? []).length,
+    felipe: (txt.match(/Felipe/g) ?? []).length,
+    anderson: (txt.match(/Anderson/g) ?? []).length,
+    reais: (txt.match(/R\$/g) ?? []).length,
+    horarios: (txt.match(/\d{2}:\d{2}\s+(Aguardando|Confirmad)/g) ?? []).length,
+    trecho: txt.replace(/\s+/g, " ").slice(0, 300),
+  };
+  await ctx.close();
+}
+console.log(JSON.stringify(res, null, 1));
+await b.close();
