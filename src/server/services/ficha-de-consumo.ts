@@ -10,7 +10,7 @@ type Cliente = SupabaseClient<Database>
 /**
  * A ficha de consumo — quanto de cada produto um serviço gasta.
  *
- * A tabela `service_products` existe desde a `0001` e `baixarEstoqueDaComanda` a lê desde o
+ * A tabela `service_products` existe desde a `0001` e `consumoDaComanda` (antes `baixarEstoqueDaComanda`) a lê desde o
  * TICKET-044. Mas **nunca houve como preencher**: nenhuma tela, nenhuma rota, nenhum serviço
  * escrevia nela (`docs/49`). Duas coisas dependiam disso e ficavam paradas em silêncio: a baixa de
  * insumo no fechamento e — desde 2026-09-06 — o custo de material do serviço.

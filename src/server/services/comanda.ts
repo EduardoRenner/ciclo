@@ -5,10 +5,9 @@ import { calcularComissaoItem, calcularSobraDaComanda, calcularTotalItem, calcul
 import { custoDoServico } from '@/core/comanda/custo-do-servico'
 import { custoFixoDoAtendimento, lerCustoFixo } from '@/core/comanda/custo-fixo'
 import { calcularTaxaDaMaquininha, FORMAS_DE_PAGAMENTO, lerTaxasDePagamento, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
-import { withTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
 import { congelarMesesFechados } from '@/server/services/caixa'
-import { baixarEstoqueDaComanda, consumoDaComanda, estornarBaixaDaComanda } from '@/server/services/estoque'
+import { consumoDaComanda, estornarBaixaDaComanda } from '@/server/services/estoque'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -154,7 +153,7 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
      * mesma classe de `fee_cents`, `actor_label` e `deposit_cents`).
      *
      * O estrago do `?? 0` era duplo. O insumo entrava na comanda a R$ 0,00 — item de graça na
-     * conta de quem atende — e `baixarEstoqueDaComanda` descontava o estoque dele. Só que a ficha
+     * conta de quem atende — e a baixa do fechamento descontava o estoque dele. Só que a ficha
      * de consumo do serviço (`service_products`) JÁ desconta o mesmo insumo: uma navalha usada uma
      * vez saía duas vezes do estoque, e o custo dela já estava em `material_cost_cents`.
      *
@@ -323,12 +322,6 @@ export async function exigirComandaPropria(db: Cliente, tenantId: string, ticket
  * percentual de comissão do profissional ou o preço do serviço mudem depois. `payments`/webhook
  * (TICKET-043) é quem move `closed` pra `paid`; aqui só fecha o carrinho.
  */
-/**
- * APR-033b: o fechamento vai pela RPC atômica (0122). O caminho antigo (escritas em sequência)
- * fica atrás desta constante até a APR-033c removê-lo — reverter é trocar para `false`.
- */
-export const FECHAMENTO_PELA_RPC = true
-
 export async function fecharComanda(db: Cliente, tenantId: string, ticketId: string, formaDePagamento: FormaDePagamento) {
   const { ticket, items } = await buscarComanda(db, tenantId, ticketId)
   if (ticket.status !== 'open') throw new AppError('INVALID_TRANSITION', { message: 'Essa comanda já foi fechada.' })
@@ -345,11 +338,6 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
     const commissionCents = calcularComissaoItem({ totalCents: item.total_cents, costCents: item.cost_cents, commissionBps, commissionBase })
     commissaoTotalCents += commissionCents
     comissaoPorItem.push({ id: item.id, commission_bps: commissionBps, commission_cents: commissionCents })
-
-    if (!FECHAMENTO_PELA_RPC) {
-      const { error } = await db.from('ticket_items').update({ commission_bps: commissionBps, commission_cents: commissionCents }).eq('tenant_id', tenantId).eq('id', item.id)
-      if (error) throw new AppError('INTERNAL', { cause: error })
-    }
   }
 
   const { subtotalCents, totalCents } = calcularTotaisComanda({ items: items.map((i) => ({ totalCents: i.total_cents })), discountCents: ticket.discount_cents, tipCents: ticket.tip_cents })
@@ -405,67 +393,31 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
     profit_cents: profitCents,
   }
 
-  let fechado: Database['public']['Tables']['tickets']['Row']
-  if (FECHAMENTO_PELA_RPC) {
-    /*
-     * APR-033b: comissão por item, totais e estoque numa transação só (`aplicar_fechamento_de_comanda`,
-     * 0122). Se qualquer parte falha, NADA muda — a comanda continua aberta e a nova tentativa fecha
-     * de verdade, em vez de "já foi fechada" com o estoque pela metade (C-15). A permissão é
-     * conferida dentro da função, com o JWT de quem chama.
-     */
-    const { data, error } = await db.rpc('aplicar_fechamento_de_comanda', {
-      p_tenant: tenantId,
-      p_ticket: ticketId,
-      p_itens: comissaoPorItem,
-      p_ticket_campos: campos,
-      p_consumo: await consumoDaComanda(db, tenantId, ticketId),
-    })
-    if (error) {
-      if (error.hint === 'INVALID_TRANSITION') throw new AppError('INVALID_TRANSITION', { message: 'Essa comanda já foi fechada.' })
-      if (error.code === '42501') throw new AppError('FORBIDDEN', { message: error.message })
-      throw new AppError('INTERNAL', { cause: error })
-    }
-    fechado = data as Database['public']['Tables']['tickets']['Row']
-  } else {
-    // `.eq('status', 'open')` no próprio UPDATE, e não só na leitura acima: entre o
-    // `buscarComanda` e este ponto rodam N consultas de comissão, uma por item. Duas requisições
-    // simultâneas passavam as duas pela verificação de estado e fechavam a mesma comanda duas
-    // vezes — e `baixarEstoqueDaComanda` não é idempotente, então o estoque descia em dobro sem
-    // nada reprovar. É a mesma correção que o achado S11 fez no débito de carteira: quem decide o
-    // estado é o banco, numa operação só.
-    const { data: fechadoAntigo, error } = await db
-      .from('tickets')
-      .update({
-        status: 'closed',
-        subtotal_cents: subtotalCents,
-        total_cents: totalCents,
-        commission_cents: commissaoTotalCents,
-        material_cost_cents: custoTotalCents,
-        payment_method: formaDePagamento,
-        fixed_cost_cents: fixedCostCents,
-        fee_bps: feeBps,
-        fee_cents: feeCents,
-        profit_cents: profitCents,
-        closed_at: new Date().toISOString(),
-      })
-      .eq('tenant_id', tenantId)
-      .eq('id', ticketId)
-      .eq('status', 'open')
-      .select('*')
-      .maybeSingle()
-    if (error) throw new AppError('INTERNAL', { cause: error })
-    if (!fechadoAntigo) throw new AppError('INVALID_TRANSITION', { message: 'Essa comanda já foi fechada.' })
-
-    // §5.6/TICKET-044: baixa DEPOIS de fechar, nunca ao abrir — uma comanda aberta pode ganhar e
-    // perder item várias vezes antes de fechar, e nada disso deveria mexer em estoque de verdade.
-    //
-    // APR-038: com o cliente de SERVIÇO. A RLS de `products_update` é só de dono e gerente, e o
-    // profissional fecha a própria comanda com o próprio JWT: o UPDATE do `stock_qty` voltava 0
-    // linhas, o CAS desistia em 5 tentativas e a pessoa via erro com a comanda já fechada. O direito
-    // de baixar ESTE estoque já foi provado acima — o UPDATE da comanda passou pela RLS de quem fecha.
-    await withTenant(tenantId, (svc) => baixarEstoqueDaComanda(svc, tenantId, ticketId))
-    fechado = fechadoAntigo
+  /*
+   * APR-033: comissão por item, totais e estoque numa transação só (`aplicar_fechamento_de_comanda`,
+   * 0122). Se qualquer parte falha, NADA muda — a comanda continua aberta e a nova tentativa fecha
+   * de verdade. Antes eram escritas em sequência: com a baixa falhando no meio, a comanda ficava
+   * fechada, o estoque pela metade e a nova tentativa dizia "já foi fechada" (C-15). A função trava
+   * a linha (`for update` com `status = 'open'`), então duas requisições simultâneas não fecham nem
+   * baixam em dobro, e confere o papel por dentro, com o JWT de quem chama: o profissional baixa o
+   * estoque da PRÓPRIA comanda sem precisar da RLS de `products`, que é só de dono e gerente (R-04).
+   *
+   * §5.6/TICKET-044: a baixa é no fechamento, nunca ao abrir — uma comanda aberta ganha e perde
+   * item várias vezes antes de fechar.
+   */
+  const { data: fechadoRpc, error: erroFechamento } = await db.rpc('aplicar_fechamento_de_comanda', {
+    p_tenant: tenantId,
+    p_ticket: ticketId,
+    p_itens: comissaoPorItem,
+    p_ticket_campos: campos,
+    p_consumo: await consumoDaComanda(db, tenantId, ticketId),
+  })
+  if (erroFechamento) {
+    if (erroFechamento.hint === 'INVALID_TRANSITION') throw new AppError('INVALID_TRANSITION', { message: 'Essa comanda já foi fechada.' })
+    if (erroFechamento.code === '42501') throw new AppError('FORBIDDEN', { message: erroFechamento.message })
+    throw new AppError('INTERNAL', { cause: erroFechamento })
   }
+  const fechado = fechadoRpc as Database['public']['Tables']['tickets']['Row']
 
   /*
    * O congelamento do mês fechado (`0071`) pega carona aqui, e o motivo é a regra 6 do `CLAUDE.md`:

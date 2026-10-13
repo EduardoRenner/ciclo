@@ -18,7 +18,7 @@
  *
  * Só que o dado já está no banco, por outro motivo: a ficha de consumo (`service_products`) diz
  * quanto de cada produto um serviço gasta, e `products.avg_cost_cents` é a média móvel ponderada
- * mantida pelas compras. `baixarEstoqueDaComanda` já usa a ficha para dar baixa — falta ela também
+ * mantida pelas compras. `consumoDaComanda` já usa a ficha para dar baixa — falta ela também
  * responder quanto aquilo custou. O dono não precisa saber o custo do serviço: ele precisa saber o
  * que gasta e quanto pagou no produto, que é o que ele já cadastra para o estoque não furar.
  *
