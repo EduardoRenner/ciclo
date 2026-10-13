@@ -50,9 +50,14 @@ describe('processarArquivo: bytes → caixas (CNV-012)', () => {
   })
 
   it('formato reconhecido ainda sem leitor responde o que fazer, nunca lixo', async () => {
-    const xlsx = Uint8Array.from([0x50, 0x4b, 0x03, 0x04, ...new Array(26).fill(0), ...Array.from('xl/workbook.xml', (c) => c.charCodeAt(0))])
-    const r = await processarArquivo({ bytes: xlsx, nome: 'clientes.xlsx', contexto: { hoje: HOJE } })
-    expect(r).toEqual({ ok: false, mensagem: expect.stringMatching(/CSV/) })
+    const r = await processarArquivo({ bytes: new TextEncoder().encode('%PDF-1.7 ...'), nome: 'clientes.pdf', contexto: { hoje: HOJE } })
+    expect(r).toEqual({ ok: false, mensagem: expect.stringMatching(/cole aqui|planilha original/) })
+  })
+
+  it('planilha corrompida (cabeçalho de zip sem o resto) vira mensagem, não exceção', async () => {
+    const quebrada = Uint8Array.from([0x50, 0x4b, 0x03, 0x04, ...new Array(26).fill(0), ...Array.from('xl/workbook.xml', (c) => c.charCodeAt(0))])
+    const r = await processarArquivo({ bytes: quebrada, nome: 'clientes.xlsx', contexto: { hoje: HOJE } })
+    expect(r).toEqual({ ok: false, mensagem: expect.stringMatching(/corrompido/) })
   })
 
   it('programa com nome de planilha é recusado com o motivo', async () => {

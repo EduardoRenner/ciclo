@@ -15,7 +15,13 @@ export type RespostaDaEsteira =
   | { ok: false; mensagem: string }
 
 export async function processarArquivo(pedido: PedidoDaEsteira): Promise<RespostaDaEsteira> {
-  const lido = await lerParaGrades(pedido.bytes, pedido.nome)
+  let lido: Awaited<ReturnType<typeof lerParaGrades>>
+  try {
+    lido = await lerParaGrades(pedido.bytes, pedido.nome)
+  } catch {
+    // Leitor que estourou com arquivo estranho: mensagem, nunca exceção na tela.
+    return { ok: false, mensagem: 'Não consegui ler este arquivo. Nada foi gravado. Abra no seu computador, salve de novo e envie, ou cole a lista.' }
+  }
   if (!lido.ok) return lido
   // Sem escolha, a aba com mais linhas: em planilha de verdade é quase sempre a da lista.
   const aba = pedido.aba ?? lido.abas.reduce((melhor, a, i, todas) => (a.grade.length > todas[melhor]!.grade.length ? i : melhor), 0)
