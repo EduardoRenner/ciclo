@@ -3382,6 +3382,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["payment_kind"]
           method: Database["public"]["Enums"]["payment_method"]
           net_cents: number | null
+          package_id: string | null
           paid_at: string | null
           pix_copy_paste: string | null
           pix_qr: string | null
@@ -3406,6 +3407,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["payment_kind"]
           method: Database["public"]["Enums"]["payment_method"]
           net_cents?: number | null
+          package_id?: string | null
           paid_at?: string | null
           pix_copy_paste?: string | null
           pix_qr?: string | null
@@ -3430,6 +3432,7 @@ export type Database = {
           kind?: Database["public"]["Enums"]["payment_kind"]
           method?: Database["public"]["Enums"]["payment_method"]
           net_cents?: number | null
+          package_id?: string | null
           paid_at?: string | null
           pix_copy_paste?: string | null
           pix_qr?: string | null
@@ -3462,6 +3465,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "v_client_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
             referencedColumns: ["id"]
           },
           {
@@ -5475,6 +5485,35 @@ export type Database = {
         Args: { p_client: string; p_tenant: string }
         Returns: Json
       }
+      registrar_venda_de_pacote: {
+        Args: {
+          p_client: string
+          p_expires_on: string
+          p_fee_cents: number
+          p_method: Database["public"]["Enums"]["payment_method"]
+          p_paid_cents: number
+          p_service: string
+          p_tenant: string
+          p_total_sessions: number
+        }
+        Returns: {
+          client_id: string
+          created_at: string
+          expires_on: string | null
+          id: string
+          paid_cents: number
+          service_id: string
+          tenant_id: string
+          total_sessions: number
+          used_sessions: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "packages"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       resolver_previsoes_em_lote: {
         Args: { p_atualizacoes: Json; p_tenant_id: string }
         Returns: number
@@ -5550,7 +5589,13 @@ export type Database = {
         | "read"
         | "failed"
         | "opted_out"
-      payment_kind: "deposit" | "service" | "product" | "club" | "fee"
+      payment_kind:
+        | "deposit"
+        | "service"
+        | "product"
+        | "club"
+        | "fee"
+        | "package"
       payment_method:
         | "pix"
         | "credit"
@@ -5749,7 +5794,7 @@ export const Constants = {
         "failed",
         "opted_out",
       ],
-      payment_kind: ["deposit", "service", "product", "club", "fee"],
+      payment_kind: ["deposit", "service", "product", "club", "fee", "package"],
       payment_method: [
         "pix",
         "credit",
