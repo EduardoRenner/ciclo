@@ -13,6 +13,7 @@ import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
 import { useVocabulario } from '@/components/shell/vocabulario'
+import { FORMAS_DE_PAGAMENTO, NOME_DA_FORMA, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
 import { comMaiuscula } from '@/core/text/vocabulario'
 import { dinheiro } from '@/lib/formato'
 import { fetchComTentativa } from '@/lib/tentativa'
@@ -157,6 +158,9 @@ function VenderPacote({
   // fácil abater de um número certo do que digitar o total do zero.
   const [pagoCents, setPagoCents] = useState((servicos[0]?.priceCents ?? 0) * 4)
   const [vence, setVence] = useState('')
+  // APR-016b: a venda entra no caixa do dia; sem forma escolhida, não dá para saber a taxa. Começa
+  // vazia de propósito, como no fechamento da comanda: ninguém confirma uma forma que não escolheu.
+  const [forma, setForma] = useState<FormaDePagamento | ''>('')
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, iniciar] = useTransition()
 
@@ -184,6 +188,10 @@ function VenderPacote({
       setErro('O pacote precisa ter de 1 a 100 sessões.')
       return
     }
+    if (pagoCents > 0 && !forma) {
+      setErro('Diga como ela pagou o pacote.')
+      return
+    }
     setErro(null)
 
     iniciar(async () => {
@@ -197,6 +205,7 @@ function VenderPacote({
             totalSessions: quantidade,
             paidCents: pagoCents,
             expiresOn: vence || undefined,
+            paymentMethod: pagoCents > 0 && forma ? forma : undefined,
           }),
         })
         const json = (await r.json()) as { error?: { message?: string; details?: { fields?: Record<string, string> } } }
@@ -227,6 +236,16 @@ function VenderPacote({
         </Select>
         <Input rotulo="Quantas sessões" value={sessoes} onChange={(e) => trocarSessoes(e.target.value)} inputMode="numeric" />
         <MoneyInput rotulo="Quanto ela pagou" centavos={pagoCents} aoMudar={setPagoCents} ajuda="Já vem no preço cheio das sessões; ajuste se houver desconto." />
+        {pagoCents > 0 ? (
+          <Select rotulo="Como ela pagou" value={forma} onChange={(e) => setForma(e.target.value as FormaDePagamento | '')} ajuda="Entra no caixa de hoje.">
+            <option value="">Escolha</option>
+            {FORMAS_DE_PAGAMENTO.map((f) => (
+              <option key={f} value={f}>
+                {NOME_DA_FORMA[f]}
+              </option>
+            ))}
+          </Select>
+        ) : null}
         <Input rotulo="Vence em (opcional)" type="date" value={vence} onChange={(e) => setVence(e.target.value)} />
 
         {erro ? (

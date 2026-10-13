@@ -145,6 +145,7 @@ export const MIGRATIONS_DO_CODIGO: readonly string[] = [
   '0123_rls_agendamento_uma_vez_por_consulta',
   '0124_rls_comanda_uma_vez_por_consulta',
   '0125_venda_de_pacote_no_caixa',
+  '0126_venda_de_pacote_visivel_como_o_pacote',
 ]
 
 /** Quantos arquivos existem em `supabase/migrations/`. */

@@ -1,9 +1,10 @@
 import { Temporal } from '@js-temporal/polyfill'
 
-import { entrouCents, numeroDoDia } from '@/core/caixa/entrou'
+import { entradasDoEntrou, numeroDoDia } from '@/core/caixa/entrou'
 import { compararComCostumeAteAgora, type ComparacaoComCostume, type DiaPassado } from '@/core/ciclo/comparacao-com-costume'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { listarAlertasDeEstoque, type AlertaEstoque } from '@/server/services/alertas-estoque'
+import { vendasDePacote } from '@/server/services/caixa'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -118,7 +119,7 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
   // de ser o que a média descreve.
   const inicioDaJanelaDeComparacao = hoje.subtract({ days: 56 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
 
-  const [{ data, error }, stockAlerts, { count: indicacoesEsteMes, error: erroIndicacoes }, diasPassados, comandas] =
+  const [{ data, error }, stockAlerts, { count: indicacoesEsteMes, error: erroIndicacoes }, diasPassados, comandas, vendas] =
     await Promise.all([
       db.from('appointments').select(COLUNAS_HOJE).eq('tenant_id', tenantId).gte('starts_at', inicioDoDia.toString()).lt('starts_at', fimDoDia.toString()).order('starts_at'),
       listarAlertasDeEstoque(db, tenantId, hoje.toString()),
@@ -146,13 +147,15 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
       buscarTudoPaginado(() =>
         db
           .from('tickets')
-          .select('status, total_cents, closed_at')
+          .select('status, total_cents, payment_method, closed_at')
           .eq('tenant_id', tenantId)
           .not('closed_at', 'is', null)
           .gte('closed_at', inicioDaJanelaDeComparacao.toString())
           .lt('closed_at', fimDoDia.toString())
           .order('id'),
       ),
+      // APR-016b: as vendas de pacote da mesma janela — a outra metade do "Entrou".
+      vendasDePacote(db, tenantId, inicioDaJanelaDeComparacao.toString(), fimDoDia.toString()),
     ])
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (erroIndicacoes) throw new AppError('INTERNAL', { cause: erroIndicacoes })
@@ -179,16 +182,20 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
 
   // APR-036a: quem usa comanda vê "Entrou", e o costume é medido em comandas também (mesma base do
   // número mostrado). Comanda estornada sai de `entrouCents`, então o estorno muda a Hoje junto.
+  // APR-016b: as entradas saem de `entradasDoEntrou` (comandas + vendas de pacote), a mesma lista que
+  // o Caixa soma — o número de hoje e o costume não têm uma segunda regra.
   const usaComanda = comandas.length > 0
-  const comandasDeHoje = comandas.filter((c) => Temporal.Instant.compare(Temporal.Instant.from(c.closed_at!), inicioDoDia) >= 0)
-  const entrouHojeCents = entrouCents(comandasDeHoje.map((c) => ({ status: c.status, totalCents: c.total_cents })))
+  const entradas = entradasDoEntrou(
+    comandas.map((c) => ({ status: c.status, totalCents: c.total_cents, paymentMethod: c.payment_method, closedAt: c.closed_at })),
+    vendas,
+  ).filter((e): e is { cents: number; em: string } => e.em !== null)
+  const entrouHojeCents = entradas.filter((e) => Temporal.Instant.compare(Temporal.Instant.from(e.em), inicioDoDia) >= 0).reduce((soma, e) => soma + e.cents, 0)
   const porDiaDeComanda = new Map<string, DiaPassado['atendimentos'][number][]>()
-  for (const c of comandas) {
-    if (!['closed', 'paid'].includes(c.status)) continue
-    const local = Temporal.Instant.from(c.closed_at!).toZonedDateTimeISO(timezone)
+  for (const e of entradas) {
+    const local = Temporal.Instant.from(e.em).toZonedDateTimeISO(timezone)
     if (local.dayOfWeek !== hoje.dayOfWeek || Temporal.PlainDate.compare(local.toPlainDate(), hoje) >= 0) continue
     const chave = local.toPlainDate().toString()
-    porDiaDeComanda.set(chave, [...(porDiaDeComanda.get(chave) ?? []), { minutoDoDia: local.hour * 60 + local.minute, cents: c.total_cents }])
+    porDiaDeComanda.set(chave, [...(porDiaDeComanda.get(chave) ?? []), { minutoDoDia: local.hour * 60 + local.minute, cents: e.cents }])
   }
   const diasDeComanda: DiaPassado[] = [...porDiaDeComanda.values()].map((atendimentos) => ({ atendimentos }))
   const agoraLocal = agora.toZonedDateTimeISO(timezone)

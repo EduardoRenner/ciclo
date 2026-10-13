@@ -90,8 +90,12 @@ describe('venda de pacote registrada como dinheiro (APR-016a)', () => {
     const r = await profissional.rpc('registrar_venda_de_pacote', venda())
     expect(r.error).toBeNull()
     expect(await pagamentosDo((r.data as { id: string }).id)).toHaveLength(1)
-    const leitura = await profissional.from('payments').select('id').eq('tenant_id', tenantId)
-    expect(leitura.data ?? [], 'controle: a leitura de payments continua fechada ao profissional').toEqual([])
+    // 0126 (APR-016b): a venda de pacote é lida por quem já vê o pacote; o resto de `payments` não.
+    await svc.from('payments').insert({ tenant_id: tenantId, client_id: cliente, kind: 'deposit', method: 'pix', status: 'paid', amount_cents: 2_000 })
+    const leitura = await profissional.from('payments').select('kind').eq('tenant_id', tenantId)
+    const tipos = new Set((leitura.data ?? []).map((p) => p.kind))
+    expect(tipos.has('package'), 'a venda de pacote fica visível como o pacote').toBe(true)
+    expect(tipos.has('deposit'), 'o sinal continua só de quem vê comissão').toBe(false)
   })
 
   it('pacote de cortesia (R$ 0) não é dinheiro: sem pagamento', async () => {

@@ -7,12 +7,33 @@
  * incluída (como o Caixa já fazia; "Entrou com ou sem gorjeta" é decisão do Eduardo, `08` §10, e até
  * lá vale o que o Caixa faz). Comanda estornada (`canceled`) sai, então o estorno muda todas juntas.
  */
-export type ComandaParaEntrou = { status: string; totalCents: number }
+export type ComandaParaEntrou = { status: string; totalCents: number; paymentMethod?: string | null; closedAt?: string | null }
+
+/**
+ * APR-016b: a venda de pacote (`payments`, `kind = 'package'`) é dinheiro que entrou no dia em que
+ * foi paga (`docs/DECISOES.md`, 2026-10-13 · APR-016). Venda desfeita (`refunded`) sai, como a
+ * comanda estornada.
+ */
+export type VendaParaEntrou = { status: string; amountCents: number; paidAt?: string | null }
 
 const CONTAM = new Set(['closed', 'paid'])
 
-export function entrouCents(comandas: readonly ComandaParaEntrou[]): number {
-  return comandas.reduce((soma, c) => (CONTAM.has(c.status) ? soma + c.totalCents : soma), 0)
+/**
+ * Cada dinheiro que entrou, com o instante — a mesma lista que a soma usa, para quem precisa agrupar
+ * por dia (o costume da Hoje) não ter uma segunda regra.
+ *
+ * Comanda paga com a forma `package` NÃO entra: o dinheiro dela entrou na venda do pacote, e contar
+ * as duas coisas somaria R$ 320 + 4 × R$ 80 por um pacote de R$ 320.
+ */
+export function entradasDoEntrou(comandas: readonly ComandaParaEntrou[], vendas: readonly VendaParaEntrou[] = []): { cents: number; em: string | null }[] {
+  return [
+    ...comandas.filter((c) => CONTAM.has(c.status) && c.paymentMethod !== 'package').map((c) => ({ cents: c.totalCents, em: c.closedAt ?? null })),
+    ...vendas.filter((v) => v.status === 'paid').map((v) => ({ cents: v.amountCents, em: v.paidAt ?? null })),
+  ]
+}
+
+export function entrouCents(comandas: readonly ComandaParaEntrou[], vendas: readonly VendaParaEntrou[] = []): number {
+  return entradasDoEntrou(comandas, vendas).reduce((soma, e) => soma + e.cents, 0)
 }
 
 /**

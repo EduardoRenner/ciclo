@@ -1,6 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
+import { calcularTaxaDaMaquininha, FORMAS_DE_PAGAMENTO, lerTaxasDePagamento } from '@/core/comanda/taxa-de-pagamento'
 import { DIAS_ALERTA_VENCIMENTO, venceEmBreve } from '@/core/pacotes/vencimento'
 import { AppError } from '@/server/http/errors'
 
@@ -10,13 +11,20 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 type Cliente = SupabaseClient<Database>
 
 
-export const EsquemaVenderPacote = z.object({
-  clientId: z.uuid(),
-  serviceId: z.uuid(),
-  totalSessions: z.number().int().min(1).max(100),
-  paidCents: z.number().int().min(0),
-  expiresOn: z.iso.date().nullish(),
-})
+export const EsquemaVenderPacote = z
+  .object({
+    clientId: z.uuid(),
+    serviceId: z.uuid(),
+    totalSessions: z.number().int().min(1).max(100),
+    paidCents: z.number().int().min(0),
+    expiresOn: z.iso.date().nullish(),
+    // APR-016b: a venda é dinheiro no caixa, e o caixa precisa saber por onde entrou (e a taxa).
+    paymentMethod: z.enum(FORMAS_DE_PAGAMENTO).optional(),
+  })
+  .refine((e) => e.paidCents === 0 || e.paymentMethod !== undefined, {
+    path: ['paymentMethod'],
+    message: 'Diga como ela pagou o pacote.',
+  })
 type EntradaVenderPacote = z.infer<typeof EsquemaVenderPacote>
 
 export type PacoteComSaldo = {
@@ -33,21 +41,32 @@ export type PacoteComSaldo = {
   expiringSoon: boolean
 }
 
+/**
+ * APR-016b: o pacote e o dinheiro da venda numa transação só (`registrar_venda_de_pacote`, 0125). A
+ * venda entra no "Entrou" do dia (`docs/DECISOES.md`, 2026-10-13 · APR-016); a taxa da maquininha é
+ * a da forma escolhida, com a mesma conta da comanda. Pacote de cortesia (R$ 0) não gera pagamento.
+ */
 export async function venderPacote(db: Cliente, tenantId: string, entrada: EntradaVenderPacote) {
-  const { data, error } = await db
-    .from('packages')
-    .insert({
-      tenant_id: tenantId,
-      client_id: entrada.clientId,
-      service_id: entrada.serviceId,
-      total_sessions: entrada.totalSessions,
-      paid_cents: entrada.paidCents,
-      expires_on: entrada.expiresOn ?? null,
-    })
-    .select('*')
-    .single()
+  const forma = entrada.paymentMethod ?? 'other'
+  let feeCents = 0
+  if (entrada.paidCents > 0) {
+    const { data: tenant, error: erroTenant } = await db.from('tenants').select('settings').eq('id', tenantId).maybeSingle()
+    if (erroTenant) throw new AppError('INTERNAL', { cause: erroTenant })
+    feeCents = calcularTaxaDaMaquininha({ totalCents: entrada.paidCents, feeBps: lerTaxasDePagamento(tenant?.settings)[forma] })
+  }
+
+  const { data, error } = await db.rpc('registrar_venda_de_pacote', {
+    p_tenant: tenantId,
+    p_client: entrada.clientId,
+    p_service: entrada.serviceId,
+    p_total_sessions: entrada.totalSessions,
+    p_paid_cents: entrada.paidCents,
+    p_expires_on: (entrada.expiresOn ?? null) as unknown as string,
+    p_method: forma,
+    p_fee_cents: feeCents,
+  })
   if (error) throw new AppError('INTERNAL', { cause: error })
-  return data
+  return data as Database['public']['Tables']['packages']['Row']
 }
 
 function comSaldo(p: Database['public']['Tables']['packages']['Row'], hoje: Temporal.PlainDate): PacoteComSaldo {

@@ -3,6 +3,7 @@ import { lerDorPrincipal, priorizarPelaDor } from '@/core/onboarding/perfil'
 import { z } from 'zod'
 
 import { alertaDoCliente, rotuloDoAlerta } from '@/server/services/anamnese'
+import { vendasDePacoteDoCliente } from '@/server/services/caixa'
 import { statusConsentimentos } from '@/server/services/consentimentos'
 import { assinaturaAtiva, extratoDePontos, lerConfigFidelidade, type AssinaturaDoCliente, type ExtratoPontos } from '@/server/services/fidelidade'
 import { listarMediaDoCliente } from '@/server/services/media'
@@ -181,6 +182,7 @@ export async function fichaDoCliente(
     servicosBruto,
     comandasBruto,
     comandasDoEntrou,
+    vendasDaPessoa,
     equipeBruto,
   ] = await Promise.all([
     db
@@ -283,12 +285,14 @@ export async function fichaDoCliente(
     buscarTudoPaginado(() =>
       db
         .from('tickets')
-        .select('status, total_cents')
+        .select('status, total_cents, payment_method')
         .eq('tenant_id', tenantId)
         .eq('client_id', clientId)
         .in('status', ['closed', 'paid', 'canceled'])
         .order('id'),
     ),
+    // APR-016b: o pacote que a pessoa comprou é dinheiro que entrou dela.
+    vendasDePacoteDoCliente(db, tenantId, clientId),
     // P4: "sempre com a dona" no negócio de uma pessoa só é ruído — só conta quem atende hoje.
     db.from('professionals').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('active', true).is('deleted_at', null),
   ])
@@ -329,8 +333,11 @@ export async function fichaDoCliente(
   const nomePorServico = new Map((servicosBruto.data ?? []).map((s) => [s.id, s.name]))
 
   const comandasPagas = comandasDoEntrou.filter((t) => t.status === 'closed' || t.status === 'paid')
-  const usaComanda = comandasDoEntrou.length > 0
-  const entrouDaPessoa = entrouCents(comandasDoEntrou.map((t) => ({ status: t.status, totalCents: t.total_cents })))
+  const usaComanda = comandasDoEntrou.length > 0 || vendasDaPessoa.length > 0
+  const entrouDaPessoa = entrouCents(
+    comandasDoEntrou.map((t) => ({ status: t.status, totalCents: t.total_cents, paymentMethod: t.payment_method })),
+    vendasDaPessoa,
+  )
 
   return {
     cliente: {
@@ -359,11 +366,13 @@ export async function fichaDoCliente(
       ltvCents,
       visitas,
       faltas,
-      // Ticket médio na MESMA base do valor mostrado: por comanda paga quando há comanda, por visita
-      // concluída quando não há. Dividir por 0 na cliente que nunca veio daria NaN na tela.
+      // Ticket médio: por comanda paga quando há comanda, por visita concluída quando não há. Dividir
+      // por 0 na cliente que nunca veio daria NaN na tela. APR-016b: o valor das COMANDAS, não o
+      // "Entrou" — a venda de um pacote de R$ 320 antes da primeira sessão não é um atendimento de
+      // R$ 320. Sem pacote, é o mesmo número de antes.
       ticketMedioCents: usaComanda
         ? comandasPagas.length > 0
-          ? Math.round(entrouDaPessoa / comandasPagas.length)
+          ? Math.round(comandasPagas.reduce((soma, t) => soma + t.total_cents, 0) / comandasPagas.length)
           : 0
         : visitas > 0
           ? Math.round(ltvCents / visitas)

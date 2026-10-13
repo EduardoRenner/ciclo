@@ -5,7 +5,7 @@ import { margemPorServico, type ItemFechado, type MargemDoServico } from '@/core
 import { mesesJaEncerrados, serieMensal, type SerieMensal } from '@/core/caixa/serie-mensal'
 import { calcularTaxaDoMes, type TaxaDoMes } from '@/core/caixa/taxa-por-forma'
 import { lerTaxasDePagamento, taxaEstaConfigurada } from '@/core/comanda/taxa-de-pagamento'
-import { entrouCents } from '@/core/caixa/entrou'
+import { entrouCents, type VendaParaEntrou } from '@/core/caixa/entrou'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -13,6 +13,39 @@ import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 type Cliente = SupabaseClient<Database>
+
+/**
+ * APR-016b: as vendas de pacote (`payments`, `kind = 'package'`) com `paid_at` em `[inicio, fim)` —
+ * a outra metade do "Entrou" (`docs/DECISOES.md`, 2026-10-13 · APR-016). Paginado pelo mesmo motivo
+ * das comandas: o corte de mil linhas não avisa.
+ */
+export async function vendasDePacote(db: Cliente, tenantId: string, inicio: string, fim: string): Promise<VendaParaEntrou[]> {
+  const linhas = await buscarTudoPaginado(() =>
+    db
+      .from('payments')
+      .select('status, amount_cents, paid_at')
+      .eq('tenant_id', tenantId)
+      .eq('kind', 'package')
+      .gte('paid_at', inicio)
+      .lt('paid_at', fim)
+      .order('id'),
+  )
+  return linhas.map((l) => ({ status: l.status, amountCents: l.amount_cents, paidAt: l.paid_at }))
+}
+
+/** As vendas de pacote de uma pessoa, de sempre — o "Entrou" da Ficha. */
+export async function vendasDePacoteDoCliente(db: Cliente, tenantId: string, clientId: string): Promise<VendaParaEntrou[]> {
+  const linhas = await buscarTudoPaginado(() =>
+    db
+      .from('payments')
+      .select('status, amount_cents, paid_at')
+      .eq('tenant_id', tenantId)
+      .eq('kind', 'package')
+      .eq('client_id', clientId)
+      .order('id'),
+  )
+  return linhas.map((l) => ({ status: l.status, amountCents: l.amount_cents, paidAt: l.paid_at }))
+}
 
 /** `month` no formato `YYYY-MM` → janela `[inicio, fim)` em instante UTC, no fuso do tenant. */
 function janelaDoMes(timezone: string, month: string): { inicio: string; fim: string } {
@@ -72,16 +105,19 @@ async function somarTickets(db: Cliente, tenantId: string, inicio: string, fim: 
     por ticket, num recorte de um dia de um salão; o teto do helper limita o pior caso, e ele só é
     alcançado num cenário que hoje travaria.
   */
-  const tickets = await buscarTudoPaginado(() =>
-    db
-      .from('tickets')
-      .select('status, total_cents, material_cost_cents, fee_cents, commission_cents, fixed_cost_cents, profit_cents')
-      .eq('tenant_id', tenantId)
-      .in('status', ['closed', 'paid'])
-      .gte('closed_at', inicio)
-      .lt('closed_at', fim)
-      .order('id'),
-  )
+  const [tickets, vendas] = await Promise.all([
+    buscarTudoPaginado(() =>
+      db
+        .from('tickets')
+        .select('status, total_cents, payment_method, material_cost_cents, fee_cents, commission_cents, fixed_cost_cents, profit_cents')
+        .eq('tenant_id', tenantId)
+        .in('status', ['closed', 'paid'])
+        .gte('closed_at', inicio)
+        .lt('closed_at', fim)
+        .order('id'),
+    ),
+    vendasDePacote(db, tenantId, inicio, fim),
+  ])
 
   for (const t of tickets) {
     resumo.ticketsCount++
@@ -92,8 +128,12 @@ async function somarTickets(db: Cliente, tenantId: string, inicio: string, fim: 
     resumo.profitCents += t.profit_cents
   }
 
-  // APR-036a: "Entrou" sai da função única do core — a mesma da Hoje.
-  resumo.revenueCents = entrouCents(tickets.map((t) => ({ status: t.status, totalCents: t.total_cents })))
+  // APR-036a: "Entrou" sai da função única do core — a mesma da Hoje. APR-016b: com as vendas de
+  // pacote do período, e sem as comandas pagas com o pacote (o dinheiro delas entrou na venda).
+  resumo.revenueCents = entrouCents(
+    tickets.map((t) => ({ status: t.status, totalCents: t.total_cents, paymentMethod: t.payment_method })),
+    vendas,
+  )
   return resumo
 }
 
