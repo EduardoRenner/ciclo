@@ -13,7 +13,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  *
  * Mora num módulo só porque há DUAS portas de entrada para a mesma base e elas não podem divergir:
  *
- *   - a planilha (`importacao-clientes.ts`), para quem tem CSV;
+ *   - a esteira (`lote-de-importacao.ts`), para quem tem planilha, contatos, print ou qualquer arquivo;
  *   - a memória (`quem-ja-atendo.ts`), para quem tem a clientela na cabeça — que é a maioria.
  *
  * Duplicar esta fórmula seria criar duas definições do mesmo cálculo, cada uma com a sua guarda,

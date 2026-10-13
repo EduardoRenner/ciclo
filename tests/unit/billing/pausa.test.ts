@@ -34,8 +34,8 @@ describe('regraDaEscritaNaPausa', () => {
     }
   })
 
-  it('a rota fixa ganha da dinâmica: /clients/import não é /clients/[id]', () => {
-    expect(regraDaEscritaNaPausa('POST', '/api/v1/clients/import')).toBe('bloqueia')
+  it('a rota fixa ganha da dinâmica: /clients/ja-atendo não é /clients/[id]', () => {
+    expect(regraDaEscritaNaPausa('POST', '/api/v1/clients/ja-atendo')).toBe('bloqueia')
     expect(regraDaEscritaNaPausa('POST', '/api/v1/services/reorder')).toBe('permite')
     expect(regraDaEscritaNaPausa('POST', '/api/v1/appointments/series')).toBe('bloqueia')
   })

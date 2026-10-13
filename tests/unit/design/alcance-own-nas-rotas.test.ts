@@ -24,8 +24,6 @@ const LINHA_DE_BASE: Record<string, number> = {
   'appointments/series/route.ts': 1,
   'clients/[id]/data-export/route.ts': 1,
   'clients/export/route.ts': 1,
-  'clients/import/preview/route.ts': 1,
-  'clients/import/route.ts': 1,
   'clients/ja-atendo/route.ts': 1,
   'clients/route.ts': 2,
   'cycle/attribution/route.ts': 1,

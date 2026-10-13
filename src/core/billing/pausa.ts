@@ -59,8 +59,6 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'POST v1/clients/[id]/subscription': 'bloqueia',
   'DELETE v1/clients/[id]/subscription': 'permite',
   'PUT v1/clients/[id]/vault': 'bloqueia',
-  'POST v1/clients/import/preview': 'bloqueia',
-  'POST v1/clients/import': 'bloqueia',
   'POST v1/imports': 'bloqueia',
   'POST v1/imports/[id]/rows': 'bloqueia',
   // Desfazer só tira o que entrou: como excluir ficha, segue liberado na pausa.
@@ -168,7 +166,7 @@ const PADROES: readonly Padrao[] = Object.entries(ROTAS_DE_ESCRITA)
     const re = new RegExp('^' + segmentos.map((s) => (s.startsWith('[') ? '[^/]+' : s)).join('/') + '$')
     return { chave, regra, metodo, re, dinamicos: segmentos.filter((s) => s.startsWith('[')).length }
   })
-  // Segmento fixo antes do dinâmico: `clients/import` ganha de `clients/[id]`.
+  // Segmento fixo antes do dinâmico: `clients/ja-atendo` ganha de `clients/[id]`.
   .sort((a, b) => a.dinamicos - b.dinamicos)
 
 /**

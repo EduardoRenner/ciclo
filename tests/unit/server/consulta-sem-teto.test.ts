@@ -46,7 +46,6 @@ const LINHA_DE_BASE: Record<string, number> = {
   'server/services/estoque.ts': 2,
   'server/services/fidelidade.ts': 1,
   'server/services/health.ts': 1,
-  'server/services/importacao-clientes.ts': 1,
   'server/services/lembretes.ts': 2,
   'server/services/lgpd.ts': 2,
   'server/services/link-de-volta.ts': 1,

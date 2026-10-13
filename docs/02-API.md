@@ -106,7 +106,9 @@ POST   /api/v1/clients                { name, phone, email?, birthDate?, source?
 GET    /api/v1/clients/:id            → ficha 360° (sem cofre)
 PATCH  /api/v1/clients/:id
 DELETE /api/v1/clients/:id            soft delete
-POST   /api/v1/clients/import         multipart CSV → { imported, skipped, errors[] }
+POST   /api/v1/imports                { fileSha256, formato, origem, nivel, counts, rowsExpected } → { lote, jaExistia }  (docs/103)
+POST   /api/v1/imports/:id/rows       { linhas[≤500], ultimo, servicoId? } → { gravadas, jaGravadas, puladas[], erros[], lote }
+POST   /api/v1/imports/:id/undo       até 7 dias → { removidas, mantidas }
 POST   /api/v1/clients/merge          { keepId, mergeId }   (duplicadas)
 GET    /api/v1/clients/:id/timeline?cursor=
 POST   /api/v1/clients/export         🔐 AAL2 + auditado + 1×/mês
