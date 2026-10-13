@@ -9,6 +9,7 @@ import { comIdempotencia } from '@/server/http/idempotency'
 import { assinar, assinaturaAtiva, cancelarAssinatura, EsquemaAssinatura } from '@/server/services/fidelidade'
 import { exigirModulo } from '@/server/services/planos'
 import { UUID } from '@/core/text/uuid'
+import { exigirClienteDoProfissional } from '@/server/services/clientes'
 
 type Ctx = { params: Promise<{ id: string }> }
 
@@ -20,11 +21,12 @@ async function idValidado(ctx: unknown): Promise<string> {
 
 export const POST = rota(async (req, params, requestId) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:update')
+  const escopo = exigirPermissao(ctx.papel, 'client:update')
 
   const id = await idValidado(params)
   const entrada = await lerCorpo(req, EsquemaAssinatura)
   const db = await criarClienteDoUsuario()
+  if (escopo === 'own') await exigirClienteDoProfissional(db, ctx.tenantId, id)
 
   // §D.2, regra 5.1: cair de plano trava CRIAR, nunca esconde o que já existe — por isso a
   // trava fica só aqui (assinar), nunca no DELETE (cancelar) logo abaixo.
@@ -58,10 +60,11 @@ export const POST = rota(async (req, params, requestId) => {
 /** Cancelar não apaga: muda o estado e data, para o histórico de receita continuar explicável. */
 export const DELETE = rota(async (req, params, requestId) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:update')
+  const escopo = exigirPermissao(ctx.papel, 'client:update')
 
   const id = await idValidado(params)
   const db = await criarClienteDoUsuario()
+  if (escopo === 'own') await exigirClienteDoProfissional(db, ctx.tenantId, id)
 
   const atual = await assinaturaAtiva(db, ctx.tenantId, id)
   if (!atual) throw new AppError('NOT_FOUND', { message: 'Esse cliente não tem assinatura ativa.' })

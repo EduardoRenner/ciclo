@@ -243,6 +243,33 @@ export async function criarCliente(db: Cliente, tenantId: string, entrada: Entra
   return data
 }
 
+/**
+ * APR-040: o que `client:own` e `vault:own` querem dizer. O profissional alcança a pessoa que ele
+ * ATENDE — tem agendamento com ela, em qualquer estado (marcado, feito, faltou), ou comanda. É a
+ * agenda que diz quem atende: quem cobre a folga do colega passa a ter o horário e, com ele, a
+ * ficha. Antes, as rotas tratavam `own` como `all` e qualquer profissional com AAL2 abria a
+ * anamnese de qualquer cliente do negócio (medido na APR-039).
+ *
+ * Com o cliente do USUÁRIO: se o negócio ligou `restrict_professional_view`, a RLS já esconde os
+ * horários dos outros; o filtro por `professional_id` aqui vale nos dois modos.
+ */
+export async function exigirClienteDoProfissional(db: Cliente, tenantId: string, clientId: string): Promise<void> {
+  const { data: eu, error: erroEu } = await db.rpc('my_professional_id', { t: tenantId })
+  if (erroEu) throw new AppError('INTERNAL', { cause: erroEu })
+  if (eu) {
+    const [horario, comanda] = await Promise.all([
+      db.from('appointments').select('id').eq('tenant_id', tenantId).eq('client_id', clientId).eq('professional_id', eu).limit(1),
+      db.from('tickets').select('id').eq('tenant_id', tenantId).eq('client_id', clientId).eq('professional_id', eu).limit(1),
+    ])
+    if (horario.error) throw new AppError('INTERNAL', { cause: horario.error })
+    if (comanda.error) throw new AppError('INTERNAL', { cause: comanda.error })
+    if ((horario.data?.length ?? 0) > 0 || (comanda.data?.length ?? 0) > 0) return
+  }
+  throw new AppError('FORBIDDEN', {
+    message: 'Esta ficha fica com quem atende esta pessoa. Marque um horário com ela ou peça ao dono do negócio.',
+  })
+}
+
 export async function buscarCliente(db: Cliente, tenantId: string, id: string) {
   const { data, error } = await db
     .from('clients')

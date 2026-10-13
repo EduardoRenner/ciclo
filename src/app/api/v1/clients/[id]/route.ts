@@ -2,7 +2,7 @@ import { writeAudit } from '@/server/audit/write'
 import { exigirPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
-import { atualizarCliente, buscarCliente, EsquemaClienteParcial, removerCliente } from '@/server/services/clientes'
+import { atualizarCliente, buscarCliente, EsquemaClienteParcial, exigirClienteDoProfissional, removerCliente } from '@/server/services/clientes'
 import { lerCorpo } from '@/server/http/body'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
@@ -19,20 +19,22 @@ async function idValidado(ctx: unknown): Promise<string> {
 
 export const GET = rota(async (req, params) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:read')
+  const escopo = exigirPermissao(ctx.papel, 'client:read')
 
   const id = await idValidado(params)
   const db = await criarClienteDoUsuario()
+  if (escopo === 'own') await exigirClienteDoProfissional(db, ctx.tenantId, id)
   return buscarCliente(db, ctx.tenantId, id)
 })
 
 export const PATCH = rota(async (req, params, requestId) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:update')
+  const escopo = exigirPermissao(ctx.papel, 'client:update')
 
   const id = await idValidado(params)
   const entrada = await lerCorpo(req, EsquemaClienteParcial)
   const db = await criarClienteDoUsuario()
+  if (escopo === 'own') await exigirClienteDoProfissional(db, ctx.tenantId, id)
 
   const antes = await buscarCliente(db, ctx.tenantId, id)
 
@@ -61,7 +63,8 @@ export const PATCH = rota(async (req, params, requestId) => {
 
 export const DELETE = rota(async (req, params, requestId) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:delete')
+  const escopo = exigirPermissao(ctx.papel, 'client:delete')
+  if (escopo === 'own') throw new AppError('FORBIDDEN', { message: 'Só o dono ou a gerência remove um cliente.' })
 
   const id = await idValidado(params)
   const db = await criarClienteDoUsuario()
