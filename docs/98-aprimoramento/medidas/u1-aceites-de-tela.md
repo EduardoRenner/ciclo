@@ -13,4 +13,9 @@ porta **3200** = build da `main` antiga, como controle. Banco local, seed da APR
 | APR-022 fica na tela | idem | reprodução original: tela do dinossauro | URL segue `/admin/agenda/novo`, aviso "Guardado neste aparelho: {nome}, {dia}, às {hora}…", 0 `chrome-error`, 5 de 5 | ✓ |
 | APR-037/039 papéis | `papeis` e `papel-x-tela` | — | profissional vê 5 de 14 horários; 75 linhas papel × tela | ✓ |
 
+| APR-015 usar sessão | `u1-lote2` (aba Fidelidade da ficha) | — (o botão não existia) | `package_uses` 0 → 1; 0 "na comanda" na ficha | ✓ (texto ajustado para "aba Fidelidade" depois da medição) |
+| APR-023 convite | `u1-lote2`: dono convida; outro navegador, conta nova, sem negócio | reprodução original: 404 | sem sessão → `/entrar?proximo=/convite/…`; depois do login volta ao convite (não ao cadastro de negócio); "Barbearia Dom Estilo te chamou para a equipe"; aceitar → `/admin/hoje`; `memberships.role = reception` | ✓ |
+| APR-024 expediente | `u1-lote2` | — (só por URL) | 3 links "Expediente e folgas", 48 px, abre a tela do profissional | ✓ |
+| APR-026 recuperação | `u1-lote2`: link gerado pela API de admin, aberto em navegador novo, 3 rodadas | reprodução original: "link não é mais válido" | `/nova-senha` → troca → entra com a senha nova, 3 de 3; 2º uso → `/entrar?erro=link_invalido` | ✓ |
+
 Pendentes de tela: APR-002 (folga com rede caindo, parte `c05`) e APR-005 (409 com alternativas).

@@ -1,0 +1,113 @@
+import { chromium } from "playwright";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+// Aceites de tela: APR-015 (usar sessão), APR-023 (convite), APR-024 (link de expediente), APR-026 (recuperação em outro navegador).
+const B = "http://localhost:3201";
+const SENHA = process.env.SEED_SENHA ?? "DemoCiclo#2026";
+const CAPT = "C:/Users/Usuario/.claude/code/ciclo-aprimoramento/docs/98-aprimoramento/capturas/";
+const env = Object.fromEntries(readFileSync("C:/Users/Usuario/.claude/code/ciclo-onda-u1/.env.local", "utf8").split("\n").filter((l) => l.includes("=")).map((l) => [l.slice(0, l.indexOf("=")).trim(), l.slice(l.indexOf("=") + 1).trim()]));
+const psql = (sql) => execFileSync("docker", ["exec", "supabase_db_ciclo", "psql", "-U", "postgres", "-At", "-c", sql], { encoding: "utf8" }).trim();
+const CEL = { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, timezoneId: "America/Sao_Paulo", locale: "pt-BR" };
+const b = await chromium.launch({ channel: "chrome" });
+const res = {};
+
+async function entrar(ctx, email, senha = SENHA, proximo) {
+  const p = await ctx.newPage();
+  await p.goto(B + "/entrar" + (proximo ? `?proximo=${encodeURIComponent(proximo)}` : ""));
+  await p.fill('input[type="email"]', email);
+  await p.fill('input[type="password"]', senha);
+  await Promise.all([p.waitForURL((u) => !u.pathname.startsWith("/entrar"), { timeout: 60000 }), p.press('input[type="password"]', "Enter")]);
+  return p;
+}
+
+// ── APR-024
+{
+  const ctx = await b.newContext(CEL);
+  const p = await entrar(ctx, "dono-demo-dom-estilo@ciclo.app");
+  await p.goto(B + "/admin/config/profissionais", { waitUntil: "networkidle" });
+  const links = p.getByRole("link", { name: /^Expediente e folgas de/ });
+  const n = await links.count();
+  const caixa = await links.first().boundingBox();
+  await links.first().click();
+  await p.waitForURL(/\/admin\/config\/profissionais\/[0-9a-f-]{36}/, { timeout: 30000 });
+  res.apr024 = { links: n, alturaPx: caixa?.height, abriu: new URL(p.url()).pathname };
+  // ── APR-015 na mesma sessão
+  const [cliente, pacote, restam] = psql("select c.id, p.id, p.total_sessions-p.used_sessions from packages p join clients c on c.id=p.client_id join tenants t on t.id=p.tenant_id where t.slug='demo-dom-estilo' and p.used_sessions<p.total_sessions order by p.id limit 1").split("|");
+  const usosAntes = Number(psql(`select count(*) from package_uses where package_id='${pacote}'`));
+  await p.goto(B + `/admin/clientes/${cliente}`, { waitUntil: "networkidle" });
+  await p.getByRole("tab", { name: /Fidelidade/ }).click();
+  await p.getByRole("button", { name: "Usar 1 sessão" }).first().click();
+  const toast = await p.getByText(/Sessão descontada/).first().textContent({ timeout: 15000 }).catch(() => null);
+  await p.waitForTimeout(1000);
+  const usosDepois = Number(psql(`select count(*) from package_uses where package_id='${pacote}'`));
+  const textoFicha = await p.locator("main").innerText();
+  res.apr015 = { restavam: Number(restam), toast, usosAntes, usosDepois, comandaNaFicha: (textoFicha.match(/na comanda/gi) ?? []).length };
+  // convite criado pelo dono (APR-023)
+  const email = `convidada-${Date.now()}@ciclo.test`;
+  const convite = await p.evaluate(async (email) => {
+    const r = await fetch("/api/v1/memberships/invite", { method: "POST", headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() }, body: JSON.stringify({ email, role: "reception" }) });
+    return r.json();
+  }, email);
+  res.convite = { email, link: convite?.data?.link ?? JSON.stringify(convite).slice(0, 200) };
+  await ctx.close();
+}
+
+// ── APR-023: outro navegador, conta nova, sem negócio
+{
+  const caminho = new URL(res.convite.link).pathname;
+  const ctx = await b.newContext(CEL);
+  const p = await ctx.newPage();
+  const r = await p.goto(B + caminho);
+  const semSessao = new URL(p.url());
+  // conta nova pela própria rota de cadastro (confirmação desligada no local)
+  const senha = `Convite-${Date.now()}`;
+  await p.evaluate(async ({ email, senha }) => {
+    await fetch("/api/v1/auth/signup", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, password: senha, fullName: "Convidada Teste", phone: "11999990000" }) });
+  }, { email: res.convite.email, senha });
+  await ctx.clearCookies();
+  const p2 = await entrar(ctx, res.convite.email, senha, caminho);
+  const depoisDoLogin = new URL(p2.url()).pathname;
+  const titulo = await p2.locator("h1").first().innerText().catch(() => null);
+  await p2.screenshot({ path: CAPT + "apr023-convite-390.png" });
+  await p2.getByRole("button", { name: "Aceitar e entrar na equipe" }).click();
+  await p2.waitForURL(/\/admin\/hoje/, { timeout: 30000 }).catch(() => {});
+  const papel = psql(`select m.role from memberships m join auth.users u on u.id=m.user_id where u.email='${res.convite.email}'`);
+  res.apr023 = { statusSemSessao: r?.status(), redirecionouPara: semSessao.pathname + semSessao.search, depoisDoLogin, titulo, depoisDeAceitar: new URL(p2.url()).pathname, papelNoBanco: papel };
+  await ctx.close();
+}
+
+// ── APR-026: pede num lugar (API de admin = "o e-mail"), abre em navegador novo
+res.apr026 = [];
+for (let i = 0; i < 3; i++) {
+  const email = "recepcao-demo-studio-bella@ciclo.app";
+  const r = await fetch(`${env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/admin/generate_link`, { method: "POST", headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, "content-type": "application/json" }, body: JSON.stringify({ type: "recovery", email }) });
+  const j = await r.json();
+  const hash = j.hashed_token ?? j.properties?.hashed_token;
+  const ctx = await b.newContext(CEL);
+  const p = await ctx.newPage();
+  await p.goto(`${B}/auth/confirmar?token_hash=${hash}&type=recovery`);
+  const chegou = new URL(p.url()).pathname;
+  const nova = `${SENHA}-${i}`;
+  let entrou = false;
+  if (chegou === "/nova-senha") {
+    await p.fill('input[name="password"]', nova);
+    await p.fill('input[name="confirmacao"]', nova);
+    await p.getByRole("button", { name: "Salvar senha nova" }).click();
+    await p.waitForTimeout(3000);
+    const ctx2 = await b.newContext(CEL);
+    const p3 = await entrar(ctx2, email, nova).catch(() => null);
+    entrou = !!p3 && new URL(p3.url()).pathname.startsWith("/admin");
+    await ctx2.close();
+  }
+  // o mesmo link de novo
+  const ctx3 = await b.newContext(CEL);
+  const p4 = await ctx3.newPage();
+  await p4.goto(`${B}/auth/confirmar?token_hash=${hash}&type=recovery`);
+  res.apr026.push({ chegou, entrouComASenhaNova: entrou, segundoUso: new URL(p4.url()).pathname + new URL(p4.url()).search });
+  await ctx.close();
+  await ctx3.close();
+}
+// devolve a senha padrão do seed para a recepção do studio-bella
+await fetch(`${env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/admin/users/${psql("select id from auth.users where email='recepcao-demo-studio-bella@ciclo.app'")}`, { method: "PUT", headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, "content-type": "application/json" }, body: JSON.stringify({ password: SENHA }) });
+console.log(JSON.stringify(res, null, 1));
+await b.close();
