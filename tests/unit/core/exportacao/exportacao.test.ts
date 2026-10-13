@@ -86,7 +86,7 @@ describe('o pacote inteiro (CNV-009)', () => {
     }
     expect(caminhos).toContain('datapackage.json')
     const leia = arquivos.find((a) => a.caminho === 'LEIA-ME.txt')!.conteudo
-    expect(leia).toMatch(/clientes\.csv — Clientes: 4 linha/)
+    expect(leia).toMatch(/clientes\.csv \(Clientes\): 4 linha/)
     expect(leia).toMatch(/saúde/)
   })
 

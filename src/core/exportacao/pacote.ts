@@ -53,7 +53,7 @@ export function descritor(recursos: readonly Recurso[], criadoEm: string, negoci
 }
 
 export function leiaMe(negocio: string, criadoEm: string, contagens: Record<string, number>): string {
-  const linhas = RECURSOS.map((r) => `  - ${r.nome}.csv — ${r.titulo}: ${contagens[r.nome] ?? 0} linha(s). ${r.descricao}`)
+  const linhas = RECURSOS.map((r) => `  - ${r.nome}.csv (${r.titulo}): ${contagens[r.nome] ?? 0} linha(s). ${r.descricao}`)
   return [
     `Dados de ${negocio} no CICLO`,
     `Exportado em ${criadoEm} (horário UTC).`,
