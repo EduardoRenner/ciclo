@@ -93,11 +93,17 @@ export default function ListaProfissionais({
 
   convitesIniciais,
 
+  podeGerenciar,
+
 }: {
 
   profissionaisIniciais: Profissional[]
 
   convitesIniciais: Convite[]
+
+  /** APR-041: sem `professional:update`, nada de Cadastrar/Convidar/Desativar/editar — a API recusaria. */
+
+  podeGerenciar: boolean
 
 }) {
 
@@ -305,25 +311,29 @@ export default function ListaProfissionais({
 
         </div>
 
-        <div className="flex gap-2">
+        {podeGerenciar ? (
 
-          <Button variante="secondary" onClick={() => setEditando('novo')}>
+          <div className="flex gap-2">
 
-            <Plus aria-hidden className="size-4" />
+            <Button variante="secondary" onClick={() => setEditando('novo')}>
 
-            Cadastrar
+              <Plus aria-hidden className="size-4" />
 
-          </Button>
+              Cadastrar
 
-          <Button variante="secondary" onClick={() => setSheetConvite(true)}>
+            </Button>
 
-            <Link2 aria-hidden className="size-4" />
+            <Button variante="secondary" onClick={() => setSheetConvite(true)}>
 
-            Convidar
+              <Link2 aria-hidden className="size-4" />
 
-          </Button>
+              Convidar
 
-        </div>
+            </Button>
+
+          </div>
+
+        ) : null}
 
       </div>
 
@@ -339,17 +349,21 @@ export default function ListaProfissionais({
 
             titulo="Ninguém no time ainda"
 
-            descricao="Convide alguém ou cadastre um profissional que não usa o app."
+            descricao={podeGerenciar ? 'Convide alguém ou cadastre um profissional que não usa o app.' : 'Quem cadastra e convida o time é o dono do negócio.'}
 
             acao={
 
-              <Button onClick={() => setSheetConvite(true)}>
+              podeGerenciar ? (
 
-                <Link2 aria-hidden className="size-4" />
+                <Button onClick={() => setSheetConvite(true)}>
 
-                Convidar
+                  <Link2 aria-hidden className="size-4" />
 
-              </Button>
+                  Convidar
+
+                </Button>
+
+              ) : undefined
 
             }
 
@@ -367,7 +381,7 @@ export default function ListaProfissionais({
 
               <Card className="flex items-center justify-between gap-3">
 
-                <button type="button" onClick={() => setEditando(p)} className="flex min-h-12 min-w-0 flex-1 flex-col justify-center text-left">
+                <button type="button" onClick={() => podeGerenciar && setEditando(p)} disabled={!podeGerenciar} aria-disabled={!podeGerenciar} className="flex min-h-12 min-w-0 flex-1 flex-col justify-center text-left">
 
                   <span className="flex items-center gap-2">
 
@@ -397,7 +411,7 @@ export default function ListaProfissionais({
 
                   </Link>
 
-                  {p.active ? (
+                  {p.active && podeGerenciar ? (
 
                     <Button variante="secondary" onClick={() => desativar(p.id)} disabled={pendente}>
 
