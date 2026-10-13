@@ -5297,6 +5297,43 @@ export type Database = {
       }
     }
     Functions: {
+      aplicar_fechamento_de_comanda: {
+        Args: {
+          p_consumo: Json
+          p_itens: Json
+          p_tenant: string
+          p_ticket: string
+          p_ticket_campos: Json
+        }
+        Returns: {
+          appointment_id: string | null
+          client_id: string | null
+          closed_at: string | null
+          commission_cents: number
+          created_at: string
+          created_by: string | null
+          discount_cents: number
+          fee_bps: number
+          fee_cents: number
+          fixed_cost_cents: number
+          id: string
+          material_cost_cents: number
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
+          professional_id: string | null
+          profit_cents: number
+          status: Database["public"]["Enums"]["ticket_status"]
+          subtotal_cents: number
+          tenant_id: string
+          tip_cents: number
+          total_cents: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       apply_profession_pack: {
         Args: { p_profession_id: string; p_tenant: string }
         Returns: undefined

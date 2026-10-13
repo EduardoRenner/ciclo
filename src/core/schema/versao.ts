@@ -141,6 +141,7 @@ export const MIGRATIONS_DO_CODIGO: readonly string[] = [
   '0116_legal_membros_sem_segundo_fator',
   '0117_privilegio_minimo',
   '0121_quem_sumiu_uma_regra',
+  '0122_fechar_comanda_numa_transacao',
 ]
 
 /** Quantos arquivos existem em `supabase/migrations/`. */
