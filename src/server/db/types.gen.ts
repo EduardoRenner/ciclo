@@ -766,6 +766,8 @@ export type Database = {
           emergency_contact: string | null
           gender: string | null
           id: string
+          import_batch_id: string | null
+          import_row: number | null
           last_visit_at: string | null
           ltv_cents: number
           marketing_opt_in: boolean
@@ -797,6 +799,8 @@ export type Database = {
           emergency_contact?: string | null
           gender?: string | null
           id?: string
+          import_batch_id?: string | null
+          import_row?: number | null
           last_visit_at?: string | null
           ltv_cents?: number
           marketing_opt_in?: boolean
@@ -828,6 +832,8 @@ export type Database = {
           emergency_contact?: string | null
           gender?: string | null
           id?: string
+          import_batch_id?: string | null
+          import_row?: number | null
           last_visit_at?: string | null
           ltv_cents?: number
           marketing_opt_in?: boolean
@@ -849,6 +855,13 @@ export type Database = {
           whatsapp_opt_out?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "clients_import_batch_id_fkey"
+            columns: ["import_batch_id"]
+            isOneToOne: false
+            referencedRelation: "import_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clients_preferred_professional_id_fkey"
             columns: ["preferred_professional_id"]
@@ -1255,6 +1268,71 @@ export type Database = {
           tenant_id?: string | null
         }
         Relationships: []
+      }
+      import_batches: {
+        Row: {
+          completed_at: string | null
+          counts: Json
+          created_at: string
+          created_by: string | null
+          declaration_version: string | null
+          file_sha256: string
+          formato: string
+          id: string
+          nivel: string
+          origem: string
+          rows_expected: number
+          rows_written: number
+          status: string
+          tenant_id: string
+          undone_at: string | null
+          undone_by: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          counts: Json
+          created_at?: string
+          created_by?: string | null
+          declaration_version?: string | null
+          file_sha256: string
+          formato: string
+          id?: string
+          nivel: string
+          origem: string
+          rows_expected: number
+          rows_written?: number
+          status?: string
+          tenant_id: string
+          undone_at?: string | null
+          undone_by?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          counts?: Json
+          created_at?: string
+          created_by?: string | null
+          declaration_version?: string | null
+          file_sha256?: string
+          formato?: string
+          id?: string
+          nivel?: string
+          origem?: string
+          rows_expected?: number
+          rows_written?: number
+          status?: string
+          tenant_id?: string
+          undone_at?: string | null
+          undone_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_batches_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invites: {
         Row: {

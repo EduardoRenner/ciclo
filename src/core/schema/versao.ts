@@ -147,6 +147,7 @@ export const MIGRATIONS_DO_CODIGO: readonly string[] = [
   '0125_venda_de_pacote_no_caixa',
   '0126_venda_de_pacote_visivel_como_o_pacote',
   '0127_comanda_fechada_congelada',
+  '0128_lotes_de_importacao',
 ]
 
 /** Quantos arquivos existem em `supabase/migrations/`. */
