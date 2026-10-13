@@ -67,7 +67,7 @@ export async function listarParaRecuperar(
   tenantId: string,
   opcoes: { state?: EstadoCiclo; limit?: number } = {},
 ): Promise<ListaRecuperar> {
-  // APR-035: a mesma regra do alarme da Hoje (`v_quem_sumiu`, 0118) — apagada, opt-out, quem tem
+  // APR-035: a mesma regra do alarme da Hoje (`v_quem_sumiu`, 0121) — apagada, opt-out, quem tem
   // ciclo em dia e ciclo sem previsão saem NO BANCO, num lugar só.
   // APR-013: paginado — a lista de quem sumiu passava de mil linhas (cliente × serviço) e o total
   // do Recuperar saía menor, sem erro.
