@@ -11,6 +11,7 @@ import { decodificar } from '@/core/ingestao/codificacao'
 import { gradeDeTexto } from '@/core/ingestao/delimitado'
 import { farejarFormato, type Formato } from '@/core/ingestao/formato'
 import { gradeDeJson } from '@/core/ingestao/json'
+import { gradeDeVcard } from '@/core/ingestao/vcard'
 
 export type Aba = { nome: string; grade: string[][] }
 
@@ -30,7 +31,6 @@ const AINDA_NAO: Partial<Record<Formato, string>> = {
   rtf: 'Documento RTF: salve como .docx ou PDF e envie de novo.',
   pdf: 'PDF: copie a tabela e cole aqui, ou envie a planilha original.',
   imagem: 'Print ou foto: digite ou cole a lista aqui enquanto a leitura de imagem não chega.',
-  vcard: 'Contatos do celular: cole a lista aqui.',
   html: 'Página da internet: copie a tabela e cole aqui.',
   zip: 'Arquivo compactado: abra e envie a planilha ou o CSV que está dentro.',
 }
@@ -49,6 +49,11 @@ export async function lerParaGrades(bytes: Uint8Array, nome: string): Promise<Li
       const j = gradeDeJson(decodificar(bytes).texto)
       if (!j.ok) return { ok: false, mensagem: j.motivo === 'json_invalido' ? 'O arquivo parece JSON, mas está quebrado. Exporte de novo.' : 'O JSON não tem uma lista de pessoas.' }
       return { ok: true, formato: 'json', abas: [{ nome, grade: j.grade }], avisos: [] }
+    }
+    case 'vcard': {
+      const grade = gradeDeVcard(decodificar(bytes).texto)
+      if (grade.length <= 1) return { ok: false, mensagem: 'O arquivo de contatos está vazio.' }
+      return { ok: true, formato: 'vcard', abas: [{ nome, grade }], avisos: [] }
     }
     default:
       return { ok: false, mensagem: AINDA_NAO[f.formato] ?? 'Ainda não lemos este tipo de arquivo.' }
