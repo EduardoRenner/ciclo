@@ -250,8 +250,9 @@ export async function concentracaoDoMes(db: Cliente, tenantId: string, timezone:
  * daquele atendimento, não os de hoje.
  */
 export async function margemDosServicos(db: Cliente, tenantId: string, timezone: string, ate: string): Promise<MargemDoServico[]> {
-  const fim = Temporal.PlainDate.from(ate).add({ days: 1 })
-  const inicio = fim.subtract({ days: 90 })
+  const fimDia = Temporal.PlainDate.from(ate).add({ days: 1 })
+  const inicio = fimDia.subtract({ days: 90 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
+  const fim = fimDia.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
 
   const tickets = await buscarTudoPaginado(() =>
     db
@@ -259,21 +260,25 @@ export async function margemDosServicos(db: Cliente, tenantId: string, timezone:
       .select('id, discount_cents, fee_cents')
       .eq('tenant_id', tenantId)
       .in('status', ['closed', 'paid'])
-      .gte('closed_at', inicio.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString())
-      .lt('closed_at', fim.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString())
+      .gte('closed_at', inicio)
+      .lt('closed_at', fim)
       .order('id'),
   )
   if (tickets.length === 0) return []
 
+  /*
+    APR-010: join com o MESMO recorte, como em `concentracaoDoMes`, e não `.in('ticket_id', ids)`.
+    Medido: com ~220 comandas em 90 dias a URL passava do limite do gateway (414) e o Mês e os
+    Serviços abriam em "Não consegui carregar esta tela" — só no salão movimentado.
+  */
   const itens = await buscarTudoPaginado(() =>
     db
       .from('ticket_items')
-      .select('ticket_id, service_id, total_cents, cost_cents, commission_cents')
+      .select('ticket_id, service_id, total_cents, cost_cents, commission_cents, tickets!inner(status, closed_at)')
       .eq('tenant_id', tenantId)
-      .in(
-        'ticket_id',
-        tickets.map((t) => t.id),
-      )
+      .in('tickets.status', ['closed', 'paid'])
+      .gte('tickets.closed_at', inicio)
+      .lt('tickets.closed_at', fim)
       .order('id'),
   )
 

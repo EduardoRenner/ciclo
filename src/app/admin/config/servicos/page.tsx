@@ -30,14 +30,24 @@ export default async function PaginaServicos() {
 
   const [servicos, margens] = await Promise.all([
     listarServicos(db, ctx.tenantId, true),
-    podeVerLucro ? margemDosServicos(db, ctx.tenantId, ctx.tenant.timezone, hoje) : [],
+    /*
+     * APR-010: a margem é coluna extra. Se ela falhar, a lista de serviços abre sem ela e com aviso
+     * — antes, um 414 desta consulta levava a tela inteira para "Não consegui carregar".
+     */
+    podeVerLucro
+      ? margemDosServicos(db, ctx.tenantId, ctx.tenant.timezone, hoje).catch((erro: unknown) => {
+          console.warn(JSON.stringify({ level: 'warn', event: 'margem_dos_servicos_falhou', tenantId: ctx.tenantId, tela: 'servicos' }), erro)
+          return null
+        })
+      : [],
   ])
 
   return (
     <>
       <PageHeader titulo={comMaiuscula(plural(ctx.tenant.vocabulario.servico))} descricao="O que você oferece, quanto dura e quanto custa. Arraste para mudar a ordem que aparece na sua página." />
 
-      <ListaServicos iniciais={servicos} margens={margens} podeVerLucro={podeVerLucro} />
+      {margens === null && <p className="mb-4 text-secundario text-txt-2">Não consegui conferir a margem dos serviços agora. O resto está certo; abra de novo daqui a pouco.</p>}
+      <ListaServicos iniciais={servicos} margens={margens ?? []} podeVerLucro={podeVerLucro} />
     </>
   )
 }
