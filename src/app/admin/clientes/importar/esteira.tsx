@@ -211,7 +211,9 @@ export default function EsteiraDeImportacao({ servicos, timezone }: { servicos: 
         : etapa === 'previa' && resultado
           ? `Encontrei ${resultado.contagem.pessoas} ${plural(resultado.contagem.pessoas, 'pessoa', 'pessoas')}. Confira antes de importar.`
           : etapa === 'pronto' && fim
-            ? `${fim.gravadas} ${plural(fim.gravadas, 'ficha criada', 'fichas criadas')}.`
+            ? fim.jaImportado
+              ? 'Este arquivo já tinha sido importado. Nada foi gravado em dobro.'
+              : `${fim.gravadas} ${plural(fim.gravadas, 'ficha criada', 'fichas criadas')}.`
             : ''
 
   return (
@@ -279,7 +281,7 @@ export default function EsteiraDeImportacao({ servicos, timezone }: { servicos: 
             </p>
             <ul className="mt-2 flex flex-col gap-1 text-secundario text-txt-2">
               <li>{resultado.contagem.ouro} {plural(resultado.contagem.ouro, 'pronta', 'prontas')} para entrar</li>
-              {resultado.contagem.comAviso > 0 ? <li className="text-warn">{resultado.contagem.comAviso} entram com aviso (veja abaixo)</li> : null}
+              {resultado.contagem.comAviso > 0 ? <li className="text-warn">{resultado.contagem.comAviso} {plural(resultado.contagem.comAviso, 'entra', 'entram')} com aviso (veja abaixo)</li> : null}
               {resultado.contagem.quarentena > 0 ? <li className="text-bad">{resultado.contagem.quarentena} {plural(resultado.contagem.quarentena, 'linha ficou', 'linhas ficaram')} de fora para corrigir</li> : null}
               {resultado.contagem.ignoradas > 0 ? <li>{resultado.contagem.ignoradas} {plural(resultado.contagem.ignoradas, 'linha ignorada', 'linhas ignoradas')} (título, total, linha em branco)</li> : null}
             </ul>
@@ -359,7 +361,7 @@ export default function EsteiraDeImportacao({ servicos, timezone }: { servicos: 
                     {previa.sumidos} {plural(previa.sumidos, 'pessoa já passou', 'pessoas já passaram')} da hora de voltar: {dinheiro.format(previa.valorCents / 100)} para recuperar
                   </p>
                   <p className="mt-1 text-secundario text-txt-2">
-                    A mesma conta da tela Hoje, com o preço de {servico?.nome}. {previa.semData > 0 ? `${previa.semData} vieram sem a última visita e ficam fora da conta.` : ''}
+                    A mesma conta da tela Hoje, com o preço de {servico?.nome}. {previa.semData > 0 ? `${previa.semData} ${plural(previa.semData, 'veio sem a última visita e fica', 'vieram sem a última visita e ficam')} fora da conta.` : ''}
                   </p>
                   <p className="mt-3 text-label font-semibold text-txt-2">Chame primeiro:</p>
                   <ol className="mt-1 list-inside list-decimal text-secundario text-txt">
@@ -453,7 +455,7 @@ export default function EsteiraDeImportacao({ servicos, timezone }: { servicos: 
             ) : (
               <p className="text-corpo font-semibold">
                 {fim.gravadas} {plural(fim.gravadas, 'ficha criada', 'fichas criadas')}
-                {fim.jaEstavam > 0 ? `, ${fim.jaEstavam} já estavam de antes` : ''}.
+                {fim.jaEstavam > 0 ? `, ${fim.jaEstavam} ${plural(fim.jaEstavam, 'já estava', 'já estavam')} de antes` : ''}.
               </p>
             )}
             {fim.puladas.length > 0 ? (
@@ -492,7 +494,7 @@ export default function EsteiraDeImportacao({ servicos, timezone }: { servicos: 
               Desfeito: {desfeito.removidas} {plural(desfeito.removidas, 'ficha saiu', 'fichas saíram')}.
               {desfeito.mantidas > 0 ? ` ${desfeito.mantidas} ${plural(desfeito.mantidas, 'ficou porque já tem', 'ficaram porque já têm')} agendamento, comanda ou anotação.` : ''}
             </p>
-          ) : !fim.jaImportado && fim.gravadas > 0 ? (
+          ) : fim.gravadas > 0 || fim.jaEstavam > 0 ? (
             <Button variante="ghost" largura="cheia" carregando={desfazendo} onClick={desfazer}>
               Desfazer esta importação
             </Button>

@@ -50,8 +50,12 @@
 
 D13 (data futura) ficou sem efeito: o leitor antigo não tem mais chamador e a esteira já barra data no futuro.
 
-**Ondas A–E concluídas.** Pendente: prova LOGADA no navegador da tela nova (o classificador barrou
-criar sessão de teste no navegador; precisa do Eduardo).
+**Ondas A–E concluídas e provadas no navegador** (13/10, `C:/temp/ciclo-medicao/cnv023-importar.mjs`,
+dona do seed, 390 px, dev da branch na 3023): CSV com linha em branco no meio, 5 pessoas, "4 já passaram
+da hora: R$ 35,35", 5 fichas criadas, 4 no Motor, desfazer tirou as 5; print em modo escuro lido em
+1,9 s com as 3 pessoas e o aviso de conferir; arquivos do OCR 200 do próprio domínio; sem rolagem
+lateral, 0 erros no console. A prova achou 3 defeitos de tela (desfazer ausente quando o arquivo já
+tinha entrado, anúncio do leitor de tela errado nesse caso, concordância de plural), corrigidos.
 
 ## Funil da importação (CNV-024)
 
