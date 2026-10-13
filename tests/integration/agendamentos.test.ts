@@ -352,6 +352,29 @@ describe('máquina de estados via API', () => {
   )
 
   it(
+    'concluir abre a comanda COM o serviço e o preço combinados, mesmo se o preço mudou depois (APR-006)',
+    async () => {
+      const ag = await novoAgendamento('16:30')
+      const combinado = (await svc.from('appointments').select('price_cents').eq('id', ag.id).single()).data!.price_cents
+      const precoAntes = (await svc.from('services').select('price_cents').eq('id', servicoId).single()).data!.price_cents
+      // O dono sobe o preço entre marcar e atender: a cliente paga o que foi combinado.
+      await svc.from('services').update({ price_cents: precoAntes + 500 }).eq('id', servicoId)
+      try {
+        await confirmarAgendamento(svc, tenantId, ag.id)
+        await marcarChegada(svc, tenantId, ag.id)
+        const { ticket } = await concluirAgendamento(svc, tenantId, ag.id)
+        await concluirAgendamento(svc, tenantId, ag.id).catch(() => null)
+
+        const itens = await svc.from('ticket_items').select('service_id, qty, unit_price_cents').eq('ticket_id', ticket.id)
+        expect(itens.data).toEqual([{ service_id: servicoId, qty: 1, unit_price_cents: combinado }])
+      } finally {
+        await svc.from('services').update({ price_cents: precoAntes }).eq('id', servicoId)
+      }
+    },
+    30_000,
+  )
+
+  it(
     'transição ilegal (pending → arrived, pulando confirmed) devolve 422 INVALID_TRANSITION',
     async () => {
       const ag = await novoAgendamento('13:00')

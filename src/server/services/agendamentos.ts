@@ -8,6 +8,7 @@ import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from 
 import { transicaoValida, type EstadoAgendamento } from '@/core/scheduling/state'
 import { weekdayPg } from '@/core/tempo/dia'
 import { recomputarCicloDeUmAtendimento } from '@/server/services/ciclo'
+import { adicionarItemComanda } from '@/server/services/comanda'
 import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
 import { pontuarAtendimentoConcluido } from '@/server/services/fidelidade'
 import { calcularScoreDeRisco } from '@/server/services/risco'
@@ -767,6 +768,25 @@ export async function concluirAgendamento(db: Cliente, tenantId: string, id: str
   }
   if (erroTicket) throw new AppError('INTERNAL', { cause: erroTicket })
   if (!ticket) throw new AppError('INTERNAL')
+
+  /*
+   * A comanda nasce COM o serviço e o preço combinados no agendamento (APR-006, achado C-01). Antes
+   * nascia vazia: a tela pré-escolhia o 1º serviço do catálogo e cobrava o preço de HOJE, não o
+   * congelado em `appointments.price_cents` — "Corte + barba R$ 70" virava "Barba R$ 35".
+   * Só na comanda nova: a que já existia (reenvio, outra aba) não ganha item duplicado. Falhar
+   * aqui não desfaz a conclusão; a comanda fica vazia como era antes, e o erro vai para o log.
+   */
+  if (agendamento.service_id) {
+    await adicionarItemComanda(db, tenantId, ticket.id, {
+      serviceId: agendamento.service_id,
+      professionalId: agendamento.professional_id,
+      qty: 1,
+      unitPriceCents: agendamento.price_cents,
+      discountCents: 0,
+    }).catch((erro: unknown) => {
+      console.error(JSON.stringify({ level: 'error', event: 'item_da_comanda_nova_falhou', appointmentId: id }), erro)
+    })
+  }
 
   return { appointment: agendamento, ticket }
 }
