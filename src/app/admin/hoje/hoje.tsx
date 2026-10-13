@@ -37,9 +37,10 @@ import type { LinhaHoje, ResumoHoje } from '@/server/services/resumo-hoje'
  * "Nesse dia da semana" é o mesmo fato, sem esse risco.
  */
 function textoDaComparacao(percentual: number): string {
-  if (percentual === 0) return 'Igual ao costume nesse dia da semana'
+  // APR-034: a régua é o costume ATÉ ESTA HORA, não o dia inteiro — a frase diz isso.
+  if (percentual === 0) return 'Igual ao costume até esta hora nesse dia da semana'
   const abs = Math.abs(percentual)
-  return `${abs}% ${percentual > 0 ? 'acima' : 'abaixo'} do costume nesse dia da semana`
+  return `${abs}% ${percentual > 0 ? 'acima' : 'abaixo'} do costume até esta hora nesse dia da semana`
 }
 
 /**

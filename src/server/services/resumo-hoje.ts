@@ -1,6 +1,6 @@
 import { Temporal } from '@js-temporal/polyfill'
 
-import { compararComCostume, type ComparacaoComCostume } from '@/core/ciclo/comparacao-com-costume'
+import { compararComCostumeAteAgora, type ComparacaoComCostume, type DiaPassado } from '@/core/ciclo/comparacao-com-costume'
 import { listarAlertasDeEstoque, type AlertaEstoque } from '@/server/services/alertas-estoque'
 import { AppError } from '@/server/http/errors'
 
@@ -144,14 +144,17 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
    * mesmo dia da semana de hoje ("domingo compara com domingos") e soma cada dia numa entrada só.
    * O resultado é a amostra que `compararComCostume` decide se é grande o bastante pra mostrar.
    */
-  const somaPorDia = new Map<string, number>()
+  // APR-034: cada dia guarda os atendimentos com o minuto local de início, para a comparação contar
+  // só o que já tinha acontecido até o mesmo minuto de agora (`compararComCostumeAteAgora`).
+  const porDia = new Map<string, DiaPassado['atendimentos'][number][]>()
   for (const a of diasPassados ?? []) {
-    const dataLocal = Temporal.Instant.from(a.starts_at).toZonedDateTimeISO(timezone).toPlainDate()
-    if (dataLocal.dayOfWeek !== hoje.dayOfWeek) continue
-    const chave = dataLocal.toString()
-    somaPorDia.set(chave, (somaPorDia.get(chave) ?? 0) + a.price_cents)
+    const local = Temporal.Instant.from(a.starts_at).toZonedDateTimeISO(timezone)
+    if (local.dayOfWeek !== hoje.dayOfWeek) continue
+    const chave = local.toPlainDate().toString()
+    porDia.set(chave, [...(porDia.get(chave) ?? []), { minutoDoDia: local.hour * 60 + local.minute, cents: a.price_cents }])
   }
-  const receitasDeMesmoDiaDaSemana = [...somaPorDia.values()]
+  const diasDeMesmoDiaDaSemana: DiaPassado[] = [...porDia.values()].map((atendimentos) => ({ atendimentos }))
+  const agoraLocal = agora.toZonedDateTimeISO(timezone)
 
   const aindaPorVir = linhas.filter(
     (a) =>
@@ -172,6 +175,6 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
     stockAlerts,
     indicacoesEsteMes: indicacoesEsteMes ?? 0,
     totalAgendamentosHoje: linhas.length,
-    comparacaoComCostume: compararComCostume(receitasDeMesmoDiaDaSemana, revenueTodayCents),
+    comparacaoComCostume: compararComCostumeAteAgora(diasDeMesmoDiaDaSemana, revenueTodayCents, agoraLocal.hour * 60 + agoraLocal.minute),
   }
 }
