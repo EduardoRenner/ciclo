@@ -8,6 +8,8 @@ import { useState } from 'react'
 
 import Sheet from '@/components/ui/sheet'
 
+import { ATALHOS_DO_MENU } from '@/core/navegacao/atalhos-do-menu'
+
 import { EVENTO_ABRIR_ASSISTENTE } from './assistente-flutuante'
 import { paiDaRota } from './navegacao'
 import wordmark from '../../../public/marca/ciclo-wordmark-aqua.png'
@@ -20,15 +22,15 @@ import wordmarkClaro from '../../../public/marca/ciclo-wordmark-aqua-claro.png'
  * de fora dela e é usado com frequência — o resto (fidelidade, notificações, segurança...)
  * continua em "Configurações", o último item da lista.
  */
-const ATALHOS = [
-  { href: '/admin/caixa', titulo: 'Caixa', icone: Wallet },
-  { href: '/admin/config/servicos', titulo: 'Serviços', icone: Scissors },
-  { href: '/admin/config/profissionais', titulo: 'Time', icone: Users },
-  { href: '/admin/campanhas', titulo: 'Campanhas', icone: Megaphone },
-  { href: '/admin/estoque', titulo: 'Estoque', icone: Package },
-  { href: '/admin/series', titulo: 'Recorrência', icone: CalendarClock },
-  { href: '/admin/config', titulo: 'Configurações', icone: Settings },
-] as const
+const ICONES: Record<string, typeof Wallet> = {
+  '/admin/caixa': Wallet,
+  '/admin/config/servicos': Scissors,
+  '/admin/config/profissionais': Users,
+  '/admin/campanhas': Megaphone,
+  '/admin/estoque': Package,
+  '/admin/series': CalendarClock,
+  '/admin/config': Settings,
+}
 
 /**
  * Barra do topo. Deixou de ser um enfeite de marca e virou **navegação**: na
@@ -62,7 +64,12 @@ function BotaoPerguntar({ className = '' }: { className?: string }) {
   )
 }
 
-export default function Topbar() {
+/**
+ * `atalhos`: os `href` que o layout liberou para este negócio e este papel (APR-103,
+ * `core/navegacao/atalhos-do-menu.ts`). Sem ele (sem contexto, ou a consulta de módulos falhou), a
+ * lista inteira, como antes.
+ */
+export default function Topbar({ atalhos }: { atalhos?: string[] }) {
   const pathname = usePathname()
   const pai = paiDaRota(pathname)
   const [menuAberto, setMenuAberto] = useState(false)
@@ -129,17 +136,20 @@ export default function Topbar() {
 
       <Sheet aberto={menuAberto} aoFechar={setMenuAberto} titulo="Menu">
         <nav className="flex flex-col gap-1 pb-2">
-          {ATALHOS.map((a) => (
+          {ATALHOS_DO_MENU.filter((a) => !atalhos || atalhos.includes(a.href)).map((a) => {
+            const Icone = ICONES[a.href] ?? Settings
+            return (
             <Link
               key={a.href}
               href={a.href}
               onClick={() => setMenuAberto(false)}
               className="flex h-12 items-center gap-3 rounded-[var(--radius-sm)] px-2 text-corpo font-semibold text-txt transition hover:bg-surface-2 active:scale-[.98]"
             >
-              <a.icone aria-hidden className="size-5 text-txt-3" />
+              <Icone aria-hidden className="size-5 text-txt-3" />
               {a.titulo}
             </Link>
-          ))}
+            )
+          })}
         </nav>
       </Sheet>
     </header>

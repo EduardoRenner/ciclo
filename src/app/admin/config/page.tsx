@@ -9,7 +9,8 @@ import SectionHeader from '@/components/ui/section-header'
 import { NOME_DO_PLANO, type PlanoTier } from '@/core/billing/planos'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
-import { listarModulos } from '@/server/services/modulos'
+import { listarModulos, moduloVisivel } from '@/server/services/modulos'
+import type { ModuloKey } from '@/core/billing/planos'
 
 import { rotuloDoPapel } from '@/core/auth/rotulo-do-papel'
 import SeletorDeTema from '@/components/shell/seletor-de-tema'
@@ -121,13 +122,8 @@ export default async function PaginaConfig() {
   const db = await criarClienteDoUsuario()
   const modulos = await listarModulos(db, ctx.tenantId)
 
-  const visivel = (chave?: string) => {
-    if (!chave) return true
-    const m = modulos.find((x) => x.key === chave)
-    // Ausente da lista = fora do eixo (listarModulos já filtrou). Não faz sentido, então some.
-    if (!m) return false
-    return m.veredito.estado !== 'desligado_pelo_dono'
-  }
+  // A mesma regra do menu do topo (APR-103): `moduloVisivel`, em `server/services/modulos.ts`.
+  const visivel = (chave?: string) => !chave || moduloVisivel(modulos, chave as ModuloKey)
 
   /** O degrau que libera este item, quando o plano de hoje não libera. */
   const degrauQueFalta = (chave?: string): PlanoTier | null => {

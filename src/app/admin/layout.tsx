@@ -4,7 +4,11 @@ import { redirect } from 'next/navigation'
 import { faixaDaConta } from '@/core/billing/faixa-da-conta'
 import { lerCortesia, situacaoEmVigor } from '@/core/billing/prelancamento'
 import { PADRAO } from '@/core/text/vocabulario'
+import { atalhosVisiveis } from '@/core/navegacao/atalhos-do-menu'
+import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
+import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { listarModulos, moduloVisivel } from '@/server/services/modulos'
 import { AppError } from '@/server/http/errors'
 import { normalizarPlano } from '@/server/services/planos'
 import ToastProvider from '@/components/ui/toast'
@@ -109,6 +113,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   // docs/87 §3.1: a data de fim da cortesia aparece em toda tela. Sem ida ao banco: `plan` e a chave
   // `settings.cortesia` vêm na consulta que já valida o vínculo (`server/auth/tenant.ts`).
+  /*
+    APR-103: o menu do topo obedece aos módulos e ao papel, com a regra do hub de Configurações. Uma
+    consulta só, na carga da página (o layout persiste entre as navegações). Se ela falhar, o menu
+    mantém a lista inteira de antes: atalho a mais é menos grave que a casca do painel cair.
+  */
+  const modulos = ctx ? await listarModulos(await criarClienteDoUsuario(), ctx.tenantId).catch(() => null) : null
+  const atalhos =
+    ctx && modulos
+      ? atalhosVisiveis({ moduloVisivel: (m) => moduloVisivel(modulos, m), alcanca: (p) => avaliarPermissao(ctx.papel, p) !== null }).map((a) => a.href)
+      : undefined
   const faixa = ctx
     ? faixaDaConta(situacaoEmVigor(normalizarPlano(ctx.tenant.plan), lerCortesia({ cortesia: ctx.tenant.cortesia }), new Date()), new Date())
     : null
@@ -149,7 +163,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         `auto` do outro lado e o conteúdo grudava na coluna, com 649px vazios à direita.
       */}
       <div className="mx-auto min-h-dvh max-w-[560px] sm:border-x sm:border-line">
-        <Topbar />
+        <Topbar atalhos={atalhos} />
         <IndicadorDeConexao pacote={ctx?.tenant.pacote ?? 'base'} />
         {faixa ? <FaixaDaConta faixa={faixa} /> : null}
         {/*
