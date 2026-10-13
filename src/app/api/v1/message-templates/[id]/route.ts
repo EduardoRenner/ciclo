@@ -19,7 +19,8 @@ async function idValidado(ctx: unknown): Promise<string> {
 
 export const PATCH = rota(async (req, params, requestId) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:update')
+  const escopo = exigirPermissao(ctx.papel, 'client:update')
+  if (escopo === 'own') throw new AppError('FORBIDDEN', { message: 'Campanha e mensagem automática são do negócio: quem mexe é o dono ou a gerência.' })
 
   const id = await idValidado(params)
   const entrada = await lerCorpo(req, EsquemaModeloParcial)
@@ -49,7 +50,8 @@ export const PATCH = rota(async (req, params, requestId) => {
 
 export const DELETE = rota(async (req, params, requestId) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:update')
+  const escopo = exigirPermissao(ctx.papel, 'client:update')
+  if (escopo === 'own') throw new AppError('FORBIDDEN', { message: 'Campanha e mensagem automática são do negócio: quem mexe é o dono ou a gerência.' })
 
   const id = await idValidado(params)
   const db = await criarClienteDoUsuario()

@@ -100,11 +100,11 @@ describe('linkWhatsAppDoProximo', () => {
   }
 
   it('sem telefone cadastrado, não inventa contato', () => {
-    expect(linkWhatsAppDoProximo(agendamento({ telefone: null }))).toBeNull()
+    expect(linkWhatsAppDoProximo(agendamento({ telefone: null }), 'America/Sao_Paulo')).toBeNull()
   })
 
   it('com telefone, monta o link com nome e hora prontos', () => {
-    const link = linkWhatsAppDoProximo(agendamento({ telefone: '+5511999998888', nome: 'Ana Paula' }))
+    const link = linkWhatsAppDoProximo(agendamento({ telefone: '+5511999998888', nome: 'Ana Paula' }), 'America/Sao_Paulo')
     expect(link).toContain('https://wa.me/5511999998888')
     // Só o primeiro nome, mesma regra de `aplicarVariaveis` — "Fala, Ana!" soa como gente.
     expect(decodeURIComponent(link!)).toContain('Oi Ana!')

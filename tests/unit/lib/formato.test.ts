@@ -61,11 +61,12 @@ describe('horaLocal', () => {
     expect(horaLocal(instante, 'Asia/Tokyo')).toBe('08:30')
   })
 
-  it('sem timezone, cai no fuso do runtime — o caso das telas internas do painel', () => {
-    // As telas internas (agenda/hoje) nunca passam timezone: quem olha já está no fuso do
-    // salão, e a conta certa é aceitar o padrão do `Intl` em vez de redescobrir o fuso local.
+  it('o painel não depende do fuso do runtime: o servidor UTC desenha a hora do salão', () => {
+    // APR-019. A premissa antiga ("as telas internas não passam fuso, quem olha já está no fuso do
+    // salão") esquecia que o HTML sai do SERVIDOR, que na Vercel é UTC: a Agenda mostrava 12:00
+    // para 09:00 até a hidratação. Com o fuso do negócio, o resultado é o mesmo em qualquer runtime.
     const instante = '2026-06-15T12:00:00Z'
-    expect(horaLocal(instante)).toBe(horaLocal(instante, Intl.DateTimeFormat().resolvedOptions().timeZone))
+    expect(horaLocal(instante, 'America/Sao_Paulo')).toBe('09:00')
   })
 
   it('meia-noite tem dois dígitos, nunca a hora nua', () => {

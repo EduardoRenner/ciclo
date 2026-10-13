@@ -38,6 +38,7 @@ const SEGMENTOS_PUBLICOS_CONHECIDOS = new Set([
   '[slug]', // a página de UM negócio — o diferencial em si
   'avaliar', // token de avaliação de um atendimento
   'confirmar', // token de confirmação de um agendamento
+  'convite', // token de UM convite de equipe (APR-023): mostra o negócio que chamou, a quem tem o link
   'lista-espera', // token da fila de espera
   'orcamento', // token de um orçamento
   'precos', // institucional do CICLO

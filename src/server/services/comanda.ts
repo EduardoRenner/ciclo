@@ -5,6 +5,7 @@ import { calcularComissaoItem, calcularSobraDaComanda, calcularTotalItem, calcul
 import { custoDoServico } from '@/core/comanda/custo-do-servico'
 import { custoFixoDoAtendimento, lerCustoFixo } from '@/core/comanda/custo-fixo'
 import { calcularTaxaDaMaquininha, FORMAS_DE_PAGAMENTO, lerTaxasDePagamento, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
+import { withTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
 import { congelarMesesFechados } from '@/server/services/caixa'
 import { baixarEstoqueDaComanda, estornarBaixaDaComanda } from '@/server/services/estoque'
@@ -205,25 +206,56 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
     .single()
   if (erroInsert) throw new AppError('INTERNAL', { cause: erroInsert })
 
-  await recalcularSubtotal(db, tenantId, ticketId)
+  try {
+    await recalcularSubtotal(db, tenantId, ticketId)
+  } catch (erro) {
+    // Fechou no meio do caminho: o item que ESTA chamada acabou de inserir sai, e a comanda
+    // fechada fica exatamente como foi fechada.
+    await db.from('ticket_items').delete().eq('tenant_id', tenantId).eq('id', item.id)
+    throw erro
+  }
   return item
 }
 
 export async function removerItemComanda(db: Cliente, tenantId: string, ticketId: string, itemId: string): Promise<void> {
   await buscarTicketAberto(db, tenantId, ticketId)
 
-  const { error } = await db.from('ticket_items').delete().eq('tenant_id', tenantId).eq('ticket_id', ticketId).eq('id', itemId)
+  const { data: removido, error } = await db.from('ticket_items').delete().eq('tenant_id', tenantId).eq('ticket_id', ticketId).eq('id', itemId).select('*')
   if (error) throw new AppError('INTERNAL', { cause: error })
 
-  await recalcularSubtotal(db, tenantId, ticketId)
+  try {
+    await recalcularSubtotal(db, tenantId, ticketId)
+  } catch (erro) {
+    // Fechou no meio do caminho: o item volta, e a comanda fechada fica como foi fechada.
+    if (removido?.length) await db.from('ticket_items').insert(removido.map((linha) => ({ ...linha, tenant_id: tenantId })))
+    throw erro
+  }
+}
+
+/**
+ * APR-008 (achado C-14): a recepção fecha num aparelho e o profissional lança item ou desconto no
+ * outro. A checagem de `status` era feita antes e a escrita gravava por `id` só: o item entrava
+ * em comanda FECHADA e o `total_cents` mudava depois de taxa e comissão congeladas. Agora toda
+ * escrita de total exige `status = 'open'` NA PRÓPRIA escrita e conta as linhas: zero linha é
+ * comanda fechada no meio do caminho, não sucesso (lição "update de zero linhas não é erro").
+ */
+function comandaFechadaNoCaminho(): AppError {
+  return new AppError('CONFLICT', { message: 'Esta comanda já foi fechada. Atualize a tela.' })
 }
 
 async function recalcularSubtotal(db: Cliente, tenantId: string, ticketId: string): Promise<void> {
   const { ticket, items } = await buscarComanda(db, tenantId, ticketId)
   const { subtotalCents, totalCents } = calcularTotaisComanda({ items: items.map((i) => ({ totalCents: i.total_cents })), discountCents: ticket.discount_cents, tipCents: ticket.tip_cents })
 
-  const { error } = await db.from('tickets').update({ subtotal_cents: subtotalCents, total_cents: totalCents }).eq('tenant_id', tenantId).eq('id', ticketId)
+  const { data, error } = await db
+    .from('tickets')
+    .update({ subtotal_cents: subtotalCents, total_cents: totalCents })
+    .eq('tenant_id', tenantId)
+    .eq('id', ticketId)
+    .eq('status', 'open')
+    .select('id')
   if (error) throw new AppError('INTERNAL', { cause: error })
+  if (!data?.length) throw comandaFechadaNoCaminho()
 }
 
 export async function atualizarDescontoEGorjeta(db: Cliente, tenantId: string, ticketId: string, entrada: EntradaDescontoGorjeta) {
@@ -233,8 +265,9 @@ export async function atualizarDescontoEGorjeta(db: Cliente, tenantId: string, t
   if (entrada.discountCents !== undefined) atualizacao.discount_cents = entrada.discountCents
   if (entrada.tipCents !== undefined) atualizacao.tip_cents = entrada.tipCents
 
-  const { error } = await db.from('tickets').update(atualizacao).eq('tenant_id', tenantId).eq('id', ticketId)
+  const { data, error } = await db.from('tickets').update(atualizacao).eq('tenant_id', tenantId).eq('id', ticketId).eq('status', 'open').select('id')
   if (error) throw new AppError('INTERNAL', { cause: error })
+  if (!data?.length) throw comandaFechadaNoCaminho()
 
   await recalcularSubtotal(db, tenantId, ticketId)
 }
@@ -265,6 +298,24 @@ async function resolverCommissionBps(db: Cliente, tenantId: string, item: { serv
 
   const { data: profissional } = await db.from('professionals').select('commission_bps').eq('tenant_id', tenantId).eq('id', item.professional_id).maybeSingle()
   return profissional?.commission_bps ?? 0
+}
+
+/**
+ * APR-038: `comanda:own` é alcance, não verbo (`rbac.ts`). Com `restrict_professional_view`
+ * desligado (o padrão), a RLS deixa o profissional enxergar e atualizar a comanda do colega — quem
+ * segura "só a própria" é esta checagem, com o mesmo `my_professional_id` que a RLS usa.
+ */
+export async function exigirComandaPropria(db: Cliente, tenantId: string, ticketId: string): Promise<void> {
+  const [{ data: eu, error: erroEu }, { data: ticket, error: erroTicket }] = await Promise.all([
+    db.rpc('my_professional_id', { t: tenantId }),
+    db.from('tickets').select('professional_id').eq('tenant_id', tenantId).eq('id', ticketId).maybeSingle(),
+  ])
+  if (erroEu) throw new AppError('INTERNAL', { cause: erroEu })
+  if (erroTicket) throw new AppError('INTERNAL', { cause: erroTicket })
+  if (!ticket) throw new AppError('NOT_FOUND', { message: 'Essa comanda não existe mais.' })
+  if (!eu || ticket.professional_id !== eu) {
+    throw new AppError('FORBIDDEN', { message: 'Só quem atendeu fecha esta comanda. Peça para a recepção ou para o dono.' })
+  }
 }
 
 /**
@@ -363,7 +414,12 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
 
   // §5.6/TICKET-044: baixa DEPOIS de fechar, nunca ao abrir — uma comanda aberta pode ganhar e
   // perder item várias vezes antes de fechar, e nada disso deveria mexer em estoque de verdade.
-  await baixarEstoqueDaComanda(db, tenantId, ticketId)
+  //
+  // APR-038: com o cliente de SERVIÇO. A RLS de `products_update` é só de dono e gerente, e o
+  // profissional fecha a própria comanda com o próprio JWT: o UPDATE do `stock_qty` voltava 0
+  // linhas, o CAS desistia em 5 tentativas e a pessoa via erro com a comanda já fechada. O direito
+  // de baixar ESTE estoque já foi provado acima — o UPDATE da comanda passou pela RLS de quem fecha.
+  await withTenant(tenantId, (svc) => baixarEstoqueDaComanda(svc, tenantId, ticketId))
 
   /*
    * O congelamento do mês fechado (`0071`) pega carona aqui, e o motivo é a regra 6 do `CLAUDE.md`:

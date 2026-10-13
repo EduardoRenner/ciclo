@@ -17,6 +17,8 @@ import { caminhoInternoSeguro } from '@/server/auth/destino'
  */
 const MENSAGEM_DE_ERRO: Record<string, string> = {
   link_invalido: 'Esse link não é mais válido. Peça um novo.',
+  // APR-026: link de confirmação de e-mail já usado — quase sempre já está confirmado.
+  confirmacao_usada: 'Esse link de confirmação já foi usado. Se o seu e-mail já está confirmado, é só entrar com a sua senha.',
   login_cancelado: 'O login foi cancelado. Tente de novo quando quiser.',
 }
 
@@ -67,7 +69,10 @@ export default function FormularioEntrar() {
       }
 
       const semNegocio = (json.data?.tenants.length ?? 0) === 0
-      router.push(semNegocio ? '/onboarding' : proximo)
+      // APR-023: quem vem de um convite de equipe ainda não tem negócio — e não deve criar um. Sem
+      // esta exceção, o login mandava o convidado para o cadastro de negócio e o convite se perdia.
+      const vemDeConvite = proximo.startsWith('/convite/')
+      router.push(semNegocio && !vemDeConvite ? '/onboarding' : proximo)
       router.refresh()
     } catch {
       setErro('Não consegui falar com o servidor. Tente de novo.')

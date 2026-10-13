@@ -43,9 +43,21 @@ function telas(dir: string): string[] {
     // e no Windows o `join` devolveria `\`, que nunca casaria.
     const caminho = `${dir}/${e.name}`
     if (e.isDirectory()) return telas(caminho)
-    return e.name.endsWith('.tsx') ? [caminho] : []
+    return /\.tsx?$/.test(e.name) ? [caminho] : []
   })
 }
+
+/**
+ * Onde o defeito pode morar. Até 13/10/2026 a varredura olhava só `src/app` e não viu
+ * `src/components/config/editor-expediente.tsx`, que derrubava Horários quando a rede piscava
+ * (APR-002, achado C-05): guarda cega de raiz. Cada raiz tem um PISO de arquivos, para a varredura
+ * não passar vazia se uma pasta mudar de nome.
+ */
+const RAIZES: readonly { dir: string; piso: number }[] = [
+  { dir: 'src/app', piso: 200 },
+  { dir: 'src/components', piso: 40 },
+  { dir: 'src/lib', piso: 10 },
+]
 
 /**
  * O corpo de cada callback passado a uma transição, casando chaves — e não um regex de uma linha
@@ -77,7 +89,7 @@ function temFetchDesprotegido(arquivo: string): boolean {
   return corpoTemODefeito(readFileSync(arquivo, 'utf8'))
 }
 
-const COM_DEFEITO = telas('src/app')
+const COM_DEFEITO = RAIZES.flatMap((r) => telas(r.dir))
   .filter(temFetchDesprotegido)
   .map((f) => f.replace('src/app/', ''))
 
@@ -115,8 +127,10 @@ describe('falha de rede não pode derrubar a tela', () => {
     expect(corpoTemODefeito(protegido), 'o scanner acusou uma transição que já tem try/catch — falso positivo').toBe(false)
   })
 
-  it('o varredor de arquivos ainda encontra as telas do produto', () => {
-    expect(telas('src/app').length, 'não achei telas para varrer').toBeGreaterThan(20)
+  it('o varredor de arquivos ainda encontra os arquivos de cada raiz', () => {
+    for (const r of RAIZES) {
+      expect(telas(r.dir).length, `a varredura de ${r.dir} achou menos arquivos que o piso`).toBeGreaterThanOrEqual(r.piso)
+    }
   })
 
   it('nenhuma tela NOVA entra com o defeito', () => {

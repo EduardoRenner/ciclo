@@ -92,7 +92,11 @@ export default async function PaginaDoMes() {
     // docs/84 Aposta B — o mapa de vazamento. Os quatro abaixo são o que ele usa além do que esta
     // página já busca (recuperar, dia ocioso): mesmas funções das telas do clube e dos serviços.
     margensDoClube(db, ctx.tenantId, timezone),
-    margemDosServicos(db, ctx.tenantId, timezone, hoje.toString()),
+    // APR-010: só o mapa de vazamento usa isto. Se falhar, o mapa avisa e o resto do mês abre.
+    margemDosServicos(db, ctx.tenantId, timezone, hoje.toString()).catch((erro: unknown) => {
+      console.warn(JSON.stringify({ level: 'warn', event: 'margem_dos_servicos_falhou', tenantId: ctx.tenantId, tela: 'mes' }), erro)
+      return null
+    }),
     // Nome dos serviços, e só dos ATIVOS: arquivado sai das telas de dinheiro (0093).
     listarServicos(db, ctx.tenantId),
     procurasEmDiaFechado(db, ctx.tenantId, hoje.toString()),
@@ -103,7 +107,7 @@ export default async function PaginaDoMes() {
     // O MESMO número do cartão "Parado em quem sumiu" logo abaixo — lucro, não receita.
     recuperar: { pessoas: recuperar.count, lucroCents: recuperar.totalProfitCents },
     clube,
-    servicosAbaixoDoPiso: margens.flatMap((m) =>
+    servicosAbaixoDoPiso: (margens ?? []).flatMap((m) =>
       m.parcelaDominante && nomeDoServico.has(m.serviceId) ? [{ nome: nomeDoServico.get(m.serviceId)!, parcela: m.parcelaDominante }] : [],
     ),
     procurasEmDiaFechado: procuras,
@@ -118,6 +122,7 @@ export default async function PaginaDoMes() {
       />
 
       <MapaDeVazamento linhas={vazamentos} />
+      {margens === null && <p className="-mt-4 mb-6 text-secundario text-txt-2">Não consegui conferir a margem dos serviços agora. O resto está certo; abra de novo daqui a pouco.</p>}
 
       {/*
         docs/84 Aposta C — depois de ver onde escapa, testar a mudança antes de decidir. Link, não

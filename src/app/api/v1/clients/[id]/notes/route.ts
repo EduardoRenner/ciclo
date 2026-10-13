@@ -8,6 +8,7 @@ import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
 import { criarNota, EsquemaNota, listarNotas } from '@/server/services/notas'
 import { UUID } from '@/core/text/uuid'
+import { exigirClienteDoProfissional } from '@/server/services/clientes'
 
 type Ctx = { params: Promise<{ id: string }> }
 
@@ -19,20 +20,22 @@ async function idValidado(ctx: unknown): Promise<string> {
 
 export const GET = rota(async (req, params) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:read')
+  const escopo = exigirPermissao(ctx.papel, 'client:read')
 
   const id = await idValidado(params)
   const db = await criarClienteDoUsuario()
+  if (escopo === 'own') await exigirClienteDoProfissional(db, ctx.tenantId, id)
   return { notes: await listarNotas(db, ctx.tenantId, id) }
 })
 
 export const POST = rota(async (req, params, requestId) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:update')
+  const escopo = exigirPermissao(ctx.papel, 'client:update')
 
   const id = await idValidado(params)
   const entrada = await lerCorpo(req, EsquemaNota)
   const db = await criarClienteDoUsuario()
+  if (escopo === 'own') await exigirClienteDoProfissional(db, ctx.tenantId, id)
 
   // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
   const nota = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}/notes` }, async () => {

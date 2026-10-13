@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useOptimistic, useState } from 'react'
 
 import AppointmentRow from '@/components/ui/appointment-row'
+import { useFuso } from '@/components/shell/fuso'
 import { useVocabulario } from '@/components/shell/vocabulario'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
@@ -59,6 +60,7 @@ export default function Agenda({
   profissionais: { id: string; display_name: string }[]
   profissionalSelecionado?: string
 }) {
+  const fuso = useFuso()
   const vocabulario = useVocabulario()
   const router = useRouter()
   const atualizarDepois = useAtualizarDepois()
@@ -200,7 +202,7 @@ export default function Agenda({
             <li key={a.id}>
               <button type="button" onClick={() => setSelecionadoId(a.id)} className="block w-full text-left">
                 <AppointmentRow
-                  horario={horaLocal(a.starts_at)}
+                  horario={horaLocal(a.starts_at, fuso)}
                   clienteNome={a.clients?.name ?? 'Cliente'}
                   servicoNome={a.services?.name ?? 'Serviço'}
                   profissionalNome={profissionais.length > 1 ? a.professionals?.display_name : undefined}

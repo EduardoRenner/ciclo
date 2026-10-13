@@ -16,6 +16,7 @@ import PhoneInput from "@/components/ui/phone-input";
 import { textoDoCanalDeConfirmacao } from "@/core/messaging/promessa";
 import { montarIcs, type EventoIcs } from "@/core/scheduling/ics";
 import { dinheiro, duracao, horaLocal } from "@/lib/formato";
+import { diaPorExtensoNoFuso } from "@/core/agenda/resumo-do-horario";
 import {
   lerReconhecimentoLocal,
   salvarReconhecimentoLocal,
@@ -342,6 +343,12 @@ export default function Agendar({
   const [querLevarProduto, setQuerLevarProduto] = useState(false);
   const [confirmado, setConfirmado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  /*
+    Horários perto do que a pessoa queria, vindos do 409 (APR-005, achado F-02). O aviso era apagado
+    no mesmo instante pelo `setErro(null)` da recarga, e o formulário sumia sem explicação.
+  */
+  const [alternativas, setAlternativas] = useState<string[]>([]);
+  const avisoRef = useRef<HTMLDivElement>(null);
   const [pendente, iniciarTransicao] = useTransition();
 
   /*
@@ -362,6 +369,8 @@ export default function Agendar({
     conteúdo novo, que é o que ela precisa para ler o resumo do que marcou.
   */
   const tituloDoSucesso = useRef<HTMLHeadingElement>(null);
+  const pedidoDeHorarios = useRef(0);
+  const tentativaDeAgendar = useRef<{ corpo: string; chave: string } | null>(null);
   useEffect(() => {
     if (confirmado) tituloDoSucesso.current?.focus();
   }, [confirmado]);
@@ -450,6 +459,11 @@ export default function Agendar({
     novoServico?: string,
     novoProfissional?: string | null,
   ) {
+    // Só a busca MAIS RECENTE pode escrever a lista. Sem isto, a resposta de um dia anterior que
+    // chegava atrasada sobrescrevia a do dia escolhido, e a cliente marcava um horário de outro dia
+    // achando que era o da tela (APR-003, achado F-01, reproduzido 3 de 3 com rede lenta).
+    const meuPedido = ++pedidoDeHorarios.current;
+    setAlternativas([]);
     setDia(novoDia);
     setSlots(null);
     setSlotEscolhido(null);
@@ -480,12 +494,14 @@ export default function Agendar({
           data?: { slots: Slot[] };
           error?: { message: string };
         };
+        if (meuPedido !== pedidoDeHorarios.current) return;
         if (!r.ok) {
           setErro(json.error?.message ?? "Não consegui buscar horários.");
           return;
         }
         setSlots(json.data?.slots ?? []);
       } catch {
+        if (meuPedido !== pedidoDeHorarios.current) return;
         /*
           NÃO `setSlots([])` aqui — foi o que a primeira versão deste catch fez, e a verificação no
           navegador pegou: com a lista vazia, a região viva passava a anunciar "Sem horários livres
@@ -605,10 +621,7 @@ export default function Agendar({
         horário apareceu, porque a requisição pode ter chegado antes de a resposta se perder.
       */
       try {
-        const r = await fetch(`/api/v1/public/${slug}/book`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
+        const corpo = JSON.stringify({
             serviceId,
             professionalId: slotEscolhido.professionalId,
             startsAt: slotEscolhido.startsAt,
@@ -620,7 +633,21 @@ export default function Agendar({
             ind: ind || undefined,
             volta: volta || undefined,
             wantsSuggestedProduct: querLevarProduto,
-          }),
+          });
+        // Chave por INTENÇÃO: a mesma enquanto o pedido não mudar. Se a resposta se perde e a
+        // pessoa toca de novo, o servidor devolve o mesmo agendamento em vez de "horário já
+        // reservado" para o horário dela (APR-004, achado C-04). Mudou serviço, horário ou dados,
+        // é outro pedido e ganha outra chave.
+        if (tentativaDeAgendar.current?.corpo !== corpo) {
+          tentativaDeAgendar.current = { corpo, chave: crypto.randomUUID() };
+        }
+        const r = await fetch(`/api/v1/public/${slug}/book`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "idempotency-key": tentativaDeAgendar.current.chave,
+          },
+          body: corpo,
         });
         const json = (await r.json()) as {
           data?: { reconhecimentoToken?: string | null };
@@ -632,8 +659,16 @@ export default function Agendar({
         };
         if (!r.ok) {
           if (json.error?.code === "SLOT_TAKEN") {
-            setErro("Esse horário acabou de ser reservado. Escolha outro.");
+            // A recarga vem ANTES do aviso: ela limpa o erro, e o aviso tem que ficar na tela.
             buscarDisponibilidade(dia);
+            setErro(
+              "Esse horário acabou de ser marcado por outra pessoa. Escolha outro: seu nome e telefone já ficam guardados.",
+            );
+            setAlternativas(json.error.details?.alternatives ?? []);
+            requestAnimationFrame(() => {
+              avisoRef.current?.scrollIntoView({ block: "center" });
+              avisoRef.current?.focus();
+            });
             return;
           }
           setErro(
@@ -649,7 +684,7 @@ export default function Agendar({
         setConfirmado(true);
       } catch {
         setErro(
-          "Não consegui falar com o servidor. Confira a conexão e tente de novo. Se o horário já tiver sido marcado, ele aparece ao escolher o dia outra vez.",
+          "Não consegui falar com o servidor. Se o pedido chegou, este horário sai da lista. Toque em Confirmar de novo: não vai duplicar.",
         );
       }
     });
@@ -700,12 +735,7 @@ export default function Agendar({
               {servicoEscolhido.name}
             </p>
             <p className="mt-1 text-secundario text-txt-2">
-              {paraData(dia).toLocaleDateString("pt-BR", {
-                weekday: "long",
-                day: "2-digit",
-                month: "long",
-                timeZone: "UTC",
-              })}
+              {diaPorExtensoNoFuso(slotEscolhido.startsAt, timezone)}
               {" às "}
               {horaLocal(slotEscolhido.startsAt, timezone)}
             </p>
@@ -1072,9 +1102,32 @@ export default function Agendar({
       </section>
 
       {erro ? (
-        <p role="alert" className="text-secundario text-bad">
-          {erro}
-        </p>
+        <div ref={avisoRef} tabIndex={-1} className="flex flex-col gap-2">
+          <p role="alert" className="text-secundario text-bad">
+            {erro}
+          </p>
+          {alternativas.length ? (
+            (() => {
+              const livres = alternativas
+                .map((iso) => slots?.find((s) => s.startsAt === iso))
+                .filter((s): s is Slot => Boolean(s));
+              return livres.length ? (
+                <div className="flex flex-col gap-2">
+                  <p className="text-secundario text-txt-2">Estes estão livres, perto do que você queria:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {livres.map((s) => (
+                      <Chip key={`${s.startsAt}-${s.professionalId}`} onClick={() => escolherHorario(s)}>
+                        {horaLocal(s.startsAt, timezone)}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-secundario text-txt-2">Escolha outro horário na lista abaixo ou outro dia.</p>
+              );
+            })()
+          ) : null}
+        </div>
       ) : null}
 
       {/*
@@ -1199,12 +1252,7 @@ export default function Agendar({
               {servicoEscolhido.name}
             </p>
             <p className="mt-0.5 text-secundario text-txt-2">
-              {paraData(dia).toLocaleDateString("pt-BR", {
-                weekday: "long",
-                day: "2-digit",
-                month: "long",
-                timeZone: "UTC",
-              })}{" "}
+              {diaPorExtensoNoFuso(slotEscolhido.startsAt, timezone)}{" "}
               às {horaLocal(slotEscolhido.startsAt, timezone)} ·{" "}
               {duracao(servicoEscolhido.durationMin)}
             </p>

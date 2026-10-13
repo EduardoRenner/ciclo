@@ -226,6 +226,92 @@ describe('comanda — abrir, itens, desconto, gorjeta, fechar', () => {
 
 
 /**
+ * APR-008 (achado C-14): a comanda fecha em OUTRO aparelho entre a checagem de `status` e a
+ * gravação. O cliente abaixo deixa a checagem passar com a comanda aberta e fecha a comanda logo
+ * depois dela, como a recepção faria. O item, o desconto e a remoção têm que ser recusados, e o
+ * total da comanda fechada não pode mudar.
+ */
+describe('comanda — fechada no meio do caminho (APR-008)', () => {
+  function fechaDepoisDaChecagem(ticketId: string): typeof svc {
+    let fechou = false
+    return new Proxy(svc, {
+      get(alvo, prop, receptor) {
+        if (prop !== 'from') return Reflect.get(alvo, prop, receptor)
+        return (tabela: string) => {
+          const consulta = alvo.from(tabela as 'tickets')
+          if (tabela !== 'tickets' || fechou) return consulta
+          return new Proxy(consulta, {
+            get(q, p2, r2) {
+              const valor = Reflect.get(q, p2, r2) as unknown
+              if (p2 !== 'select' || typeof valor !== 'function') return typeof valor === 'function' ? (valor as (...a: unknown[]) => unknown).bind(q) : valor
+              return (...args: unknown[]) => {
+                const construtor = (valor as (...a: unknown[]) => { then: PromiseLike<unknown>['then'] }).apply(q, args)
+                const thenOriginal = construtor.then.bind(construtor)
+                construtor.then = ((ok: (v: unknown) => unknown, falha: (e: unknown) => unknown) =>
+                  thenOriginal(async (res: unknown) => {
+                    if (!fechou) {
+                      fechou = true
+                      await alvo.from('tickets').update({ status: 'closed' }).eq('id', ticketId)
+                    }
+                    return res
+                  }).then(ok, falha)) as PromiseLike<unknown>['then']
+                return construtor
+              }
+            },
+          })
+        }
+      },
+    }) as typeof svc
+  }
+
+  async function comandaComUmItem() {
+    const ticketId = await abrirTicketVazio()
+    await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+    const antes = (await svc.from('tickets').select('total_cents').eq('id', ticketId).single()).data!.total_cents
+    return { ticketId, antes }
+  }
+
+  it(
+    'item novo: recusado com 409, e o total da comanda fechada não muda',
+    async () => {
+      const { ticketId, antes } = await comandaComUmItem()
+      await expect(
+        adicionarItemComanda(fechaDepoisDaChecagem(ticketId), tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 }),
+      ).rejects.toMatchObject({ code: 'CONFLICT' })
+      const depois = await svc.from('tickets').select('status, total_cents').eq('id', ticketId).single()
+      expect(depois.data).toEqual({ status: 'closed', total_cents: antes })
+      const { count } = await svc.from('ticket_items').select('id', { count: 'exact', head: true }).eq('ticket_id', ticketId)
+      expect(count).toBe(1)
+    },
+    30_000,
+  )
+
+  it(
+    'desconto: recusado com 409, e o total não muda',
+    async () => {
+      const { ticketId, antes } = await comandaComUmItem()
+      await expect(atualizarDescontoEGorjeta(fechaDepoisDaChecagem(ticketId), tenantId, ticketId, { discountCents: 1_000 })).rejects.toMatchObject({ code: 'CONFLICT' })
+      const depois = await svc.from('tickets').select('total_cents, discount_cents').eq('id', ticketId).single()
+      expect(depois.data).toEqual({ total_cents: antes, discount_cents: 0 })
+    },
+    30_000,
+  )
+
+  it(
+    'remover item: recusado com 409, e o item volta',
+    async () => {
+      const { ticketId, antes } = await comandaComUmItem()
+      const item = (await svc.from('ticket_items').select('id').eq('ticket_id', ticketId).single()).data!
+      await expect(removerItemComanda(fechaDepoisDaChecagem(ticketId), tenantId, ticketId, item.id)).rejects.toMatchObject({ code: 'CONFLICT' })
+      const { count } = await svc.from('ticket_items').select('id', { count: 'exact', head: true }).eq('ticket_id', ticketId)
+      expect(count).toBe(1)
+      expect((await svc.from('tickets').select('total_cents').eq('id', ticketId).single()).data!.total_cents).toBe(antes)
+    },
+    30_000,
+  )
+})
+
+/**
  * Achados de dinheiro e de corrida da auditoria de 2026-08-28. Os dois moram aqui porque só o
  * banco de verdade prova: o teste de `tests/integration/caixa.test.ts` insere `profit_cents` na
  * mão, então ele somava certo um número que `fecharComanda` tinha calculado errado, e o verde

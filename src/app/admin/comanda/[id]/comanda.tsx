@@ -13,6 +13,7 @@ import type { SobraExplicada } from '@/core/comanda/sobra-explicada'
 import { FORMAS_DE_PAGAMENTO, NOME_DA_FORMA, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
 
 import type { Database } from '@/server/db/types.gen'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -23,9 +24,9 @@ type Servico = { id: string; name: string; price_cents: number }
 type Produto = { id: string; name: string; price_cents: number; stock_qty: number }
 
 async function chamar<T>(url: string, opcoes: RequestInit = {}): Promise<T> {
-  const r = await fetch(url, {
+  const r = await fetchComTentativa(url, {
     ...opcoes,
-    headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID(), ...opcoes.headers },
+    headers: { 'content-type': 'application/json', ...opcoes.headers },
   })
   const json = (await r.json()) as { data?: T; error?: { message: string } }
   if (!r.ok) throw new Error(json.error?.message ?? 'Não consegui completar a ação.')

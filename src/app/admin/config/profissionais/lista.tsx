@@ -4,6 +4,8 @@
 
 import { Link2, Plus, Users } from 'lucide-react'
 
+import Link from 'next/link'
+
 import { useState, useTransition } from 'react'
 
 
@@ -385,15 +387,27 @@ export default function ListaProfissionais({
 
                 </button>
 
-                {p.active ? (
+                {/* APR-024: expediente e folgas de cada profissional só abriam digitando a URL. */}
 
-                  <Button variante="secondary" onClick={() => desativar(p.id)} disabled={pendente}>
+                <div className="flex shrink-0 flex-col items-end gap-1">
 
-                    Desativar
+                  <Link href={`/admin/config/profissionais/${p.id}`} aria-label={`Expediente e folgas de ${p.display_name}`} className="flex min-h-12 items-center px-2 text-label font-semibold text-acc-2 underline">
 
-                  </Button>
+                    Expediente e folgas
 
-                ) : null}
+                  </Link>
+
+                  {p.active ? (
+
+                    <Button variante="secondary" onClick={() => desativar(p.id)} disabled={pendente}>
+
+                      Desativar
+
+                    </Button>
+
+                  ) : null}
+
+                </div>
 
               </Card>
 

@@ -30,12 +30,13 @@ export function mascaraTelefone(entrada: string): string {
 }
 
 /**
- * "14:30" a partir de um `timestamptz`. Estava copiada em `admin/agenda/agenda.tsx` e
- * `admin/hoje/hoje.tsx` (sem `timezone` — telas internas, o fuso do navegador da profissional já
- * é o do salão) e divergia em forma de `[slug]/agendar/agendar.tsx` (com `timezone` explícito — a
- * página pública pode ser vista de qualquer fuso, e ali o certo é o do SALÃO, não o de quem olha).
- * `timezone` opcional cobre os dois: omitido, o `Intl` usa o fuso do runtime.
+ * "14:30" a partir de um `timestamptz`, no fuso do NEGÓCIO.
+ *
+ * `timezone` é obrigatório (APR-019). Era opcional, com a premissa de que nas telas internas "o
+ * fuso do navegador da profissional já é o do salão" — mas o HTML sai do SERVIDOR, que na Vercel é
+ * UTC: medido, a Agenda mostrava 12:11 para 09:11 por até 1 s, até a hidratação trocar. No painel,
+ * o fuso vem de `useFuso()`; na página pública, do negócio carregado.
  */
-export function horaLocal(iso: string, timezone?: string): string {
+export function horaLocal(iso: string, timezone: string): string {
   return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: timezone })
 }
