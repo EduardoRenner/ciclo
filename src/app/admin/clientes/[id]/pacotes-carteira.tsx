@@ -32,9 +32,14 @@ function dataCurta(iso: string): string {
 
 /**
  * Pacotes (TICKET-046) e carteira (TICKET-047) existiam com rota, serviço e teste, e esta seção
- * era **só leitura**: dava para ver o saldo e nunca para lançar um. Consumir acontece na comanda,
- * mas *vender* o pacote e *creditar* a carteira (sinal virado crédito, cortesia, fiado pago) só
- * existiam como endpoint — na prática, funcionalidade inacessível. Ver `docs/12-AUDITORIA-DE-PRODUTO.md`.
+ * era **só leitura**: dava para ver o saldo e nunca para lançar um. *Vender* o pacote e *creditar*
+ * a carteira (sinal virado crédito, cortesia, fiado pago) só existiam como endpoint — na prática,
+ * funcionalidade inacessível. Ver `docs/12-AUDITORIA-DE-PRODUTO.md`.
+ *
+ * APR-015: os avisos diziam "use na comanda", e a comanda NÃO sabe do pacote nem do crédito
+ * (`packages/[id]/use` e `wallet/debit` não tinham chamador). Quem acreditava cobrava o atendimento
+ * E o pacote. Enquanto o épico de pacote (APR-016/017) não liga isso à comanda, o desconto da
+ * sessão acontece AQUI, pelo "Usar 1 sessão", e é isso que os avisos dizem.
  */
 export default function PacotesCarteira({ clientId, pacotes, saldoCarteiraCents, servicos, podeLancar }: Props) {
   const [abrindo, setAbrindo] = useState<'pacote' | 'credito' | null>(null)
@@ -65,6 +70,7 @@ export default function PacotesCarteira({ clientId, pacotes, saldoCarteiraCents,
               </p>
             </div>
             {p.expiresOn ? <p className="mt-0.5 text-secundario text-txt-3">Vence em {dataCurta(p.expiresOn)}</p> : null}
+            {podeLancar && p.restantes > 0 ? <UsarSessao pacote={p} /> : null}
           </Card>
         ))}
 
@@ -94,6 +100,42 @@ export default function PacotesCarteira({ clientId, pacotes, saldoCarteiraCents,
       ) : null}
       {abrindo === 'credito' ? <LancarCredito clientId={clientId} aoFechar={() => setAbrindo(null)} /> : null}
     </section>
+  )
+}
+
+/** APR-015: o caminho que os avisos descrevem — a rota existia sem chamador. */
+function UsarSessao({ pacote }: { pacote: Props['pacotes'][number] }) {
+  const router = useRouter()
+  const mostrarToast = useToast()
+  const [usando, iniciar] = useTransition()
+
+  function usar() {
+    iniciar(async () => {
+      try {
+        const r = await fetchComTentativa(`/api/v1/packages/${pacote.id}/use`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({}),
+        })
+        const json = (await r.json()) as { error?: { message?: string; details?: { fields?: Record<string, string> } } }
+        if (!r.ok) {
+          const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
+          mostrarToast({ tom: 'erro', titulo: 'Não descontei a sessão', descricao: campo ?? json.error?.message ?? 'Tente de novo.' })
+          return
+        }
+        const restam = pacote.restantes - 1
+        mostrarToast({ tom: 'ok', titulo: 'Sessão descontada', descricao: `${pacote.serviceName}: restam ${restam} de ${pacote.total}.` })
+        router.refresh()
+      } catch {
+        mostrarToast({ tom: 'erro', titulo: 'Não consegui falar com o servidor', descricao: 'A sessão não foi descontada. Confira a conexão e tente de novo.' })
+      }
+    })
+  }
+
+  return (
+    <Button tamanho="sm" variante="secondary" className="mt-2" onClick={usar} carregando={usando}>
+      Usar 1 sessão
+    </Button>
   )
 }
 
@@ -163,7 +205,7 @@ function VenderPacote({
           return
         }
         aoFechar()
-        mostrarToast({ tom: 'ok', titulo: 'Pacote vendido', descricao: 'As sessões já podem ser usadas na comanda.' })
+        mostrarToast({ tom: 'ok', titulo: 'Pacote registrado', descricao: `${quantidade} sessões. Em cada atendimento, toque em “Usar 1 sessão” aqui na ficha.` })
         router.refresh()
       } catch {
         // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
@@ -174,7 +216,7 @@ function VenderPacote({
   }
 
   return (
-    <Sheet aberto aoFechar={(aberto) => !aberto && aoFechar()} titulo="Vender pacote" descricao="Sessões pagas na frente, consumidas na comanda.">
+    <Sheet aberto aoFechar={(aberto) => !aberto && aoFechar()} titulo="Vender pacote" descricao="Sessões pagas na frente. Cada atendimento desconta uma aqui na ficha.">
       <div className="flex flex-col gap-3">
         <Select rotulo={comMaiuscula(vocabulario.servico)} value={serviceId} onChange={(e) => trocarServico(e.target.value)}>
           {servicos.map((s) => (
@@ -233,7 +275,7 @@ function LancarCredito({ clientId, aoFechar }: { clientId: string; aoFechar: () 
           return
         }
         aoFechar()
-        mostrarToast({ tom: 'ok', titulo: 'Crédito lançado', descricao: 'O saldo aparece na comanda dela.' })
+        mostrarToast({ tom: 'ok', titulo: 'Crédito lançado', descricao: 'O saldo fica aqui na ficha. Na hora de cobrar, desconte do valor.' })
         router.refresh()
       } catch {
         setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
