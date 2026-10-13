@@ -205,25 +205,56 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
     .single()
   if (erroInsert) throw new AppError('INTERNAL', { cause: erroInsert })
 
-  await recalcularSubtotal(db, tenantId, ticketId)
+  try {
+    await recalcularSubtotal(db, tenantId, ticketId)
+  } catch (erro) {
+    // Fechou no meio do caminho: o item que ESTA chamada acabou de inserir sai, e a comanda
+    // fechada fica exatamente como foi fechada.
+    await db.from('ticket_items').delete().eq('tenant_id', tenantId).eq('id', item.id)
+    throw erro
+  }
   return item
 }
 
 export async function removerItemComanda(db: Cliente, tenantId: string, ticketId: string, itemId: string): Promise<void> {
   await buscarTicketAberto(db, tenantId, ticketId)
 
-  const { error } = await db.from('ticket_items').delete().eq('tenant_id', tenantId).eq('ticket_id', ticketId).eq('id', itemId)
+  const { data: removido, error } = await db.from('ticket_items').delete().eq('tenant_id', tenantId).eq('ticket_id', ticketId).eq('id', itemId).select('*')
   if (error) throw new AppError('INTERNAL', { cause: error })
 
-  await recalcularSubtotal(db, tenantId, ticketId)
+  try {
+    await recalcularSubtotal(db, tenantId, ticketId)
+  } catch (erro) {
+    // Fechou no meio do caminho: o item volta, e a comanda fechada fica como foi fechada.
+    if (removido?.length) await db.from('ticket_items').insert(removido)
+    throw erro
+  }
+}
+
+/**
+ * APR-008 (achado C-14): a recepção fecha num aparelho e o profissional lança item ou desconto no
+ * outro. A checagem de `status` era feita antes e a escrita gravava por `id` só: o item entrava
+ * em comanda FECHADA e o `total_cents` mudava depois de taxa e comissão congeladas. Agora toda
+ * escrita de total exige `status = 'open'` NA PRÓPRIA escrita e conta as linhas: zero linha é
+ * comanda fechada no meio do caminho, não sucesso (lição "update de zero linhas não é erro").
+ */
+function comandaFechadaNoCaminho(): AppError {
+  return new AppError('CONFLICT', { message: 'Esta comanda já foi fechada. Atualize a tela.' })
 }
 
 async function recalcularSubtotal(db: Cliente, tenantId: string, ticketId: string): Promise<void> {
   const { ticket, items } = await buscarComanda(db, tenantId, ticketId)
   const { subtotalCents, totalCents } = calcularTotaisComanda({ items: items.map((i) => ({ totalCents: i.total_cents })), discountCents: ticket.discount_cents, tipCents: ticket.tip_cents })
 
-  const { error } = await db.from('tickets').update({ subtotal_cents: subtotalCents, total_cents: totalCents }).eq('tenant_id', tenantId).eq('id', ticketId)
+  const { data, error } = await db
+    .from('tickets')
+    .update({ subtotal_cents: subtotalCents, total_cents: totalCents })
+    .eq('tenant_id', tenantId)
+    .eq('id', ticketId)
+    .eq('status', 'open')
+    .select('id')
   if (error) throw new AppError('INTERNAL', { cause: error })
+  if (!data?.length) throw comandaFechadaNoCaminho()
 }
 
 export async function atualizarDescontoEGorjeta(db: Cliente, tenantId: string, ticketId: string, entrada: EntradaDescontoGorjeta) {
@@ -233,8 +264,9 @@ export async function atualizarDescontoEGorjeta(db: Cliente, tenantId: string, t
   if (entrada.discountCents !== undefined) atualizacao.discount_cents = entrada.discountCents
   if (entrada.tipCents !== undefined) atualizacao.tip_cents = entrada.tipCents
 
-  const { error } = await db.from('tickets').update(atualizacao).eq('tenant_id', tenantId).eq('id', ticketId)
+  const { data, error } = await db.from('tickets').update(atualizacao).eq('tenant_id', tenantId).eq('id', ticketId).eq('status', 'open').select('id')
   if (error) throw new AppError('INTERNAL', { cause: error })
+  if (!data?.length) throw comandaFechadaNoCaminho()
 
   await recalcularSubtotal(db, tenantId, ticketId)
 }
