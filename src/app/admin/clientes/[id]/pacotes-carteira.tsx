@@ -15,6 +15,7 @@ import { useToast } from '@/components/ui/toast'
 import { useVocabulario } from '@/components/shell/vocabulario'
 import { comMaiuscula } from '@/core/text/vocabulario'
 import { dinheiro } from '@/lib/formato'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Props = {
   clientId: string
@@ -145,9 +146,9 @@ function VenderPacote({
 
     iniciar(async () => {
       try {
-        const r = await fetch('/api/v1/packages', {
+        const r = await fetchComTentativa('/api/v1/packages', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             clientId,
             serviceId,
@@ -221,9 +222,9 @@ function LancarCredito({ clientId, aoFechar }: { clientId: string; aoFechar: () 
 
     iniciar(async () => {
       try {
-        const r = await fetch('/api/v1/wallet/credit', {
+        const r = await fetchComTentativa('/api/v1/wallet/credit', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ clientId, amountCents: valorCents, reason: motivo.trim() }),
         })
         const json = (await r.json()) as { error?: { message?: string; details?: { fields?: Record<string, string> } } }

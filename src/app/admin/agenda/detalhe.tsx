@@ -13,6 +13,7 @@ import { vibrarConfirmacao } from '@/lib/haptics'
 import { proximosEstados, type EstadoAgendamento } from '@/core/scheduling/state'
 
 import type { LinhaAgendaDia } from '@/server/services/agendamentos'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -39,7 +40,7 @@ const TITULO_FEITO: Partial<Record<EstadoAgendamento, string>> = {
 }
 
 async function post(url: string) {
-  const r = await fetch(url, { method: 'POST', headers: { 'idempotency-key': crypto.randomUUID() } })
+  const r = await fetchComTentativa(url, { method: 'POST' })
   const json = (await r.json()) as { data?: unknown; error?: { message: string } }
   if (!r.ok) throw new Error(json.error?.message ?? 'Não consegui completar a ação.')
   return json.data
@@ -111,9 +112,9 @@ export default function DetalheAgendamento({
     setErro(null)
     iniciarTransicao(async () => {
       try {
-        const r = await fetch(`/api/v1/appointments/${agendamento.id}`, {
+        const r = await fetchComTentativa(`/api/v1/appointments/${agendamento.id}`, {
           method: 'DELETE',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ canceledBy: 'professional', reason: motivo || undefined }),
         })
         const json = (await r.json()) as { error?: { message: string } }
@@ -138,9 +139,9 @@ export default function DetalheAgendamento({
     setErro(null)
     iniciarTransicao(async () => {
       try {
-        const r = await fetch(`/api/v1/appointments/${agendamento.id}`, {
+        const r = await fetchComTentativa(`/api/v1/appointments/${agendamento.id}`, {
           method: 'PATCH',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ startsAt: new Date(novoHorario).toISOString() }),
         })
         const json = (await r.json()) as { error?: { code: string; message: string } }

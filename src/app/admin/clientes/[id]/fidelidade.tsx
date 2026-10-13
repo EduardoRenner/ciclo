@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/toast'
 import { dinheiro } from '@/lib/formato'
 
 import type { AssinaturaDoCliente, ConfigFidelidade, ExtratoPontos } from '@/server/services/fidelidade'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Plano = { id: string; name: string; price_cents: number; sessions_per_month: number | null }
 
@@ -62,9 +63,9 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
     }
     iniciarTransicao(async () => {
       try {
-        const r = await fetch(`/api/v1/clients/${clientId}/loyalty`, {
+        const r = await fetchComTentativa(`/api/v1/clients/${clientId}/loyalty`, {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ points: n * sinal, reason: motivoPontos || (sinal > 0 ? 'Pontos' : 'Resgate') }),
         })
         const json = (await r.json()) as { data?: { id: string }; error?: { message: string; details?: { fields?: Record<string, string> } } }
@@ -96,9 +97,9 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
     }
     iniciarTransicao(async () => {
       try {
-        const r = await fetch(`/api/v1/clients/${clientId}/subscription`, {
+        const r = await fetchComTentativa(`/api/v1/clients/${clientId}/subscription`, {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ planId: planoEscolhido, billingDay: dia }),
         })
         const json = (await r.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
@@ -139,9 +140,8 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
   function cancelar() {
     iniciarTransicao(async () => {
       try {
-        const r = await fetch(`/api/v1/clients/${clientId}/subscription`, {
+        const r = await fetchComTentativa(`/api/v1/clients/${clientId}/subscription`, {
           method: 'DELETE',
-          headers: { 'idempotency-key': crypto.randomUUID() },
         })
         if (!r.ok) {
           mostrarToast({ tom: 'erro', titulo: 'Não consegui cancelar' })

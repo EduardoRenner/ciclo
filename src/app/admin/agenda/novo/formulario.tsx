@@ -14,6 +14,7 @@ import { comMaiuscula, type Vocabulario } from '@/core/text/vocabulario'
 import { formatarPreco, type ModeloDePreco } from '@/core/pricing/formatar'
 import { formatarTelefone } from '@/lib/formato'
 import { apiFetch } from '@/lib/offline/api-client'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Servico = {
   id: string
@@ -161,9 +162,9 @@ export default function FormularioAgendamento({
       }
 
       try {
-        const r = await fetch('/api/v1/appointments', {
+        const r = await fetchComTentativa('/api/v1/appointments', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(corpo),
         })
         const json = (await r.json()) as {
@@ -176,9 +177,9 @@ export default function FormularioAgendamento({
             // Best-effort: o agendamento já existe e é o que importa — se o vínculo falhar, a
             // cliente já tem hora marcada, só o orçamento não fica marcado como "virou agendamento"
             // (segue "Aprovado" na lista, sem perder nada; dá pra tentar nessa tela de novo depois).
-            await fetch(`/api/v1/quotes/${orcamentoId}/convert`, {
+            await fetchComTentativa(`/api/v1/quotes/${orcamentoId}/convert`, {
               method: 'POST',
-              headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+              headers: { 'content-type': 'application/json' },
               body: JSON.stringify({ appointmentId: json.data.appointment.id }),
             }).catch(() => {})
           }
@@ -226,9 +227,9 @@ export default function FormularioAgendamento({
 
     iniciarTransicao(async () => {
       try {
-        const r = await fetch('/api/v1/appointments/series', {
+        const r = await fetchComTentativa('/api/v1/appointments/series', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(corpo),
         })
         const json = (await r.json()) as {

@@ -14,6 +14,7 @@ import PhoneInput from '@/components/ui/phone-input'
 import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
 import { camposDePreferencia } from '@/lib/preferencias'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 /**
  * Faltava a tela mais básica de todas: o vazio da lista de clientes mandava para
@@ -46,9 +47,9 @@ export default function FormularioCliente({ vertical, ehPrimeiroCliente = false 
     setErro(null)
     iniciarSalvamento(async () => {
       try {
-        const r = await fetch('/api/v1/clients', {
+        const r = await fetchComTentativa('/api/v1/clients', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             name: nome,
             phone: telefone.trim() || null,
