@@ -13,6 +13,13 @@
 | CNV-001 | 7d21d8a3 | E0–E2: formato pelos bytes (planilha, documento, PDF, imagem, vCard, JSON, texto; recusa programa, macro, senha), codificação (UTF-16, Windows-1252, "JoÃ£o"); `decodificarTexto` delega |
 | CNV-002 | ab2ff29e | D1: telefone sem DDD não ganha DDD inventado |
 | CNV-003 | 132130de | E1 delimitado próprio + E3 achar a tabela (título, filtro, total, rodapé, grupo, cabeçalho repetido, duas tabelas) |
+| CNV-004 | 82bc8a71 + 8bbe5779 | E4 perfil + E5 classificação pelo conteúdo, com confiança; D14 e D21 |
+| CNV-005 | 7fe53baf | E6 normalização no core (telefone sem biblioteca com paridade, nome, e-mail com sugestão, data com serial do Excel e futuro barrado, dinheiro em centavos); D2, D12, D13 |
+| CNV-006 | 64a5b939 | E7 junção (telefone compartilhado não junta; homônimo não some; D11) |
+| CNV-007 | 40f72e7b | `processarGrade`: caixas, perguntas, nível N0–N3, controle de totais, planilha anotada; invariante lança erro |
+| CNV-008 | db4a659f | corpus de 48 variações com gabarito: falso-aceite 0, perda 0, CPF/alergia nunca em ficha; achou e consertou 3 defeitos |
+
+**Onda A (núcleo) concluída.**
 
 ## Próximos
-CNV-004 (perfil e classificação), CNV-005, CNV-006, CNV-007, CNV-008 (corpus) → Onda B (exportação).
+Onda B: CNV-009 (exportação da conta inteira), CNV-010 (escape e telefone no Excel), CNV-011 (cota e LGPD). Depois Onda C (formatos).
