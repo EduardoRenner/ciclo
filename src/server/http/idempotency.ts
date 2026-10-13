@@ -129,6 +129,11 @@ const HORAS_PARA_ORFA = 1
 const DIAS_DE_GUARDA = 30
 /** Teto por passada, no mesmo espírito do `consumir_rate_limit`: limpeza nunca vira varredura cara. */
 const MAXIMO_POR_PASSADA = 500
+/**
+ * Chaves por `DELETE`. A chave é `<tenant>:<uuid>` (~73 caracteres) e o filtro vai na URL: a partir
+ * de ~110 chaves o gateway recusava (414), a faxina lançava e o cron devolvia 0 para sempre (APR-011).
+ */
+const CHAVES_POR_DELETE = 50
 
 export type FaxinaDeIdempotencia = { orfas: number; vencidas: number }
 
@@ -170,8 +175,10 @@ export async function limparChavesDeIdempotencia(
     const chaves = (data ?? []).map((linha) => linha.key)
     if (chaves.length === 0) return 0
 
-    const { error: erroApagar } = await db.from('idempotency_keys').delete().in('key', chaves)
-    if (erroApagar) throw new AppError('INTERNAL', { cause: erroApagar })
+    for (let i = 0; i < chaves.length; i += CHAVES_POR_DELETE) {
+      const { error: erroApagar } = await db.from('idempotency_keys').delete().in('key', chaves.slice(i, i + CHAVES_POR_DELETE))
+      if (erroApagar) throw new AppError('INTERNAL', { cause: erroApagar })
+    }
     return chaves.length
   }
 
