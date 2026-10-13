@@ -9,6 +9,7 @@ import { AppError } from '@/server/http/errors'
 import { normalizarPlano } from '@/server/services/planos'
 import ToastProvider from '@/components/ui/toast'
 import AssistenteFlutuante from '@/components/shell/assistente-flutuante'
+import { FusoProvider } from '@/components/shell/fuso'
 import { VocabularioProvider } from '@/components/shell/vocabulario'
 import ResolucaoDeFila from '@/components/shell/resolucao-de-fila'
 import FaixaDaConta from '@/components/shell/faixa-da-conta'
@@ -126,6 +127,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {corDeFundo ? (
         <style dangerouslySetInnerHTML={{ __html: `html,body{background:${corDeFundo}}` }} />
       ) : null}
+      {/* APR-019: o fuso do negócio, para a hora sair igual no HTML do servidor (UTC na Vercel) e no navegador. */}
+      <FusoProvider fuso={ctx?.tenant.timezone ?? 'America/Sao_Paulo'}>
       <VocabularioProvider valor={ctx?.tenant.vocabulario ?? PADRAO}>
       {/*
         No monitor, o app é uma coluna de 560px sobre um fundo preto infinito —
@@ -183,6 +186,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         */}
         <AssistenteFlutuante disponivel />
     </VocabularioProvider>
+    </FusoProvider>
     </ToastProvider>
     </div>
   )

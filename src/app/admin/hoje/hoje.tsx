@@ -12,6 +12,7 @@ import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
 import { useAtualizarDepois } from '@/lib/atualizar-depois'
+import { useFuso } from '@/components/shell/fuso'
 import { dinheiro, horaLocal } from '@/lib/formato'
 import { aplicarVariaveis, linkWhatsApp, linkWhatsAppCompartilhar } from '@/lib/mensagens'
 import { APP_URL } from '@/lib/app-url'
@@ -45,10 +46,10 @@ function textoDaComparacao(percentual: number): string {
  * docs/62 Fase A: texto pronto, não campo livre — mesmo padrão de `mensagens-prontas.ts`.
  * `null` sem telefone cadastrado: nunca inventa contato, o ícone some (ver ponto de uso).
  */
-export function linkWhatsAppDoProximo(agendamento: LinhaHoje): string | null {
+export function linkWhatsAppDoProximo(agendamento: LinhaHoje, fuso: string): string | null {
   const texto = aplicarVariaveis('Oi {{nome}}! Tudo certo pro seu horário hoje às {{hora}}?', {
     nome: agendamento.clients?.name ?? null,
-    hora: horaLocal(agendamento.starts_at),
+    hora: horaLocal(agendamento.starts_at, fuso),
   })
   return linkWhatsApp(agendamento.clients?.phone_e164 ?? null, texto)
 }
@@ -67,6 +68,7 @@ export function linkWhatsAppDoProximo(agendamento: LinhaHoje): string | null {
  * de 2 itens.
  */
 function TimelineDoDia({ itens }: { itens: LinhaHoje[] }) {
+  const fuso = useFuso()
   if (itens.length < 2) return null
 
   const agora = Date.now()
@@ -98,7 +100,7 @@ function TimelineDoDia({ itens }: { itens: LinhaHoje[] }) {
       </div>
       {/* A faixa é decorativa (`aria-hidden`) — quem usa leitor de tela já tem a lista de baixo, com hora e nome de cada uma. */}
       <p className="mt-1.5 text-label text-txt-3">
-        {horaLocal(itens[0]!.starts_at)}–{horaLocal(itens[itens.length - 1]!.ends_at)}
+        {horaLocal(itens[0]!.starts_at, fuso)}–{horaLocal(itens[itens.length - 1]!.ends_at, fuso)}
       </p>
     </section>
   )
@@ -185,6 +187,7 @@ export default function Hoje({
   prestacaoDeContas: PrestacaoDeContas
   children?: React.ReactNode
 }) {
+  const fuso = useFuso()
   const atualizarDepois = useAtualizarDepois()
   const [selecionado, setSelecionado] = useState<LinhaHoje | null>(null)
 
@@ -412,16 +415,16 @@ export default function Hoje({
               className="block min-w-0 flex-1 text-left"
             >
               <AppointmentRow
-                horario={horaLocal(resumo.nextClient.starts_at)}
+                horario={horaLocal(resumo.nextClient.starts_at, fuso)}
                 clienteNome={resumo.nextClient.clients?.name ?? 'Cliente'}
                 servicoNome={resumo.nextClient.services?.name ?? 'Serviço'}
                 status={resumo.nextClient.status as EstadoAgendamento}
                 alertaSaude={resumo.nextClient.clients?.health_records?.some((h) => h.has_alert) ?? false}
               />
             </button>
-            {linkWhatsAppDoProximo(resumo.nextClient) ? (
+            {linkWhatsAppDoProximo(resumo.nextClient, fuso) ? (
               <a
-                href={linkWhatsAppDoProximo(resumo.nextClient)!}
+                href={linkWhatsAppDoProximo(resumo.nextClient, fuso)!}
                 target="_blank"
                 rel="noreferrer"
                 aria-label={`Chamar ${resumo.nextClient.clients?.name ?? 'cliente'} no WhatsApp`}
@@ -476,7 +479,7 @@ export default function Hoje({
               <li key={a.id}>
                 <button type="button" onClick={() => setSelecionado(a)} className="block w-full text-left">
                   <AppointmentRow
-                    horario={horaLocal(a.starts_at)}
+                    horario={horaLocal(a.starts_at, fuso)}
                     clienteNome={a.clients?.name ?? 'Cliente'}
                     servicoNome={a.services?.name ?? 'Serviço'}
                     status={a.status as EstadoAgendamento}
@@ -513,7 +516,7 @@ export default function Hoje({
                 <li key={a.id}>
                   <button type="button" onClick={() => setSelecionado(a)} className="block w-full text-left">
                     <AppointmentRow
-                      horario={horaLocal(a.starts_at)}
+                      horario={horaLocal(a.starts_at, fuso)}
                       clienteNome={a.clients?.name ?? 'Cliente'}
                       servicoNome={a.services?.name ?? 'Serviço'}
                       status={a.status as EstadoAgendamento}
