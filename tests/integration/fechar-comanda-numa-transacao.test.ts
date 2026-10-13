@@ -4,6 +4,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { fecharComanda } from '@/server/services/comanda'
 import { executarOnboarding } from '@/server/services/onboarding'
 
 import type { Database } from '@/server/db/types.gen'
@@ -169,4 +170,37 @@ describe('fechar a comanda numa transação só (APR-033a)', () => {
     const r = await anon.rpc('aplicar_fechamento_de_comanda', { p_tenant: tenantId, p_ticket: randomUUID(), p_itens: [], p_ticket_campos: campos, p_consumo: [] })
     expect(r.error).not.toBeNull()
   })
+
+  /*
+   * APR-033b: o MESMO cenário pelo serviço que a rota chama. Antes, a comanda ficava `closed` com o
+   * estoque pela metade e a nova tentativa dizia "já foi fechada" (C-15).
+   */
+  it(
+    'fecharComanda: falha no 2º produto deixa tudo como estava; corrigido, fecha uma vez',
+    async () => {
+      const ana = profs[0]!
+      const { ticketId } = await comandaAberta(ana.id)
+      // Produto de OUTRO negócio enfiado direto no banco: a baixa dele falha dentro da transação.
+      const marca = randomUUID().slice(0, 8)
+      const outroDono = await svc.auth.admin.createUser({ email: `apr033-outro-${marca}@ciclo.test`, password: randomUUID(), email_confirm: true })
+      usuarios.push(outroDono.data.user!.id)
+      const { tenant: outro } = await executarOnboarding(svc, { userId: outroDono.data.user!.id, businessName: 'Outro', vertical: 'barber', slug: `apr033-outro-${marca}`, timezone: 'America/Sao_Paulo' })
+      const alheio = (await svc.from('products').insert({ tenant_id: outro.id, name: 'Alheio', stock_qty: 5, avg_cost_cents: 100 }).select('id').single()).data!.id
+      const ruim = (await svc.from('ticket_items').insert({ tenant_id: tenantId, ticket_id: ticketId, professional_id: ana.id, product_id: alheio, description: 'Alheio', qty: 1, unit_price_cents: 1_000, total_cents: 1_000 }).select('id').single()).data!.id
+      const antesA = await estoque(produtoA)
+
+      await expect(fecharComanda(ana.db, tenantId, ticketId, 'pix')).rejects.toBeDefined()
+      expect((await svc.from('tickets').select('status').eq('id', ticketId).single()).data!.status).toBe('open')
+      expect(await movimentos(ticketId)).toBe(0)
+      expect(await estoque(produtoA)).toBe(antesA)
+
+      await svc.from('ticket_items').delete().eq('id', ruim)
+      await svc.from('tenants').delete().eq('id', outro.id)
+      const fechada = await fecharComanda(ana.db, tenantId, ticketId, 'pix')
+      expect(fechada.status).toBe('closed')
+      expect(await estoque(produtoA)).toBe(antesA - 1)
+      expect(await movimentos(ticketId)).toBe(1)
+    },
+    60_000,
+  )
 })

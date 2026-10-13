@@ -15,7 +15,12 @@ type Cliente = SupabaseClient<Database>
  * produto vendido direto (revenda) consome a si mesmo. Nunca bloqueia o fechamento por estoque
  * insuficiente (F83) — só desce o número, mesmo que fique negativo.
  */
-export async function baixarEstoqueDaComanda(db: Cliente, tenantId: string, ticketId: string): Promise<void> {
+/**
+ * APR-033b: QUANTO de cada produto a comanda consome (ficha de consumo dos serviços + produtos
+ * vendidos), sem escrever nada. O fechamento atômico (`aplicar_fechamento_de_comanda`, 0122) recebe
+ * isto pronto; a baixa antiga usa o mesmo cálculo.
+ */
+export async function consumoDaComanda(db: Cliente, tenantId: string, ticketId: string): Promise<{ product_id: string; qty: number }[]> {
   const { data: items, error: erroItems } = await db.from('ticket_items').select('id, qty, service_id, product_id').eq('tenant_id', tenantId).eq('ticket_id', ticketId)
   if (erroItems) throw new AppError('INTERNAL', { cause: erroItems })
 
@@ -43,6 +48,12 @@ export async function baixarEstoqueDaComanda(db: Cliente, tenantId: string, tick
     if (!item.product_id) continue
     consumoPorProduto.set(item.product_id, (consumoPorProduto.get(item.product_id) ?? 0) + item.qty)
   }
+
+  return [...consumoPorProduto].map(([product_id, qty]) => ({ product_id, qty }))
+}
+
+export async function baixarEstoqueDaComanda(db: Cliente, tenantId: string, ticketId: string): Promise<void> {
+  const consumoPorProduto = new Map((await consumoDaComanda(db, tenantId, ticketId)).map((c) => [c.product_id, c.qty] as const))
 
   // Cada produto é uma linha independente (`consumoPorProduto` já está deduplicado e somado por
   // `productId`), então os `registrarMovimento` de produtos diferentes não competem por linha
