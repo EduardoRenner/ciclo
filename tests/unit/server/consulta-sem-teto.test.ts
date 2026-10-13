@@ -53,7 +53,6 @@ const LINHA_DE_BASE: Record<string, number> = {
   'server/services/ociosidade.ts': 1,
   'server/services/pacotes.ts': 3,
   'server/services/public-booking.ts': 1,
-  'server/services/quem-ja-atendo.ts': 1,
   'server/services/recorrencia.ts': 2,
   'server/services/resumo-hoje.ts': 1,
   'server/services/whatsapp-inbound.ts': 1,

@@ -44,6 +44,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 /** Teto generoso para digitação à mão: ninguém digita 200 nomes numa sessão, e 200 não dói. */
 const MAX_PESSOAS = 200
+/** `.in()` vai na URL do PostgREST: 100 por consulta cabe com folga (APR-011). */
+const LOTE_IN = 100
 
 const EsquemaRetorno = z.object({
   clientId: z.string().uuid(),
@@ -86,6 +88,10 @@ export type ResultadoQuemJaAtendo = {
   cadastrados: number
   /** Nomes que já tinham ficha com aquele telefone — dito por nome, não por número. */
   jaExistiam: string[]
+  /** D8: o mesmo telefone apareceu duas vezes na lista; só a primeira entrou. */
+  repetidosNaLista: string[]
+  /** D10: telefone digitado que não é número de telefone; a pessoa entrou SEM ele, e a tela diz quem. */
+  telefoneNaoReconhecido: string[]
   previsao: PrevisaoDaBase | null
 }
 
@@ -102,9 +108,20 @@ export async function cadastrarQuemJaAtendo(
   const pessoas = entrada.pessoas ?? []
   const retornos = entrada.retornos ?? []
 
-  const normalizadas = pessoas.map((p) => {
+  const telefoneNaoReconhecido: string[] = []
+  const repetidosNaLista: string[] = []
+  const vistos = new Set<string>()
+  const normalizadas = pessoas.flatMap((p) => {
     const e164 = p.telefone ? normalizarTelefoneBR(p.telefone) : null
-    return { nome: p.nome, e164, hash: e164 ? hashTelefone(e164) : null, ultimaVisita: dataDaUltimaVez(p.quando, hoje) }
+    if (p.telefone && p.telefone.trim() !== '' && !e164) telefoneNaoReconhecido.push(p.nome)
+    const hash = e164 ? hashTelefone(e164) : null
+    // D8: o mesmo telefone duas vezes no lote derrubava o insert inteiro (23505 virava erro interno).
+    if (hash && vistos.has(hash)) {
+      repetidosNaLista.push(p.nome)
+      return []
+    }
+    if (hash) vistos.add(hash)
+    return [{ nome: p.nome, e164, hash, ultimaVisita: dataDaUltimaVez(p.quando, hoje) }]
   })
 
   /*
@@ -115,13 +132,15 @@ export async function cadastrarQuemJaAtendo(
   */
   const hashes = normalizadas.map((n) => n.hash).filter((h): h is string => h !== null)
   const jaNoBanco = new Set<string>()
-  if (hashes.length > 0) {
+  // D9: em fatias de LOTE_IN — 200 hashes de 64 caracteres na URL passam do teto do gateway (APR-011).
+  for (let i = 0; i < hashes.length; i += LOTE_IN) {
     const { data, error } = await db
       .from('clients')
       .select('phone_hash')
       .eq('tenant_id', tenantId)
       .is('deleted_at', null)
-      .in('phone_hash', hashes)
+      .in('phone_hash', hashes.slice(i, i + LOTE_IN))
+      .limit(LOTE_IN)
     if (error) throw new AppError('INTERNAL', { cause: error })
     for (const linha of data ?? []) if (linha.phone_hash) jaNoBanco.add(linha.phone_hash)
   }
@@ -139,20 +158,34 @@ export async function cadastrarQuemJaAtendo(
   let cadastrados = 0
 
   if (paraCriar.length > 0) {
-    const { data: criados, error } = await db
-      .from('clients')
-      .insert(
-        paraCriar.map((n) => ({
-          tenant_id: tenantId,
-          name: n.nome,
-          phone_e164: n.e164,
-          phone_hash: n.hash,
-          source: 'memoria',
-          // Meio-dia UTC, não meia-noite: ver `instanteDoDiaInformado` (o dia não pode voltar um).
-          last_visit_at: instanteDoDiaInformado(n.ultimaVisita),
-        })),
-      )
-      .select('id')
+    const ficha = (n: (typeof paraCriar)[number]) => ({
+      tenant_id: tenantId,
+      name: n.nome,
+      phone_e164: n.e164,
+      phone_hash: n.hash,
+      source: 'memoria',
+      // Meio-dia UTC, não meia-noite: ver `instanteDoDiaInformado` (o dia não pode voltar um).
+      last_visit_at: instanteDoDiaInformado(n.ultimaVisita),
+    })
+    let { data: criados, error } = await db.from('clients').insert(paraCriar.map(ficha)).select('id')
+    if (error?.code === '23505') {
+      // Corrida: outra porta criou o mesmo telefone entre a conferência e a escrita. Linha a linha, para
+      // a que colidiu virar "já tinha ficha" e as outras entrarem, em vez de um erro interno para todas.
+      const porLinha: { id: string }[] = []
+      const entraram: typeof paraCriar = []
+      for (const n of paraCriar) {
+        const um = await db.from('clients').insert(ficha(n)).select('id').single()
+        if (um.error?.code === '23505') jaExistiam.push(n.nome)
+        else if (um.error) throw new AppError('INTERNAL', { cause: um.error })
+        else {
+          porLinha.push(um.data)
+          entraram.push(n)
+        }
+      }
+      paraCriar.splice(0, paraCriar.length, ...entraram)
+      criados = porLinha
+      error = null
+    }
     if (error) throw new AppError('INTERNAL', { cause: error })
 
     /*
@@ -177,14 +210,17 @@ export async function cadastrarQuemJaAtendo(
       armadilha do UPDATE de zero linhas que não é erro.
     */
     const idsUnicos = [...new Set(retornos.map((r) => r.clientId))]
-    const { data: existentes, error: erroExistentes } = await db
-      .from('clients')
-      .select('id')
-      .eq('tenant_id', tenantId)
-      .is('deleted_at', null)
-      .in('id', idsUnicos)
-    if (erroExistentes) throw new AppError('INTERNAL', { cause: erroExistentes })
-    const idsValidos = new Set((existentes ?? []).map((c) => c.id))
+    const idsValidos = new Set<string>()
+    for (let i = 0; i < idsUnicos.length; i += LOTE_IN) {
+      const { data: existentes, error: erroExistentes } = await db
+        .from('clients')
+        .select('id')
+        .eq('tenant_id', tenantId)
+        .is('deleted_at', null)
+        .in('id', idsUnicos.slice(i, i + LOTE_IN))
+      if (erroExistentes) throw new AppError('INTERNAL', { cause: erroExistentes })
+      for (const c of existentes ?? []) idsValidos.add(c.id)
+    }
 
     // Dedup por `clientId`: o mesmo id duas vezes no lote faria o `upsert` de
     // `preverEPersistirCiclos` tentar afetar a MESMA linha duas vezes na mesma instrução, e o
@@ -198,5 +234,5 @@ export async function cadastrarQuemJaAtendo(
 
   const previsao = comData.length > 0 ? await preverEPersistirCiclos(db, tenantId, comData, entrada.serviceId) : null
 
-  return { cadastrados, jaExistiam, previsao }
+  return { cadastrados, jaExistiam, repetidosNaLista, telefoneNaoReconhecido, previsao }
 }

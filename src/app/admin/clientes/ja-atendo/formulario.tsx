@@ -28,6 +28,8 @@ type Resultado = {
    */
   atualizados: number
   jaExistiam: string[]
+  repetidosNaLista: string[]
+  telefoneNaoReconhecido: string[]
   previsao: { comDataInformada: number; jaDevendoVoltar: number; cyclesGravados: number; proximaVolta: string | null } | null
 }
 
@@ -212,6 +214,16 @@ export default function FormularioQuemJaAtendo({ servicos, servicoPadrao, temCli
           {resultado.jaExistiam.length > 0 ? (
             <p className="mt-1 text-secundario text-txt-2">
               {resultado.jaExistiam.length === 1 ? 'Já tinha ficha' : 'Já tinham ficha'}: {resultado.jaExistiam.join(', ')}.
+            </p>
+          ) : null}
+          {resultado.repetidosNaLista.length > 0 ? (
+            <p className="mt-1 text-secundario text-txt-2">
+              Mesmo telefone de outra linha da lista, entrou só uma vez: {resultado.repetidosNaLista.join(', ')}.
+            </p>
+          ) : null}
+          {resultado.telefoneNaoReconhecido.length > 0 ? (
+            <p className="mt-1 text-secundario text-warn">
+              Entrou sem telefone, porque o número não parecia um telefone: {resultado.telefoneNaoReconhecido.join(', ')}. Dá para corrigir na ficha.
             </p>
           ) : null}
         </Card>

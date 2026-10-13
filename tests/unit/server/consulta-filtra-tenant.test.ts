@@ -63,6 +63,12 @@ const SEM_COLUNA_TENANT = new Set([
  */
 const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: string }[] = [
   {
+    arquivo: 'src/server/services/quem-ja-atendo.ts',
+    tabela: 'clients',
+    quantas: 2,
+    porque: 'os dois `insert` (em lote e, na corrida, linha a linha): `tenant_id` vai no VALOR montado por `ficha()`, do tenant do contexto. Escrita não aceita `.eq`; cliente do usuário (RLS)',
+  },
+  {
     arquivo: 'src/server/services/lote-de-importacao.ts',
     tabela: 'clients',
     quantas: 2,

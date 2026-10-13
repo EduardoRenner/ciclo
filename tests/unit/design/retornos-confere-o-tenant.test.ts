@@ -31,14 +31,14 @@ describe('retornos: o clientId da busca não entra sem conferir o tenant', () =>
   it('o serviço filtra os clientId de retornos por tenant_id antes de usar', () => {
     // `.eq('tenant_id', tenantId)` no MESMO trecho que lê `clients` para validar `retornos` —
     // casa com a chamada, não com qualquer `.eq('tenant_id'` solto no arquivo (que existem vários).
-    expect(servico).toMatch(/from\('clients'\)[\s\S]{0,120}\.eq\('tenant_id',\s*tenantId\)[\s\S]{0,200}\.in\('id',\s*idsUnicos\)/)
+    expect(servico).toMatch(/from\('clients'\)[\s\S]{0,120}\.eq\('tenant_id',\s*tenantId\)[\s\S]{0,200}\.in\('id',\s*idsUnicos(\.slice\([^)]*\))?\)/)
   })
 
   it('idsValidos vem do RESULTADO da consulta, não é reconstruído a partir do que o cliente mandou', () => {
     // A guarda anterior só conferia que a consulta a `clients` existe em algum lugar do arquivo —
     // ela continuaria "verde" se `idsValidos` ignorasse o resultado e usasse `retornos` direto
     // (código morto de query ao lado). Esta casa com o que ALIMENTA `idsValidos` de verdade.
-    expect(servico).toMatch(/idsValidos\s*=\s*new Set\(\(existentes/)
+    expect(servico).toMatch(/idsValidos\s*=\s*new Set\(\(existentes|for \(const c of existentes \?\? \[\]\) idsValidos\.add\(c\.id\)/)
     expect(servico, 'idsValidos não pode vir direto de retornos/entrada — isso pula a validação').not.toMatch(
       /idsValidos\s*=\s*new Set\(\s*retornos/,
     )
@@ -55,6 +55,6 @@ describe('retornos: o clientId da busca não entra sem conferir o tenant', () =>
 
   it('o detector reconhece o defeito que ele impede', () => {
     const semConferencia = "const idsValidos = new Set(retornos.map(r => r.clientId)) // sem consultar o banco"
-    expect(/from\('clients'\)[\s\S]{0,120}\.eq\('tenant_id',\s*tenantId\)[\s\S]{0,200}\.in\('id',\s*idsUnicos\)/.test(semConferencia)).toBe(false)
+    expect(/from\('clients'\)[\s\S]{0,120}\.eq\('tenant_id',\s*tenantId\)[\s\S]{0,200}\.in\('id',\s*idsUnicos(\.slice\([^)]*\))?\)/.test(semConferencia)).toBe(false)
   })
 })

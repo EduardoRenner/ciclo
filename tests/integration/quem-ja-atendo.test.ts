@@ -508,3 +508,39 @@ describe('BL-52 — "hoje" é o dia no salão, não no servidor', () => {
     30_000,
   )
 })
+
+describe('defeitos do "já atendo" (docs/103 Onda E)', () => {
+  it('D8: o mesmo telefone duas vezes na lista não derruba o lote; entra uma vez e a tela diz quem', async () => {
+    const marca = randomUUID().slice(0, 6)
+    const tel = telefoneNovo()
+    const r = await cadastrarQuemJaAtendo(svc, tenantId, {
+      serviceId,
+      pessoas: [
+        { nome: `Duda ${marca}`, telefone: tel, quando: 'quinzena' },
+        { nome: `Duda de novo ${marca}`, telefone: tel, quando: 'quinzena' },
+        { nome: `Eli ${marca}`, telefone: telefoneNovo(), quando: 'quinzena' },
+      ],
+    })
+    expect(r.cadastrados).toBe(2)
+    expect(r.repetidosNaLista).toEqual([`Duda de novo ${marca}`])
+  })
+
+  it('D10: telefone que não é telefone entra sem número, e a tela diz quem', async () => {
+    const marca = randomUUID().slice(0, 6)
+    const r = await cadastrarQuemJaAtendo(svc, tenantId, { serviceId, pessoas: [{ nome: `Fafá ${marca}`, telefone: 'não sei', quando: 'quinzena' }] })
+    expect(r.cadastrados).toBe(1)
+    expect(r.telefoneNaoReconhecido).toEqual([`Fafá ${marca}`])
+    const { data } = await svc.from('clients').select('phone_e164').eq('tenant_id', tenantId).eq('name', `Fafá ${marca}`).single()
+    expect(data?.phone_e164).toBeNull()
+  })
+
+  it('D9: 200 pessoas com telefone (o máximo) passam, sem estourar a URL da conferência', async () => {
+    const marca = randomUUID().slice(0, 6)
+    const pessoas = Array.from({ length: 200 }, (_, i) => ({ nome: `Lote ${marca} ${i}`, telefone: telefoneNovo(), quando: 'quinzena' as const }))
+    const r = await cadastrarQuemJaAtendo(svc, tenantId, { serviceId, pessoas })
+    expect(r.cadastrados).toBe(200)
+    // De novo, agora todas já existem: a conferência em fatias acha as 200.
+    const deNovo = await cadastrarQuemJaAtendo(svc, tenantId, { serviceId, pessoas })
+    expect(deNovo.jaExistiam).toHaveLength(200)
+  }, 60_000)
+})
