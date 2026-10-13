@@ -55,9 +55,21 @@ export default function ResolucaoDeFila({ sessao }: { sessao: ContextoDaSessao |
   const [guardadas, setGuardadas] = useState({ deOutros: 0, semDono: 0 })
   const [aviso, setAviso] = useState<string | null>(null)
 
-  // APR-020: a sessão vem do servidor; a fila só manda o que é de quem está aqui.
+  /*
+   * APR-020 + APR-021. A sessão vem do servidor e é definida ANTES da primeira drenagem: a fila só
+   * manda o que é de quem está aqui. E a drenagem roda ao montar a casca e ao voltar para o app — o
+   * evento `online` sozinho não vem quando a rede já voltou antes de o app abrir (medido: 0 POST em
+   * 10 s, item preso na fila).
+   */
   useEffect(() => {
-    if (sessao) definirSessaoDaFila(sessao)
+    if (!sessao) return
+    definirSessaoDaFila(sessao)
+    void drenarFilaPendente()
+    const aoVoltar = () => {
+      if (document.visibilityState === 'visible') void drenarFilaPendente()
+    }
+    document.addEventListener('visibilitychange', aoVoltar)
+    return () => document.removeEventListener('visibilitychange', aoVoltar)
   }, [sessao?.userId, sessao?.tenantId]) // eslint-disable-line react-hooks/exhaustive-deps -- o objeto muda a cada render; a identidade é o par
 
   useEffect(() => {

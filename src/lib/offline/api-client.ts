@@ -2,7 +2,7 @@
 
 import { ehEscritaJuridica } from '@/core/advocacia/falha-de-escrita'
 import { separarFilaPorDono, type ContextoDaSessao } from '@/core/offline/dono'
-import { classificarResposta, drenarFila, type Mutacao, type ResultadoEnvio } from '@/core/offline/queue'
+import { classificarResposta, drenarFila, proximaTentativaMs, type Mutacao, type ResultadoEnvio } from '@/core/offline/queue'
 
 import { listarMutacoes, removerMutacao, salvarMutacao } from './db'
 
@@ -97,6 +97,9 @@ export async function drenarFilaPendente(): Promise<void> {
     if (fila.length === 0) return
 
     const resultado = await drenarFila(fila, enviarMutacao)
+    // APR-021: sobrou fila por rede/5xx — tenta de novo sozinha, com teto, em vez de esperar o
+    // próximo evento `online` (que não vem se a rede já voltou antes de o app abrir).
+    if (resultado.pendentes.length > 0) void tentarNovamenteComBackoff()
 
     for (const id of resultado.sincronizadas) {
       await removerMutacao(id)
@@ -119,15 +122,22 @@ export async function drenarFilaPendente(): Promise<void> {
 }
 
 let tentativaEmAndamento = false
-const ESPERAS_RETRY_MS = [2_000, 5_000, 15_000]
+/** Passadas seguidas sem esvaziar a fila antes de parar e esperar o próximo `online`/abrir o app. */
+const TENTATIVAS_SEGUIDAS = 12
+
+async function minhasPendentes(): Promise<number> {
+  if (!sessaoAtual) return 0
+  return separarFilaPorDono(await listarMutacoes(), sessaoAtual).minhas.length
+}
 
 async function tentarNovamenteComBackoff(): Promise<void> {
   if (tentativaEmAndamento) return
   tentativaEmAndamento = true
   try {
-    for (const espera of ESPERAS_RETRY_MS) {
-      await new Promise((resolve) => setTimeout(resolve, espera))
+    for (let tentativa = 0; tentativa < TENTATIVAS_SEGUIDAS; tentativa++) {
+      await new Promise((resolve) => setTimeout(resolve, proximaTentativaMs(tentativa)))
       if (navigator.onLine) await drenarFilaPendente()
+      if ((await minhasPendentes()) === 0) return
     }
   } finally {
     tentativaEmAndamento = false

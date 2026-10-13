@@ -17,6 +17,18 @@ export type Mutacao = {
   dono?: DonoDaMutacao | null
 }
 
+/**
+ * APR-021: espera antes da próxima tentativa de drenar, enquanto houver fila. Cresce e para num
+ * teto: a fila não pode desistir (a pessoa viu "sai quando a internet voltar"), e também não pode
+ * martelar o servidor a cada 2 s pelo resto do dia.
+ */
+const ESPERAS_MS = [2_000, 5_000, 15_000, 30_000]
+export const ESPERA_MAXIMA_MS = 60_000
+
+export function proximaTentativaMs(tentativa: number): number {
+  return ESPERAS_MS[tentativa] ?? ESPERA_MAXIMA_MS
+}
+
 export type ResultadoEnvio = { kind: 'ok' } | { kind: 'conflict' } | { kind: 'discard' } | { kind: 'retry' }
 
 export type Enviador = (mutacao: Mutacao) => Promise<ResultadoEnvio>
