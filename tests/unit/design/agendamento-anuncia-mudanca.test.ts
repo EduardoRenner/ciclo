@@ -300,7 +300,10 @@ describe('a Agenda anuncia o dia e o filtro que acabaram de mudar', () => {
 
   it('a região vive SEMPRE no DOM — vem depois da faixa da semana e antes da lista', () => {
     const src = fonte(AGENDA)
-    const faixa = src.indexOf('aria-label="Dias da semana"')
+    // APR-102: a faixa virou componente (`FaixaDaSemana`, no fim do arquivo). A ordem na tela é a do
+    // USO dele dentro da Agenda, não a da definição.
+    expect(src.includes('aria-label="Dias da semana"'), 'a faixa perdeu o rótulo do grupo').toBe(true)
+    const faixa = src.indexOf('<FaixaDaSemana ')
     const regiao = src.indexOf('aria-live="polite"')
     const listaOuVazio = src.indexOf('{resumo.appointments.length === 0 ?')
 
