@@ -1,7 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill'
 
 import { atribuirReceita, type AgendamentoElegivel, type CampanhaEnviada } from '@/core/attribution/compute'
-import { AppError } from '@/server/http/errors'
+import { buscarTudoPaginado } from '@/server/db/paginar'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -27,22 +27,23 @@ type ElegibilidadeDeVendaAvulsa = {
  * fora preserva o paralelismo com `messages`/`appointments` também.
  */
 async function elegibilidadeDeVendaAvulsa(db: Cliente, tenantId: string, hoje: string): Promise<ElegibilidadeDeVendaAvulsa> {
+  // APR-012: paginado — o PostgREST corta em 1.000 linhas sem erro, e o assinante 1.001 virava
+  // "venda avulsa" no número do Motor.
   const [assinaturasAtivas, pacotesComSaldo] = await Promise.all([
-    db.from('client_subscriptions').select('client_id').eq('tenant_id', tenantId).eq('status', 'active'),
-    db
-      .from('packages')
-      .select('client_id, service_id, total_sessions, used_sessions')
-      .eq('tenant_id', tenantId)
-      .or(`expires_on.is.null,expires_on.gte.${hoje}`),
+    buscarTudoPaginado(() => db.from('client_subscriptions').select('client_id').eq('tenant_id', tenantId).eq('status', 'active').order('id')),
+    buscarTudoPaginado(() =>
+      db
+        .from('packages')
+        .select('client_id, service_id, total_sessions, used_sessions')
+        .eq('tenant_id', tenantId)
+        .or(`expires_on.is.null,expires_on.gte.${hoje}`)
+        .order('id'),
+    ),
   ])
-  if (assinaturasAtivas.error) throw new AppError('INTERNAL', { cause: assinaturasAtivas.error })
-  if (pacotesComSaldo.error) throw new AppError('INTERNAL', { cause: pacotesComSaldo.error })
 
   return {
-    assinantesAtivos: new Set((assinaturasAtivas.data ?? []).map((a) => a.client_id)),
-    combinacoesComPacote: new Set(
-      (pacotesComSaldo.data ?? []).filter((p) => p.used_sessions < p.total_sessions).map((p) => `${p.client_id}:${p.service_id}`),
-    ),
+    assinantesAtivos: new Set(assinaturasAtivas.map((a) => a.client_id)),
+    combinacoesComPacote: new Set(pacotesComSaldo.filter((p) => p.used_sessions < p.total_sessions).map((p) => `${p.client_id}:${p.service_id}`)),
   }
 }
 
@@ -138,35 +139,41 @@ export async function receitaAtribuidaAoCiclo(
     paga por outro mecanismo, mesmo que a campanha tenha de fato motivado a volta.
   */
   const [mensagens, agendamentos, elegibilidade] = await Promise.all([
-    db
-      .from('messages')
-      .select('client_id, sent_at, campaign_id')
-      .eq('tenant_id', tenantId)
-      .eq('kind', 'campaign')
-      .eq('status', 'sent')
-      .gte('sent_at', inicioBuscaInstante)
-      .lt('sent_at', fimBuscaInstante),
-    db
-      .from('appointments')
-      .select('id, client_id, service_id, created_at, price_cents, clients(name)')
-      .eq('tenant_id', tenantId)
-      .eq('status', 'done')
-      .gte('created_at', inicioBuscaInstante)
-      .lt('created_at', fimBuscaInstante),
+    // APR-012 (achado E-02): paginado. Acima de 1.000 linhas no período, o PostgREST devolvia as
+    // primeiras mil e "o Motor trouxe R$ X" saía menor, sem erro nenhum.
+    buscarTudoPaginado(() =>
+      db
+        .from('messages')
+        .select('client_id, sent_at, campaign_id')
+        .eq('tenant_id', tenantId)
+        .eq('kind', 'campaign')
+        .eq('status', 'sent')
+        .gte('sent_at', inicioBuscaInstante)
+        .lt('sent_at', fimBuscaInstante)
+        .order('id'),
+    ),
+    buscarTudoPaginado(() =>
+      db
+        .from('appointments')
+        .select('id, client_id, service_id, created_at, price_cents, clients(name)')
+        .eq('tenant_id', tenantId)
+        .eq('status', 'done')
+        .gte('created_at', inicioBuscaInstante)
+        .lt('created_at', fimBuscaInstante)
+        .order('id'),
+    ),
     elegibilidadeDeVendaAvulsa(db, tenantId, hoje),
   ])
-  if (mensagens.error) throw new AppError('INTERNAL', { cause: mensagens.error })
-  if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
 
   const { assinantesAtivos, combinacoesComPacote } = elegibilidade
 
-  const campanhas: CampanhaEnviada[] = (mensagens.data ?? [])
+  const campanhas: CampanhaEnviada[] = mensagens
     .filter((m): m is { client_id: string; sent_at: string; campaign_id: string | null } => m.client_id !== null && m.sent_at !== null)
     .map((m) => ({ clientId: m.client_id, sentAt: Temporal.Instant.from(m.sent_at), campaignId: m.campaign_id }))
 
   const nomePorCliente = new Map<string, string>()
   const elegiveis: AgendamentoElegivel[] = []
-  for (const ag of agendamentos.data ?? []) {
+  for (const ag of agendamentos) {
     if (!ag.client_id) continue
     const cliente = ag.clients as { name: string } | null
     nomePorCliente.set(ag.client_id, cliente?.name ?? '')
@@ -233,20 +240,21 @@ export async function receitaPorCampanha(db: Cliente, tenantId: string): Promise
   // Mesmo motivo de `receitaAtribuidaAoCiclo`, acima: assinante ativo do clube ou com sessão de
   // pacote sobrando não gera venda avulsa.
   const [mensagens, agendamentos, elegibilidade] = await Promise.all([
-    db.from('messages').select('client_id, sent_at, campaign_id').eq('tenant_id', tenantId).eq('kind', 'campaign').eq('status', 'sent').not('campaign_id', 'is', null),
-    db.from('appointments').select('id, client_id, service_id, created_at, price_cents').eq('tenant_id', tenantId).eq('status', 'done'),
+    // APR-012: paginado — e aqui sem janela de data, o primeiro lugar a passar de mil linhas.
+    buscarTudoPaginado(() =>
+      db.from('messages').select('client_id, sent_at, campaign_id').eq('tenant_id', tenantId).eq('kind', 'campaign').eq('status', 'sent').not('campaign_id', 'is', null).order('id'),
+    ),
+    buscarTudoPaginado(() => db.from('appointments').select('id, client_id, service_id, created_at, price_cents').eq('tenant_id', tenantId).eq('status', 'done').order('id')),
     elegibilidadeDeVendaAvulsa(db, tenantId, hoje),
   ])
-  if (mensagens.error) throw new AppError('INTERNAL', { cause: mensagens.error })
-  if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
 
   const { assinantesAtivos, combinacoesComPacote } = elegibilidade
 
-  const campanhas: CampanhaEnviada[] = (mensagens.data ?? [])
+  const campanhas: CampanhaEnviada[] = mensagens
     .filter((m): m is { client_id: string; sent_at: string; campaign_id: string } => m.client_id !== null && m.sent_at !== null && m.campaign_id !== null)
     .map((m) => ({ clientId: m.client_id, sentAt: Temporal.Instant.from(m.sent_at), campaignId: m.campaign_id }))
 
-  const elegiveis: AgendamentoElegivel[] = (agendamentos.data ?? [])
+  const elegiveis: AgendamentoElegivel[] = agendamentos
     .filter((ag): ag is typeof ag & { client_id: string } => ag.client_id !== null)
     .map((ag) => ({
       id: ag.id,
