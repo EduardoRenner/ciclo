@@ -224,7 +224,7 @@ describe('lista de espera', () => {
       const link = chamada![0].params.link!
       const token = link.split('/lista-espera/')[1]!
 
-      const agendamento = await reivindicarEncaixe(svc, token)
+      const { agendamento } = await reivindicarEncaixe(svc, token)
       expect(agendamento.status).toBe('pending')
 
       const naAgenda = await svc.from('appointments').select('id, origin').eq('id', agendamento.id).single()
@@ -234,7 +234,7 @@ describe('lista de espera', () => {
   )
 
   it(
-    'reivindicar duas vezes o mesmo link falha na segunda — o encaixe já foi usado',
+    'reabrir o mesmo link devolve o horário já garantido (APR-119); "já foi usado" só quando esse horário caiu',
     async () => {
       const cliente = await criarCliente('Vai Tentar Duas Vezes')
       await entrarNaLista(svc, tenantId, { clientId: cliente, serviceId: servicoId })
@@ -251,9 +251,15 @@ describe('lista de espera', () => {
       const link = vi.mocked(provider.sendTemplate).mock.calls.at(-1)![0].params.link!
       const token = link.split('/lista-espera/')[1]!
 
-      await reivindicarEncaixe(svc, token)
+      const primeira = await reivindicarEncaixe(svc, token)
+      expect(primeira.jaGarantido).toBe(false)
+      const segunda = await reivindicarEncaixe(svc, token)
+      expect(segunda).toMatchObject({ jaGarantido: true, timezone: TZ })
+      expect(segunda.agendamento.id).toBe(primeira.agendamento.id)
+
+      await svc.from('appointments').update({ status: 'canceled' }).eq('id', primeira.agendamento.id)
       const erro = await reivindicarEncaixe(svc, token).catch((e: unknown) => e)
-      expect(erro).toMatchObject({ code: 'NOT_FOUND' })
+      expect(erro).toMatchObject({ code: 'NOT_FOUND', details: { slug: expect.any(String), negocio: expect.any(String) } })
     },
     30_000,
   )

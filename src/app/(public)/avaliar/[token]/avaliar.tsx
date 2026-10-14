@@ -12,9 +12,15 @@ import { linkWhatsAppCompartilhar } from '@/lib/mensagens'
 type Estado = 'carregando' | 'pronto' | 'enviando' | 'enviado' | 'erro'
 type Dados = { negocioNome: string; servicoNome: string; jaAvaliado: boolean }
 
-export default function Avaliar({ token }: { token: string }) {
-  const [estado, setEstado] = useState<Estado>('carregando')
-  const [dados, setDados] = useState<Dados | null>(null)
+/**
+ * APR-119 (docs/98 F-08): `inicial` vem do Server Component (lido pelo token no servidor), então a
+ * tela abre com o nome do negócio e do serviço já no HTML — medido no celular 4× mais lento, o
+ * caminho antigo (HTML vazio → JS → fetch → render) levava 2,3–3,4 s até o primeiro conteúdo útil.
+ * O fetch continua existindo só para o "Tentar de novo" de uma falha transitória.
+ */
+export default function Avaliar({ token, inicial = null }: { token: string; inicial?: Dados | null }) {
+  const [estado, setEstado] = useState<Estado>(inicial ? (inicial.jaAvaliado ? 'enviado' : 'pronto') : 'carregando')
+  const [dados, setDados] = useState<Dados | null>(inicial)
   const [nota, setNota] = useState(0)
   const [notaEmFoco, setNotaEmFoco] = useState(0)
   const [comentario, setComentario] = useState('')
@@ -30,6 +36,7 @@ export default function Avaliar({ token }: { token: string }) {
   const [tentativa, setTentativa] = useState(0)
 
   useEffect(() => {
+    if (inicial && tentativa === 0) return
     let cancelado = false
     fetch(`/api/v1/public/reviews/${token}`)
       .then(async (r) => {
@@ -54,7 +61,7 @@ export default function Avaliar({ token }: { token: string }) {
     return () => {
       cancelado = true
     }
-  }, [token, tentativa])
+  }, [token, tentativa, inicial])
 
   function enviar() {
     if (nota === 0) return
