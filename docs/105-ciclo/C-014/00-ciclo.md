@@ -28,6 +28,9 @@ dia sorteado, 1.500 clientes por cenário, 25% somem de vez, só os atrasados no
 - **H3 não confirmada aqui:** o ganho é parecido com ≤ 4 visitas e com ≥ 6. Ele vem da H1 (silêncio
   medido contra o ritmo e a folga do próprio cliente). O arnês faz todo mundo sumir no mesmo ritmo por
   construção, então NÃO consegue testar a H3; ela precisa de dado real (histórico N2 do plano 97).
+- **Mutação que sobreviveu:** curva do termo principal 10× mais larga manteve a AUC (pulo até subiu para
+  0,80) e piorou o Brier (regular 0,15 → 0,31). A ordem vem quase toda de "silêncio ÷ ritmo"; a
+  largura controla a calibração. Guarda ganhou tetos de Brier por cenário.
 - Correção de arnês no caminho: a foto de quem sumiu usava o padrão do serviço, e no "padrão errado"
   ninguém que sumiu aparecia atrasado (AUC indefinida). Passou a usar o ritmo do cliente.
 

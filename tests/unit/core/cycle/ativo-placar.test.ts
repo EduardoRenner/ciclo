@@ -90,6 +90,22 @@ describe('placar: quem está atrasado ainda volta? (C-014, H3)', () => {
     expect(l['AUC P(ativo)']).toBeGreaterThanOrEqual(l['AUC tabela'])
     expect(l['AUC P(ativo)']).toBeGreaterThanOrEqual(PISO_AUC[nome]!)
   })
+
+  /**
+   * Tetos de Brier medidos no C-014. A ORDEM quase não depende da largura da curva (vem do silêncio ÷
+   * ritmo); a CALIBRAÇÃO depende. Sem estes tetos, uma curva 10× mais larga passava (mutação do C-014).
+   */
+  const TETO_BRIER: Record<string, number> = {
+    'regular (21±2)': 0.15,
+    'deriva (21 → 35)': 0.13,
+    'pulo (21, às vezes 42)': 0.18,
+    'errático (14–45)': 0.15,
+    'padrão errado (70±5, padrão 21)': 0.15,
+  }
+
+  it.each(CENARIOS.map((c) => c.nome))('%s: Brier de P(ativo) no teto medido', (nome) => {
+    expect(linhas.find((x) => x.cenario === nome)!['Brier P(ativo)']).toBeLessThanOrEqual(TETO_BRIER[nome]!)
+  })
 })
 
 describe('probabilidade de ativo de um cliente (C-014)', () => {
