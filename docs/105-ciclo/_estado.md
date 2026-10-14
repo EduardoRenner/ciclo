@@ -1,0 +1,14 @@
+# 105 · Estado do ciclo infinito
+
+Uma linha por ciclo: `C-NNN · objetivo · número antes → depois · nota (cliente/segredo/engenharia) · próximo`.
+Primeira coisa a ler depois de um resumo de contexto. O laço e as regras estão em `docs/105-PROMPT-MESTRE-CICLO-INFINITO.md`.
+
+## Escolhas em vigor
+
+- **Primeira expansão de vertical:** automotivo (oficina) — prova o relógio que não é só tempo (km + tempo). Fonte de domínio: StarkOS.
+- **Segunda expansão ("a outra coisa"):** pet, por padrão de trabalho (dois relógios, mesmo perfil de comprador, nenhum código ainda). Trocar se o Eduardo apontar outra.
+- **Trilha permanente:** o algoritmo (Motor de Ciclo) em pelo menos 1 de cada 3 ciclos.
+
+## Ciclos
+
+- C-001 · (a F1 do próximo turno escreve) · — · — · —
