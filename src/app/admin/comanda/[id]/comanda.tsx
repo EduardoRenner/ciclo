@@ -9,6 +9,7 @@ import AlertBanner from '@/components/ui/alert-banner'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
+import { useFuso } from '@/components/shell/fuso'
 import type { SobraExplicada } from '@/core/comanda/sobra-explicada'
 import { FORMAS_DE_PAGAMENTO, NOME_DA_FORMA, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
 import { calcularTotaisComanda } from '@/core/comanda/totals'
@@ -92,6 +93,30 @@ export default function Comanda({
   // escolhem no fechamento. Comanda de antes da `0066` vem nula, e as três de fora (clube, pacote,
   // voucher) não têm nome aqui — nos dois casos a frase sai sem a forma, em vez de sair torta.
   const formaFechada = ticket.payment_method ? (NOME_DA_FORMA[ticket.payment_method as FormaDePagamento] ?? null) : null
+  const fuso = useFuso()
+  const [desfazendo, setDesfazendo] = useState(false)
+  const [pendenteDesfazer, setPendenteDesfazer] = useState(false)
+  async function desfazerFechamento() {
+    setPendenteDesfazer(true)
+    try {
+      const r = await fetchComTentativa(`/api/v1/tickets/${ticket.id}/cancel`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+      })
+      const json = (await r.json().catch(() => ({}))) as { error?: { message?: string } }
+      if (!r.ok) {
+        mostrarToast({ tom: 'erro', titulo: json.error?.message ?? 'Não consegui desfazer o fechamento.' })
+        return
+      }
+      mostrarToast({ tom: 'ok', titulo: 'Fechamento desfeito. A comanda saiu do caixa.' })
+      setDesfazendo(false)
+      router.refresh()
+    } catch {
+      mostrarToast({ tom: 'erro', titulo: 'Sem conexão agora. Nada foi desfeito.' })
+    } finally {
+      setPendenteDesfazer(false)
+    }
+  }
 
   function adicionarItem() {
     if (!ticket.professional_id) {
@@ -476,9 +501,37 @@ export default function Comanda({
           </Button>
         </>
       ) : (
-        <p className="text-center text-secundario text-txt-2">
-          Recebido {dinheiro.format(ticket.total_cents / 100)}{formaFechada ? ` em ${formaFechada}` : ''}. Nada mais pode mudar aqui.
-        </p>
+        <div className="flex flex-col gap-3">
+          <p className="text-center text-secundario text-txt-2">
+            Recebido {dinheiro.format(ticket.total_cents / 100)}{formaFechada ? ` em ${formaFechada}` : ''}.
+          </p>
+          {/*
+            APR-204 (C-41): fechou errado (forma, item, desconto) e não tinha volta — a rota de cancelar
+            existia sem chamador. Desfazer é compensação (status + `return` no estoque), nunca DELETE,
+            e pede um segundo toque porque mexe no caixa do dia e na comissão de quem atendeu.
+          */}
+          {ticket.status === 'closed' ? (
+            desfazendo ? (
+              <div role="group" aria-label="Confirmar desfazer" className="flex flex-col gap-2 rounded-[var(--radius-sm)] bg-surface-2 p-3">
+                <p className="text-secundario text-txt">
+                  O caixa de {ticket.closed_at ? new Date(ticket.closed_at).toLocaleDateString('pt-BR', { timeZone: fuso }) : 'hoje'} e a comissão de quem
+                  atendeu mudam junto: a comanda fica cancelada e sai dos dois, e o produto baixado volta ao estoque. Não dá para abrir outra
+                  comanda para o mesmo atendimento.
+                </p>
+                <Button variante="secondary" largura="cheia" carregando={pendenteDesfazer} onClick={desfazerFechamento}>
+                  Sim, desfazer o fechamento
+                </Button>
+                <Button largura="cheia" disabled={pendenteDesfazer} onClick={() => setDesfazendo(false)}>
+                  Deixar como está
+                </Button>
+              </div>
+            ) : (
+              <Button variante="secondary" largura="cheia" onClick={() => setDesfazendo(true)}>
+                Desfazer fechamento
+              </Button>
+            )
+          ) : null}
+        </div>
       )}
     </div>
   )

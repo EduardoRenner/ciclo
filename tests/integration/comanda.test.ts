@@ -7,7 +7,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { criarProfissional } from '@/server/services/profissionais'
 import { atualizarServico, criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
-import { adicionarItemComanda, atualizarDescontoEGorjeta, buscarComanda, fecharComanda, removerItemComanda } from '@/server/services/comanda'
+import { fechamentoDiario } from '@/server/services/caixa'
+import { adicionarItemComanda, atualizarDescontoEGorjeta, buscarComanda, cancelarComandaFechada, fecharComanda, removerItemComanda } from '@/server/services/comanda'
 
 import type { Database, Json } from '@/server/db/types.gen'
 
@@ -694,4 +695,31 @@ describe('comanda — desconto e gorjeta no MESMO envio do fechamento (APR-112a)
     const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash')
     expect([fechado.discount_cents, fechado.total_cents]).toEqual([1_000, 9_000])
   }, 30_000)
+})
+
+describe('desfazer o fechamento por compensação (APR-204)', () => {
+  it(
+    'fechar → desfazer: o caixa do dia volta ao que era; desfazer de novo → 409',
+    async () => {
+      const tz = 'America/Sao_Paulo'
+      const hoje = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date())
+      const antes = await fechamentoDiario(svc, tenantId, tz, hoje)
+
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+      await fecharComanda(svc, tenantId, ticketId, 'cash', {})
+      const fechado = await fechamentoDiario(svc, tenantId, tz, hoje)
+      expect(fechado.revenueCents).toBe(antes.revenueCents + 10_000)
+      expect(fechado.ticketsCount).toBe(antes.ticketsCount + 1)
+
+      const cancelado = await cancelarComandaFechada(svc, tenantId, ticketId)
+      expect(cancelado.status).toBe('canceled')
+      const depois = await fechamentoDiario(svc, tenantId, tz, hoje)
+      expect(depois.revenueCents).toBe(antes.revenueCents)
+      expect(depois.ticketsCount).toBe(antes.ticketsCount)
+
+      await expect(cancelarComandaFechada(svc, tenantId, ticketId)).rejects.toMatchObject({ code: 'CONFLICT' })
+    },
+    30_000,
+  )
 })

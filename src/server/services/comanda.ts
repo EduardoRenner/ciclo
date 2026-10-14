@@ -466,6 +466,8 @@ export async function cancelarComandaFechada(db: Cliente, tenantId: string, tick
   const { data: ticket, error: erroTicket } = await db.from('tickets').select('status').eq('tenant_id', tenantId).eq('id', ticketId).maybeSingle()
   if (erroTicket) throw new AppError('INTERNAL', { cause: erroTicket })
   if (!ticket) throw new AppError('NOT_FOUND')
+  // APR-204: desfazer duas vezes (dois toques, dois aparelhos) é conflito, não transição inválida — a tela diz "já foi desfeita".
+  if (ticket.status === 'canceled') throw new AppError('CONFLICT', { message: 'Essa comanda já foi desfeita.' })
   if (ticket.status !== 'closed') throw new AppError('INVALID_TRANSITION', { message: 'Só dá para cancelar uma comanda fechada e ainda não paga.' })
 
   // Mesma razão do `fecharComanda`: a troca de estado vem ANTES do estorno, e com
@@ -481,7 +483,7 @@ export async function cancelarComandaFechada(db: Cliente, tenantId: string, tick
     .select('*')
     .maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
-  if (!cancelado) throw new AppError('INVALID_TRANSITION', { message: 'Só dá para cancelar uma comanda fechada e ainda não paga.' })
+  if (!cancelado) throw new AppError('CONFLICT', { message: 'Essa comanda mudou enquanto você desfazia. Abra de novo.' })
 
   await estornarBaixaDaComanda(db, tenantId, ticketId)
 
