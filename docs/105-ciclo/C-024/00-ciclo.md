@@ -37,3 +37,8 @@ teste determinístico (2 tipos na fila, 1 pedido, o outro intocado).
 
 **Nota:** cliente 6 · segredo 4 · engenharia 9. **Próximo (C-025):** a suíte inteira de novo, para ver se
 passa de uma vez; depois a fila e a ficha mostram o sujeito.
+
+**Suíte inteira depois do conserto:** integração 91 de 91 arquivos, 627 verdes, 1 pulado, NUMA rodada
+(a primeira desta sessão; antes: 3 rodadas, 3 vermelhas). O pulado é `health-advocacia` "quem tem fator
+verificado não conta": TOTP desligado no Supabase local; na CI o teste reprova em vez de pular. Uma rodada
+verde não prova estabilidade: a régua é a próxima rodada inteira de cada ciclo.
