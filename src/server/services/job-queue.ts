@@ -91,6 +91,21 @@ export async function enfileirar(db: Cliente, entrada: EntradaEnfileirar): Promi
  * handler registrado marca `dead` na hora — silêncio ali seria pior que
  * reprovar, porque ninguém saberia que aquele tipo nunca roda.
  */
+/** Esperas entre as tentativas da baixa de um job concluído (C-024). Três tentativas no total. */
+export const ESPERAS_DA_BAIXA_MS = [200, 600] as const
+
+/** `finish_job('done')` com nova tentativa: devolve o último erro, ou `null` se a baixa entrou. */
+async function darBaixaComoFeito(db: Cliente, id: number): Promise<unknown> {
+  let ultimo: unknown = null
+  for (let tentativa = 0; tentativa <= ESPERAS_DA_BAIXA_MS.length; tentativa++) {
+    if (tentativa > 0) await new Promise((r) => setTimeout(r, ESPERAS_DA_BAIXA_MS[tentativa - 1]))
+    const { error } = await db.rpc('finish_job', { p_id: id, p_status: 'done' })
+    if (!error) return null
+    ultimo = error
+  }
+  return ultimo
+}
+
 export async function processarLote(
   db: Cliente,
   handlers: Record<string, ManipuladorDeJob>,
@@ -124,13 +139,18 @@ export async function processarLote(
     }
 
     if (sucesso) {
-      const { error: erroFim } = await db.rpc('finish_job', { p_id: job.id, p_status: 'done' })
+      const erroFim = await darBaixaComoFeito(db, job.id)
       if (erroFim) {
         // O trabalho JÁ aconteceu — cair no ramo de falha marcaria `failed`/`dead` e reexecutaria
         // um handler que já rodou (mensagem duplicada, cobrança duplicada, o que o handler for).
         // Isto não é falha do job, é falha de CONTABILIDADE: loga alto e não toca no status, que
-        // fica em `running` — vira "job parado" para a vigilância, que é o desfecho seguro (alguém
-        // humano confere) em vez de reexecutar uma ação não-idempotente às cegas.
+        // fica em `running`.
+        //
+        // C-024: isto NÃO é o fim da história. A 0037 reivindica de novo todo `running` parado há
+        // mais de 15 min (com tentativas sobrando) e executa o handler OUTRA VEZ. Por isso a baixa
+        // tenta 3 vezes antes de desistir (`darBaixaComoFeito`): a falha medida aqui é passageira
+        // (gateway devolvendo resposta inválida sob carga), e cada tentativa a mais é uma
+        // reexecução evitada. Falhou as 3: o risco de reexecutar continua, e o log diz qual job.
         console.error(
           JSON.stringify({ level: 'error', event: 'job_concluido_sem_registro', jobId: job.id, kind: job.kind }),
           erroFim,
