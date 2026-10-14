@@ -192,7 +192,11 @@ describe('a lista do Motor de Ciclo anuncia o que mudou ao trocar o filtro', () 
     const inicio = src.indexOf('aria-live="polite"')
     const bloco = src.slice(inicio, src.indexOf('</p>', inicio))
     expect(/lista\.count/.test(bloco), 'o anúncio precisa dizer a quantidade que os StatTiles mostram').toBe(true)
-    expect(/lista\.totalValueCents/.test(bloco), 'o anúncio precisa dizer o valor que os StatTiles mostram').toBe(true)
+    // C-037: o campo do valor mudou (preço cheio); a guarda lê QUAL campo o cartão usa e exige o mesmo no
+    // anúncio, em vez de fixar o nome — fixar teria cegado na troca, ou cobrado o campo antigo.
+    const doCartao = /rotulo="Dá para recuperar" valor=\{dinheiro\.format\(lista\.(\w+)/.exec(src)?.[1]
+    expect(doCartao, 'não achei o cartão "Dá para recuperar": a guarda cegou').toBeTruthy()
+    expect(new RegExp(`lista\\.${doCartao}\\b`).test(bloco), 'o anúncio precisa dizer o valor que os StatTiles mostram').toBe(true)
     expect(/carregando/.test(bloco), 'o anúncio precisa cobrir o estado de carregando').toBe(true)
   })
 })

@@ -36,6 +36,12 @@ export type ItemRecuperar = {
    */
   ritmo: { cicloPessoalDias: number; ultimaVisitaOn: string | null; amostra: number } | null
   valueCents: number
+  /**
+   * C-037 (pedido do Eduardo, 14/10): o preço CHEIO do serviço, sem a redução pela chance de voltar —
+   * é o número que a tela de Recuperar mostra. 0 quando a próxima visita não gera venda avulsa
+   * (assinante do clube, pacote com sessão), a mesma regra do `valueCents`.
+   */
+  fullValueCents: number
   /** O que SOBRA daquele atendimento × a chance de a pessoa voltar. É o que ordena a lista. */
   profitCents: number
   lastCampaignAt: string | null
@@ -49,6 +55,8 @@ export type ItemRecuperar = {
 
 export type ListaRecuperar = {
   totalValueCents: number
+  /** C-037: a soma do preço cheio de cada pessoa da lista — o que entra se todas voltarem. */
+  totalFullValueCents: number
   /** A soma do lucro em risco — o que de fato sobra se todo mundo dessa lista voltar. */
   totalProfitCents: number
   count: number
@@ -84,7 +92,15 @@ export async function listarParaRecuperar(
     return (opcoes.state ? q.eq('state', opcoes.state) : q).order('client_id').order('service_id')
   }
 
-  const data = await buscarTudoPaginado(consulta)
+  const [data, servicos] = await Promise.all([
+    buscarTudoPaginado(consulta),
+    db.from('services').select('id, price_cents').eq('tenant_id', tenantId),
+  ])
+  if (servicos.error) throw new AppError('INTERNAL', { cause: servicos.error })
+  const precoPorServico = new Map((servicos.data ?? []).map((s) => [s.id, s.price_cents ?? 0]))
+  // Preço cheio só onde há venda avulsa: o job grava `value_at_risk_cents` 0 para assinante e pacote.
+  const precoCheio = (l: { service_id: string | null; value_at_risk_cents: number | null }) =>
+    (l.value_at_risk_cents ?? 0) > 0 ? (precoPorServico.get(l.service_id!) ?? 0) : 0
 
   // A view não declara FK nem `not null` para o PostgREST/gerador de tipos,
   // mas toda coluna aqui vem de `join`s obrigatórios sobre colunas `not null`
@@ -107,10 +123,12 @@ export async function listarParaRecuperar(
    */
   const totalValueCents = linhas.reduce((soma, l) => soma + (l.value_at_risk_cents ?? 0), 0)
   const totalProfitCents = linhas.reduce((soma, l) => soma + l.ordemCents, 0)
+  const totalFullValueCents = linhas.reduce((soma, l) => soma + precoCheio(l), 0)
   const limite = opcoes.limit ?? LIMITE_PADRAO
 
   return {
     totalValueCents,
+    totalFullValueCents,
     totalProfitCents,
     count: linhas.length,
     naHoraDeVoltar: linhas.filter((l) => l.state === 'due').length,
@@ -127,6 +145,7 @@ export async function listarParaRecuperar(
       lateDays: l.late_days!,
       ritmo: l.personal_cycle_days == null ? null : { cicloPessoalDias: l.personal_cycle_days, ultimaVisitaOn: l.last_visit_on, amostra: l.sample_size ?? 0 },
       valueCents: l.value_at_risk_cents!,
+      fullValueCents: precoCheio(l),
       profitCents: l.profit_at_risk_cents ?? 0,
       lastCampaignAt: l.last_campaign_at,
     })),

@@ -183,7 +183,8 @@ export default function RecuperarReceita({
         gastar o WhatsApp do dia com quem vale menos.
       */}
       <div className="mb-5 grid grid-cols-2 gap-3">
-        <StatTile rotulo="Dá para recuperar" valor={dinheiro.format(lista.totalValueCents / 100)} apoio={`${dinheiro.format(lista.totalProfitCents / 100)} de lucro`} />
+        {/* C-037 (pedido do Eduardo, 14/10): só "Dá para recuperar" e o preço cheio, sem lucro e sem reduzir pela chance. */}
+        <StatTile rotulo="Dá para recuperar" valor={dinheiro.format(lista.totalFullValueCents / 100)} />
         <StatTile rotulo={comMaiuscula(plural(vocabulario.cliente))} valor={String(lista.count)} />
       </div>
 
@@ -197,11 +198,10 @@ export default function RecuperarReceita({
         clientela não é "ela".
       */}
       <details className="mb-3 text-secundario text-txt-3">
-        <summary className="cursor-pointer py-4 font-semibold text-txt-2">Estimativa, não promessa: como a conta é feita</summary>
+        <summary className="cursor-pointer py-4 font-semibold text-txt-2">Não é promessa: como a conta é feita</summary>
         <p className="pb-2">
-          O preço do serviço de cada pessoa, multiplicado pela chance de ela voltar. Quanto mais tempo sem aparecer, menor a
-          chance, e por isso quem sumiu há mais tempo vale menos aqui. A ordem da lista segue o <strong>lucro</strong>, o que
-          sobra depois da comissão{servicosSemMaterial > 0 ? '' : ' e do produto'}, não o preço.
+          A soma do preço do serviço de cada pessoa da lista: o que entra se todas voltarem. A ordem da lista põe primeiro
+          quem deixa mais depois da comissão{servicosSemMaterial > 0 ? '' : ' e do produto'}, não quem paga mais.
         </p>
       </details>
 
@@ -275,7 +275,7 @@ export default function RecuperarReceita({
       <p aria-live="polite" className="sr-only">
         {carregando
           ? 'Carregando a lista.'
-          : `${lista.count} ${lista.count === 1 ? 'cliente' : 'clientes'}, ${dinheiro.format(lista.totalValueCents / 100)} para recuperar.${recorte ? ` ${recorte}` : ''}`}
+          : `${lista.count} ${lista.count === 1 ? 'cliente' : 'clientes'}, ${dinheiro.format(lista.totalFullValueCents / 100)} para recuperar.${recorte ? ` ${recorte}` : ''}`}
       </p>
 
       {/*
@@ -361,14 +361,11 @@ export default function RecuperarReceita({
                         probabilidade calibrada genuinamente perto de zero): a tela não sabe qual, e
                         inventar um dos dois seria menos honesto que dizer "sem valor avulso".
                       */}
-                      {item.valueCents === 0 && item.profitCents === 0 ? (
+                      {item.fullValueCents === 0 ? (
                         <p className="text-label text-txt-3">Sem valor avulso</p>
                       ) : (
-                        <>
-                          <p className="tabular text-corpo font-bold text-acc-2">{dinheiro.format(item.valueCents / 100)}</p>
-                          <p className="tabular text-label text-txt-3">{dinheiro.format(item.profitCents / 100)} de lucro</p>
-        </>
-                    )}
+                        <p className="tabular text-corpo font-bold text-acc-2">{dinheiro.format(item.fullValueCents / 100)}</p>
+                      )}
                     {/*
                       `docs/82` §7/§11 do plano — decisão de 2026-09-23: "Chamar" (o WhatsApp DO
                       PRÓPRIO DONO, grátis, sem depender de credencial) virou o caminho padrão para
