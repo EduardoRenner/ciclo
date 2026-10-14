@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarClock, ChevronLeft, Megaphone, Menu, Package, Scissors, Settings, Sparkles, Users, Wallet } from 'lucide-react'
+import { CalendarClock, ChevronLeft, ExternalLink, Megaphone, Menu, Package, Scissors, Settings, Sparkles, Users, Wallet } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -69,7 +69,7 @@ function BotaoPerguntar({ className = '' }: { className?: string }) {
  * `core/navegacao/atalhos-do-menu.ts`). Sem ele (sem contexto, ou a consulta de módulos falhou), a
  * lista inteira, como antes.
  */
-export default function Topbar({ atalhos }: { atalhos?: string[] }) {
+export default function Topbar({ atalhos, site }: { atalhos?: string[]; site?: { href: string } }) {
   const pathname = usePathname()
   const pai = paiDaRota(pathname)
   const [menuAberto, setMenuAberto] = useState(false)
@@ -150,6 +150,19 @@ export default function Topbar({ atalhos }: { atalhos?: string[] }) {
             </Link>
             )
           })}
+          {/* APR-108: "Ver meu site" saiu do topo da Hoje (peso zero na pergunta "o que faço agora") e mora aqui. */}
+          {site ? (
+            <a
+              href={site.href}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setMenuAberto(false)}
+              className="flex h-12 items-center gap-3 rounded-[var(--radius-sm)] px-2 text-corpo font-semibold text-txt transition hover:bg-surface-2 active:scale-[.98]"
+            >
+              <ExternalLink aria-hidden className="size-5 text-txt-3" />
+              Meu site
+            </a>
+          ) : null}
         </nav>
       </Sheet>
     </header>

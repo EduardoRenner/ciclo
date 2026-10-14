@@ -1,6 +1,4 @@
-import { ExternalLink } from 'lucide-react'
 import { headers } from 'next/headers'
-import Link from 'next/link'
 import { after } from 'next/server'
 import { Temporal } from '@js-temporal/polyfill'
 
@@ -21,14 +19,6 @@ import HojeDaAdvocacia from './advocacia'
 import CentralDeAcoes from './central-de-acoes'
 import CompartilharSite from './compartilhar'
 import Hoje from './hoje'
-
-/** Saudação pelo horário do salão, não pelo do servidor (que roda em UTC na Vercel). */
-function saudacao(timezone: string): string {
-  const hora = Number(new Intl.DateTimeFormat('pt-BR', { hour: 'numeric', hour12: false, timeZone: timezone }).format(new Date()))
-  if (hora < 12) return 'Bom dia'
-  if (hora < 18) return 'Boa tarde'
-  return 'Boa noite'
-}
 
 export const metadata = { title: "Hoje" }
 
@@ -152,26 +142,11 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
         ser a saudação, que datava a tela e ancora o "agora"; o nome vira apoio,
         que ainda importa para quem gerencia mais de uma unidade.
       */}
-      <PageHeader
-        overline={data}
-        titulo={saudacao(timezone)}
-        descricao={ctx.tenant.name}
-        acao={
-          ctx.tenant.slug ? (
-            <div className="flex items-center gap-1">
-              <Link
-                href={`/${ctx.tenant.slug}`}
-                target="_blank"
-                className="flex h-12 items-center gap-1 text-label font-semibold text-acc-2 transition active:scale-[.97]"
-              >
-                Ver meu site
-                <ExternalLink aria-hidden className="size-3.5" />
-              </Link>
-              <CompartilharSite slug={ctx.tenant.slug} nome={ctx.tenant.name} />
-            </div>
-          ) : null
-        }
-      />
+      {/*
+        APR-108: cabeçalho de uma linha. A saudação e o nome do negócio tinham peso zero na pergunta
+        "o que faço agora?" e empurravam o dia para baixo; "Ver meu site" foi para o menu.
+      */}
+      <PageHeader overline={data} titulo="Hoje" acao={ctx.tenant.slug ? <CompartilharSite slug={ctx.tenant.slug} nome={ctx.tenant.name} /> : null} />
 
       <Hoje
         resumo={resumo}

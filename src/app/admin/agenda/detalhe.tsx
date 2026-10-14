@@ -19,14 +19,14 @@ import { fetchComTentativa } from '@/lib/tentativa'
 
 const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
-const ROTULO_ACAO: Partial<Record<EstadoAgendamento, string>> = {
+export const ROTULO_ACAO: Partial<Record<EstadoAgendamento, string>> = {
   confirmed: 'Confirmar',
   arrived: 'Chegou',
   done: 'Concluir',
   no_show: 'Marcar falta',
 }
 
-const ROTA_ACAO: Partial<Record<EstadoAgendamento, string>> = {
+export const ROTA_ACAO: Partial<Record<EstadoAgendamento, string>> = {
   confirmed: 'confirm',
   arrived: 'arrive',
   done: 'complete',
@@ -34,14 +34,14 @@ const ROTA_ACAO: Partial<Record<EstadoAgendamento, string>> = {
 }
 
 /** Confirmação específica no toast — na mesma voz de "Agendamento cancelado"/"remarcado" logo abaixo. */
-const TITULO_FEITO: Partial<Record<EstadoAgendamento, string>> = {
+export const TITULO_FEITO: Partial<Record<EstadoAgendamento, string>> = {
   confirmed: 'Agendamento confirmado',
   arrived: 'Chegada registrada',
   done: 'Atendimento concluído',
   no_show: 'Falta registrada',
 }
 
-async function post(url: string) {
+export async function post(url: string) {
   const r = await fetchComTentativa(url, { method: 'POST' })
   const json = (await r.json()) as { data?: unknown; error?: { message: string } }
   if (!r.ok) throw new Error(json.error?.message ?? 'Não consegui completar a ação.')

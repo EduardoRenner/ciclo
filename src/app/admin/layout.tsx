@@ -163,7 +163,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         `auto` do outro lado e o conteúdo grudava na coluna, com 649px vazios à direita.
       */}
       <div className="mx-auto min-h-dvh max-w-[560px] sm:border-x sm:border-line">
-        <Topbar atalhos={atalhos} />
+        <Topbar atalhos={atalhos} site={ctx?.tenant.slug ? { href: `/${ctx.tenant.slug}` } : undefined} />
         <IndicadorDeConexao pacote={ctx?.tenant.pacote ?? 'base'} />
         {faixa ? <FaixaDaConta faixa={faixa} /> : null}
         {/*

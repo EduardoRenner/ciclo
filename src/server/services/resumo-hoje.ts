@@ -63,6 +63,9 @@ export type ResumoHoje = {
    */
   numeroDoDia: { rotulo: 'Entrou hoje' | 'Atendido hoje'; cents: number }
   nextClient: LinhaHoje | null
+  /** APR-108: "3 de 7 horários feitos" na linha do número do dia. Cancelado e expirado não contam no total. */
+  horariosFeitos: number
+  horariosDoDia: number
   /** Confirmações pendentes que começam nas próximas 3 horas — o que precisa de atenção agora, não o dia inteiro. */
   alerts: LinhaHoje[]
   /** O que ainda vem hoje, dali para frente, na ordem em que acontece. */
@@ -214,6 +217,8 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
   return {
     revenueTodayCents,
     nextClient: aindaPorVir[0] ?? null,
+    horariosFeitos: linhas.filter((a) => a.status === 'done').length,
+    horariosDoDia: linhas.filter((a) => !['canceled', 'expired'].includes(a.status)).length,
     alerts,
     restOfDay: aindaPorVir,
     stockAlerts,

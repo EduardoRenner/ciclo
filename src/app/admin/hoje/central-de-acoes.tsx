@@ -42,9 +42,13 @@ const ICONE: Record<string, typeof DollarSign> = {
   'motor-sem-ultima-visita': CalendarClock,
 }
 
-/** docs/62 Fase E1: piso de cards visíveis antes do "ver mais" — medido, 4 cards de sugestão
- * empurravam qualquer coisa acionável pra debaixo da dobra num dia vazio. */
-const VISIVEIS_DE_INICIO = 3
+/**
+ * docs/62 Fase E1 media 4 cards empurrando a ação para baixo da dobra e cortou em 3. APR-108 (docs/98
+ * I-09) vai ao fim: UM cartão, o primeiro da ordem do servidor (`centralDeAcoes` já ordena por valor:
+ * recuperar → aniversariantes → pontos → orçamentos → completude), e o resto em "Ver mais N". Tudo
+ * que sai continua a 1 toque.
+ */
+const VISIVEIS_DE_INICIO = 1
 
 /**
  * "Próximo passo sugerido" — nunca aparece vazio: some da tela quando não há nada a sugerir.
