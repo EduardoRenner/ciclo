@@ -45,3 +45,38 @@ Uma entrada por rodada: o que, por quê, número antes e depois, o que saiu, pr�
   Hoje dos dois salões de demonstração: número verdadeiro, manchete que mata a confiança no
   diferencial do produto no primeiro mês. Virou a aposta A-08.
 - **Próxima:** APR-109/110 (grade de horários livres compartilhada entre o público e o Marcar).
+
+## 2026-10-14 · Rodada 3 · APR-109 a 115 (agendar, comanda, 404, Clientes, ficha)
+
+- **APR-109/110 (grade de horários compartilhada):** uma grade (`GradeDeHorarios` + `TrilhoDeDias`
+  + `core/agenda/dias`) para o público e o Marcar. Corrida público × painel 0/20; `agendar.tsx` de
+  1.4xx para 1.198 linhas; Marcar em 3 toques, caindo no dia certo da Agenda.
+- **APR-111 (remarcar no sheet):** 4 toques (aceite ≤ 4), grade 12 horários e trilho 14 dias dentro
+  do sheet, botão "Remarcar para HH:MM", 409 com 2 alternativas tocáveis, 2 PATCH. O primeiro
+  roteiro não achava a grade: a linha da Agenda não trazia `service_id` → `availability?serviceId=
+  undefined` → 422. Defeito real, pego só porque a medição foi feita.
+- **APR-112 (comanda "Receber R$ X"):** desconto e gorjeta no MESMO envio do fechamento (migration
+  0130 equivalente, RPC com `coalesce`); nada de `onBlur` que grava sozinho (guarda vista reprovando).
+  "Receber R$ 55" 3/3, caso simples 2 toques, pior 993 ms.
+- **APR-113 (404 com casca):** comanda inexistente e id torto → "Essa comanda não existe" com barra e
+  "Voltar para Hoje". `/admin/xyz` ainda caía no 404 da raiz (medido: barra 0): o `not-found.tsx` do
+  segmento não pega rota que não casa com nada. Pega-tudo `[...naoExiste]` → 404, barra 1, saída 1.
+- **APR-114 (Clientes):** busca y 401 (plano) → 286 (só tirando os quadros) → **148** (atalhos de
+  "sumindo"/"aniversário" abaixo da lista). Ordem alfabética com cursor composto (A, B, C fora de
+  ordem saem em ordem; homônimos não se perdem). 500 na busca → "Isso não quer dizer que a pessoa
+  não existe" (aviso 1, "Confira a grafia" 0). Duas buscas em voo, a velha chega depois: mostra a
+  nova. Últimos 4 dígitos acham.
+- **APR-115 (ficha):** quadros por regra no core (`tilesDoResumo`, 6 casos; mutação sem a trava do
+  lucro nulo reprova 3). Na demo: Visitas, Gasto médio por visita, Sobrou, Lucro por ano; 0
+  "Faltas 0", 0 "R$ 0,00". "Marcar de novo" abre o Marcar com cliente e último serviço preenchidos
+  (URL com `cliente` e `servico`), 3 toques até "Marcar horário". "Mensagem" 98–99% dos pontos da
+  caixa a 360/390: os 4 que faltam são os cantos fora do raio de 12 px, a forma inteira responde.
+- **Achado fora do plano (Lente 3, "verde não é prova"):** a guarda `lucro-nao-vaza-para-quem-atende`
+  tinha `new RegExp(`${coluna}`)` — `` em template literal é BACKSPACE. Nunca casou nada;
+  passava vazia desde que nasceu. Consertada e vista reprovando com `profit_cents` injetado na ficha.
+  E `pnpm lint` reprovava com 19 erros de arquivos minificados do Tesseract (`public/ocr`, CNV-018)
+  que o `.gitignore` escondia e o ESLint varria.
+- **O que saiu:** "Entrou"/"Valor atendido" da ficha (preço de tabela com nome de dinheiro); "Ticket
+  médio"/"Voltam de novo" do topo de Clientes (foram para o Mês); orçamento e indicar do meio do resumo.
+- **Próxima:** APR-116 depende do merge do PR #149 (aberto) → pula para APR-117 (página pública de
+  confirmar mostra QUAL horário, desmarcar em 2 passos com desfazer).
