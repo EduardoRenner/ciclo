@@ -175,6 +175,8 @@ export async function atendidoSemComandaDoDia(db: Cliente, tenantId: string, tim
     .eq('status', 'done')
     .gte('starts_at', inicio)
     .lt('starts_at', fim)
+    // Teto (guarda consulta-sem-teto): um dia de UM negócio não chega perto disto; passar seria dado errado, não escala.
+    .limit(500)
   if (error) throw new AppError('INTERNAL', { cause: error })
   const semComanda = (data ?? []).filter((a) => !(a.tickets as { status: string }[] | null)?.some((t) => t.status === 'closed'))
   return { cents: semComanda.reduce((soma, a) => soma + a.price_cents, 0), atendimentos: semComanda.length }
