@@ -110,6 +110,8 @@ export default async function PaginaCampanhas() {
     <div className="pb-8">
       <PageHeader titulo="Campanhas" descricao="Quem voltou depois de receber mensagem, e quanto isso trouxe." />
 
+      {/* APR-121 (A-13): sem mensagem enviada no período não há o que medir; "R$ 0,00" e "0 de 0" só assustam. */}
+      {atribuicao.mensagensNaJanela > 0 ? (
       <div className="grid grid-cols-2 gap-3">
         <StatTile rotulo="Voltaram este mês" valor={dinheiro.format(atribuicao.totalCents / 100)} />
         <StatTile
@@ -123,6 +125,7 @@ export default async function PaginaCampanhas() {
           }
         />
       </div>
+      ) : null}
 
       {bloqueado ? (
         <BloqueioPlano
@@ -135,14 +138,17 @@ export default async function PaginaCampanhas() {
             : {})}
           alternativa={<Link href="/admin/recuperar">Avisar uma de cada vez, de graça</Link>}
         />
-      ) : (
+      ) : null}
+
+      {/* APR-121 (I-18): um primário só. Com a lista vazia, o estado vazio já traz "Criar a primeira". */}
+      {!bloqueado && lista.length > 0 ? (
         <Link href="/admin/campanhas/nova" className="mt-4 block">
           <Button largura="cheia">
             <Megaphone aria-hidden className="size-4" />
             Nova campanha
           </Button>
         </Link>
-      )}
+      ) : null}
 
       <section className="mt-7">
         <SectionHeader icone={<TrendingUp className="size-3.5" />}>Resultados</SectionHeader>

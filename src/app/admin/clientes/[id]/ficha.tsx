@@ -734,7 +734,7 @@ export default function Ficha({
             largura="cheia"
             disabled={!podeOrcamento}
             motivoDesabilitado="Orçamento é do plano Essencial. Veja os planos em Configurações, Meu plano."
-            onClick={() => router.push(`/admin/orcamentos/novo?cliente=${cliente.id}`)}
+            onClick={() => router.push(`/admin/orcamentos/novo?cliente=${cliente.id}&de=cliente:${cliente.id}`)}
           >
             <FileText className="size-4" />
             Criar orçamento

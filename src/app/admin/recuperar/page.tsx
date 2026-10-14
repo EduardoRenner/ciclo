@@ -104,7 +104,7 @@ export default async function PaginaRecuperar() {
         descricao="Quem o Motor de Ciclo identificou em atraso para voltar."
         acao={
           <Link
-            href="/admin/campanhas"
+            href="/admin/campanhas?de=recuperar"
             className="flex h-12 items-center gap-1 text-label font-semibold text-acc-2 transition active:scale-[.97]"
           >
             Campanhas

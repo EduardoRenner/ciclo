@@ -3,8 +3,8 @@
 import { CalendarClock, ChevronLeft, ExternalLink, Megaphone, Menu, Package, Scissors, Settings, Sparkles, Users, Wallet } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
 
 import Sheet from '@/components/ui/sheet'
 
@@ -69,9 +69,21 @@ function BotaoPerguntar({ className = '' }: { className?: string }) {
  * `core/navegacao/atalhos-do-menu.ts`). Sem ele (sem contexto, ou a consulta de módulos falhou), a
  * lista inteira, como antes.
  */
+/** Lê `?de=` e entrega para a Topbar; separado para o `useSearchParams` ficar sob Suspense. */
+function LeitorDeOrigem({ aoLer }: { aoLer: (de: string | null) => void }) {
+  const de = useSearchParams().get('de')
+  useEffect(() => {
+    aoLer(de)
+  }, [de, aoLer])
+  return null
+}
+
 export default function Topbar({ atalhos, site }: { atalhos?: string[]; site?: { href: string } }) {
   const pathname = usePathname()
-  const pai = paiDaRota(pathname)
+  // APR-121: a origem (`?de=`) decide o voltar; `useSearchParams` fica num componente próprio sob
+  // Suspense porque a Topbar também vive em páginas estáticas (o 404 do painel).
+  const [de, setDe] = useState<string | null>(null)
+  const pai = paiDaRota(pathname, de)
   const [menuAberto, setMenuAberto] = useState(false)
 
   return (
@@ -81,6 +93,9 @@ export default function Topbar({ atalhos, site }: { atalhos?: string[]; site?: {
         'pt-[env(safe-area-inset-top)] backdrop-blur-xl backdrop-saturate-150'
       }
     >
+      <Suspense fallback={null}>
+        <LeitorDeOrigem aoLer={setDe} />
+      </Suspense>
       {pai ? (
         <Link
           href={pai.href}

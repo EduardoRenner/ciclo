@@ -52,12 +52,36 @@ const REGRAS: { prefixo: string; pai: Pai }[] = [
  * A regra passa a ser topológica em vez de baseada na lista: uma aba cujo href é sub-rota de OUTRA
  * aba é um formulário, e mantém o voltar do pai.
  */
-export function paiDaRota(pathname: string): Pai | null {
+/**
+ * APR-121 (docs/98 G-44): Campanhas e Orçamentos chegam por mais de um caminho (Recuperar, a ficha
+ * da cliente, a Hoje), e o voltar fixo em "Configurações" mandava a pessoa para um lugar onde ela
+ * nunca esteve. Quem abre a tela diz de onde veio (`?de=`), e o voltar devolve para lá. A lista é
+ * fechada de propósito: `de` é texto da URL, e um voltar para endereço arbitrário é porta aberta.
+ */
+const ORIGENS: Record<string, Pai> = {
+  hoje: { href: '/admin/hoje', rotulo: 'Hoje' },
+  recuperar: { href: '/admin/recuperar', rotulo: 'Recuperar' },
+  agenda: { href: '/admin/agenda', rotulo: 'Agenda' },
+}
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** `de=cliente:<id>` volta para a ficha daquela pessoa; qualquer outra forma é ignorada. */
+export function origemDoVoltar(de: string | null | undefined): Pai | null {
+  if (!de) return null
+  if (de in ORIGENS) return ORIGENS[de]!
+  const [tipo, id] = de.split(':')
+  if (tipo === 'cliente' && id && UUID.test(id)) return { href: `/admin/clientes/${id}`, rotulo: 'Ficha' }
+  return null
+}
+
+export function paiDaRota(pathname: string, de?: string | null): Pai | null {
   const ehRaizDeAba = ABAS.some(
     (aba) => aba.href === pathname && !ABAS.some((outra) => outra.href !== aba.href && aba.href.startsWith(`${outra.href}/`)),
   )
   if (ehRaizDeAba) return null
 
+  const origem = origemDoVoltar(de)
+  if (origem) return origem
   const regra = REGRAS.find((r) => pathname.startsWith(r.prefixo))
   if (regra) return regra.pai
 
