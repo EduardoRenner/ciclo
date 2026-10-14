@@ -96,3 +96,75 @@ describe('o que vencer primeiro, com o ritmo de cada carro (C-002)', () => {
     expect(carro.erroMediano).toBeLessThanOrEqual(meses.erroMediano)
   })
 })
+
+/**
+ * C-038: o carro que MUDA de uso. Os perfis de cima têm o mesmo ritmo a vida toda; aqui o uso troca no
+ * 3º intervalo (virou carro de aplicativo; parou de rodar) ou tem UM ano fora da curva (uma viagem longa).
+ * O comparador é o jeito antigo — a mediana do histórico inteiro — refeito aqui fora do módulo.
+ */
+const PERFIS_QUE_MUDAM: { nome: string; mudanca: boolean; kmAno: (i: number, base: number, r: () => number) => number }[] = [
+  { nome: 'estável ±20%', mudanca: false, kmAno: (_i, b, r) => b * (0.8 + r() * 0.4) },
+  { nome: 'virou aplicativo no 3º (13 mil → 45 mil)', mudanca: true, kmAno: (i, _b, r) => (i < 3 ? 13_000 : 45_000) * (0.85 + r() * 0.3) },
+  { nome: 'parou de rodar no 3º (25 mil → 7 mil)', mudanca: true, kmAno: (i, _b, r) => (i < 3 ? 25_000 : 7_000) * (0.85 + r() * 0.3) },
+  { nome: 'ruidoso ±50%', mudanca: false, kmAno: (_i, b, r) => b * (0.5 + r()) },
+  { nome: 'um ano atípico (viagem, 3×)', mudanca: false, kmAno: (i, b, r) => (i === 2 ? 3 * b : b) * (0.9 + r() * 0.2) },
+]
+
+function gerarQueMuda(perfil: (typeof PERFIS_QUE_MUDAM)[number], r: () => number): Caso {
+  const base = 8_000 + r() * 30_000
+  let dia = Temporal.PlainDate.from('2024-01-08')
+  let km = 30_000
+  const visitas: Visita[] = [{ date: dia, uso: km }]
+  const vencimentos: Temporal.PlainDate[] = []
+  for (let i = 0; i < 7; i++) {
+    const porDia = perfil.kmAno(i, base, r) / 365
+    const venceEm = Math.min(Math.ceil(REGRA.uso / porDia), REGRA.dias)
+    vencimentos.push(dia.add({ days: venceEm }))
+    const atraso = Math.floor(r() * 11)
+    dia = dia.add({ days: venceEm + atraso })
+    km = Math.round(km + porDia * (venceEm + atraso))
+    visitas.push({ date: dia, uso: km })
+  }
+  return { visitas, vencimentos }
+}
+
+function medianaDoHistoricoInteiro(p: Visita[]): Temporal.PlainDate {
+  const taxas = p.slice(1).map((v, i) => (v.uso! - p[i]!.uso!) / v.date.since(p[i]!.date).total('days'))
+  const dias = Math.min(Math.round(REGRA.uso / mediana(taxas)), REGRA.dias)
+  return p[p.length - 1]!.date.add({ days: dias })
+}
+
+function erroMedianoQueMuda(perfil: (typeof PERFIS_QUE_MUDAM)[number], lembrar: Lembrador) {
+  const r = mulberry32(3803)
+  const erros: number[] = []
+  for (let c = 0; c < 400; c++) {
+    const caso = gerarQueMuda(perfil, r)
+    for (let k = 2; k < caso.visitas.length; k++) erros.push(lembrar(caso.visitas.slice(0, k)).since(caso.vencimentos[k - 1]!).total('days'))
+  }
+  return mediana(erros.map(Math.abs))
+}
+
+describe('o carro que muda de uso: só as taxas recentes (C-038)', () => {
+  const linhas = PERFIS_QUE_MUDAM.map((p) => ({
+    perfil: p.nome,
+    mudanca: p.mudanca,
+    'histórico inteiro (antes)': erroMedianoQueMuda(p, medianaDoHistoricoInteiro),
+    'as 3 últimas (agora)': erroMedianoQueMuda(p, (passado) => preverPorRelogios(passado, REGRA, REFERENCIA_BR).data),
+  }))
+
+  it('imprime o placar (erro mediano em dias)', () => {
+    console.table(linhas)
+    expect(linhas).toHaveLength(PERFIS_QUE_MUDAM.length)
+  })
+
+  it.each(PERFIS_QUE_MUDAM.filter((p) => p.mudanca).map((p) => p.nome))('%s: percebe a troca — erra no máximo 30 dias e menos da metade do jeito antigo', (nome) => {
+    const l = linhas.find((x) => x.perfil === nome)!
+    expect(l['as 3 últimas (agora)']).toBeLessThanOrEqual(30)
+    expect(l['as 3 últimas (agora)']).toBeLessThan(l['histórico inteiro (antes)'] / 2)
+  })
+
+  it.each(PERFIS_QUE_MUDAM.filter((p) => !p.mudanca).map((p) => p.nome))('%s: não paga pela janela — no máximo 2 dias pior que o histórico inteiro', (nome) => {
+    const l = linhas.find((x) => x.perfil === nome)!
+    expect(l['as 3 últimas (agora)']).toBeLessThanOrEqual(l['histórico inteiro (antes)'] + 2)
+  })
+})

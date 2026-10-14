@@ -46,8 +46,16 @@ export type PrevisaoPorRelogios = {
 }
 
 /**
- * Ritmo de uso por dia, robusto: mediana das taxas entre leituras consecutivas. Leitura que DESCE
- * (digitação errada, painel trocado) ou que dá taxa absurda é descartada — a mediana absorve o resto.
+ * Quantas taxas recentes entram na mediana (C-038). O carro muda de uso (virou de aplicativo, a pessoa
+ * passou a trabalhar de casa) e a mediana do histórico inteiro leva metade das visitas para perceber:
+ * no backtest, 118 dias de erro mediano contra 23 com as 3 últimas, sem perder nada no carro estável,
+ * no ruidoso nem no ano atípico. Com 4, a troca de uso ainda erra 44 dias.
+ */
+export const JANELA_DO_RITMO_DE_USO = 3
+
+/**
+ * Ritmo de uso por dia, robusto: mediana das taxas RECENTES entre leituras consecutivas. Leitura que
+ * DESCE (digitação errada, painel trocado) ou que dá taxa absurda é descartada — a mediana absorve o resto.
  * Com menos de 2 leituras válidas, usa o ritmo de referência e diz que usou.
  */
 export function ritmoDeUso(visitas: readonly Visita[], referenciaPorDia: number, tetoPorDia = 1000): RitmoDeUso {
@@ -71,7 +79,7 @@ export function ritmoDeUso(visitas: readonly Visita[], referenciaPorDia: number,
     anterior = atual
   }
   if (taxas.length === 0) return { porDia: referenciaPorDia, origem: 'referencia', leituras: comLeitura.length }
-  return { porDia: mediana(taxas), origem: 'medido', leituras: comLeitura.length }
+  return { porDia: mediana(taxas.slice(-JANELA_DO_RITMO_DE_USO)), origem: 'medido', leituras: comLeitura.length }
 }
 
 /** A última leitura de uso válida (a maior até a última visita, como o `GREATEST` do StarkOS). */
