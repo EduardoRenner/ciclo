@@ -7,9 +7,10 @@
 alter table appointments add column subject_id uuid;
 alter table appointments add constraint appointments_subject_fk
   foreign key (tenant_id, subject_id) references subjects (tenant_id, id) on delete set null (subject_id);
-create index appointments_subject_idx on appointments (subject_id) where subject_id is not null;
+-- Índice pelo PREFIXO da FK composta (guarda `indices-fk`): sem ele, mexer no sujeito varre a tabela inteira.
+create index appointments_subject_idx on appointments (tenant_id, subject_id);
 
 alter table ticket_items add column subject_id uuid;
 alter table ticket_items add constraint ticket_items_subject_fk
   foreign key (tenant_id, subject_id) references subjects (tenant_id, id) on delete set null (subject_id);
-create index ticket_items_subject_idx on ticket_items (subject_id) where subject_id is not null;
+create index ticket_items_subject_idx on ticket_items (tenant_id, subject_id);

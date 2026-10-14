@@ -32,6 +32,14 @@ própria (equivalente), com o código que a usa.
   atributos, inativos; `rowsRedacted.subjects = 2`.
 - Tipos regenerados do banco local: só acréscimos.
 
+**Suítes inteiras (depois do commit):**
+- RLS: 356 de 357; a que falhou foi a guarda `indices-fk`, com razão: as FKs compostas
+  `(tenant_id, subject_id)` tinham índice só em `subject_id`, e mexer num sujeito varreria agendamentos
+  inteiros. Conserto na própria 0133 (nunca saiu da branch): índices em `(tenant_id, subject_id)`.
+  A guarda passou a 2 de 2; a falha original vale como a guarda vista reprovando.
+- Integração: 620 verdes; 1 arquivo (`servico-arquivado-sai-das-telas`) caiu no preparo com o mesmo
+  erro genérico de gravação sob carga (onboarding); isolado, 5 de 5.
+
 **Ordem de deploy:** 0132 e 0133 são aditivas (antes do deploy). Nada no código lê `subjects` ainda.
 
 **Nota:** cliente 5 · segredo 8 · engenharia 9. **Próximo (C-022):** a chave de `client_cycles` com o
