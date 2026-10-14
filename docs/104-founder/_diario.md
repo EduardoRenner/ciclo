@@ -80,3 +80,24 @@ Uma entrada por rodada: o que, por quê, número antes e depois, o que saiu, pr�
   médio"/"Voltam de novo" do topo de Clientes (foram para o Mês); orçamento e indicar do meio do resumo.
 - **Próxima:** APR-116 depende do merge do PR #149 (aberto) → pula para APR-117 (página pública de
   confirmar mostra QUAL horário, desmarcar em 2 passos com desfazer).
+
+## 2026-10-14 · Rodada 4 · APR-117 e 118 (as páginas públicas do cliente do salão)
+
+- **APR-117 (confirmar pelo link):** a tela não dizia QUAL horário. Agora o cartão "{serviço} com
+  {profissional} · {dia}, às {hora} · {negócio}" vem do servidor e aparece em **y=138** antes de
+  qualquer toque (centrado ficava em 374). Desmarcar pede 2º passo e dá 10 s para desfazer: 0 POST
+  em 3 s, 0 depois de "Desfazer", 1 POST e "Desmarcado" em 10,6 s, cancelado por `client` no banco.
+  "Você já confirmou" quando já estava; token forjado abre no erro com 1 saída (antes 0).
+  **Fechar a aba dentro da janela:** `fetch keepalive` em `pagehide` NÃO chegou ao servidor (medido);
+  `sendBeacon` chega com `page.close()` e com o evento disparado; o `goto('about:blank')` do
+  Playwright não dispara `pagehide` — limitação do roteiro, não do produto. [NÃO VERIFICADO em
+  navegador real de celular].
+- **APR-118 (agendar público):** "Pedir este horário" (era "Confirmar agendamento": quem confirma é
+  quem atende); sucesso "Pedido enviado para {negócio}"; conta sem telefone não ouve mais "é só chamar
+  por telefone" (medido com o telefone do demo zerado: 0 "por telefone", 0 contato; com telefone,
+  1 contato); 14 dias no trilho, 4 fechados, os 4 riscados com "fechado"; metadado sem "sem esperar
+  resposta". Guardas vistas reprovando com a frase e o botão antigos de volta.
+- **Achado fora do plano:** o roteiro de agendar clicava num chip de SERVIÇO achando que era horário
+  (os dois são `aria-pressed`). Não é defeito de produto, mas é o tipo de ambiguidade que um leitor
+  de tela também sente: fica anotado para a APR-124 (anúncios e papéis).
+- **Próxima:** APR-119 (avaliar, orçamento e lista de espera lidos no servidor; saída no erro).
