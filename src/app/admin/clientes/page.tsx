@@ -9,7 +9,6 @@ import AlertBanner from '@/components/ui/alert-banner'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 import StatTile from '@/components/ui/stat-tile'
-import { dinheiro } from '@/lib/formato'
 import { APP_HOST } from '@/lib/app-url'
 import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { avaliarPermissao } from '@/server/auth/rbac'
@@ -87,22 +86,7 @@ export default async function PaginaClientes({ searchParams }: { searchParams: P
         vazio, porque é o mesmo par: quem trouxe a base de outro lugar precisa saber que também
         consegue levá-la embora.
       */}
-      {avaliarPermissao(ctx.papel, 'client:export') !== null ? (
-        <div className="mb-4 text-right">
-          <Link href="/admin/clientes/exportar" className="inline-flex min-h-12 items-center text-label font-semibold text-acc-2 underline underline-offset-2">
-            Baixar todos em planilha
-          </Link>
-        </div>
-      ) : null}
-
-      <div className="mb-4 grid grid-cols-2 gap-3">
-        <StatTile rotulo="Ticket médio" valor={dinheiro.format(painel.ticketMedioCents / 100)} />
-        <StatTile
-          rotulo="Voltam de novo"
-          valor={`${Math.round(painel.taxaRetornoBps / 100)}%`}
-          progresso={painel.taxaRetornoBps / 10_000}
-        />
-      </div>
+      {/* APR-114 (I-12): a busca é a resposta desta tela e sobe para y < 200. "Ticket médio" e "Voltam de novo" foram para o Mês; o link de exportar vai para o fim. */}
 
       {/*
         I-6, `docs/30-INDICACAO-PLANO.md` §5.3/§6.2e: a barra que enche é o gatilho de upgrade nº
@@ -166,9 +150,11 @@ export default async function PaginaClientes({ searchParams }: { searchParams: P
         })()
       ) : null}
 
-      {/* Atalhos acionáveis: número que não leva a lugar nenhum não muda o dia de ninguém. */}
+      <ListaClientes iniciais={clientes} />
+
+      {/* APR-114 (I-12): estes atalhos ficavam entre o título e a busca e empurravam a busca para y=286. Atalhos acionáveis: número que não leva a lugar nenhum não muda o dia de ninguém. */}
       {(painel.emRisco > 0 || painel.aniversariantes > 0) && (
-        <div className="mb-5 grid gap-2">
+        <div className="mt-5 grid gap-2">
           {painel.emRisco > 0 ? (
             <Link href="/admin/recuperar" className="block transition active:scale-[.99]">
               <AlertBanner tom="warn" acao={<span className="text-warn">Recuperar</span>}>
@@ -189,7 +175,17 @@ export default async function PaginaClientes({ searchParams }: { searchParams: P
         </div>
       )}
 
-      <ListaClientes iniciais={clientes} />
+      {/*
+        P3, `docs/83` §7.4/§9: só o dono vê, a mesma permissão da rota (`client:export`, C35). Fica depois
+        da lista, perto de "Importe": quem trouxe a base de outro lugar precisa saber que também a leva.
+      */}
+      {avaliarPermissao(ctx.papel, 'client:export') !== null ? (
+        <div className="mt-4 text-right">
+          <Link href="/admin/clientes/exportar" className="inline-flex min-h-12 items-center text-label font-semibold text-acc-2 underline underline-offset-2">
+            Baixar todos em planilha
+          </Link>
+        </div>
+      ) : null}
     </>
   )
 }

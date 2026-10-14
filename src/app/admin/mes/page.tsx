@@ -6,12 +6,15 @@ import { Temporal } from '@js-temporal/polyfill'
 import EmptyState from '@/components/ui/empty-state'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
+import StatTile from '@/components/ui/stat-tile'
+import { dinheiro } from '@/lib/formato'
 import { RELATORIO_DA_EQUIPE, avaliarPermissao } from '@/server/auth/rbac'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { montarMapaDeVazamento } from '@/core/caixa/mapa-de-vazamento'
 import { concentracaoDoMes, margemDosServicos, resumoMensal, serieMensalDeLucro, taxaPorFormaDoMes } from '@/server/services/caixa'
 import { margensDoClube } from '@/server/services/clube'
+import { painelDaCarteira } from '@/server/services/crm'
 import { lerCustoFixoDoTenant } from '@/server/services/custo-fixo'
 import { medirMaterialDoCatalogo } from '@/server/services/ficha-de-consumo'
 import { procurasEmDiaFechado } from '@/server/services/demanda-nao-atendida'
@@ -62,7 +65,7 @@ export default async function PaginaDoMes() {
   const hoje = Temporal.Now.instant().toZonedDateTimeISO(timezone).toPlainDate()
   const mes = `${hoje.year}-${String(hoje.month).padStart(2, '0')}`
 
-  const [mensal, concentracao, recuperar, motor, material, serie, custoFixo, taxa, diaOcioso, clube, margens, servicos, procuras] = await Promise.all([
+  const [mensal, concentracao, recuperar, motor, material, serie, custoFixo, taxa, diaOcioso, clube, margens, servicos, procuras, carteira] = await Promise.all([
     resumoMensal(db, ctx.tenantId, timezone, mes),
     // Mesma trava do caixa (`docs/50` L-10): sem `report:team` o número "de quem depende" não sai,
     // e a consulta nem acontece.
@@ -100,6 +103,7 @@ export default async function PaginaDoMes() {
     // Nome dos serviços, e só dos ATIVOS: arquivado sai das telas de dinheiro (0093).
     listarServicos(db, ctx.tenantId),
     procurasEmDiaFechado(db, ctx.tenantId, hoje.toString()),
+    painelDaCarteira(db, ctx.tenantId),
   ])
 
   const nomeDoServico = new Map(servicos.map((s) => [s.id, s.name]))
@@ -154,6 +158,21 @@ export default async function PaginaDoMes() {
         taxa={taxa}
         diaOcioso={diaOcioso}
       />
+
+      {/* APR-114 (I-12): "Ticket médio" e "Voltam de novo" moravam no topo de Clientes, onde ocupavam o lugar da busca. São números de mês, não de pessoa. */}
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <Link href="/admin/clientes" className="block">
+          <StatTile pressionavel rotulo="Ticket médio" valor={dinheiro.format(carteira.ticketMedioCents / 100)} />
+        </Link>
+        <Link href="/admin/clientes" className="block">
+          <StatTile
+            pressionavel
+            rotulo="Voltam de novo"
+            valor={`${Math.round(carteira.taxaRetornoBps / 100)}%`}
+            progresso={carteira.taxaRetornoBps / 10_000}
+          />
+        </Link>
+      </div>
     </>
   )
 }
