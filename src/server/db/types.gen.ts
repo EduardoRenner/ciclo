@@ -3296,6 +3296,7 @@ export type Database = {
         Row: {
           commission_cents: number
           fee_cents: number
+          fixed_cost_cents: number
           frozen_at: string
           material_cents: number
           month: string
@@ -3303,10 +3304,12 @@ export type Database = {
           revenue_cents: number
           tenant_id: string
           tickets_count: number
+          tip_cents: number
         }
         Insert: {
           commission_cents: number
           fee_cents: number
+          fixed_cost_cents?: number
           frozen_at?: string
           material_cents: number
           month: string
@@ -3314,10 +3317,12 @@ export type Database = {
           revenue_cents: number
           tenant_id: string
           tickets_count: number
+          tip_cents?: number
         }
         Update: {
           commission_cents?: number
           fee_cents?: number
+          fixed_cost_cents?: number
           frozen_at?: string
           material_cents?: number
           month?: string
@@ -3325,6 +3330,7 @@ export type Database = {
           revenue_cents?: number
           tenant_id?: string
           tickets_count?: number
+          tip_cents?: number
         }
         Relationships: [
           {

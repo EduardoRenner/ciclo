@@ -66,6 +66,8 @@ function janelaDoMes(timezone: string, month: string): { inicio: string; fim: st
 
 export type ResumoCaixa = {
   ticketsCount: number
+  /** APR-211: gorjetas do mês. Entram no Entrou e não são receita de serviço. */
+  tipCents: number
   revenueCents: number
   materialCents: number
   feeCents: number
@@ -92,7 +94,7 @@ export type ResumoCaixa = {
  * bug em vez de herdá-lo. Registrado em `docs/DECISOES.md`.
  */
 async function somarTickets(db: Cliente, tenantId: string, inicio: string, fim: string): Promise<ResumoCaixa> {
-  const resumo: ResumoCaixa = { ticketsCount: 0, revenueCents: 0, materialCents: 0, feeCents: 0, commissionCents: 0, fixedCostCents: 0, profitCents: 0 }
+  const resumo: ResumoCaixa = { ticketsCount: 0, revenueCents: 0, materialCents: 0, feeCents: 0, commissionCents: 0, fixedCostCents: 0, tipCents: 0, profitCents: 0 }
 
   /*
     `buscarTudoPaginado` em vez do laço à mão. A paginação estava certa — o que faltava era teto:
@@ -109,7 +111,7 @@ async function somarTickets(db: Cliente, tenantId: string, inicio: string, fim: 
     buscarTudoPaginado(() =>
       db
         .from('tickets')
-        .select('status, total_cents, payment_method, material_cost_cents, fee_cents, commission_cents, fixed_cost_cents, profit_cents')
+        .select('status, total_cents, payment_method, material_cost_cents, fee_cents, commission_cents, fixed_cost_cents, tip_cents, profit_cents')
         .eq('tenant_id', tenantId)
         .in('status', ['closed', 'paid'])
         .gte('closed_at', inicio)
@@ -125,6 +127,7 @@ async function somarTickets(db: Cliente, tenantId: string, inicio: string, fim: 
     resumo.feeCents += t.fee_cents
     resumo.commissionCents += t.commission_cents
     resumo.fixedCostCents += t.fixed_cost_cents
+    resumo.tipCents += t.tip_cents
     resumo.profitCents += t.profit_cents
   }
 
@@ -421,6 +424,9 @@ export async function congelarMesesFechados(db: Cliente, tenantId: string, timez
       fee_cents: resumo.feeCents,
       commission_cents: resumo.commissionCents,
       profit_cents: resumo.profitCents,
+      // APR-211 (E-14): o mês congelado guarda o aluguel rateado e a gorjeta — sem eles a conta da tabela não fechava.
+      fixed_cost_cents: resumo.fixedCostCents,
+      tip_cents: resumo.tipCents,
       tickets_count: resumo.ticketsCount,
     })
 
