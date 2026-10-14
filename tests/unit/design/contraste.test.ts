@@ -71,6 +71,8 @@ describe('contraste dos tokens (WCAG AA)', () => {
     // então os dois contam — medir só contra o fundo mais escuro superestima.
     expect(contraste(token(nome), BG), `${nome} sobre --bg`).toBeGreaterThanOrEqual(minimo)
     expect(contraste(token(nome), SURFACE), `${nome} sobre --surface`).toBeGreaterThanOrEqual(minimo)
+    // APR-124 (A-17, G-33): o texto semântico também vive sobre `--surface-2` (selos de estado, chips).
+    expect(contraste(token(nome), SURFACE_2), `${nome} sobre --surface-2`).toBeGreaterThanOrEqual(minimo)
   })
 
   it.each(['ok', 'warn', 'risk', 'bad', 'info', 'acc-2'])(
