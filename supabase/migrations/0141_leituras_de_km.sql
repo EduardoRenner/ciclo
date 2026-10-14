@@ -37,6 +37,7 @@ create table odometer_readings (
 
 create index odometer_readings_subject_idx on odometer_readings (tenant_id, subject_id, read_on);
 create index odometer_readings_appointment_idx on odometer_readings (tenant_id, appointment_id);
+create index odometer_readings_created_by_idx on odometer_readings (created_by);
 
 alter table odometer_readings enable row level security;
 alter table odometer_readings force row level security;
