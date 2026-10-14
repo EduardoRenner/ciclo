@@ -1081,6 +1081,7 @@ export type Database = {
           predicted_on: string
           resolved_at: string | null
           service_id: string
+          subject_id: string | null
           tenant_id: string
         }
         Insert: {
@@ -1095,6 +1096,7 @@ export type Database = {
           predicted_on: string
           resolved_at?: string | null
           service_id: string
+          subject_id?: string | null
           tenant_id: string
         }
         Update: {
@@ -1109,6 +1111,7 @@ export type Database = {
           predicted_on?: string
           resolved_at?: string | null
           service_id?: string
+          subject_id?: string | null
           tenant_id?: string
         }
         Relationships: [
@@ -1132,6 +1135,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "services"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cycle_predictions_subject_fk"
+            columns: ["tenant_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["tenant_id", "id"]
           },
           {
             foreignKeyName: "cycle_predictions_tenant_id_fkey"

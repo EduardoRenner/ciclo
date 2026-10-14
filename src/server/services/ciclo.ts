@@ -5,7 +5,7 @@ import { computeCycle } from '@/core/cycle/compute'
 import { custoDoServico } from '@/core/comanda/custo-do-servico'
 import { lucroEmRiscoCents, lucroEsperadoCents, valorEmRiscoCents } from '@/core/cycle/valor-em-risco'
 import { buscarTudoPaginado } from '@/server/db/paginar'
-import { calibrarServicos, probabilidadeCalibradaDoTenant, registrarPrevisoes, resolverPrevisoes, type PrevisaoParaRegistrar } from '@/server/services/previsao'
+import { calibrarServicos, chaveDaCombinacao, probabilidadeCalibradaDoTenant, registrarPrevisoes, resolverPrevisoes, type PrevisaoParaRegistrar } from '@/server/services/previsao'
 import { registrarEvento } from '@/server/services/product-events'
 import { AppError } from '@/server/http/errors'
 
@@ -163,7 +163,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
     pedaço é vazio e tudo segue como antes; com sujeito, o tutor de 2 animais vira 2 ciclos, cada um no
     ritmo do seu animal, em vez de uma série só com intervalos pela metade (C-003).
   */
-  const combinacao = (clientId: string, serviceId: string, subjectId: string | null) => `${clientId}:${serviceId}:${subjectId ?? ''}`
+  const combinacao = chaveDaCombinacao
   const temFuturoPorCombinacao = new Set(futuros.filter((a) => a.client_id).map((a) => combinacao(a.client_id!, a.service_id, a.subject_id)))
 
   const historicoPorCombinacao = new Map<string, string[]>()
@@ -203,9 +203,9 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
   for (const chave of combinacoes) {
     const [clientId, serviceId, sujeito] = chave.split(':') as [string, string, string]
     const subjectId = sujeito === '' ? null : sujeito
-    // A trilha de previsões (`docs/46`) e o casamento delas seguem por (cliente, serviço): só o ciclo SEM
-    // sujeito entra nela por enquanto (C-023; o sujeito na trilha é passo próprio, com migration).
-    const chaveDaTrilha = `${clientId}:${serviceId}`
+    // Pacote é vendido por (cliente, serviço), sem sujeito. A trilha de previsões, desde o C-030, é por
+    // sujeito (a mesma `chave`).
+    const chaveDoPacote = `${clientId}:${serviceId}`
     const defaultCycleDays = cycleDaysPorServico.get(serviceId)
     if (!defaultCycleDays) continue // serviço apagado/desconhecido — sem padrão, sem como calcular
 
@@ -237,11 +237,12 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
       que um atendimento REGISTROU. "Uns 15 dias" de memória é aproximado por desenho
       (`quando-foi-a-ultima-vez.ts`) e mediria o palpite da pessoa, não o Motor.
     */
-    if (subjectId === null && doAtendimento.length > 0) datasPorCombinacao.set(chaveDaTrilha, doAtendimento.map((d) => d.toString()))
-    if (subjectId === null && !somaInformada) {
+    if (doAtendimento.length > 0) datasPorCombinacao.set(chave, doAtendimento.map((d) => d.toString()))
+    if (!somaInformada) {
       previsoes.push({
         clientId,
         serviceId,
+        subjectId,
         lastVisitOn: ultimaVisita,
         predictedOn: resultado.predictedDate.toString(),
         // A tabela exige > 0, e o piso do ciclo pessoal é 0.5 do padrão: sem o `max`, um serviço de
@@ -267,8 +268,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
       assinatura (cobre o tenant inteiro), pacote é por `(cliente, serviço)` — a MESMA granularidade
       de `client_cycles` — então aqui a checagem é mais precisa, não uma aproximação.
     */
-    // Pacote é vendido por (cliente, serviço), não por sujeito.
-    const semVendaAvulsa = assinantesAtivos.has(clientId) || combinacoesComPacote.has(chaveDaTrilha)
+    const semVendaAvulsa = assinantesAtivos.has(clientId) || combinacoesComPacote.has(chaveDoPacote)
     const precoEfetivo = semVendaAvulsa ? 0 : (precoPorServico.get(serviceId) ?? 0)
 
     linhas.push({

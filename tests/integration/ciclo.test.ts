@@ -9,7 +9,7 @@ import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { concluirAgendamento, confirmarAgendamento, criarAgendamento, marcarChegada } from '@/server/services/agendamentos'
 import { recomputarCiclosDoTenant, recomputarCicloDeUmAtendimento } from '@/server/services/ciclo'
-import { prestacaoDeContasDoMotor, oscilacaoDaReguaDoTenant, resolverPrevisoes } from '@/server/services/previsao'
+import { chaveDaCombinacao, prestacaoDeContasDoMotor, oscilacaoDaReguaDoTenant, resolverPrevisoes } from '@/server/services/previsao'
 import { listarParaRecuperar, registrarChamadaManual } from '@/server/services/recuperar-receita'
 
 import type { Database } from '@/server/db/types.gen'
@@ -107,6 +107,40 @@ async function inserirAtendimentoConcluido(clientId: string, diasAtras: number, 
 }
 
 describe('recomputarCiclosDoTenant', () => {
+  it(
+    'C-030: dois animais banhados nos mesmos dias têm cada um a sua previsão, e a volta de um só fecha a dele',
+    async () => {
+      const tutor = await criarCliente('Tutor Mesmo Dia')
+      const sujeito = async (nome: string) => {
+        const r = await svc.from('subjects').insert({ tenant_id: tenantId, client_id: tutor, kind: 'animal', name: nome }).select('id').single()
+        if (r.error) throw r.error
+        return r.data.id
+      }
+      const mel = await sujeito('Mel')
+      const thor = await sujeito('Thor')
+      // Mesmo dia, horários diferentes (a trava anti-sobreposição é por profissional).
+      for (const dias of [42, 28, 14]) {
+        await inserirAtendimentoConcluido(tutor, dias, mel)
+        await inserirAtendimentoConcluido(tutor, dias + 0.05, thor)
+      }
+      const hoje = new Date().toISOString().slice(0, 10)
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, hoje)
+
+      const abertas = await svc.from('cycle_predictions').select('subject_id').eq('tenant_id', tenantId).eq('client_id', tutor).is('resolved_at', null)
+      expect(abertas.error).toBeNull()
+      expect(new Set((abertas.data ?? []).map((p) => p.subject_id))).toEqual(new Set([mel, thor]))
+
+      // Só a Mel volta.
+      await inserirAtendimentoConcluido(tutor, 0.1, mel)
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, hoje)
+
+      const depois = await svc.from('cycle_predictions').select('subject_id, resolved_at').eq('tenant_id', tenantId).eq('client_id', tutor)
+      const fechadas = (depois.data ?? []).filter((p) => p.resolved_at !== null).map((p) => p.subject_id)
+      expect(fechadas).toEqual([mel])
+    },
+    30_000,
+  )
+
   it(
     'C-025 (AUT-101): o animal em dia não esconde o outro que sumiu — o tutor fica na fila, mostrando quem sumiu',
     async () => {
@@ -710,7 +744,7 @@ describe('resolverPrevisoes / resolver_previsoes_em_lote — isolado num tenant 
         if (error) throw error
       }
 
-      const historicoPorCombinacao = new Map<string, string[]>(idsClientes.map((clientId) => [`${clientId}:${servicoIdIsolado}`, [lastVisitOn, retorno]]))
+      const historicoPorCombinacao = new Map<string, string[]>(idsClientes.map((clientId) => [chaveDaCombinacao(clientId, servicoIdIsolado, null), [lastVisitOn, retorno]]))
 
       const t0 = Date.now()
       const fechadas = await resolverPrevisoes(svc, tenantIdIsolado, historicoPorCombinacao)
