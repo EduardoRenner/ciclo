@@ -66,6 +66,8 @@ describe('as metricas da ficha sao do agora, nao do cron de ontem', () => {
     // Os dois nomes honestos têm que estar no tipo, e nenhum deles promete gasto.
     const crm = readFileSync('src/server/services/crm.ts', 'utf8')
     expect(crm, 'o rotulo honesto sumiu').toMatch(/valorDaFicha: \{ rotulo: 'Entrou' \| 'Valor atendido'/)
-    expect(FICHA).toContain('rotulo={metricas.valorDaFicha.rotulo}')
+    // APR-115: o quadro saiu da ficha (a regra do resumo está em `tilesDoResumo`, no core). A tela
+    // não lê o valor de tabela por nome nenhum — se voltar, volta pelo core e com rótulo honesto.
+    expect(FICHA, 'a ficha voltou a desenhar o valor de tabela por fora do core').not.toMatch(/valorDaFicha|metricas\.ltvCents/)
   })
 })

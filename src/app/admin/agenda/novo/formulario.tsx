@@ -147,6 +147,12 @@ export default function FormularioAgendamento({
   // são texto livre, sem `service_id` por trás, então quem decide isso continua sendo o
   // profissional aqui na tela normal — ver `converterOrcamentoEmAgendamento` em orcamentos.ts.
   const orcamentoId = searchParams.get('orcamento')
+  // APR-115: "Marcar de novo" na ficha manda `?servico=<id>` (o último feito). Só vale se o serviço
+  // ainda existe na lista; senão fica o primeiro, como sempre.
+  const servicoId = searchParams.get('servico')
+  useEffect(() => {
+    if (servicoId && servicos.some((s) => s.id === servicoId)) setServiceId(servicoId)
+  }, [servicoId, servicos])
   useEffect(() => {
     if (!clienteId) return
     let cancelado = false

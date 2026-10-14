@@ -6,6 +6,7 @@ import {
   FileText,
   Gift,
   MessageCircle,
+  MoreHorizontal,
   Pencil,
   Scissors,
   Share2,
@@ -33,6 +34,7 @@ import { camposDePreferencia } from '@/lib/preferencias'
 import { aplicarVariaveis, linkWhatsApp, linkWhatsAppCompartilhar, precisaDeAgendamento } from '@/lib/mensagens'
 
 import { fraseDoRitmo } from '@/core/ciclo/ritmo-do-cliente'
+import { tilesDoResumo } from '@/core/crm/resumo-da-ficha'
 import { ROTULO_DA_CLASSE, ROTULO_DO_COMPONENTE, ROTULO_DO_PERFIL, type Classe, type ParteDaNota, type Perfil } from '@/core/crm/nota-do-cliente'
 import type { EstadoCiclo } from '@/core/cycle/compute'
 import type { EstadoAgendamento } from '@/core/scheduling/state'
@@ -240,8 +242,10 @@ export default function Ficha({
   const [profissionalPreferido, setProfissionalPreferido] = useState(cliente.preferredProfessionalId ?? '')
   const [bloqueado, setBloqueado] = useState(cliente.onlineBookingBlocked)
   const [erro, setErro] = useState<string | null>(null)
+  const [maisAberto, setMaisAberto] = useState(false)
 
-  const ultimoServico = historico.find((h) => h.status === 'done')?.serviceName ?? null
+  const ultimoFeito = historico.find((h) => h.status === 'done') ?? null
+  const ultimoServico = ultimoFeito?.serviceName ?? null
 
   /**
    * O horário marcado que ainda vem. É ele que preenche `{{data}}`/`{{hora}}` de confirmação e
@@ -377,6 +381,10 @@ export default function Ficha({
         <IconButton onClick={() => setEditando(true)} aria-label="Editar ficha">
           <Pencil aria-hidden className="size-5" />
         </IconButton>
+        {/* APR-115: orçamento, indicar e os direitos da cliente saem do meio do resumo e vão para um "Mais". */}
+        <IconButton onClick={() => setMaisAberto(true)} aria-label="Mais ações">
+          <MoreHorizontal aria-hidden className="size-5" />
+        </IconButton>
       </header>
 
       {cliente.tags.length > 0 ? (
@@ -506,75 +514,22 @@ export default function Ficha({
 
       {aba === 'resumo' ? (
         <div id="painel-resumo" role="tabpanel" aria-label="Resumo" tabIndex={0} className="mt-4">
+          {/*
+            APR-115 (I-13): a regra de quais números aparecem mora em `tilesDoResumo` (core, com teste).
+            "Entrou"/"Valor atendido" saiu: era preço de tabela com nome de dinheiro, e o que a pessoa
+            quer saber aqui é "quantas vezes veio e quanto gasta por vez". "Sobrou" segue a mesma
+            conta do Caixa e só aparece com comanda fechada; "Faltas" só quando houve.
+          */}
           <div className="grid grid-cols-2 gap-3">
-            {/*
-              Era "Já gastou", e prometia mais do que sabe: o valor sai do `price_cents` DO
-              AGENDAMENTO, ou seja PREÇO DE TABELA — não enxerga desconto dado na comanda nem item
-              extra. Dizer a uma dona de salão que a cliente "já gastou R$ 540" quando ela deu
-              R$ 60 de desconto ao longo do ano é errar sobre uma pessoa específica, com nome na
-              tela. Mesma palavra de "Atendido hoje", na tela Hoje, de propósito: no CICLO
-              "atendido" é preço de tabela e "entrou" é dinheiro no caixa.
-            */}
-            <StatTile rotulo={metricas.valorDaFicha.rotulo} valor={dinheiro.format(metricas.valorDaFicha.cents / 100)} />
-            {/*
-              `docs/48` C2. "Valor atendido" é a soma dos preços — o mesmo número que o `docs/47`
-              P01 acusa o setor inteiro de confundir com ganho. Ao lado dele, o que de fato SOBROU.
-
-              A frase de apoio não é enfeite: o lucro sai das comandas fechadas, e nem toda visita
-              passa por uma. Sem dizer de quantas está falando, três comandas de doze visitas
-              apareceriam como o valor da pessoa inteira.
-            */}
-            {metricas.lucro ? (
+            {tilesDoResumo(metricas).map((t) => (
               <StatTile
-                rotulo="Sobrou"
-                valor={dinheiro.format(metricas.lucro.lucroCents / 100)}
-                apoio={
-                  metricas.lucro.cobertura === 'nenhuma'
-                    ? 'nenhuma comanda fechada ainda'
-                    : metricas.lucro.cobertura === 'parcial'
-                      ? `de ${metricas.visitas - metricas.lucro.visitasSemComanda} de ${metricas.visitas} visitas`
-                      : 'de todas as visitas'
-                }
+                key={t.chave}
+                rotulo={t.rotulo}
+                valor={t.valor.tipo === 'dinheiro' ? dinheiro.format(t.valor.cents / 100) : String(t.valor.n)}
+                apoio={t.apoio}
               />
-            ) : null}
-            <StatTile rotulo="Visitas" valor={String(metricas.visitas)} />
-            <StatTile rotulo="Ticket médio" valor={dinheiro.format(metricas.ticketMedioCents / 100)} />
-            <StatTile rotulo="Faltas" valor={String(metricas.faltas)} />
-            {/*
-              O anual é o C2 completo: lucro por visita × cadência daquela pessoa. É o número que
-              muda a decisão de quem chamar de volta primeiro — e some quando não há cadência
-              medida, porque projetar o que não se mediu é inventar.
-            */}
-            {metricas.lucro?.lucroAnualCents !== null && metricas.lucro?.lucroAnualCents !== undefined ? (
-              <StatTile rotulo="Lucro por ano" valor={dinheiro.format(metricas.lucro.lucroAnualCents / 100)} apoio="no ritmo de hoje" />
-            ) : null}
+            ))}
           </div>
-
-          <Button
-            variante="secondary"
-            largura="cheia"
-            className="mt-3"
-            disabled={!podeOrcamento}
-            motivoDesabilitado="Orçamento é do plano Essencial. Veja os planos em Configurações, Meu plano."
-            onClick={() => router.push(`/admin/orcamentos/novo?cliente=${cliente.id}`)}
-          >
-            <FileText className="size-4" />
-            Criar orçamento
-          </Button>
-
-          {linkIndicacao ? (
-            <Button
-              variante="secondary"
-              largura="cheia"
-              className="mt-2"
-              onClick={() => setIndicando(true)}
-              disabled={!telefoneUtilizavel}
-              motivoDesabilitado="Cadastre um telefone válido na ficha para poder mandar o convite."
-            >
-              <Share2 className="size-4" />
-              Indicar
-            </Button>
-          ) : null}
 
       {(cliente.birthDate || cliente.preferredProfessionalName || indicadoPor || indicados.length > 0) && (
         <section className="mt-7">
@@ -753,9 +708,16 @@ export default function Ficha({
       */}
       <ActionBar>
         <div className="grid grid-cols-2 gap-2">
-          <Button variante="secondary" largura="cheia" onClick={() => router.push(`/admin/agenda/novo?cliente=${cliente.id}`)}>
+          {/* APR-115: "Marcar de novo" leva cliente E o último serviço feito; sem histórico, só o cliente. */}
+          <Button
+            variante="secondary"
+            largura="cheia"
+            onClick={() =>
+              router.push(`/admin/agenda/novo?cliente=${cliente.id}${ultimoFeito?.serviceId ? `&servico=${ultimoFeito.serviceId}` : ''}`)
+            }
+          >
             <CalendarDays aria-hidden className="size-4" />
-            Horário
+            {ultimoFeito ? 'Marcar de novo' : 'Marcar horário'}
           </Button>
           <Button largura="cheia" onClick={() => setEscolhendoMensagem(true)}>
             <MessageCircle aria-hidden className="size-4" />
@@ -763,6 +725,47 @@ export default function Ficha({
           </Button>
         </div>
       </ActionBar>
+
+      {/* ─── mais ações (APR-115) ─── */}
+      <Sheet aberto={maisAberto} aoFechar={(a) => !a && setMaisAberto(false)} titulo="Mais">
+        <div className="flex flex-col gap-2">
+          <Button
+            variante="secondary"
+            largura="cheia"
+            disabled={!podeOrcamento}
+            motivoDesabilitado="Orçamento é do plano Essencial. Veja os planos em Configurações, Meu plano."
+            onClick={() => router.push(`/admin/orcamentos/novo?cliente=${cliente.id}`)}
+          >
+            <FileText className="size-4" />
+            Criar orçamento
+          </Button>
+          {linkIndicacao ? (
+            <Button
+              variante="secondary"
+              largura="cheia"
+              onClick={() => {
+                setMaisAberto(false)
+                setIndicando(true)
+              }}
+              disabled={!telefoneUtilizavel}
+              motivoDesabilitado="Cadastre um telefone válido na ficha para poder mandar o convite."
+            >
+              <Share2 className="size-4" />
+              Indicar
+            </Button>
+          ) : null}
+          <Button
+            variante="secondary"
+            largura="cheia"
+            onClick={() => {
+              setMaisAberto(false)
+              trocarAba('ficha')
+            }}
+          >
+            Dados e direitos (baixar, apagar)
+          </Button>
+        </div>
+      </Sheet>
 
       {/* ─── escolher mensagem pronta ─── */}
       <Sheet aberto={escolhendoMensagem} aoFechar={(a) => !a && setEscolhendoMensagem(false)} titulo="Mensagem pronta">

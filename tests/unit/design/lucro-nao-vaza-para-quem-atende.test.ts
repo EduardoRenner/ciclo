@@ -146,12 +146,17 @@ describe('o lucro por cliente também não chega a quem não pode ver', () => {
 
       Cartão novo de lucro entra aqui. É trabalho manual de propósito: a alternativa seria uma
       regra tentando adivinhar o que é "renderizar lucro", e ela erraria nos dois sentidos.
+
+      APR-115: a regra de quais quadros aparecem saiu da tela e foi para `tilesDoResumo` (core),
+      cujo teste de comportamento prova que `lucro: null` não rende "Sobrou" nem "Lucro por ano"
+      (`tests/unit/core/crm/resumo-da-ficha.test.ts`). Aqui fica o que o teste de comportamento não
+      cobre: a TELA passa pelo core (a chamada, não o import) e não lê `metricas.lucro` por fora dele.
     */
-    expect(/\{metricas\.lucro \? \(/.test(src), 'o cartão "Lucro" não é mais condicionado à prop').toBe(true)
-    expect(
-      /metricas\.lucro\?\.lucroAnualCents !== null/.test(src),
-      'o cartão "Lucro por ano" não é mais condicionado à prop',
-    ).toBe(true)
+    expect(/tilesDoResumo\(metricas\)/.test(src), 'a ficha não desenha os quadros por `tilesDoResumo(metricas)`').toBe(true)
+    expect(/metricas\.lucro\b/.test(src), 'a ficha voltou a ler `metricas.lucro` direto, fora da regra do core').toBe(false)
+    const core = semComentarios('src/core/crm/resumo-da-ficha.ts')
+    expect(/if \(m\.lucro && m\.lucro\.cobertura/.test(core), 'o quadro "Sobrou" não é mais condicionado ao lucro poder ser nulo').toBe(true)
+    expect(/m\.lucro\?\.lucroAnualCents !== null/.test(core), 'o quadro "Lucro por ano" não é mais condicionado ao lucro poder ser nulo').toBe(true)
     expect(
       /lucro:\s*LucroDoCliente\s*\|\s*null/.test(semComentarios(SERVICO_CRM)),
       'a prop do lucro deixou de poder ser nula — quem não pode ver não teria como não ver',
@@ -160,7 +165,9 @@ describe('o lucro por cliente também não chega a quem não pode ver', () => {
 
   it('a tela da ficha não lê número de lucro cru do ticket', () => {
     const src = semComentarios(TELA_FICHA)
-    const vazando = NUMEROS_DE_LUCRO.filter((coluna) => new RegExp(`\b${coluna}\b`).test(src))
+    // `\b` dentro de template literal é BACKSPACE (U+0008), não borda de palavra: esta guarda nunca
+    // casava nada e passava vazia desde que nasceu. Visto em 2026-10-14 (APR-115). `\\b` é a borda.
+    const vazando = NUMEROS_DE_LUCRO.filter((coluna) => new RegExp(`\\b${coluna}\\b`).test(src))
     expect(vazando, `a ficha lê número de lucro cru, contornando a régua do servidor: ${vazando.join(', ')}`).toEqual([])
   })
 })

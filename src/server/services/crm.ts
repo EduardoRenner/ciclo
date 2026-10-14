@@ -96,6 +96,7 @@ export type FichaCliente = {
     startsAt: string
     status: EstadoAgendamento
     priceCents: number
+    serviceId: string | null
     serviceName: string
     professionalName: string
   }[]
@@ -187,7 +188,7 @@ export async function fichaDoCliente(
   ] = await Promise.all([
     db
       .from('appointments')
-      .select('id, starts_at, status, price_cents, services(name), professionals(display_name)')
+      .select('id, starts_at, status, price_cents, service_id, services(name), professionals(display_name)')
       .eq('tenant_id', tenantId)
       .eq('client_id', clientId)
       .order('starts_at', { ascending: false })
@@ -302,6 +303,8 @@ export async function fichaDoCliente(
     startsAt: a.starts_at,
     status: a.status,
     priceCents: a.price_cents,
+    // APR-115: "Marcar de novo" abre o Marcar com o ÚLTIMO serviço feito já escolhido.
+    serviceId: a.service_id,
     serviceName: a.services?.name ?? 'Serviço removido',
     professionalName: a.professionals?.display_name ?? '—',
   }))
