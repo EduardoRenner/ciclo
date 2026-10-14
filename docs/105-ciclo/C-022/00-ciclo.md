@@ -15,6 +15,6 @@ derivado, não histórico), índice ÚNICO `nulls not distinct` em (tenant, clie
 índice pelo prefixo da FK. As 3 portas gravam com `onConflict` de 4 colunas (sujeito nulo).
 
 **F5 · Medida (banco local, 90.539 linhas de ciclo):** índice único criado sem conflito; unidade
-4.267; integração das 3 portas (ciclo, recuperar, notas, já atendo, CRM) 63 de 63. Mutação abaixo.
+4.267; integração das 3 portas (ciclo, recuperar, notas, já atendo, CRM) 63 de 63. Mutação: a chave nova SEM `nulls not distinct` (recriada no banco local) derruba 10 testes de ciclo, porque o sujeito nulo da beleza deixa de colidir; restaurada igual à migration.
 
 **Nota:** cliente 3 · segredo 8 · engenharia 9. **Próximo (C-023):** passo 2 (job por sujeito) + 3 (0135).
