@@ -29,3 +29,19 @@ Uma entrada por rodada: o que, por quê, número antes e depois, o que saiu, pr�
 - **O que saiu:** o segundo primário; o vermelho cheio do cancelar.
 - **Próxima:** APR-106 (cada bloco da Hoje avisa quando falha em vez de mostrar zero): dano evitado
   alto, porque zero falso na Hoje é número errado na tela mais vista.
+
+## 2026-10-13 · Rodada 2 · APR-106, 107, 108 (a Hoje)
+
+- **APR-106:** bloco que não carrega avisa e oferece "Tentar de novo" em vez de R$ 0,00. Medido no
+  build com a view e a RPC renomeadas no banco local (e restauradas): 2 avisos, 0 "R$ 0,00", o resto
+  da tela aberto. A guarda de degradação silenciosa reprova helper mudo e catch mudo.
+- **APR-107:** "Chegou" no sheet da Hoje volta atrás com a rota caída, 5 de 5.
+- **APR-108:** a Hoje reordenada. Próximo horário em y=141 (aceite < 420) com Chegou em 1 toque
+  (1 POST); sem horário, "Marcar horário" em y=336 (antes ≈ 1.080); conteúdo útil em 396 ms.
+  **Saíram:** saudação, nome do negócio, "Ver meu site" (menu), a faixa decorativa do dia, a seção
+  "Precisa confirmar" (a linha já diz Aguardando) e 2 dos 3 cartões de sugestão.
+- **Achados ao olhar a captura (Lente 1):** "0 de 17 horários feitos" ao lado de "Falta 1" lia como
+  contradição (consertado: só com algum feito). E "O Motor acertou **0%** dos retornos previstos" na
+  Hoje dos dois salões de demonstração: número verdadeiro, manchete que mata a confiança no
+  diferencial do produto no primeiro mês. Virou a aposta A-08.
+- **Próxima:** APR-109/110 (grade de horários livres compartilhada entre o público e o Marcar).
