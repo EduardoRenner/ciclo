@@ -78,11 +78,10 @@ describe('computeCycle — §5.3', () => {
       defaultCycleDays: 70,
       today: dia('2026-01-01'),
     })
-    // clamp: 0.5×70=35, 2.5×70=175 — a mediana dos últimos 5 (21) cai abaixo
-    // do piso e é esticada até 35. O teste de clamp cobre isso; aqui só
-    // confirma que o outlier de 200 não entrou na mediana dos 5 mais recentes
-    // (se tivesse entrado, o resultado teria sido bem mais alto que 35).
-    expect(r.personalCycleDays).toBe(35)
+    // v2 (docs/105-ciclo/C-001): com 3+ intervalos a referência é o próprio cliente (mediana 21,5),
+    // não o padrão 70. O 200 sai pelo descarte (> 3×21,5) e pela janela dos 5; a mediana dos 5 é 21
+    // e fica — a v1 esticava para 35 (piso de 0,5×70) uma cliente que volta a cada 21 dias.
+    expect(r.personalCycleDays).toBe(21)
   })
 
   it('gap absurdo (> 3× o padrão) é descartado, não usado na conta', () => {
@@ -108,18 +107,36 @@ describe('computeCycle — §5.3', () => {
     expect(r.personalCycleDays).toBe(10.5)
   })
 
-  it('clamp: gap muito longo não deixa o ciclo pessoal passar de 2,5× o padrão', () => {
-    // No braço de 1-2 gaps o blend 60/40 com o padrão amortece tanto que,
-    // combinado com o próprio descarte de gaps > 3×padrão, nunca ultrapassa
-    // o teto — é matematicamente impossível estourar por ali. O teto só é
-    // alcançável no braço de 3+ gaps (mediana pura, sem blend). 5 gaps perto
-    // do limite de descarte (30 ≤ 3×10), mediana 29, padrão 10 → teto 25.
+  it('v2: ritmo provado (3+ intervalos coerentes) vence o padrão do serviço, sem o teto de 2,5× o padrão', () => {
+    // Na v1, 5 intervalos de ~29 dias num serviço de padrão 10 davam 25 (teto 2,5×10): o produto
+    // chamava a cliente 4 dias antes, toda vez. O backtest (C-001) mostrou o mesmo defeito em escala:
+    // ritmo 70 com padrão 21 → erro mediano de 44 dias. Na v2 a referência é a mediana dela (29).
     const r = computeCycle({
       history: historicoDeGaps('2026-01-01', [29, 30, 28, 30, 29]),
       defaultCycleDays: 10,
       today: dia('2026-01-01'),
     })
-    expect(r.personalCycleDays).toBe(25)
+    expect(r.personalCycleDays).toBe(29)
+  })
+
+  it('v2: o teto continua valendo, agora relativo ao próprio cliente — um intervalo não estica o ciclo', () => {
+    // 3 intervalos de 20 e um de 55 (< 3×mediana 20, não é descartado): mediana dos 4 = 20.
+    const r = computeCycle({
+      history: historicoDeGaps('2026-01-01', [20, 20, 55, 20]),
+      defaultCycleDays: 21,
+      today: dia('2026-01-01'),
+    })
+    expect(r.personalCycleDays).toBe(20)
+  })
+
+  it('v2: com 1–2 intervalos nada muda — o padrão segue sendo a referência (ritmo não provado)', () => {
+    // 1 intervalo de 50 num serviço de padrão 10: > 3×10, descartado → só o padrão.
+    const r = computeCycle({
+      history: historicoDeGaps('2026-01-01', [50]),
+      defaultCycleDays: 10,
+      today: dia('2026-01-01'),
+    })
+    expect(r.personalCycleDays).toBe(10)
   })
 
   it('agendamento futuro força on_track mesmo com o cálculo dizendo "lost"', () => {

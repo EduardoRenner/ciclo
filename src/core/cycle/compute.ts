@@ -15,7 +15,7 @@ export type EstadoCiclo = 'on_track' | 'due' | 'late' | 'at_risk' | 'lost'
  * atrás previa, concluiria que o erro mudou, e atribuiria à clientela uma mudança que foi nossa.
  * É a versão que permite separar "o salão mudou" de "nós mudamos".
  */
-export const VERSAO_DO_MOTOR = 1
+export const VERSAO_DO_MOTOR = 2
 
 export type EntradaComputeCycle = {
   /** Atendimentos concluídos daquele cliente naquele serviço, em ordem cronológica. */
@@ -81,8 +81,17 @@ export function computeCycle(entrada: EntradaComputeCycle): ResultadoComputeCycl
     gapsBrutos.push(history[i]!.date.since(history[i - 1]!.date).total('days'))
   }
 
-  // 2. descartar gaps > 3× o padrão (sumiu e voltou não é ritmo, é exceção).
-  const gaps = gapsBrutos.filter((g) => g <= 3 * defaultCycleDays)
+  // 2. descartar gaps anômalos (sumiu e voltou não é ritmo, é exceção).
+  //
+  // v2 (docs/105-ciclo/C-001): com 3+ intervalos, a régua do que é "anômalo" é o PRÓPRIO cliente
+  // (3× a mediana dele), não o padrão do serviço. O padrão é um palpite de catálogo
+  // (`calibracao.ts`: "nunca foi uma escolha do dono") e, quando está errado, a v1 descartava todos
+  // os intervalos de quem tem ritmo próprio longo: medido no backtest, cliente de 70 dias num
+  // serviço de padrão 21 tinha erro mediano de 44 dias e 0% de acerto na semana. Com 0–2
+  // intervalos não há ritmo provado e nada muda: o padrão segue sendo a referência.
+  const ritmoProvado = gapsBrutos.length >= 3
+  const referencia = ritmoProvado ? mediana(gapsBrutos) : defaultCycleDays
+  const gaps = gapsBrutos.filter((g) => g <= 3 * referencia)
 
   // 3. 0 gaps → só o padrão. 1-2 → mistura com o padrão. 3+ → mediana dos últimos 5.
   let personalCycleDays: number
@@ -94,8 +103,9 @@ export function computeCycle(entrada: EntradaComputeCycle): ResultadoComputeCycl
     personalCycleDays = mediana(gaps.slice(-5))
   }
 
-  // 4. clamp entre 0,5× e 2,5× o padrão — um outlier não pode esticar o ciclo pra sempre.
-  personalCycleDays = Math.min(Math.max(personalCycleDays, 0.5 * defaultCycleDays), 2.5 * defaultCycleDays)
+  // 4. clamp entre 0,5× e 2,5× a referência — um outlier não pode esticar o ciclo pra sempre. Na v2,
+  // com ritmo provado, a referência é o próprio cliente (o mesmo motivo do passo 2).
+  personalCycleDays = Math.min(Math.max(personalCycleDays, 0.5 * referencia), 2.5 * referencia)
 
   // 5. predictedDate = último atendimento + personalCycleDays.
   const ultimoAtendimento = history[history.length - 1]!.date
