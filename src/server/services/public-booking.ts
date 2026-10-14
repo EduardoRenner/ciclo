@@ -28,6 +28,7 @@ import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { diaNoFuso } from '@/core/tempo/dia'
 
 type Cliente = SupabaseClient<Database>
 
@@ -525,7 +526,9 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.input<typ
 
     let professionalId = entrada.professionalId ?? undefined
     if (!professionalId) {
-      const disponiveis = await disponibilidadePublica(slug, entrada.serviceId, entrada.startsAt.slice(0, 10))
+      // APR-223 (R-33): o DIA do horário é o do negócio. `startsAt.slice(0, 10)` era o dia em UTC — às 21h
+      // de Brasília já é amanhã em UTC, a disponibilidade era a do dia errado e "Tanto faz" caía em 409.
+      const disponiveis = await disponibilidadePublica(slug, entrada.serviceId, diaNoFuso(tenant.timezone, new Date(entrada.startsAt)))
       const achado = disponiveis.find((s) => s.startsAt === entrada.startsAt)
       if (!achado) {
         throw new AppError('SLOT_TAKEN', { details: { alternatives: disponiveis.slice(0, 3).map((s) => s.startsAt) } })
