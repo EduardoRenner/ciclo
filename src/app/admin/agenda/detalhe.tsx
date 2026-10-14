@@ -5,12 +5,14 @@ import Link from 'next/link'
 
 import { useState, useTransition } from 'react'
 
+import { useFuso } from '@/components/shell/fuso'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
 import { vibrarConfirmacao } from '@/lib/haptics'
 
-import { proximosEstados, type EstadoAgendamento } from '@/core/scheduling/state'
+import { acoesDoHorario } from '@/core/scheduling/acoes-do-horario'
+import type { EstadoAgendamento } from '@/core/scheduling/state'
 
 import type { LinhaAgendaDia } from '@/server/services/agendamentos'
 import { fetchComTentativa } from '@/lib/tentativa'
@@ -54,7 +56,7 @@ function paraInputLocal(iso: string): string {
 
 /**
  * TICKET-023/024: as duas telas viraram uma só — os botões de estado nascem
- * direto de `proximosEstados()`, o mesmo módulo que valida no servidor. Uma
+ * de `acoesDoHorario()`, que lê `proximosEstados()`, o mesmo módulo que valida no servidor. Uma
  * transição que o servidor recusaria nunca aparece como botão: não tem como
  * a tela e a regra de negócio discordarem.
  */
@@ -78,10 +80,11 @@ export default function DetalheAgendamento({
   const [erro, setErro] = useState<string | null>(null)
   const [linkAvaliacao, setLinkAvaliacao] = useState<string | null>(null)
   const mostrarToast = useToast()
+  const fuso = useFuso()
 
   const estadoAtual = agendamento.status as EstadoAgendamento
-  const acoesDeEstado = proximosEstados(estadoAtual).filter((e) => e in ROTULO_ACAO)
-  const podeCancelar = proximosEstados(estadoAtual).includes('canceled')
+  // APR-105: um primário só (a próxima ação do estado); o resto secundário; cancelar separado no fim.
+  const { principal, secundarias, podeCancelar } = acoesDoHorario(estadoAtual)
   // Remarcar não é uma transição de status — cabe enquanto ainda não chegou.
   const podeRemarcar = estadoAtual === 'pending' || estadoAtual === 'confirmed'
 
@@ -162,13 +165,26 @@ export default function DetalheAgendamento({
   return (
     <div aria-busy={pendente} className="flex flex-col gap-4">
       <div>
-        <p className="text-corpo font-semibold">
+        {/*
+          Quem é vem primeiro: o detalhe dizia só "Agendamento", o dia e o preço, e o balcão tocava em
+          "Chegou" sem ver o nome (achado na medida do APR-105). Dia e hora no fuso do NEGÓCIO
+          (APR-019), não no do aparelho de quem abre.
+        */}
+        <p className="text-stat font-semibold">{agendamento.clients?.name ?? 'Sem cliente'}</p>
+        {agendamento.services?.name ? (
+          <p className="text-secundario text-txt-2">
+            {agendamento.services.name}
+            {agendamento.professionals?.display_name ? ` com ${agendamento.professionals.display_name}` : ''}
+          </p>
+        ) : null}
+        <p className="mt-2 text-corpo font-semibold">
           {new Date(agendamento.starts_at).toLocaleString('pt-BR', {
             weekday: 'short',
             day: '2-digit',
             month: '2-digit',
             hour: '2-digit',
             minute: '2-digit',
+            timeZone: fuso,
           })}
         </p>
         <p className="mt-0.5 text-secundario text-txt-2">{dinheiro.format(agendamento.price_cents / 100)}</p>
@@ -237,19 +253,19 @@ export default function DetalheAgendamento({
             sequência aparece no lugar) — um spinner aqui giraria num botão que ninguém tocou.
             `disabled` continua bloqueando toque duplo enquanto a mutação real está em voo.
           */}
-          {acoesDeEstado.map((estado) => (
-            <Button key={estado} largura="cheia" disabled={pendente} onClick={() => executar(estado)}>
+          {principal ? (
+            <Button largura="cheia" disabled={pendente} onClick={() => executar(principal)}>
+              {ROTULO_ACAO[principal]}
+            </Button>
+          ) : null}
+          {secundarias.map((estado) => (
+            <Button key={estado} variante="secondary" largura="cheia" disabled={pendente} onClick={() => executar(estado)}>
               {ROTULO_ACAO[estado]}
             </Button>
           ))}
           {podeRemarcar ? (
             <Button variante="secondary" largura="cheia" disabled={pendente} onClick={() => setMostrarRemarcar(true)}>
               Remarcar
-            </Button>
-          ) : null}
-          {podeCancelar ? (
-            <Button variante="danger" largura="cheia" disabled={pendente} onClick={() => setMostrarCancelar(true)}>
-              Cancelar
             </Button>
           ) : null}
           {estadoAtual === 'done' ? (
@@ -272,8 +288,17 @@ export default function DetalheAgendamento({
               Pedir avaliação
             </a>
           ) : null}
-          {acoesDeEstado.length === 0 && !podeRemarcar && !podeCancelar ? (
+          {!principal && secundarias.length === 0 && !podeRemarcar && !podeCancelar ? (
             <p className="text-secundario text-txt-2">Esse agendamento não tem mais ação disponível.</p>
+          ) : null}
+          {/* Destrutivo no fim, separado, com a consequência: longe do polegar que procura "Chegou". */}
+          {podeCancelar ? (
+            <div className="mt-3 border-t border-line pt-3">
+              <Button variante="ghost" largura="cheia" className="text-bad" disabled={pendente} onClick={() => setMostrarCancelar(true)}>
+                Cancelar horário
+              </Button>
+              <p className="mt-1 text-center text-label text-txt-3">Ele sai da agenda e o horário fica livre.</p>
+            </div>
           ) : null}
         </div>
       ) : null}
