@@ -216,7 +216,15 @@ export default function FormularioAgendamento({
       // enfileirar e revalidar quando a mutação sair da fila de verdade. O
       // servidor é quem decide se o horário oferecido offline ainda existe.
       if (typeof navigator !== 'undefined' && !navigator.onLine) {
-        await apiFetch('/api/v1/appointments', { method: 'POST', body: corpo })
+        // APR-203 (C-47): `apiFetch` sem rede grava no IndexedDB, e IndexedDB falha de verdade (janela
+        // anônima, armazenamento cheio). Sem o `try`, a rejeição dentro da Action derrubava a tela
+        // inteira no boundary e levava o que a pessoa preencheu.
+        try {
+          await apiFetch('/api/v1/appointments', { method: 'POST', body: corpo })
+        } catch {
+          setErro('Não consegui guardar neste aparelho (sem internet e sem espaço para a fila). Tente de novo com rede.')
+          return
+        }
         /*
          * APR-022: fica NESTA tela. Ir para `/admin/agenda` sem rede caía na tela do dinossauro do
          * navegador (o service worker não guarda o painel, `public/sw.js`) — medido. O formulário
@@ -248,11 +256,16 @@ export default function FormularioAgendamento({
             // Best-effort: o agendamento já existe e é o que importa — se o vínculo falhar, a
             // cliente já tem hora marcada, só o orçamento não fica marcado como "virou agendamento"
             // (segue "Aprovado" na lista, sem perder nada; dá pra tentar nessa tela de novo depois).
-            await fetchComTentativa(`/api/v1/quotes/${orcamentoId}/convert`, {
+            // APR-206 (C-29): `fetch` não rejeita em 4xx/5xx, então o `.catch` sozinho engolia a falha
+            // em silêncio. Confere `r.ok` e avisa — o agendamento fica, o orçamento é que não virou.
+            const vinculo = await fetchComTentativa(`/api/v1/quotes/${orcamentoId}/convert`, {
               method: 'POST',
               headers: { 'content-type': 'application/json' },
               body: JSON.stringify({ appointmentId: json.data.appointment.id }),
-            }).catch(() => {})
+            }).catch(() => null)
+            if (!vinculo?.ok) {
+              mostrarToast({ tom: 'erro', titulo: 'Horário marcado, mas o orçamento não ficou ligado a ele. Dá para tentar de novo pela lista de orçamentos.' })
+            }
           }
           mostrarToast({ tom: 'ok', titulo: 'Agendamento criado' })
           router.push(`/admin/agenda?date=${new Intl.DateTimeFormat('en-CA', { timeZone: fuso }).format(new Date(startsAtIso))}`)

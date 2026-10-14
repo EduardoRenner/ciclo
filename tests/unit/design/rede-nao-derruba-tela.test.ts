@@ -82,7 +82,9 @@ function corposDeTransicao(src: string): string[] {
 }
 
 function corpoTemODefeito(src: string): boolean {
-  return corposDeTransicao(src).some((c) => c.includes('await fetch') && !c.includes('try {'))
+  // APR-203 (C-47): `apiFetch` sem rede grava no IndexedDB, que falha de verdade — a rejeição dentro da
+  // transição derruba a tela do mesmo jeito que um `fetch` cru. Os dois contam.
+  return corposDeTransicao(src).some((c) => (c.includes('await fetch') || c.includes('await apiFetch(')) && !c.includes('try {'))
 }
 
 function temFetchDesprotegido(arquivo: string): boolean {
@@ -110,6 +112,15 @@ describe('falha de rede não pode derrubar a tela', () => {
       }
     `
     expect(corpoTemODefeito(comDefeito), 'o scanner deixou de casar `await fetch` sem `try` numa transição').toBe(true)
+  })
+
+  it('o detector reconhece `await apiFetch(` sem `try` numa transição (APR-203)', () => {
+    const comDefeito = `
+      startTransition(async () => {
+        await apiFetch('/api/v1/x', { method: 'POST', body: {} })
+      })
+    `
+    expect(corpoTemODefeito(comDefeito)).toBe(true)
   })
 
   it('o detector NÃO acusa quando o fetch está protegido — prova que não é sempre-true', () => {
