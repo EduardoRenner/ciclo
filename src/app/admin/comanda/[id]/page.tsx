@@ -1,4 +1,5 @@
 import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
 
 import { podeUsarModulo } from '@/core/billing/planos'
 import { CATALOGO_DE_SERVICOS, destinoDoMaterial } from '@/core/comanda/completude-do-lucro'
@@ -6,6 +7,8 @@ import { custoFixoEstaConfigurado } from '@/core/comanda/custo-fixo'
 import { explicarSobra } from '@/core/comanda/sobra-explicada'
 import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoDoPainel } from '@/server/auth/tenant'
+import { AppError } from '@/server/http/errors'
+import { UUID } from '@/core/text/uuid'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { buscarComanda } from '@/server/services/comanda'
 import { listarProdutosAtivos } from '@/server/services/estoque'
@@ -21,6 +24,9 @@ export const metadata = { title: "Comanda" }
 
 export default async function PaginaComanda({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  // APR-113: id que não é id, ou comanda que não existe (apagada, de outro negócio), é 404 com tela
+  // própria (not-found.tsx ao lado), não o erro genérico de carregamento que mandava tentar de novo.
+  if (!UUID.test(id)) notFound()
   const ctx = await contextoDoPainel(new Request('https://interno/comanda', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
@@ -32,7 +38,10 @@ export default async function PaginaComanda({ params }: { params: Promise<{ id: 
    */
   const podeVerLucro = avaliarPermissao(ctx.papel, 'report:read') !== null
 
-  const comandaPromise = buscarComanda(db, ctx.tenantId, id)
+  const comandaPromise = buscarComanda(db, ctx.tenantId, id).catch((erro: unknown) => {
+    if (erro instanceof AppError && erro.code === 'NOT_FOUND') notFound()
+    throw erro
+  })
 
   /*
    * Encadeado na PRÓPRIA `comandaPromise` (nunca uma segunda chamada a `buscarComanda`), e não

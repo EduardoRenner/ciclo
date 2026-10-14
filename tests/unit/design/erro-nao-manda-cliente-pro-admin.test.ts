@@ -94,8 +94,13 @@ describe('a tela de erro não manda o cliente do salão para o painel', () => {
 
 const BOUNDARY = /^(error|global-error|not-found)\.tsx$/
 
-/** O boundary do painel pode mandar para o painel: ele só sombreia rotas `/admin`. */
+/**
+ * Boundary dentro de `src/app/admin/` pode mandar para o painel: o Next só o desenha em rotas `/admin`,
+ * e quem chega nelas já passou pelo login do painel (APR-113 trouxe os `not-found.tsx` do painel e da
+ * comanda, com a mesma saída do `error.tsx` de lá).
+ */
 const SO_SOMBREIA_O_PAINEL = 'src/app/admin/error.tsx'
+const soSombreiaOPainel = (b: string) => b.startsWith('src/app/admin/')
 
 function boundaries(dir: string): string[] {
   const achados: string[] = []
@@ -119,7 +124,7 @@ describe('nenhum boundary que o cliente do salão alcança oferece o painel', ()
     expect(TODOS, 'o boundary do painel sumiu — a isenção abaixo ficou sem objeto').toContain(SO_SOMBREIA_O_PAINEL)
   })
 
-  it.each(TODOS.filter((b) => b !== SO_SOMBREIA_O_PAINEL))('%s não manda para o painel', (arquivo) => {
+  it.each(TODOS.filter((b) => !soSombreiaOPainel(b)))('%s não manda para o painel', (arquivo) => {
     const src = semComentarios(readFileSync(arquivo, 'utf8'))
     /*
      * `href="/admin…"` literal. O ramo condicional de `error.tsx` monta o destino do painel por
