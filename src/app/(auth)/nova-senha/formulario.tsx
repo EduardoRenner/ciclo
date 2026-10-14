@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import Button from '@/components/ui/button'
-import Input from '@/components/ui/input'
+import Input from '@/components/ui/input'
+import { SENHA_MINIMA } from '@/core/auth/erro-de-senha'
 
 export default function FormularioNovaSenha() {
   const router = useRouter()
@@ -15,6 +16,11 @@ export default function FormularioNovaSenha() {
     const senha = String(formData.get('password') ?? '')
     if (senha !== String(formData.get('confirmacao') ?? '')) {
       setErro('As duas senhas estão diferentes.')
+      return
+    }
+    // APR-217: o piso é conferido ANTES de bater no servidor, com a frase certa.
+    if (senha.length < SENHA_MINIMA) {
+      setErro(`Essa senha é curta demais: use pelo menos ${SENHA_MINIMA} caracteres.`)
       return
     }
 
