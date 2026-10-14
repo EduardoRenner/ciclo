@@ -100,9 +100,10 @@ const ROTULO_ORIGEM: Record<string, string> = {
   passou_na_frente: 'Passou na frente',
 }
 
-function dataCurta(iso: string | null): string {
+// APR-202 (C-51): data no fuso do NEGÓCIO — o aparelho de quem olha pode estar noutro fuso.
+function dataCurta(iso: string | null, fuso: string): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: fuso })
 }
 
 /** "12 de março" — aniversário não precisa do ano, e mostrar a idade é um vexame desnecessário. */
@@ -268,9 +269,9 @@ export default function Ficha({
       servico: proximo?.serviceName ?? ultimoServico,
       negocio: nomeDoNegocio,
       valor: metricas.ticketMedioCents > 0 ? dinheiro.format(metricas.ticketMedioCents / 100) : null,
-      data: proximo ? new Date(proximo.startsAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : null,
+      data: proximo ? new Date(proximo.startsAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: timezone }) : null,
       hora: proximo
-        ? new Date(proximo.startsAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        ? new Date(proximo.startsAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: timezone })
         : null,
       link: linkIndicacao,
     }),
@@ -669,7 +670,7 @@ export default function Ficha({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-corpo font-semibold">{h.serviceName}</p>
                   <p className="text-secundario text-txt-3">
-                    {dataCurta(h.startsAt)} · {h.professionalName}
+                    {dataCurta(h.startsAt, timezone)} · {h.professionalName}
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
@@ -693,7 +694,7 @@ export default function Ficha({
             {mensagens.slice(0, 6).map((m) => (
               <div key={m.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <span className="truncate text-corpo">{ROTULO_MENSAGEM[m.kind] ?? m.kind}</span>
-                <span className="shrink-0 text-secundario text-txt-3">{dataCurta(m.createdAt)}</span>
+                <span className="shrink-0 text-secundario text-txt-3">{dataCurta(m.createdAt, timezone)}</span>
               </div>
             ))}
           </Card>

@@ -9,7 +9,9 @@ import { ROTULO_DA_CLASSE, ROTULO_DO_PERFIL } from '@/core/crm/nota-do-cliente'
 import { dinheiro } from '@/lib/formato'
 import { linkWhatsApp, linkWhatsAppCompartilhar, textoDeVolta } from '@/lib/mensagens'
 
-import type { ItemRecuperar } from '@/server/services/recuperar-receita'
+import type { ItemRecuperar } from '@/server/services/recuperar-receita'
+import { useFuso } from '@/components/shell/fuso'
+import { hojeNoFuso } from '@/core/agenda/dias'
 
 /**
  * `docs/95` E2 — a fila de chamadas: um cliente por vez, na ordem que o dono escolheu. "Chamar"
@@ -19,22 +21,23 @@ import type { ItemRecuperar } from '@/server/services/recuperar-receita'
  * dia: é conveniência de quem está chamando, não dado do salão. Navegador sem armazenamento (aba
  * anônima, dado bloqueado) só perde isso ao recarregar; a fila continua funcionando.
  */
-function chaveDoDia(): string {
-  return `ciclo:fila-de-chamadas:${new Date().toLocaleDateString('sv-SE')}`
+// APR-202: o "dia" é o do negócio — a lista de quem já foi tratado vira na meia-noite do salão, não na do aparelho.
+function chaveDoDia(fuso: string): string {
+  return `ciclo:fila-de-chamadas:${hojeNoFuso(fuso)}`
 }
 
-function lerTratados(): Set<string> {
+function lerTratados(fuso: string): Set<string> {
   try {
-    const bruto = window.localStorage.getItem(chaveDoDia())
+    const bruto = window.localStorage.getItem(chaveDoDia(fuso))
     return new Set(bruto ? (JSON.parse(bruto) as string[]) : [])
   } catch {
     return new Set()
   }
 }
 
-function gravarTratados(tratados: Set<string>) {
+function gravarTratados(fuso: string, tratados: Set<string>) {
   try {
-    window.localStorage.setItem(chaveDoDia(), JSON.stringify([...tratados]))
+    window.localStorage.setItem(chaveDoDia(fuso), JSON.stringify([...tratados]))
   } catch {
     // Sem armazenamento a fila só não lembra depois de recarregar.
   }
@@ -53,11 +56,12 @@ export default function FilaDeChamadas({
   pararDeChamar: (item: ItemRecuperar) => Promise<boolean>
   sair: () => void
 }) {
+  const fuso = useFuso()
   const [tratados, setTratados] = useState<Set<string>>(() => new Set())
   // Pergunta antes de gravar: "não chamar mais" tira a pessoa da fila e do Chamar até alguém desfazer na ficha.
   const [confirmandoParar, setConfirmandoParar] = useState(false)
   const [parando, setParando] = useState(false)
-  useEffect(() => setTratados(lerTratados()), [])
+  useEffect(() => setTratados(lerTratados(fuso)), [fuso])
 
   const chamaveis = useMemo(() => itens.filter((i) => !i.optOut), [itens])
   const atual = proximoDaFila(chamaveis, tratados)
@@ -68,7 +72,7 @@ export default function FilaDeChamadas({
     const proximo = new Set(tratados)
     proximo.add(chaveDaFila(item))
     setTratados(proximo)
-    gravarTratados(proximo)
+    gravarTratados(fuso, proximo)
   }
 
   return (

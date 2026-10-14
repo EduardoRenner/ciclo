@@ -27,7 +27,8 @@ import { useToast } from '@/components/ui/toast'
 
 
 
-import FormularioProfissional, { type ProfissionalEditavel } from './formulario'
+import FormularioProfissional, { type ProfissionalEditavel } from './formulario'
+import { useFuso } from '@/components/shell/fuso'
 
 
 
@@ -106,6 +107,7 @@ export default function ListaProfissionais({
   podeGerenciar: boolean
 
 }) {
+  const fuso = useFuso()
 
   const [profissionais, setProfissionais] = useState(profissionaisIniciais)
 
@@ -463,7 +465,7 @@ export default function ListaProfissionais({
 
                       {rotuloDoPapel(c.role)} · vence em{' '}
 
-                      {new Date(c.expires_at).toLocaleDateString('pt-BR')}
+                      {new Date(c.expires_at).toLocaleDateString('pt-BR', { timeZone: fuso })}
 
                     </p>
 

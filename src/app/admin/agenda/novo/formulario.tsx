@@ -35,9 +35,10 @@ function paraIso(dataLocal: string): string {
   return new Date(dataLocal).toISOString()
 }
 
-function formatarAlternativa(iso: string): string {
+// APR-202: no fuso do negócio.
+function formatarAlternativa(iso: string, fuso: string): string {
   const d = new Date(iso)
-  return d.toLocaleString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: fuso })
 }
 
 export default function FormularioAgendamento({
@@ -608,7 +609,7 @@ export default function FormularioAgendamento({
             <div className="mt-3 flex flex-wrap gap-2">
               {alternativas.map((a) => (
                 <Chip key={a} onClick={() => enviar(a)}>
-                  {formatarAlternativa(a)}
+                  {formatarAlternativa(a, fuso)}
                 </Chip>
               ))}
             </div>

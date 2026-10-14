@@ -7,10 +7,12 @@ import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import SectionHeader from '@/components/ui/section-header'
 
-import type { NotaDoCliente } from '@/server/services/notas'
+import type { NotaDoCliente } from '@/server/services/notas'
+import { useFuso } from '@/components/shell/fuso'
 
-function dataHora(iso: string): string {
-  return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+// APR-202 (C-51): no fuso do negócio, não no do aparelho.
+function dataHora(iso: string, fuso: string): string {
+  return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: fuso })
 }
 
 /**
@@ -19,6 +21,7 @@ function dataHora(iso: string): string {
  * escreveu e quando. Nunca edita nem apaga (regra 11) — é registro, não rascunho.
  */
 export default function Notas({ clientId, iniciais }: { clientId: string; iniciais: NotaDoCliente[] }) {
+  const fuso = useFuso()
   const [notas, setNotas] = useState(iniciais)
   const [escrevendo, setEscrevendo] = useState(false)
   const [texto, setTexto] = useState('')
@@ -100,7 +103,7 @@ export default function Notas({ clientId, iniciais }: { clientId: string; inicia
             <div key={n.id} className="px-4 py-3">
               <p className="whitespace-pre-wrap text-corpo text-txt">{n.body}</p>
               <p className="mt-1 text-label text-txt-3">
-                {dataHora(n.createdAt)}
+                {dataHora(n.createdAt, fuso)}
                 {n.autor ? ` · ${n.autor}` : ''}
               </p>
             </div>

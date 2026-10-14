@@ -16,7 +16,8 @@ import { useVocabulario } from '@/components/shell/vocabulario'
 import { FORMAS_DE_PAGAMENTO, NOME_DA_FORMA, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
 import { comMaiuscula } from '@/core/text/vocabulario'
 import { dinheiro } from '@/lib/formato'
-import { fetchComTentativa } from '@/lib/tentativa'
+import { fetchComTentativa } from '@/lib/tentativa'
+import { useFuso } from '@/components/shell/fuso'
 
 type Props = {
   clientId: string
@@ -27,8 +28,9 @@ type Props = {
   podeLancar: boolean
 }
 
-function dataCurta(iso: string): string {
-  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+// APR-202 (C-51): no fuso do negócio, não no do aparelho.
+function dataCurta(iso: string, fuso: string): string {
+  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', timeZone: fuso })
 }
 
 /**
@@ -43,6 +45,7 @@ function dataCurta(iso: string): string {
  * sessão acontece AQUI, pelo "Usar 1 sessão", e é isso que os avisos dizem.
  */
 export default function PacotesCarteira({ clientId, pacotes, saldoCarteiraCents, servicos, podeLancar }: Props) {
+  const fuso = useFuso()
   const [abrindo, setAbrindo] = useState<'pacote' | 'credito' | null>(null)
 
   return (
@@ -70,7 +73,7 @@ export default function PacotesCarteira({ clientId, pacotes, saldoCarteiraCents,
                 {p.restantes}/{p.total}
               </p>
             </div>
-            {p.expiresOn ? <p className="mt-0.5 text-secundario text-txt-3">Vence em {dataCurta(p.expiresOn)}</p> : null}
+            {p.expiresOn ? <p className="mt-0.5 text-secundario text-txt-3">Vence em {dataCurta(p.expiresOn, fuso)}</p> : null}
             {podeLancar && p.restantes > 0 ? <UsarSessao pacote={p} /> : null}
           </Card>
         ))}
