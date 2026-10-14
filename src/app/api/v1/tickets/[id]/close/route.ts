@@ -24,7 +24,7 @@ export const POST = rota(async (req, params, requestId) => {
   if (escopo === 'own') await exigirComandaPropria(db, ctx.tenantId, ticketId)
   // BL-42: `writeAudit` dentro do fechamento — ver o comentário em `wallet/credit/route.ts`.
   const ticket = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/tickets/${ticketId}/close` }, async () => {
-    const ticket = await fecharComanda(db, ctx.tenantId, ticketId, entrada.paymentMethod)
+    const ticket = await fecharComanda(db, ctx.tenantId, ticketId, entrada.paymentMethod, { discountCents: entrada.discountCents, tipCents: entrada.tipCents })
     await writeAudit(
       { tenantId: ctx.tenantId, actorId: ctx.sessao.userId, actorRole: ctx.papel, action: 'ticket.close', entity: 'tickets', entityId: ticketId, after: ticket, requestId },
       req,

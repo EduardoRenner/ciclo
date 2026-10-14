@@ -35,6 +35,13 @@ export type EntradaItemComanda = z.infer<typeof EsquemaItemComanda>
  */
 export const EsquemaFechamento = z.object({
   paymentMethod: z.enum(FORMAS_DE_PAGAMENTO, { message: 'Diga como foi pago para poder fechar.' }),
+  /**
+   * APR-112a: desconto e gorjeta vêm no MESMO envio do fechamento. Antes só entravam por um PATCH
+   * separado (o `onBlur` do campo), e quem digitava o desconto e tocava direto em "Receber" fechava
+   * sem o desconto (docs/98 C-13). Opcionais: sem eles vale o que já está na comanda.
+   */
+  discountCents: z.number().int().nonnegative().optional(),
+  tipCents: z.number().int().nonnegative().optional(),
 })
 export type EntradaFechamentoComanda = z.infer<typeof EsquemaFechamento>
 
@@ -322,10 +329,18 @@ export async function exigirComandaPropria(db: Cliente, tenantId: string, ticket
  * percentual de comissão do profissional ou o preço do serviço mudem depois. `payments`/webhook
  * (TICKET-043) é quem move `closed` pra `paid`; aqui só fecha o carrinho.
  */
-export async function fecharComanda(db: Cliente, tenantId: string, ticketId: string, formaDePagamento: FormaDePagamento) {
-  const { ticket, items } = await buscarComanda(db, tenantId, ticketId)
-  if (ticket.status !== 'open') throw new AppError('INVALID_TRANSITION', { message: 'Essa comanda já foi fechada.' })
+export async function fecharComanda(
+  db: Cliente,
+  tenantId: string,
+  ticketId: string,
+  formaDePagamento: FormaDePagamento,
+  ajustes: { discountCents?: number; tipCents?: number } = {},
+) {
+  const { ticket: gravado, items } = await buscarComanda(db, tenantId, ticketId)
+  if (gravado.status !== 'open') throw new AppError('INVALID_TRANSITION', { message: 'Essa comanda já foi fechada.' })
   if (items.length === 0) throw AppError.validacao({ items: 'Adicione pelo menos um item antes de fechar.' })
+  // APR-112a: o desconto e a gorjeta DESTE envio mandam; a RPC grava os dois na mesma transação do fechamento.
+  const ticket = { ...gravado, discount_cents: ajustes.discountCents ?? gravado.discount_cents, tip_cents: ajustes.tipCents ?? gravado.tip_cents }
 
   const { data: tenant } = await db.from('tenants').select('settings, timezone').eq('id', tenantId).maybeSingle()
   const commissionBase = ((tenant?.settings as Settings | null)?.commission_base ?? 'gross') as BaseComissao
@@ -382,6 +397,8 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
   })
 
   const campos = {
+    discount_cents: ticket.discount_cents,
+    tip_cents: ticket.tip_cents,
     subtotal_cents: subtotalCents,
     total_cents: totalCents,
     commission_cents: commissaoTotalCents,

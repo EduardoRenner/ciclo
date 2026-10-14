@@ -667,3 +667,31 @@ describe('o aluguel entra no fechamento, e fica congelado', () => {
     60_000,
   )
 })
+
+describe('comanda — desconto e gorjeta no MESMO envio do fechamento (APR-112a)', () => {
+  it(
+    'fechar com discountCents e tipCents grava os dois e o total na mesma transação, sem PATCH antes',
+    async () => {
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+
+      const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash', { discountCents: 1_500, tipCents: 500 })
+      expect(fechado.status).toBe('closed')
+      expect(fechado.discount_cents).toBe(1_500)
+      expect(fechado.tip_cents).toBe(500)
+      expect(fechado.total_cents).toBe(9_000) // 10.000 - 1.500 + 500
+
+      const { ticket } = await buscarComanda(svc, tenantId, ticketId)
+      expect([ticket.discount_cents, ticket.tip_cents, ticket.total_cents]).toEqual([1_500, 500, 9_000])
+    },
+    30_000,
+  )
+
+  it('sem os campos no envio, vale o que já estava gravado (o caminho de antes continua certo)', async () => {
+    const ticketId = await abrirTicketVazio()
+    await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+    await atualizarDescontoEGorjeta(svc, tenantId, ticketId, { discountCents: 1_000, tipCents: 0 })
+    const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash')
+    expect([fechado.discount_cents, fechado.total_cents]).toEqual([1_000, 9_000])
+  }, 30_000)
+})
