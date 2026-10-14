@@ -56,7 +56,6 @@ const LINHA_DE_BASE: Record<string, number> = {
   'server/services/recorrencia.ts': 2,
   'server/services/resumo-hoje.ts': 1,
   'server/services/whatsapp-inbound.ts': 1,
-  'app/admin/caixa/page.tsx': 1,
 }
 
 const COM_TETO = [/\.limit\(/, /\.range\(/, /\.single\(\)/, /\.maybeSingle\(\)/, /head:\s*true/, /\.eq\(\s*'id'/, /\.in\(\s*'id'/]
