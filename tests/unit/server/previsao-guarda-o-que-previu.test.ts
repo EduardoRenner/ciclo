@@ -163,15 +163,16 @@ describe('o registro anda junto com o recálculo, não num job à parte', () => 
 })
 
 describe('C-030: a previsão do animal casa com as visitas DELE, não com as do outro animal do tutor', () => {
-  it('a visita do Thor não fecha a previsão da Mel', async () => {
+  it('fecha a previsão da Mel com a volta da Mel (01/02), nunca com a do Thor (17/01)', async () => {
     const daMel = { id: 'p-mel', client_id: 'cli-1', service_id: 'srv-1', subject_id: 'mel', last_visit_on: '2026-01-10' }
     const { db, rpcs } = fakeDb([daMel])
     const historico = new Map([
       [chaveDaCombinacao('cli-1', 'srv-1', 'thor'), ['2026-01-10', '2026-01-17']],
-      [chaveDaCombinacao('cli-1', 'srv-1', 'mel'), ['2026-01-10']],
+      [chaveDaCombinacao('cli-1', 'srv-1', 'mel'), ['2026-01-10', '2026-02-01']],
     ])
-    expect(await resolverPrevisoes(db, 'tenant-1', historico)).toBe(0)
-    expect(rpcs).toHaveLength(0)
+    // Controle positivo: fecha UMA, com a data da Mel. Só "nada fecha" passaria vazio se o casamento
+    // ignorasse o sujeito (mutação do C-030).
+    expect(await resolverPrevisoes(db, 'tenant-1', historico)).toBe(1)
+    expect(rpcs[0]!.args.p_atualizacoes).toEqual([{ id: 'p-mel', actual_return_on: '2026-02-01' }])
   })
 })
-
