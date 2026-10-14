@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { PREVISORES_DE_BASE, backtest, previsorDoMotor, type Previsor, type ResultadoDoBacktest } from '@/core/cycle/backtest'
 
-import { CENARIOS, CENARIOS_CURTOS, gerar } from './cenarios'
+import { CENARIOS, CENARIOS_CURTOS, CENARIOS_DE_UM_INTERVALO, gerar } from './cenarios'
 
 export function placar(previsores: Record<string, Previsor>): Record<string, Record<string, ResultadoDoBacktest>> {
   return Object.fromEntries(CENARIOS.map((c) => [c.nome, Object.fromEntries(Object.entries(previsores).map(([n, p]) => [n, backtest(gerar(c), p)]))]))
@@ -84,3 +84,20 @@ describe('ritmo curto: nenhuma versão do Motor piora (C-013)', () => {
     expect(Math.round(r.acertoNaSemanaPct)).toBeGreaterThanOrEqual(PISOS_CURTOS[nome]!.acerto)
   })
 })
+
+/**
+ * C-027: com UM intervalo só, ritmo longo e sumiço são indistinguíveis. Descartar o intervalo acima de 3× o
+ * padrão (regra da v1 à v4) erra o "padrão errado" e acerta o sumiço; aceitá-lo (mistura, teto 3×, teto 2×)
+ * melhora o erro do padrão errado (47 → 19,5 d) sem tirar o acerto do zero e derruba o sumiço de 100% para
+ * 0%. Este piso existe para quem tentar "consertar" o padrão errado com 2 visitas ver o custo.
+ */
+describe('um intervalo só: sumiço no início não vira ritmo (C-027)', () => {
+  it.each(CENARIOS_DE_UM_INTERVALO.map((c) => c.nome))('%s: faixa de 2 visitas acerta a semana em 100%', (nome) => {
+    const c = CENARIOS_DE_UM_INTERVALO.find((x) => x.nome === nome)!
+    const r = backtest(gerar(c), previsorDoMotor)
+    expect(r.porFaixa['2 visitas']!.erroMedianoDias).toBeLessThanOrEqual(1)
+    expect(Math.round(r.porFaixa['2 visitas']!.acertoNaSemanaPct)).toBe(100)
+    expect(Math.round(r.geral.acertoNaSemanaPct)).toBeGreaterThanOrEqual(86)
+  })
+})
+

@@ -55,3 +55,11 @@ export const CENARIOS_CURTOS: Cenario[] = [
   { nome: 'ritmo curto (7±1, padrão 21)', padrao: 21, intervalo: (r) => normal(r, 7, 1) },
   { nome: 'sessões iniciais (2× 5±1, depois 21±2)', padrao: 21, intervalo: (r, i) => (i < 2 ? normal(r, 5, 1) : normal(r, 21, 2)) },
 ]
+
+/**
+ * C-027: o OUTRO lado da regra de 1 intervalo fora da régua. No "padrão errado" o intervalo longo é o
+ * ritmo; aqui é um sumiço de verdade logo depois da 1ª visita, e o ritmo depois é o do serviço.
+ */
+export const CENARIOS_DE_UM_INTERVALO: Cenario[] = [
+  { nome: 'sumiço no início (1º intervalo 90–150, depois 21±2)', padrao: 21, intervalo: (r, i) => (i === 0 ? 90 + r() * 60 : normal(r, 21, 2)) },
+]
