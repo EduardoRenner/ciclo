@@ -10,6 +10,7 @@ import { executarOnboarding } from '@/server/services/onboarding'
 import { concluirAgendamento, confirmarAgendamento, criarAgendamento, marcarChegada } from '@/server/services/agendamentos'
 import { recomputarCiclosDoTenant, recomputarCicloDeUmAtendimento } from '@/server/services/ciclo'
 import { prestacaoDeContasDoMotor, oscilacaoDaReguaDoTenant, resolverPrevisoes } from '@/server/services/previsao'
+import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -105,6 +106,30 @@ async function inserirAtendimentoConcluido(clientId: string, diasAtras: number) 
 }
 
 describe('recomputarCiclosDoTenant', () => {
+  it(
+    'C-015: grava sample_size (intervalos medidos) e a fila de recuperar devolve o ritmo com ela',
+    async () => {
+      const medido = await criarCliente('Ritmo Medido')
+      for (const dias of [64, 42, 22]) await inserirAtendimentoConcluido(medido, dias) // 2 intervalos
+      const novo = await criarCliente('Uma Visita So')
+      await inserirAtendimentoConcluido(novo, 30)
+
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
+
+      const amostra = async (cliente: string) =>
+        (await svc.from('client_cycles').select('sample_size').eq('tenant_id', tenantId).eq('client_id', cliente).single()).data?.sample_size
+      expect(await amostra(medido)).toBe(2)
+      // Uma visita só: o ciclo pessoal é o padrão do catálogo, e a amostra diz isso (0), não um default esquecido.
+      expect(await amostra(novo)).toBe(0)
+
+      const lista = await listarParaRecuperar(svc, tenantId)
+      const item = lista.items.find((i) => i.clientId === medido)
+      expect(item?.ritmo).toMatchObject({ amostra: 2 })
+      expect(item?.ritmo?.ultimaVisitaOn).toBeTruthy()
+    },
+    30_000,
+  )
+
   it(
     'cliente sem retorno esperado ainda vira due/late — grava em client_cycles',
     async () => {
