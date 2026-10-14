@@ -24,3 +24,8 @@ conflito no teste de unidade foi atualizada mantendo a intenção (ignorar dupli
 **Ordem de deploy:** 0138 antes; o código; 0139 depois.
 
 **Nota:** cliente 4 · segredo 8 · engenharia 9. **Próximo (C-031):** AUT-104, o pacote oficina no catálogo.
+
+**Suítes inteiras:** RLS 357 de 357. Integração 624 verdes, 1 pulado, 5 falhas em 3 arquivos
+(cliente-do-profissional, comissão, lembretes), todas com a assinatura do gateway local ("invalid response
+from the upstream server", o `AppError` genérico que a embrulha, e `id` nulo de inserção que voltou vazia).
+Isolados: 19 de 19.
