@@ -26,7 +26,7 @@ export type Aba = {
 }
 
 /** Os valores do `check` de `professions.pacote` (migration 0102). A guarda `pacote-tem-registro` confere. */
-export type SlugDoPacote = 'base' | 'advocacia'
+export type SlugDoPacote = 'base' | 'advocacia' | 'oficina'
 
 export type Pacote = {
   slug: SlugDoPacote

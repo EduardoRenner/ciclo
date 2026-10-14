@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 import { pacoteAberto, pacotesAbertos } from '@/core/pacotes/abertos'
+import { pacoteDe } from '@/core/pacotes'
+import { OFICINA_ABERTA } from '@/core/pacotes/oficina-aberta'
 import { ADVOCACIA_ABERTA } from '@/core/pacotes/advocacia-aberta'
 
 import { semComentarios } from '../../helpers/fonte'
@@ -46,3 +48,24 @@ describe('as duas leitoras usam a regra', () => {
     expect(/if \(!pacoteAberto\(normalizarPacote\(data\.pacote\)\)\)/.test(fonte), 'o serviço aceita pacote fechado').toBe(true)
   })
 })
+
+describe('o pacote Oficina nasce fechado (AUT-104, C-031)', () => {
+  it('a chave está desligada: entrar no mercado de oficinas é decisão do Eduardo', () => {
+    expect(OFICINA_ABERTA).toBe(false)
+    expect(pacoteAberto('oficina')).toBe(false)
+    expect(pacotesAbertos()).not.toContain('oficina')
+  })
+
+  it('aberta, a oficina entra; a chave dela não abre a advocacia nem o contrário', () => {
+    expect(pacoteAberto('oficina', false, true)).toBe(true)
+    expect(pacoteAberto('advocacia', false, true)).toBe(false)
+    expect(pacoteAberto('oficina', true, false)).toBe(false)
+    expect(pacotesAbertos(false, true)).toEqual(['base', 'oficina'])
+  })
+
+  it('o registro resolve o slug do banco para o pacote com o vocabulário do balcão', () => {
+    expect(pacoteDe('oficina').nome).toBe('Oficina')
+    expect(pacoteDe('oficina').vocabularioExtra.veiculo).toBe('veículo')
+  })
+})
+

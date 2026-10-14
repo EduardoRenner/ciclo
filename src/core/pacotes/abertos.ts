@@ -1,4 +1,5 @@
 import { ADVOCACIA_ABERTA } from './advocacia-aberta'
+import { OFICINA_ABERTA } from './oficina-aberta'
 import type { SlugDoPacote } from './tipos'
 
 /**
@@ -9,10 +10,10 @@ import type { SlugDoPacote } from './tipos'
  * no pior lugar do funil, `0078`) e o serviço de onboarding (recusa no servidor, para quem chama a
  * API direto). `aberta` é parâmetro só para o teste; em produção vale a chave.
  */
-export function pacoteAberto(pacote: SlugDoPacote, aberta: boolean = ADVOCACIA_ABERTA): boolean {
-  return pacote === 'base' || (pacote === 'advocacia' && aberta)
+export function pacoteAberto(pacote: SlugDoPacote, aberta: boolean = ADVOCACIA_ABERTA, oficinaAberta: boolean = OFICINA_ABERTA): boolean {
+  return pacote === 'base' || (pacote === 'advocacia' && aberta) || (pacote === 'oficina' && oficinaAberta)
 }
 
-export function pacotesAbertos(aberta: boolean = ADVOCACIA_ABERTA): SlugDoPacote[] {
-  return (['base', 'advocacia'] as const).filter((p) => pacoteAberto(p, aberta))
+export function pacotesAbertos(aberta: boolean = ADVOCACIA_ABERTA, oficinaAberta: boolean = OFICINA_ABERTA): SlugDoPacote[] {
+  return (['base', 'advocacia', 'oficina'] as const).filter((p) => pacoteAberto(p, aberta, oficinaAberta))
 }

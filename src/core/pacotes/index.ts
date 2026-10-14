@@ -1,5 +1,6 @@
 import { ADVOCACIA } from './advocacia'
 import { BASE } from './base'
+import { OFICINA } from './oficina'
 import type { Pacote, SlugDoPacote } from './tipos'
 
 export type { Aba, IconeDaAba, Pacote, SlugDoPacote } from './tipos'
@@ -15,6 +16,7 @@ export type { Aba, IconeDaAba, Pacote, SlugDoPacote } from './tipos'
 export const PACOTES: Readonly<Record<SlugDoPacote, Pacote>> = {
   base: BASE,
   advocacia: ADVOCACIA,
+  oficina: OFICINA,
 }
 
 /**

@@ -30,9 +30,10 @@ describe('catálogo de profissões (docs/09-PLATAFORMA.md §5)', () => {
     if (error) throw error
     // 8 originais (P0) + 9 novas (P5) = 17, mais 'outra' (migration 0078: a saída
     // para quem não se encontra na lista do onboarding) = 18, mais 'advocacia'
-    // (migration 0102, o primeiro pacote fora de beleza) = 19. As 12 "do
-    // lançamento" do plano são um subconjunto conceitual; a tabela guarda todas.
-    expect(data).toHaveLength(19)
+    // (migration 0102, o primeiro pacote fora de beleza) = 19, mais 'oficina_mecanica'
+    // (migration 0140, C-031) = 20. As 12 "do lançamento" do plano são um subconjunto
+    // conceitual; a tabela guarda todas.
+    expect(data).toHaveLength(20)
     // 'outra' explícito: se uma migration futura apagar essa linha, o beco sem
     // saída do onboarding volta — e o teste reprova pelo motivo certo, não só por
     // um número que mudou.
@@ -40,6 +41,8 @@ describe('catálogo de profissões (docs/09-PLATAFORMA.md §5)', () => {
     // docs/101 T0.1: só a advocacia tem pacote próprio; as outras 18 ficam no `base`, que é o
     // produto de hoje. Afirmado pelos dois lados, para a coluna não virar `advocacia` por engano.
     expect(data!.filter((p) => p.pacote === 'advocacia').map((p) => p.slug)).toEqual(['advocacia'])
+    // C-031 (0140): a oficina tem pacote próprio (fechado pela chave OFICINA_ABERTA até a decisão do Eduardo).
+    expect(data!.filter((p) => p.pacote === 'oficina').map((p) => p.slug)).toEqual(['oficina_mecanica'])
     expect(data!.filter((p) => p.pacote === 'base')).toHaveLength(18)
   })
 
