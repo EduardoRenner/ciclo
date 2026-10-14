@@ -3,7 +3,7 @@
 import Link from 'next/link'
 
 import { TriangleAlert, CalendarCheck, ChevronRight, Gift, MessageCircle, PackageX } from 'lucide-react'
-import { useState } from 'react'
+import { useOptimistic, useState } from 'react'
 
 import AppointmentRow, { COR_BARRA } from '@/components/ui/appointment-row'
 import Card from '@/components/ui/card'
@@ -196,6 +196,16 @@ export default function Hoje({
   const fuso = useFuso()
   const atualizarDepois = useAtualizarDepois()
   const [selecionado, setSelecionado] = useState<LinhaHoje | null>(null)
+  /*
+    APR-107 (docs/98 C-09): o estado do sheet era um `setState` comum. "Chegou" com a rede caída
+    deixava o sheet no estado NOVO para sempre (sem Chegou, com Concluir), como se tivesse gravado.
+    `useOptimistic`, como na Agenda: a mudança vive dentro da transição do `fetch`; se a mutação
+    falha e `onAtualizado` não roda, o React descarta a projeção sozinho e o sheet volta ao real.
+  */
+  const [selecionadoNaTela, aplicarStatusOtimista] = useOptimistic(
+    selecionado,
+    (atual, status: EstadoAgendamento) => (atual ? { ...atual, status } : atual),
+  )
 
   const faltam = resumo.restOfDay.length
   const heroi = escolherHeroi({
@@ -543,9 +553,9 @@ export default function Hoje({
       {prestacaoDeContas ? <PrestacaoTeaser contas={prestacaoDeContas} /> : <BlocoFalhou oQue="a prestação de contas do Motor" className="mb-5" />}
 
       <Sheet aberto={!!selecionado} aoFechar={(aberto) => !aberto && setSelecionado(null)} titulo="Agendamento">
-        {selecionado ? (
+        {selecionadoNaTela ? (
           <DetalheAgendamento
-            agendamento={selecionado as unknown as LinhaAgendaDia}
+            agendamento={selecionadoNaTela as unknown as LinhaAgendaDia}
             onFechar={() => setSelecionado(null)}
             onAtualizado={() => {
               setSelecionado(null)
@@ -558,7 +568,7 @@ export default function Hoje({
               botões trocam na hora); as linhas por trás dele continuam esperando `atualizarDepois()`,
               como sempre esperaram.
             */
-            aoMudarOtimista={(status) => setSelecionado((s) => (s ? { ...s, status } : s))}
+            aoMudarOtimista={aplicarStatusOtimista}
           />
         ) : null}
       </Sheet>
