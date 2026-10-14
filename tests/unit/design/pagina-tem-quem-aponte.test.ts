@@ -19,6 +19,8 @@ const ENTRADAS_EXTERNAS: Record<string, string> = {
   '/': 'a home: é o endereço que a pessoa digita',
   '/[slug]': 'a página de cada negócio: o dono divulga o link dele, o buscador acha',
   '/dev/ui': 'vitrine de componentes para quem desenvolve; em produção dá notFound()',
+  '/admin/[...naoExiste]':
+    'APR-113: pega-tudo do painel; ninguém aponta de propósito, é o endereço errado que chega aqui e sai pelo not-found do painel',
 }
 
 function arquivos(dir: string, filtro: (nome: string) => boolean): string[] {
