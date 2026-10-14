@@ -101,3 +101,32 @@ Uma entrada por rodada: o que, por quê, número antes e depois, o que saiu, pr�
   (os dois são `aria-pressed`). Não é defeito de produto, mas é o tipo de ambiguidade que um leitor
   de tela também sente: fica anotado para a APR-124 (anúncios e papéis).
 - **Próxima:** APR-119 (avaliar, orçamento e lista de espera lidos no servidor; saída no erro).
+
+## 2026-10-14 · Rodada 5 · APR-119 a 123 (páginas por token, Configurações, Campanhas, Mês, Caixa)
+
+- **APR-119:** avaliar e orçamento lidos no servidor pelo token: conteúdo útil em **881 ms com a CPU
+  4× mais lenta** (o plano media 2,3–3,4 s), y=48. Token forjado nas 4 páginas públicas por token
+  (avaliar, orçamento, lista de espera, confirmar): **1 interativo em cada** (eram 0). Lista de
+  espera reaberta pela mesma pessoa: "Você já garantiu: sábado, 17 de outubro, às 04:30" (era
+  "já foi usado", como se tivesse perdido a vaga); "já foi usado" só quando o horário caiu, e aí o
+  erro leva "Ver a página de {negócio}".
+- **APR-120:** Configurações reagrupadas (Seu negócio · Dinheiro · Clientes e mensagens · Avançado
+  · Sua conta). "Negócio" em **y=166** (era 674); 0 descrições cortadas a 390; a 360 só o e-mail da
+  conta corta (é identidade, não descrição). "Sair da conta" virou linha comum, em y=2366 — de
+  propósito, documentado no código: a conta se abre uma vez por mês.
+- **APR-121:** Campanhas com um primário e sem "R$ 0,00 · 0 de 0" quando nada foi enviado. Voltar
+  pela origem: Campanhas aberta pela Recuperar volta "Recuperar" (`?de=recuperar`), orçamento novo
+  pela ficha volta "Ficha" (`de=cliente:<id>`), direto volta "Configurações". Lista fechada de
+  origens; forma estranha é ignorada (teste).
+- **APR-122:** o Mês abre por "Entrou no mês" (y=184) com "mês passado R$ X" no apoio dos dois
+  números; mapa de onde escapa e "Testar antes de decidir" vêm depois; "Testar" só com mês fechado
+  (guarda vista reprovando com a condição removida); "Gasto médio por visita" e "Voltam de novo"
+  com a definição.
+- **APR-123:** "Caixa de hoje" + data; vazio diz "Você atendeu R$ X hoje e ainda não fechou as
+  comandas" com o valor de `atendidoSemComandaDoDia` (integração: R$ 50 + 70 sem comanda e 90 com
+  comanda fechada → R$ 120 em 2). A guarda `consulta-sem-teto` pegou a consulta nova sem `limit`
+  — commit de conserto em seguida.
+- **Processo:** um `cd` perdido no meio de um comando encadeado deixou uma MUTAÇÃO viva no
+  arquivo (o `git checkout` falhou fora do worktree) — revertida à mão antes do commit. Regra que
+  fica: `git -C <worktree>` em tudo que muda estado, nunca `cd &&`.
+- **Próxima:** APR-124 (aria-live nas subtelas e contraste do selo), APR-125 (alvos de 48 px).
