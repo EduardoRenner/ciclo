@@ -423,7 +423,7 @@ export async function criarAgendamento(
 const ESTADOS_VALIDOS = new Set<EstadoAgendamento>(['pending', 'confirmed', 'arrived', 'done', 'no_show', 'canceled', 'expired'])
 
 const COLUNAS_AGENDA_DIA =
-  'id, starts_at, ends_at, status, price_cents, deposit_cents, origin, client_note, address, professional_id, no_show_score, clients ( name ), services ( name ), professionals ( display_name )'
+  'id, starts_at, ends_at, status, price_cents, deposit_cents, origin, client_note, address, professional_id, service_id, no_show_score, clients ( name ), services ( name ), professionals ( display_name )'
 
 export type LinhaAgendaDia = {
   id: string
