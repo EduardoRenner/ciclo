@@ -29,3 +29,7 @@ a advocacia nem o contrário (unidade).
 
 **Nota:** cliente 6 · segredo 5 · engenharia 8. **Próximo (C-032):** AUT-105 (o papel do mecânico sem
 valor e sem contato) ou algoritmo (regra ≥ 1 a cada 3; o último foi o C-030).
+
+**Suítes inteiras:** RLS 357 de 357. Integração 603 verdes, 26 pulados (arquivos que caíram no preparo),
+1 falha + 2 arquivos no preparo (seed da demo do escritório, serviços, casos jurídicos), todos com a
+assinatura do gateway local. Isolados, incluindo `servicos.test.ts` (que toca o catálogo): 29 de 29.
