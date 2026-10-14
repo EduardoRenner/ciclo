@@ -12,3 +12,4 @@ Primeira coisa a ler depois de um resumo de contexto. O laço e as regras estão
 ## Ciclos
 
 - C-001 · Dar régua ao Motor (backtest com origem móvel) + Motor v2 · "padrão errado": erro mediano 44 d → 5 d, acerto ±7 0% → 66%; outros 4 cenários iguais · 7/8/8 · próximo: C-002 = relógio múltiplo (tempo + km) com o carro como caso de teste; seed e integração do C-001 quando o Docker voltar
+- C-002 · Relógio múltiplo (tempo ou km, o que vencer primeiro) · erro mediano do lembrete, sintético: aplicativo 290 d → 8 d, 25 mil/ano 216 → 16, médio 78 → 30; beleza idêntica · 8/9/8 · próximo: C-003 = expansão automotiva degrau (a) diagnóstico (o que da plataforma serve, o que falta; StarkOS como fonte), depois MOT-006/007
