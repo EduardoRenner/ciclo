@@ -39,7 +39,8 @@ export default function ReivindicarEncaixe({ token }: { token: string }) {
           setMensagem(json.error?.message ?? 'Esse encaixe não está mais disponível.')
           setPodeTentarDeNovo(r.status >= 500)
           const slug = json.error?.details?.slug
-          setSaida(slug ? { href: `/${slug}`, rotulo: `Ver a página de ${json.error?.details?.negocio ?? 'quem atende'}` } : null)
+          // Token forjado ou vencido não traz o negócio: a saída é o início, nunca 0 interativos (medido: era 0).
+          setSaida(slug ? { href: `/${slug}`, rotulo: `Ver a página de ${json.error?.details?.negocio ?? 'quem atende'}` } : { href: '/', rotulo: 'Ir para o início' })
           return
         }
         if (json.data) {
