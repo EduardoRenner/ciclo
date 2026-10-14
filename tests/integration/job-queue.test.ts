@@ -44,7 +44,7 @@ describe('enfileirar + processarLote', () => {
         [kind]: async (job: Job) => {
           recebidos.push(job.payload)
         },
-      })
+      }, 50, [kind])
 
       expect(resultado.processados).toBe(1)
       expect(recebidos).toEqual([{ valor: 42 }])
@@ -74,6 +74,25 @@ describe('enfileirar + processarLote', () => {
   )
 
   it(
+    'C-024 (0136): com tipos pedidos, reivindica só eles; o outro tipo fica na fila intocado',
+    async () => {
+      const meu = kindDoTeste('so_o_meu')
+      const alheio = kindDoTeste('alheio')
+      await enfileirar(svc, { kind: meu, payload: {} })
+      await enfileirar(svc, { kind: alheio, payload: {} })
+
+      let vistos = 0
+      const r = await processarLote(svc, { [meu]: async () => void vistos++, [alheio]: async () => void vistos++ }, 50, [meu])
+      expect(r.processados).toBe(1)
+      expect(vistos).toBe(1)
+
+      const outro = await svc.from('job_queue').select('status, attempts').eq('kind', alheio).single()
+      expect(outro.data).toEqual({ status: 'queued', attempts: 0 })
+    },
+    30_000,
+  )
+
+  it(
     'job sem handler registrado morre na hora — nunca falha em silêncio',
     async () => {
       const kind = kindDoTeste('sem_handler')
@@ -82,7 +101,7 @@ describe('enfileirar + processarLote', () => {
       // (comportamento correto: um handler pode nascer num deploy seguinte).
       await enfileirar(svc, { kind, payload: {}, maxAttempts: 1 })
 
-      const resultado = await processarLote(svc, {})
+      const resultado = await processarLote(svc, {}, 50, [kind])
       expect(resultado.mortos).toBe(1)
 
       const linha = await svc.from('job_queue').select('status, last_error').eq('kind', kind).single()
@@ -102,7 +121,7 @@ describe('enfileirar + processarLote', () => {
         [kind]: async () => {
           throw new Error('falha simulada')
         },
-      })
+      }, 50, [kind])
 
       expect(resultado.mortos).toBe(1)
       expect(resultado.falharam).toBe(0)
@@ -125,7 +144,7 @@ describe('enfileirar + processarLote', () => {
           chamadas++
           throw new Error('falha transitória')
         },
-      })
+      }, 50, [kind])
       expect(chamadas).toBe(1)
 
       const linha = await svc.from('job_queue').select('status, run_after, attempts').eq('kind', kind).single()
@@ -138,7 +157,7 @@ describe('enfileirar + processarLote', () => {
         [kind]: async () => {
           chamadas++
         },
-      })
+      }, 50, [kind])
       expect(segundoLote.processados).toBe(0)
       expect(chamadas).toBe(1)
     },
@@ -173,7 +192,7 @@ describe('enfileirar + processarLote', () => {
       async function drenar() {
         let processadosNesseWorker = 0
         for (;;) {
-          const r = await processarLote(svc, handlers, 100)
+          const r = await processarLote(svc, handlers, 100, [kind])
           if (r.processados === 0) break
           processadosNesseWorker += r.processados
         }

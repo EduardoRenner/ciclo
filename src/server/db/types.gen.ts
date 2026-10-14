@@ -5540,7 +5540,7 @@ export type Database = {
       }
       can_see_ticket: { Args: { prof: string; t: string }; Returns: boolean }
       claim_jobs: {
-        Args: { p_limit?: number }
+        Args: { p_kinds?: string[]; p_limit?: number }
         Returns: {
           attempts: number
           created_at: string

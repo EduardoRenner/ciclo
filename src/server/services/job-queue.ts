@@ -95,8 +95,15 @@ export async function processarLote(
   db: Cliente,
   handlers: Record<string, ManipuladorDeJob>,
   limite = 50,
+  /**
+   * C-024 (0136): restringe a reivindicação a estes tipos. O worker de produção NÃO passa (reivindica
+   * tudo): job de tipo sem tratador tem que morrer com o erro escrito, nunca ficar parado em silêncio
+   * (`job-queue.test.ts`). Quem passa são os testes, para um arquivo não roubar o job de fixture de
+   * outro rodando em paralelo (causa medida da intermitência descrita em `health.test.ts`).
+   */
+  tipos?: readonly string[],
 ): Promise<{ processados: number; falharam: number; mortos: number }> {
-  const { data: jobs, error } = await db.rpc('claim_jobs', { p_limit: limite })
+  const { data: jobs, error } = await db.rpc('claim_jobs', { p_limit: limite, ...(tipos ? { p_kinds: [...tipos] } : {}) })
   if (error) throw new AppError('INTERNAL', { cause: error })
 
   let processados = 0
