@@ -51,7 +51,8 @@ const LINHA_DE_BASE: Record<string, number> = {
   'server/services/lista-espera.ts': 1,
   'server/services/ociosidade.ts': 1,
   'server/services/pacotes.ts': 3,
-  'server/services/public-booking.ts': 1,
+  // APR-110a: a leitura de business_hours de UM dia saiu do público para a função compartilhada.
+  'server/services/disponibilidade.ts': 1,
   'server/services/recorrencia.ts': 2,
   'server/services/resumo-hoje.ts': 1,
   'server/services/whatsapp-inbound.ts': 1,

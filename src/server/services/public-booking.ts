@@ -1,11 +1,9 @@
-import { ouDoProfissionalOuGeral } from '@/server/db/filtro'
 import { Temporal } from '@js-temporal/polyfill'
 import { cache } from 'react'
 import { z } from 'zod'
 
 import { classificarDemanda } from '@/core/agenda/demanda-nao-atendida'
 import { podeUsarCapacidade } from '@/core/billing/planos'
-import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from '@/core/scheduling/available-slots'
 import type { ModeloDePreco } from '@/core/pricing/formatar'
 import { resolverVocabulario, type Vocabulario } from '@/core/text/vocabulario'
 import { sinalEmCentavos } from '@/core/pricing/sinal'
@@ -15,6 +13,7 @@ import { urlDaVitrine } from '@/core/text/vitrine'
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { listarExpediente } from '@/server/services/expediente'
 import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
+import { slotsLivresDoDia } from '@/server/services/disponibilidade'
 import { negocioEstaPausado, paginaIndisponivel, planoPagoDoTenant } from '@/server/services/planos'
 import { lerSite } from '@/server/services/site'
 import { normalizarTelefoneBR } from '@/server/services/telefone'
@@ -375,10 +374,7 @@ export async function disponibilidadePublica(
     const config = lerConfiguracoesAgenda(tenant.settings)
     // FAQ E62: booking público nunca fura a antecedência mínima — diferente
     // do app do profissional, que pode fazer encaixe manual.
-    const now = Temporal.Now.instant().toString()
 
-    const inicioDia = dia.toZonedDateTime({ timeZone: tenant.timezone, plainTime: '00:00' }).toInstant().toString()
-    const fimDia = dia.add({ days: 1 }).toZonedDateTime({ timeZone: tenant.timezone, plainTime: '00:00' }).toInstant().toString()
 
     /*
      * Um profissional por vez era N+1: o `Promise.all` de baixo paraleliza as TRÊS consultas
@@ -390,77 +386,15 @@ export async function disponibilidadePublica(
      * havia acumulador além do `push`, que virou o retorno. E a lista final é ordenada por
      * `startsAt` no fim de qualquer forma, então a ordem de chegada nunca importou.
      */
-    const porProfissional = await Promise.all(
-      (profissionais ?? []).map(async (prof) => {
-        const [horarios, folgas, agendamentos] = await Promise.all([
-          svc
-            .from('business_hours')
-            .select('professional_id, weekday, opens_at, closes_at')
-            .eq('tenant_id', tenant.id)
-            .eq('weekday', weekdayPg(dia))
-            .or(ouDoProfissionalOuGeral('professional_id', prof.id)),
-          svc
-            .from('time_off')
-            .select('starts_at, ends_at')
-            .eq('tenant_id', tenant.id)
-            .or(ouDoProfissionalOuGeral('professional_id', prof.id))
-            .lt('starts_at', fimDia)
-            .gt('ends_at', inicioDia),
-          svc
-            .from('appointments')
-            .select('starts_at, ends_at')
-            .eq('tenant_id', tenant.id)
-            .eq('professional_id', prof.id)
-            .in('status', ['pending', 'confirmed', 'arrived'])
-            .lt('starts_at', fimDia)
-            .gt('ends_at', inicioDia),
-        ])
-        if (horarios.error) throw new AppError('INTERNAL', { cause: horarios.error })
-        if (folgas.error) throw new AppError('INTERNAL', { cause: folgas.error })
-        if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
-
-        const doProfissional = horarios.data.filter((h) => h.professional_id === prof.id)
-        const doPadrao = horarios.data.filter((h) => h.professional_id === null)
-        const businessHours: IntervaloExpediente[] = (doProfissional.length > 0 ? doProfissional : doPadrao).map((h) => ({
-          opensAt: h.opens_at,
-          closesAt: h.closes_at,
-        }))
-        if (businessHours.length === 0) return { temExpediente: false, slots: [] }
-
-        const timeOff: IntervaloOcupado[] = (folgas.data ?? []).map((f) => ({ start: f.starts_at, end: f.ends_at }))
-        const ocupados: IntervaloOcupado[] = (agendamentos.data ?? []).map((a) => ({ start: a.starts_at, end: a.ends_at }))
-
-        const slots = availableSlots({
-          date,
-          timezone: tenant.timezone,
-          businessHours,
-          timeOff,
-          appointments: ocupados,
-          serviceDurationMin: servico.duration_min,
-          // Achado na auditoria pré-`/admin`: vinha fixo em 0, ignorando o que o
-          // serviço cadastra — o buffer só funcionava no agendamento interno, nunca
-          // no site público. Agora que o formulário de serviço expõe os dois campos
-          // (Fase 2), o dono vai configurar e esperar que valha aqui também.
-          bufferBeforeMin: servico.buffer_before_min,
-          bufferAfterMin: servico.buffer_after_min,
-          slotGranularityMin: config.slotGranularityMin,
-          minLeadTimeMinutes: config.minLeadTimeMinutes,
-          maxAdvanceDays: config.maxAdvanceDays,
-          now,
-          parallelCapacity: servico.parallel_capacity,
-        })
-
-        return {
-          temExpediente: true,
-          slots: slots.map((s) => ({
-            startsAt: s,
-            endsAt: Temporal.Instant.from(s).add({ minutes: servico.duration_min }).toString(),
-            professionalId: prof.id,
-          })),
-        }
-      }),
-    )
-
+    // APR-110a: a MESMA conta do "Marcar" do painel (`disponibilidade.ts`).
+    const porProfissional = await slotsLivresDoDia(svc, {
+      tenantId: tenant.id,
+      timezone: tenant.timezone,
+      settings: tenant.settings,
+      servico,
+      profissionais: profissionais ?? [],
+      date,
+    })
     const todos = porProfissional.flatMap((p) => p.slots).sort((a, b) => (a.startsAt < b.startsAt ? -1 : 1))
 
     if (opcoes.registrarDemanda) {
