@@ -99,10 +99,8 @@ export default function Comanda({
   async function desfazerFechamento() {
     setPendenteDesfazer(true)
     try {
-      const r = await fetchComTentativa(`/api/v1/tickets/${ticket.id}/cancel`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-      })
+      // Sem chave aqui: `fetchComTentativa` gera e segura a Idempotency-Key enquanto a tentativa não termina (APR-007).
+      const r = await fetchComTentativa(`/api/v1/tickets/${ticket.id}/cancel`, { method: 'POST', headers: { 'content-type': 'application/json' } })
       const json = (await r.json().catch(() => ({}))) as { error?: { message?: string } }
       if (!r.ok) {
         mostrarToast({ tom: 'erro', titulo: json.error?.message ?? 'Não consegui desfazer o fechamento.' })
@@ -521,7 +519,7 @@ export default function Comanda({
                 <Button variante="secondary" largura="cheia" carregando={pendenteDesfazer} onClick={desfazerFechamento}>
                   Sim, desfazer o fechamento
                 </Button>
-                <Button largura="cheia" disabled={pendenteDesfazer} onClick={() => setDesfazendo(false)}>
+                <Button largura="cheia" disabled={pendenteDesfazer} motivoDesabilitado="Aguarde: estamos desfazendo o fechamento." onClick={() => setDesfazendo(false)}>
                   Deixar como está
                 </Button>
               </div>

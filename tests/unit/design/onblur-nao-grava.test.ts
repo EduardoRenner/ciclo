@@ -17,7 +17,9 @@ import { semComentarios } from '../../helpers/fonte'
  * escrita (`fetch`/`chamar`/`apiFetch`/`fetchComTentativa` com método de escrita, ou um handler
  * do arquivo que a contém).
  */
-const ESCRITA = /\b(fetch|chamar|apiFetch|fetchComTentativa)\s*\(|method:\s*'(POST|PATCH|PUT|DELETE)'/
+// APR-207: `fetch(` sem método é LEITURA (buscar o cliente pelo telefone ao sair do campo) e pode viver no
+// onBlur. Escrita é `chamar`/`apiFetch` (só escrevem) ou qualquer chamada com método de escrita.
+const ESCRITA = /\b(chamar|apiFetch)\s*\(|method:\s*'(POST|PATCH|PUT|DELETE)'/
 
 function arquivos(dir: string): string[] {
   return readdirSync(dir).flatMap((nome) => {
@@ -77,5 +79,6 @@ describe('nenhum campo grava no onBlur num formulário com botão de enviar (APR
     expect(blursQueGravam(porNome)).toEqual(['salvarDescontoGorjeta'])
     expect(blursQueGravam(`<input onBlur={() => fetch('/x', { method: 'POST' })} />`)).toHaveLength(1)
     expect(blursQueGravam(`<input onBlur={() => setTocado(true)} />`)).toEqual([])
+    expect(blursQueGravam(`<input onBlur={() => fetch('/api/v1/clients?q=1').then((r) => r.json())} />`), 'leitura no onBlur não é escrita').toEqual([])
   })
 })
