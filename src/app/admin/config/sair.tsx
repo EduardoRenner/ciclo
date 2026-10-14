@@ -102,23 +102,23 @@ export default function SairDaConta() {
     }
   }
 
+  // APR-120: uma LINHA como os outros itens de Configurações (ícone, título, uma linha), não um
+  // cartão com parágrafo e botão. O aviso de fila pendente continua aparecendo no lugar, quando há.
   return (
     <Card className="flex flex-col gap-3">
-      <div>
-        <p className="text-corpo font-semibold">Sair da conta</p>
-        <p className="text-secundario text-txt-2">
-          Encerra a sessão neste e nos outros aparelhos, e limpa o que estiver guardado aqui. O que
-          ainda não tiver subido é enviado antes, se houver internet.
-        </p>
-      </div>
-
       {aviso === null ? (
-        <Button variante="secondary" onClick={() => sair()} disabled={saindo}>
-          <LogOut aria-hidden className="size-4" />
-          {saindo ? 'Saindo…' : 'Sair da conta'}
-        </Button>
+        <button type="button" onClick={() => sair()} disabled={saindo} className="flex min-h-12 w-full items-center gap-3 text-left disabled:opacity-60">
+          <div className="grid size-10 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-acc-soft text-acc-2">
+            <LogOut aria-hidden className="size-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-corpo font-semibold">{saindo ? 'Saindo…' : 'Sair da conta'}</p>
+            <p className="truncate text-secundario text-txt-2">Neste e nos outros aparelhos</p>
+          </div>
+        </button>
       ) : (
         <div className="flex flex-col gap-2">
+          <p className="text-corpo font-semibold">Sair da conta</p>
           <p role="alert" className="rounded-[var(--radius-sm)] bg-surface-2 p-3 text-secundario text-txt">
             {aviso.tipo === 'vai_descartar' ? (
               <>

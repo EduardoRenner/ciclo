@@ -20,81 +20,99 @@ import SairDaConta from './sair'
 export const dynamic = 'force-dynamic'
 
 /**
- * Eram nove itens numa lista chapada, do preço do serviço até a trilha de
- * acesso à ficha de saúde — coisas de peso e frequência completamente
- * diferentes, com o mesmo desenho e nenhuma ordem aparente. Agrupados por
- * pergunta que a pessoa está se fazendo quando abre esta tela.
+ * Eram nove itens numa lista chapada; viraram grupos por pergunta. APR-120 (docs/98 I-17, A-08)
+ * reordena pela FREQUÊNCIA: o que se mexe no primeiro dia (Negócio, Serviços, Time, Horário) abre
+ * sem rolar — medido antes em y=674 —, dinheiro e mensagens depois, e "Sua conta" (plano, tema,
+ * sair, excluir) no fim, porque é o que se abre uma vez por mês. Descrição em UMA linha a 360 px:
+ * a que cortava com "…" não dizia nada.
  */
 const GRUPOS = [
   {
     titulo: 'Seu negócio',
     itens: [
-      { href: '/admin/config/negocio', titulo: 'Negócio', descricao: 'Nome, contato, sobre e link do seu site', icone: Store },
-      { href: '/admin/config/servicos', titulo: 'Serviços', descricao: 'Preço, duração e o que aparece no site', icone: Scissors },
+      { href: '/admin/config/negocio', titulo: 'Negócio', descricao: 'Nome, contato e link do site', icone: Store },
+      { href: '/admin/config/servicos', titulo: 'Serviços', descricao: 'Preço, duração e o que aparece', icone: Scissors },
       { href: '/admin/config/profissionais', titulo: 'Time', descricao: 'Quem atende, expediente e convites', icone: Users },
-      // docs/101 T4.6: só existe no pacote Advocacia (o módulo some do hub fora dele, `fora_do_pacote`)
-      { href: '/admin/config/advocacia', titulo: 'Escritório', descricao: 'OAB da equipe, regras de prazo e captura de intimações', icone: Scale, modulo: 'legal_deadlines' },
       { href: '/admin/config/horarios', titulo: 'Horário de funcionamento', descricao: 'Expediente padrão do negócio', icone: Clock },
-    ],
-  },
-  {
-    titulo: 'Falar com quem você atende',
-    itens: [
-      { href: '/admin/config/mensagens', titulo: 'Mensagens prontas', descricao: 'Textos que você manda com um toque', icone: MessageSquareText },
-      { href: '/admin/config/automacoes', titulo: 'Automações', descricao: 'O que o CICLO faz sozinho, e quanta rédea você dá', icone: Bot },
-      { href: '/admin/campanhas', titulo: 'Campanhas', descricao: 'Mandar em lote e ver quanto voltou em receita', icone: Megaphone, modulo: 'campaigns' },
-      { href: '/admin/config/notificacoes', titulo: 'Notificações', descricao: 'Ativar lembretes no aparelho', icone: Bell },
+      // docs/101 (Advocacia): só aparece com o módulo ligado, como qualquer item de módulo.
+      { href: '/admin/config/advocacia', titulo: 'Escritório', descricao: 'OAB, prazos e intimações', icone: Scale, modulo: 'legal_deadlines' },
     ],
   },
   {
     titulo: 'Dinheiro',
     itens: [
-      { href: '/admin/caixa', titulo: 'Caixa', descricao: 'Fechamento do dia, do mês e a comissão de cada um', icone: Wallet, modulo: 'register' },
+      { href: '/admin/caixa', titulo: 'Caixa', descricao: 'Fechamento do dia e comissões', icone: Wallet, modulo: 'register' },
+      { href: '/admin/comissao', titulo: 'Minha comissão', descricao: 'O que você já ganhou este mês', icone: HandCoins },
+      { href: '/admin/mes', titulo: 'O mês', descricao: 'Os números do mês numa página', icone: CalendarRange, modulo: 'register' },
+      { href: '/admin/estoque', titulo: 'Estoque', descricao: 'Quanto tem e registrar compra', icone: Package, modulo: 'stock' },
+      { href: '/admin/config/taxas', titulo: 'Taxa da maquininha', descricao: 'O que a máquina fica por forma', icone: CreditCard, modulo: 'register' },
+      { href: '/admin/config/custo-fixo', titulo: 'Aluguel e contas', descricao: 'O que sai todo mês', icone: Building2, modulo: 'register' },
       /*
-        `docs/53` C-01. Sem `modulo`, de propósito: aparece para todo mundo, inclusive
-        `professional` e `reception`, que não têm `register` — o `commission:own` do profissional
-        não depende do módulo de caixa estar ligado. A tela de destino decide sozinha quem entra.
+        "Fidelidade e assinatura" é o salão vendendo plano para a CLIENTE dele; "Meu plano" (em Sua
+        conta) é o profissional pagando o CICLO. A regra 5.6 do plano de monetização manda manter
+        as duas separadas — por isso uma fica em Dinheiro e a outra em Sua conta.
       */
-      { href: '/admin/comissao', titulo: 'Minha comissão', descricao: 'O que você já ganhou este mês, item a item', icone: HandCoins },
-      { href: '/admin/mes', titulo: 'O mês', descricao: 'Os cinco números do mês numa página só, para mostrar a alguém', icone: CalendarRange, modulo: 'register' },
-      { href: '/admin/estoque', titulo: 'Estoque', descricao: 'Quanto tem de cada produto e registrar compra', icone: Package, modulo: 'stock' },
-      { href: '/admin/config/taxas', titulo: 'Taxa da maquininha', descricao: 'Quanto a máquina fica de cada forma de pagamento', icone: CreditCard, modulo: 'register' },
-      { href: '/admin/config/custo-fixo', titulo: 'Aluguel e contas', descricao: 'O que sai todo mês, para o Sobrou virar lucro de verdade', icone: Building2, modulo: 'register' },
+      { href: '/admin/config/planos', titulo: 'Fidelidade e assinatura', descricao: 'Pontos e planos mensais', icone: Repeat, modulo: 'loyalty' },
+      { href: '/admin/orcamentos', titulo: 'Orçamentos', descricao: 'Quem aprovou ou não respondeu', icone: FileText, modulo: 'quotes' },
     ],
   },
   {
-    titulo: 'Receita recorrente',
+    titulo: 'Clientes e mensagens',
     itens: [
-      { href: '/admin/config/planos', titulo: 'Fidelidade e assinatura', descricao: 'Pontos por atendimento e planos mensais', icone: Repeat, modulo: 'loyalty' },
-      { href: '/admin/orcamentos', titulo: 'Orçamentos', descricao: 'Acompanhar quem aprovou, recusou ou ainda não respondeu', icone: FileText, modulo: 'quotes' },
-      { href: '/admin/series', titulo: 'Séries de recorrência', descricao: 'Ver quem repete e cancelar quando precisar', icone: Repeat2, modulo: 'recurrence' },
+      { href: '/admin/config/mensagens', titulo: 'Mensagens prontas', descricao: 'Textos que você manda num toque', icone: MessageSquareText },
+      { href: '/admin/config/automacoes', titulo: 'Automações', descricao: 'O que o CICLO faz sozinho', icone: Bot },
+      { href: '/admin/campanhas', titulo: 'Campanhas', descricao: 'Mandar em lote e ver o retorno', icone: Megaphone, modulo: 'campaigns' },
+      { href: '/admin/config/notificacoes', titulo: 'Notificações', descricao: 'Lembretes no aparelho', icone: Bell },
+      { href: '/admin/series', titulo: 'Séries de recorrência', descricao: 'Quem repete, e cancelar', icone: Repeat2, modulo: 'recurrence' },
     ],
   },
   {
-    /*
-      Grupo próprio: "Meu plano" é sobre a conta do PROFISSIONAL no CICLO, e não cabe em nenhum
-      dos outros. Colocar junto de "Fidelidade e assinatura" — que é o salão vendendo plano para a
-      CLIENTE dele — seria juntar exatamente as duas coisas que a regra 5.6 do plano de
-      monetização manda manter separadas.
-    */
-    titulo: 'Sua conta no CICLO',
+    titulo: 'Avançado',
     itens: [
-      { href: '/admin/config/meu-plano', titulo: 'Meu plano', descricao: 'O que você usa, o que cada plano libera', icone: BadgeDollarSign },
-      { href: '/admin/config/modulos', titulo: 'Módulos', descricao: 'Ligue só o que você usa na interface', icone: ToggleRight },
-    ],
-  },
-  {
-    titulo: 'Privacidade',
-    itens: [
-      { href: '/admin/config/cofre', titulo: 'Trilha do cofre', descricao: 'Quem acessou a ficha de saúde de cada cliente', icone: ScrollText, modulo: 'health_records' },
-      { href: '/admin/config/seguranca', titulo: 'Segurança', descricao: 'Autenticação em duas etapas da sua conta', icone: ShieldCheck },
-      // T-DEL (docs/64 §0.3): guideline 5.1.1(v) — quem criou conta precisa conseguir excluí-la
-      // de dentro do app. Sem `modulo`: é sobre a CONTA da pessoa, não sobre o negócio, então
-      // aparece pra qualquer papel — inclusive quem não tem módulo nenhum ligado.
-      { href: '/admin/config/excluir-conta', titulo: 'Excluir minha conta', descricao: 'Apaga seu login para sempre', icone: Trash2 },
+      { href: '/admin/config/modulos', titulo: 'Módulos', descricao: 'Ligue só o que você usa', icone: ToggleRight },
+      { href: '/admin/config/cofre', titulo: 'Trilha do cofre', descricao: 'Quem acessou a ficha de saúde', icone: ScrollText, modulo: 'health_records' },
+      { href: '/admin/config/seguranca', titulo: 'Segurança', descricao: 'Duas etapas na sua conta', icone: ShieldCheck },
     ],
   },
 ] as const
+
+/** Itens de "Sua conta" que são links; "Sair" e "Tema" têm componente próprio e entram no meio deles. */
+const CONTA = {
+  meuPlano: { href: '/admin/config/meu-plano', titulo: 'Meu plano', descricao: 'O que você usa e o que libera', icone: BadgeDollarSign },
+  // T-DEL (docs/64 §0.3): guideline 5.1.1(v) — quem criou conta precisa conseguir excluí-la de
+  // dentro do app. Sem `modulo`: é sobre a CONTA da pessoa, aparece para qualquer papel.
+  excluir: { href: '/admin/config/excluir-conta', titulo: 'Excluir minha conta', descricao: 'Apaga seu login para sempre', icone: Trash2 },
+} as const
+
+type ItemDeConfigProps = { href: string; titulo: string; descricao: string; icone: typeof Store }
+
+function ItemDeConfig({ item, falta }: { item: ItemDeConfigProps; falta: PlanoTier | null }) {
+  const Icone = item.icone
+  return (
+    <Link href={item.href} className="block">
+      <Card pressionavel className="flex items-center gap-3">
+        <div className="grid size-10 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-acc-soft text-acc-2">
+          <Icone aria-hidden className="size-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-corpo font-semibold">{item.titulo}</p>
+          <p className="truncate text-secundario text-txt-2">{item.descricao}</p>
+        </div>
+        {/*
+          Selo, não cadeado sozinho: o nome do degrau responde "quanto custa isso?" num toque a
+          menos. Cor de destaque em vez de cinza porque isto é uma oferta, e o §5.10 proíbe punir
+          quem não pagou — o item continua abrindo. O leitor de tela ouve a frase inteira.
+        */}
+        {falta ? (
+          <span className="shrink-0 rounded-[var(--radius-pill)] bg-acc-soft px-2.5 py-1 text-label font-semibold text-acc-2">
+            <span className="sr-only">Recurso do plano </span>
+            {NOME_DO_PLANO[falta]}
+          </span>
+        ) : null}
+      </Card>
+    </Link>
+  )
+}
 
 export const metadata = { title: "Configurações" }
 
@@ -140,21 +158,27 @@ export default async function PaginaConfig() {
       <PageHeader titulo="Configurações" />
 
       <div className="flex flex-col gap-6">
+        {grupos.map((grupo) => (
+          <section key={grupo.titulo}>
+            <SectionHeader>{grupo.titulo}</SectionHeader>
+            <div className="flex flex-col gap-2">
+              {grupo.itens.map((item) => (
+                <ItemDeConfig key={item.href} item={item} falta={degrauQueFalta('modulo' in item ? item.modulo : undefined)} />
+              ))}
+            </div>
+          </section>
+        ))}
+
         {/*
-          A conta vem PRIMEIRO, e isso é conserto de descoberta, não gosto.
+          "Sua conta" por último, e "Sair" como uma linha comum entre os outros itens.
 
-          Medido em 2026-09-10 no navegador, com o painel no ar: "Sair da conta" ficava em y=2184
-          numa página de 2427 px, com 812 px de tela — depois de QUATORZE seções de configuração do
-          negócio, e só depois de tocar num ícone de engrenagem sem rótulo. O Eduardo relatou "não
-          consigo sair da conta" e o botão estava lá, funcionando, a 1.400 px de rolagem.
-
-          O que NÃO mudou, de propósito: a saída continua fora da Topbar. O motivo original segue
-          valendo — a Topbar aparece em toda tela, e um alvo de 48 px que encerra a sessão a um
-          toque de distância o dia inteiro é acidente esperando acontecer no tablet do balcão. O
-          conserto é de ORDEM, não de lugar.
-
-          E ganha identidade: uma tela de conta que não diz de quem é a conta não é tela de conta.
-          Quem entra como Recepção num salão que não é o seu precisa ver isso escrito.
+          A história desta seção: em 2026-09-10 "Sair da conta" estava em y=2184 numa página de
+          2427 px, atrás de um ícone sem rótulo, e a conta foi para o TOPO. Funcionou para sair e
+          empurrou o que se mexe no primeiro dia para y=674 (APR-120). A saída continua fora da
+          Topbar (um alvo de 48 px que encerra a sessão o dia inteiro é acidente no tablet do
+          balcão), mas aqui dentro ela é uma linha como as outras, numa seção com nome — e a
+          seção diz de quem é a conta: quem entra como Recepção num salão que não é o seu precisa
+          ver isso escrito.
         */}
         <section>
           <SectionHeader>Sua conta</SectionHeader>
@@ -170,56 +194,14 @@ export default async function PaginaConfig() {
                 </p>
               </div>
             </Card>
+            <ItemDeConfig item={CONTA.meuPlano} falta={null} />
+            <Card>
+              <SeletorDeTema />
+            </Card>
             <SairDaConta />
+            <ItemDeConfig item={CONTA.excluir} falta={null} />
           </div>
         </section>
-
-        <section>
-          <SectionHeader>Aparência</SectionHeader>
-          <Card>
-            <SeletorDeTema />
-          </Card>
-        </section>
-
-        {grupos.map((grupo) => (
-          <section key={grupo.titulo}>
-            <SectionHeader>{grupo.titulo}</SectionHeader>
-            <div className="flex flex-col gap-2">
-              {grupo.itens.map((item) => {
-                const Icone = item.icone
-                const falta = degrauQueFalta('modulo' in item ? item.modulo : undefined)
-                return (
-                  <Link key={item.href} href={item.href} className="block">
-                    <Card pressionavel className="flex items-center gap-3">
-                      <div className="grid size-10 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-acc-soft text-acc-2">
-                        <Icone aria-hidden className="size-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-corpo font-semibold">{item.titulo}</p>
-                        <p className="truncate text-secundario text-txt-2">{item.descricao}</p>
-                      </div>
-                      {/*
-                        Selo, não cadeado sozinho: o nome do degrau responde "quanto custa isso?"
-                        num toque a menos. Cor de destaque em vez de cinza porque isto é uma oferta,
-                        e o §5.10 proíbe punir quem não pagou — o item continua abrindo.
-
-                        O texto do leitor de tela diz a frase inteira; o selo visual mostra só o
-                        nome do plano, que é o que cabe em 390 px sem espremer o título do item.
-                      */}
-                      {falta ? (
-                        <span className="shrink-0 rounded-[var(--radius-pill)] bg-acc-soft px-2.5 py-1 text-label font-semibold text-acc-2">
-                          <span className="sr-only">Recurso do plano </span>
-                          {NOME_DO_PLANO[falta]}
-                        </span>
-                      ) : null}
-                    </Card>
-                  </Link>
-                )
-              })}
-            </div>
-          </section>
-        ))}
-
       </div>
     </>
   )
