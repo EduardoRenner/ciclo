@@ -1,6 +1,6 @@
 import { Temporal } from '@js-temporal/polyfill'
 
-import { custoDoServico } from '@/core/comanda/custo-do-servico'
+import { custoDoServico, custoJaGravado } from '@/core/comanda/custo-do-servico'
 import { calcularComissaoItem, type BaseComissao } from '@/core/comanda/totals'
 import { janelaDeCobranca, margemDoAssinante, type MargemDoAssinante } from '@/core/loyalty/margem-do-clube'
 import {
@@ -117,14 +117,15 @@ export async function margensDoClube(db: Cliente, tenantId: string, timezone: st
           ?.filter((t) => t.status === 'closed' || t.status === 'paid')
           .flatMap((t) => t.ticket_items)
           .find((i) => i.service_id === v.service_id)
-        if (itemPago) return { custoCents: itemPago.cost_cents + itemPago.commission_cents, materialIncerto: itemPago.material_incerto }
         const ficha = fichaPorServico.get(v.service_id) ?? []
-        const custo = custoDoServico(ficha, 1)
+        const custo = itemPago ? custoJaGravado(itemPago.cost_cents, itemPago.material_incerto) : custoDoServico(ficha, 1)
         const material = custo.custoCents
         const bps = v.professional_id
           ? (bpsDoVinculo.get(`${v.professional_id}:${v.service_id}`) ?? bpsDoProfissional.get(v.professional_id) ?? 0)
           : 0
-        const comissao = calcularComissaoItem({ totalCents: v.price_cents, costCents: material, commissionBps: bps, commissionBase })
+        const comissao = itemPago
+          ? itemPago.commission_cents
+          : calcularComissaoItem({ totalCents: v.price_cents, costCents: material, commissionBps: bps, commissionBase })
         /*
          * A pergunta vem pronta de `custoDoServico`. Ela era remontada aqui como
          * `ficha.length === 0` — e errava, porque a ficha semeada pelo pack responde "tem ficha"

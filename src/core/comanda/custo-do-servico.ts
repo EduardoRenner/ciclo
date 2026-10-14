@@ -80,3 +80,12 @@ export function custoDoServico(ficha: readonly LinhaDaFicha[], qtyDoItem: number
     materialIncerto: ficha.length === 0 || produtosSemCusto > 0,
   }
 }
+
+/**
+ * APR-210: a resposta que JÁ FOI DADA no fechamento da comanda (`ticket_items.cost_cents` e
+ * `material_incerto`), no mesmo formato de `custoDoServico` — a pergunta "o material é confiável?"
+ * continua tendo um dono só; aqui ela só é lida de volta do que foi gravado.
+ */
+export function custoJaGravado(costCents: number, incerto: boolean): { custoCents: number; materialIncerto: boolean } {
+  return { custoCents: costCents, materialIncerto: incerto }
+}
