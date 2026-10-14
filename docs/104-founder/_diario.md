@@ -176,7 +176,7 @@ Uma entrada por rodada: o que, por quê, número antes e depois, o que saiu, pr�
 - **Processo (3 lições, todas de ferramenta):** (1) três guardas reprovaram DEPOIS do commit porque
   o `grep` da suíte engoliu o código de saída — conferir "Tests … passed" com os olhos antes do
   `git commit`; (2) o `cd` perdido no meio do comando de novo — `git -C` e caminhos absolutos em
-  tudo; (3) `` digitado num heredoc virou byte 0x08 num arquivo de teste (de novo) — montar
+  tudo; (3) `\b` digitado num heredoc virou byte 0x08 num arquivo de teste (de novo) — montar
   escapes com `chr(92)` ou usar o Edit.
 - **Próxima:** 202 (datas no fuso em toda tela, guarda estendida), 210/211 (clube e mês congelado),
   212, 214, 217, 219, 221, 222. 209 e 220 esperam decisão (a; sinal).
