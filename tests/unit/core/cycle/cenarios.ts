@@ -6,7 +6,7 @@ import type { HistoricoParaBacktest } from '@/core/cycle/backtest'
  * C-001 (MOT-002): cinco clientelas SINTÉTICAS com processo conhecido, semente fixa. Não é a clientela
  * real — é o banco de provas que diz se uma mudança no Motor melhora ou piora em cada tipo de cliente.
  */
-function mulberry32(semente: number) {
+export function mulberry32(semente: number) {
   let a = semente >>> 0
   return () => {
     a = (a + 0x6d2b79f5) >>> 0

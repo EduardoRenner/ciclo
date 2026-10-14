@@ -1,6 +1,6 @@
 import { Temporal } from '@js-temporal/polyfill'
 
-import { computeCycle, intervalosDoRitmo, mediana, type EntradaComputeCycle } from './compute'
+import { computeCycle, intervalosDoRitmo, mediana, type EntradaComputeCycle, type EstadoCiclo } from './compute'
 
 /**
  * A faixa de incerteza da previsão (`docs/105-ciclo/C-008`, aposta A-09: regularidade).
@@ -62,4 +62,30 @@ export function faixaDaPrevisao(entrada: EntradaComputeCycle, opcoes: OpcoesDaFa
     origem = 'padrao'
   }
   return { cedo: predictedDate.subtract({ days: folga }), prevista: predictedDate, tarde: predictedDate.add({ days: folga }), folgaDias: folga, origem }
+}
+
+/**
+ * Quanto da folga o cliente ganha antes de virar "atrasado" (C-009). 0 = a régua de hoje (atrasado no
+ * dia seguinte ao previsto); 1 = só depois do `tarde`. Medido com 25% de sumiço sintético: 0,5 corta os
+ * lembretes que saem antes de uma volta que ia acontecer sozinha pela metade ou mais em todo cenário
+ * (regular 24% → 6%, deriva 86% → 34%, errático 45% → 20%), ao custo de notar quem sumiu de 1 a 8 dias
+ * depois. 1 cortaria mais (2–16%) e atrasaria até 15 dias. Decisão de produto registrada no C-009.
+ */
+export const ALFA_DO_ALERTA = 0.5
+
+/**
+ * Candidato da v4 (`docs/105-ciclo/C-009`): o estado medido contra a faixa do PRÓPRIO cliente.
+ * Antes de `cedo` está em dia; até `prevista + alfa × folga` é hora de voltar; depois disso o atraso
+ * conta, com as mesmas faixas de 10 e 30 dias do `estadoPorAtraso`. Ainda não é o estado gravado:
+ * entra no ar só com `VERSAO_DO_MOTOR` 4.
+ */
+export function estadoPelaFaixa(faixa: FaixaDaPrevisao, hoje: Temporal.PlainDate, temAgendamentoFuturo = false, alfa = ALFA_DO_ALERTA): EstadoCiclo {
+  if (temAgendamentoFuturo) return 'on_track'
+  if (Temporal.PlainDate.compare(hoje, faixa.cedo) < 0) return 'on_track'
+  const limite = faixa.prevista.add({ days: Math.round(alfa * faixa.folgaDias) })
+  const atraso = hoje.since(limite).total('days')
+  if (atraso <= 0) return 'due'
+  if (atraso <= 10) return 'late'
+  if (atraso <= 30) return 'at_risk'
+  return 'lost'
 }

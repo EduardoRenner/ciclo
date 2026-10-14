@@ -25,7 +25,8 @@ Sem ritmo provado (1–2 intervalos), folga = 0,3 × ciclo: empata ou ganha da f
 no "padrão errado" nenhuma folga ajuda (48%), porque o erro é do padrão, não da dispersão. Registrado.
 
 **F5 · Medida:** cobertura passa de 44–100% (fixa) para 77–90% (própria). O cliente regular ganha
-folga de 3 dias em vez de 7: o lembrete pode sair 4 dias antes. O errático, de 44% para 78%: metade
+folga de 3 dias em vez de 7 (correção do C-009: isto é a régua de ACERTO; o estado `late` já entra no
+dia seguinte ao previsto, então a faixa não adianta lembrete nenhum — ela atrasa, e o C-009 mede o preço). O errático, de 44% para 78%: metade
 dos "atrasos" que eram só o ritmo dele deixam de parecer atraso. Custo honesto: na deriva a cobertura
 cai de 92% para 80% (a fixa é larga demais ali por sorte). Guarda: cobertura 77–95% (sem a inflação √(1 + 1/n) cai para 75%: a mutação reprova) em todo cenário e
 folga do regular ≤ 3 d (`tests/unit/core/cycle/incerteza-placar.test.ts`). Arnês: os cenários saíram

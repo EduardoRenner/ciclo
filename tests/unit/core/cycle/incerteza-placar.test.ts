@@ -2,7 +2,7 @@ import { Temporal } from '@js-temporal/polyfill'
 import { describe, expect, it } from 'vitest'
 
 import { mediana } from '@/core/cycle/compute'
-import { faixaDaPrevisao, type OpcoesDaFaixa } from '@/core/cycle/incerteza'
+import { estadoPelaFaixa, faixaDaPrevisao, type OpcoesDaFaixa } from '@/core/cycle/incerteza'
 import { TOLERANCIA_DIAS } from '@/core/cycle/prestacao-de-contas'
 
 import { CENARIOS, gerar } from './cenarios'
@@ -87,5 +87,16 @@ describe('faixa de um cliente (C-008)', () => {
     const f = faixaDaPrevisao({ history: historico([21]), defaultCycleDays: 21, today: d('2026-02-01') })
     expect(f.origem).toBe('padrao')
     expect(f.tarde.since(f.prevista).total('days')).toBe(f.folgaDias)
+  })
+
+  it('estado pela faixa (C-009): em dia antes do cedo, hora de voltar até prevista + metade da folga, atrasado no dia seguinte', () => {
+    const faixa = { cedo: d('2026-03-01'), prevista: d('2026-03-09'), tarde: d('2026-03-17'), folgaDias: 8, origem: 'medida' as const }
+    expect(estadoPelaFaixa(faixa, d('2026-02-28'))).toBe('on_track')
+    expect(estadoPelaFaixa(faixa, d('2026-03-01'))).toBe('due')
+    expect(estadoPelaFaixa(faixa, d('2026-03-13'))).toBe('due')
+    expect(estadoPelaFaixa(faixa, d('2026-03-14'))).toBe('late')
+    expect(estadoPelaFaixa(faixa, d('2026-03-24'))).toBe('at_risk')
+    expect(estadoPelaFaixa(faixa, d('2026-04-13'))).toBe('lost')
+    expect(estadoPelaFaixa(faixa, d('2026-04-13'), true)).toBe('on_track')
   })
 })
