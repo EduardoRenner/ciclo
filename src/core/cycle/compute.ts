@@ -101,23 +101,7 @@ export function computeCycle(entrada: EntradaComputeCycle): ResultadoComputeCycl
     return { personalCycleDays: defaultCycleDays, predictedDate: today, lateDays: 0, state: 'on_track' }
   }
 
-  // 1. gaps = diferenças em dias entre atendimentos consecutivos.
-  const gapsBrutos: number[] = []
-  for (let i = 1; i < history.length; i++) {
-    gapsBrutos.push(history[i]!.date.since(history[i - 1]!.date).total('days'))
-  }
-
-  // 2. descartar gaps anômalos (sumiu e voltou não é ritmo, é exceção).
-  //
-  // v2 (docs/105-ciclo/C-001): com 3+ intervalos, a régua do que é "anômalo" é o PRÓPRIO cliente
-  // (3× a mediana dele), não o padrão do serviço. O padrão é um palpite de catálogo
-  // (`calibracao.ts`: "nunca foi uma escolha do dono") e, quando está errado, a v1 descartava todos
-  // os intervalos de quem tem ritmo próprio longo: medido no backtest, cliente de 70 dias num
-  // serviço de padrão 21 tinha erro mediano de 44 dias e 0% de acerto na semana. Com 0–2
-  // intervalos não há ritmo provado e nada muda: o padrão segue sendo a referência.
-  const ritmoProvado = gapsBrutos.length >= 3
-  const referencia = ritmoProvado ? mediana(gapsBrutos) : defaultCycleDays
-  const gaps = gapsBrutos.filter((g) => g <= 3 * referencia)
+  const { gaps, referencia } = intervalosDoRitmo(history, defaultCycleDays)
 
   // 3. 0 gaps → só o padrão. 1-2 → mistura com o padrão. 3+ → mediana dos últimos 5.
   let personalCycleDays: number
@@ -144,4 +128,32 @@ export function computeCycle(entrada: EntradaComputeCycle): ResultadoComputeCycl
   const state = entrada.hasFutureAppointment ? 'on_track' : estadoPorAtraso(lateDays)
 
   return { personalCycleDays, predictedDate, lateDays, state }
+}
+
+/**
+ * Passos 1 e 2 do `computeCycle`, exportados para que a faixa de incerteza (`incerteza.ts`) meça a
+ * dispersão dos MESMOS intervalos que o Motor usou — uma cópia do filtro lá divergiria daqui.
+ */
+export function intervalosDoRitmo(
+  history: readonly { date: Temporal.PlainDate }[],
+  defaultCycleDays: number,
+): { gapsBrutos: number[]; gaps: number[]; referencia: number; ritmoProvado: boolean } {
+  // 1. gaps = diferenças em dias entre atendimentos consecutivos.
+  const gapsBrutos: number[] = []
+  for (let i = 1; i < history.length; i++) {
+    gapsBrutos.push(history[i]!.date.since(history[i - 1]!.date).total('days'))
+  }
+
+  // 2. descartar gaps anômalos (sumiu e voltou não é ritmo, é exceção).
+  //
+  // v2 (docs/105-ciclo/C-001): com 3+ intervalos, a régua do que é "anômalo" é o PRÓPRIO cliente
+  // (3× a mediana dele), não o padrão do serviço. O padrão é um palpite de catálogo
+  // (`calibracao.ts`: "nunca foi uma escolha do dono") e, quando está errado, a v1 descartava todos
+  // os intervalos de quem tem ritmo próprio longo: medido no backtest, cliente de 70 dias num
+  // serviço de padrão 21 tinha erro mediano de 44 dias e 0% de acerto na semana. Com 0–2
+  // intervalos não há ritmo provado e nada muda: o padrão segue sendo a referência.
+  const ritmoProvado = gapsBrutos.length >= 3
+  const referencia = ritmoProvado ? mediana(gapsBrutos) : defaultCycleDays
+  const gaps = gapsBrutos.filter((g) => g <= 3 * referencia)
+  return { gapsBrutos, gaps, referencia, ritmoProvado }
 }
