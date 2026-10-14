@@ -108,6 +108,27 @@ async function inserirAtendimentoConcluido(clientId: string, diasAtras: number, 
 
 describe('recomputarCiclosDoTenant', () => {
   it(
+    'C-035 (v5): com a régua calibrada pelo salão, o ciclo de 3+ intervalos encolhe em direção a ela',
+    async () => {
+      const cliente = await criarCliente('Ritmo Longo Calibrado')
+      for (const dias of [126, 84, 44, 0.2]) await inserirAtendimentoConcluido(cliente, dias) // 42, 40, 44 dias
+      const antes = await svc.from('services').select('cycle_days, cycle_days_observado').eq('id', servicoId).single()
+      if (antes.error) throw antes.error
+      try {
+        await svc.from('services').update({ cycle_days_observado: antes.data.cycle_days }).eq('id', servicoId)
+        await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
+        const linha = await svc.from('client_cycles').select('personal_cycle_days').eq('tenant_id', tenantId).eq('client_id', cliente).single()
+        // Sem calibrar seria 42; com a régua de 21 calibrada: (3 × 42 + 3 × 21) / 6 = 31,5 → 32.
+        expect(antes.data.cycle_days).toBe(21)
+        expect(linha.data?.personal_cycle_days).toBe(32)
+      } finally {
+        await svc.from('services').update({ cycle_days_observado: antes.data.cycle_days_observado }).eq('id', servicoId)
+      }
+    },
+    30_000,
+  )
+
+  it(
     'C-030: dois animais banhados nos mesmos dias têm cada um a sua previsão, e a volta de um só fecha a dele',
     async () => {
       const tutor = await criarCliente('Tutor Mesmo Dia')

@@ -15,7 +15,7 @@ export type EstadoCiclo = 'on_track' | 'due' | 'late' | 'at_risk' | 'lost'
  * atrás previa, concluiria que o erro mudou, e atribuiria à clientela uma mudança que foi nossa.
  * É a versão que permite separar "o salão mudou" de "nós mudamos".
  */
-export const VERSAO_DO_MOTOR = 4
+export const VERSAO_DO_MOTOR = 5
 
 export type EntradaComputeCycle = {
   /** Atendimentos concluídos daquele cliente naquele serviço, em ordem cronológica. */
@@ -24,7 +24,17 @@ export type EntradaComputeCycle = {
   today: Temporal.PlainDate
   /** `§5.3.8`: agendamento futuro já marcado força on_track — não incomodar quem já vai voltar. */
   hasFutureAppointment?: boolean
+  /**
+   * v5 (docs/105-ciclo/C-035): `defaultCycleDays` é a régua CALIBRADA pelo próprio salão
+   * (`services.cycle_days_observado`), não o padrão do catálogo. Só então o ciclo de quem tem 3+
+   * intervalos é encolhido em direção a ela. Contra um padrão sem calibrar o encolhimento é desastroso
+   * (medido: o "padrão errado" cai de 79% para 14% de acerto), por isso é opt-in e falso por padrão.
+   */
+  reguaCalibrada?: boolean
 }
+
+/** Peso da régua calibrada no encolhimento (equivale a 3 intervalos a mais na conta). Medido no C-035. */
+export const ENCOLHIMENTO_REGUA_CALIBRADA = 3
 
 export type ResultadoComputeCycle = {
   personalCycleDays: number
@@ -119,7 +129,11 @@ export function computeCycle(entrada: EntradaComputeCycle): ResultadoComputeCycl
   } else if (gaps.length <= 2) {
     personalCycleDays = provadoPorConcordancia ? mediana(gaps) : 0.6 * mediana(gaps) + 0.4 * defaultCycleDays
   } else {
-    personalCycleDays = medianaPonderada(gaps.slice(-5), PESOS_RECENTES)
+    const recentes = gaps.slice(-5)
+    const ponderada = medianaPonderada(recentes, PESOS_RECENTES)
+    personalCycleDays = entrada.reguaCalibrada
+      ? (recentes.length * ponderada + ENCOLHIMENTO_REGUA_CALIBRADA * defaultCycleDays) / (recentes.length + ENCOLHIMENTO_REGUA_CALIBRADA)
+      : ponderada
   }
 
   // 4. clamp entre 0,5× e 2,5× a referência — um outlier não pode esticar o ciclo pra sempre. Na v2,

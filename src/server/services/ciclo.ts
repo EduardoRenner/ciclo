@@ -141,6 +141,8 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
     poder comparar e para a correção ser reversível.
   */
   const cycleDaysPorServico = new Map(servicos.map((s) => [s.id, reguaEfetivaDias(s.cycle_days, s.cycle_days_observado)]))
+  // v5 (C-035): o Motor só encolhe em direção à régua quando ela foi medida pelo salão.
+  const reguaCalibradaPorServico = new Set(servicos.filter((s) => s.cycle_days_observado != null).map((s) => s.id))
   const precoPorServico = new Map(servicos.map((s) => [s.id, s.price_cents]))
 
   /*
@@ -229,6 +231,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
       defaultCycleDays,
       today: hoje,
       hasFutureAppointment: temFuturoPorCombinacao.has(chave),
+      reguaCalibrada: reguaCalibradaPorServico.has(serviceId),
     })
 
     const ultimaVisita = history[history.length - 1]!.date.toString()
@@ -426,6 +429,7 @@ export async function recomputarCicloDeUmAtendimento(
     // A MESMA régua do job noturno. Ler `cycle_days` sozinho aqui fazia concluir um atendimento
     // reverter a previsão para o palpite de catálogo até a madrugada seguinte corrigir.
     defaultCycleDays: reguaEfetivaDias(servico.data.cycle_days, servico.data.cycle_days_observado),
+    reguaCalibrada: servico.data.cycle_days_observado != null,
     today: Temporal.PlainDate.from(today),
     hasFutureAppointment: (futuros.count ?? 0) > 0,
   })

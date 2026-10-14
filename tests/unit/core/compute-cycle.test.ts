@@ -139,6 +139,13 @@ describe('computeCycle — §5.3', () => {
     expect(r.personalCycleDays).toBe(10)
   })
 
+  it('v5: com régua calibrada, o ciclo de 3+ intervalos encolhe em direção a ela; sem, nada muda', () => {
+    const base = { history: historicoDeGaps('2026-01-01', [42, 40, 44]), defaultCycleDays: 21, today: dia('2026-01-01') }
+    expect(computeCycle(base).personalCycleDays).toBe(42)
+    // (3 × 42 + 3 × 21) / 6 = 31,5
+    expect(computeCycle({ ...base, reguaCalibrada: true }).personalCycleDays).toBeCloseTo(31.5)
+  })
+
   it('amostra (C-015): quantos intervalos formaram o ciclo pessoal; 0 quando é só o padrão', () => {
     const amostra = (gaps: number[]) => computeCycle({ history: historicoDeGaps('2026-01-01', gaps), defaultCycleDays: 21, today: dia('2026-01-01') }).amostra
     expect(computeCycle({ history: [], defaultCycleDays: 21, today: dia('2026-01-01') }).amostra).toBe(0)

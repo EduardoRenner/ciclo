@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import { PREVISORES_DE_BASE, backtest, previsorDoMotor, type Previsor, type ResultadoDoBacktest } from '@/core/cycle/backtest'
+import { computeCycle } from '@/core/cycle/compute'
 
-import { CENARIOS, CENARIOS_CURTOS, CENARIOS_DE_UM_INTERVALO, gerar } from './cenarios'
+import { CENARIOS, CENARIOS_CURTOS, CENARIOS_DE_UM_INTERVALO, calibrar, gerar } from './cenarios'
 
 export function placar(previsores: Record<string, Previsor>): Record<string, Record<string, ResultadoDoBacktest>> {
   return Object.fromEntries(CENARIOS.map((c) => [c.nome, Object.fromEntries(Object.entries(previsores).map(([n, p]) => [n, backtest(gerar(c), p)]))]))
@@ -98,6 +99,37 @@ describe('um intervalo só: sumiço no início não vira ritmo (C-027)', () => {
     expect(r.porFaixa['2 visitas']!.erroMedianoDias).toBeLessThanOrEqual(1)
     expect(Math.round(r.porFaixa['2 visitas']!.acertoNaSemanaPct)).toBe(100)
     expect(Math.round(r.geral.acertoNaSemanaPct)).toBeGreaterThanOrEqual(86)
+  })
+})
+
+/**
+ * C-035 (Motor v5): com a régua CALIBRADA pelo salão, o ciclo de quem tem 3+ intervalos é encolhido em
+ * direção a ela (peso 3). Medido: deriva 93% → 96%, padrão errado 83% → 85%, errático 47% → 50%, nenhum
+ * pior. Sem régua calibrada, nada muda (os pisos acima, da v4, seguem valendo) — encolher para um padrão
+ * errado derrubava o "padrão errado" para 14%.
+ */
+const previsorCalibrado: Previsor = (passado, padrao) =>
+  computeCycle({ history: passado.map((date) => ({ date })), defaultCycleDays: padrao, today: passado[passado.length - 1]!, reguaCalibrada: true }).predictedDate
+
+const PISO_CALIBRADO_PCT: Record<string, number> = {
+  'regular (21±2)': 100,
+  'deriva (21 → 35)': 96,
+  'pulo (21, às vezes 42)': 74,
+  'errático (14–45)': 48,
+  'padrão errado (70±5, padrão 21)': 85,
+  'ritmo curto (7±1, padrão 21)': 100,
+  'sessões iniciais (2× 5±1, depois 21±2)': 66,
+  'sumiço no início (1º intervalo 90–150, depois 21±2)': 100,
+}
+
+describe('régua calibrada: o encolhimento não piora nenhum cenário (C-035, v5)', () => {
+  it.each([...CENARIOS, ...CENARIOS_CURTOS, ...CENARIOS_DE_UM_INTERVALO].map((c) => c.nome))('%s', (nome) => {
+    const c = [...CENARIOS, ...CENARIOS_CURTOS, ...CENARIOS_DE_UM_INTERVALO].find((x) => x.nome === nome)!
+    const hs = calibrar(gerar(c))
+    const v5 = Math.round(backtest(hs, previsorCalibrado).porFaixa['3+ visitas']!.acertoNaSemanaPct)
+    const v4 = Math.round(backtest(hs, previsorDoMotor).porFaixa['3+ visitas']!.acertoNaSemanaPct)
+    expect(v5).toBeGreaterThanOrEqual(v4)
+    expect(v5).toBeGreaterThanOrEqual(PISO_CALIBRADO_PCT[nome]!)
   })
 })
 

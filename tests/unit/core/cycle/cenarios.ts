@@ -63,3 +63,14 @@ export const CENARIOS_CURTOS: Cenario[] = [
 export const CENARIOS_DE_UM_INTERVALO: Cenario[] = [
   { nome: 'sumiço no início (1º intervalo 90–150, depois 21±2)', padrao: 21, intervalo: (r, i) => (i === 0 ? 90 + r() * 60 : normal(r, 21, 2)) },
 ]
+
+/**
+ * C-035: a régua CALIBRADA. Em produção o padrão do serviço vira a mediana medida no próprio salão
+ * (`services.cycle_days_observado`); aqui, a mediana de todos os intervalos da população do cenário.
+ */
+export function calibrar(hs: HistoricoParaBacktest[]): HistoricoParaBacktest[] {
+  const todos = hs.flatMap((h) => h.datas.slice(1).map((d, i) => h.datas[i]!.until(d).total('days'))).sort((a, b) => a - b)
+  const meio = Math.floor(todos.length / 2)
+  const regua = Math.round(todos.length % 2 ? todos[meio]! : (todos[meio - 1]! + todos[meio]!) / 2)
+  return hs.map((h) => ({ ...h, padraoDoServico: regua }))
+}
