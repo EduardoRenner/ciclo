@@ -154,6 +154,7 @@ export const MIGRATIONS_DO_CODIGO: readonly string[] = [
   '0132_sujeito_do_ciclo',
   '0133_sujeito_no_agendamento_e_na_comanda',
   '0134_ciclo_por_sujeito',
+  '0135_ciclo_por_sujeito_chave_primaria',
 ]
 
 /** Quantos arquivos existem em `supabase/migrations/`. */

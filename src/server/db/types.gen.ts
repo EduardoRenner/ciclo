@@ -456,6 +456,7 @@ export type Database = {
           service_id: string
           state: Database["public"]["Enums"]["cycle_state"]
           subject_id: string | null
+          subject_key: string
           tenant_id: string
           value_at_risk_cents: number
         }
@@ -472,6 +473,7 @@ export type Database = {
           service_id: string
           state?: Database["public"]["Enums"]["cycle_state"]
           subject_id?: string | null
+          subject_key?: string
           tenant_id: string
           value_at_risk_cents?: number
         }
@@ -488,6 +490,7 @@ export type Database = {
           service_id?: string
           state?: Database["public"]["Enums"]["cycle_state"]
           subject_id?: string | null
+          subject_key?: string
           tenant_id?: string
           value_at_risk_cents?: number
         }

@@ -90,10 +90,11 @@ async function criarCliente(nome: string) {
   return c.data!.id
 }
 
-async function inserirAtendimentoConcluido(clientId: string, diasAtras: number) {
+async function inserirAtendimentoConcluido(clientId: string, diasAtras: number, subjectId: string | null = null) {
   const inicio = new Date(Date.now() - diasAtras * 86_400_000)
   const { error } = await svc.from('appointments').insert({
     tenant_id: tenantId,
+    subject_id: subjectId,
     client_id: clientId,
     professional_id: professionalId,
     service_id: servicoId,
@@ -106,6 +107,48 @@ async function inserirAtendimentoConcluido(clientId: string, diasAtras: number) 
 }
 
 describe('recomputarCiclosDoTenant', () => {
+  it(
+    'C-023 (AUT-101): tutor com 2 animais no mesmo serviço vira 2 ciclos, cada um no ritmo do seu animal',
+    async () => {
+      const tutor = await criarCliente('Tutor de Dois')
+      const sujeito = async (nome: string) => {
+        const r = await svc.from('subjects').insert({ tenant_id: tenantId, client_id: tutor, kind: 'animal', name: nome }).select('id').single()
+        if (r.error) throw r.error
+        return r.data.id
+      }
+      const mel = await sujeito('Mel')
+      const thor = await sujeito('Thor')
+      // Semanas alternadas: juntos, uma série a cada 7 dias; cada animal, a cada 14.
+      for (const dias of [70, 56, 42, 28]) await inserirAtendimentoConcluido(tutor, dias, mel)
+      for (const dias of [63, 49, 35, 21]) await inserirAtendimentoConcluido(tutor, dias, thor)
+
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
+
+      const ciclos = await svc
+        .from('client_cycles')
+        .select('subject_id, personal_cycle_days, sample_size, last_visit_on')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', tutor)
+      expect(ciclos.error).toBeNull()
+      const porSujeito = new Map((ciclos.data ?? []).map((c) => [c.subject_id, c]))
+      expect(porSujeito.size).toBe(2)
+      expect(porSujeito.get(mel)?.personal_cycle_days).toBe(14)
+      expect(porSujeito.get(thor)?.personal_cycle_days).toBe(14)
+      expect(porSujeito.get(mel)?.sample_size).toBe(3)
+      expect(porSujeito.has(null)).toBe(false)
+
+      // Rodar de novo não duplica (a chave por sujeito é o alvo do upsert).
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
+      const deNovo = await svc.from('client_cycles').select('subject_id').eq('tenant_id', tenantId).eq('client_id', tutor)
+      expect(deNovo.data).toHaveLength(2)
+
+      // A fila mostra o tutor uma vez (uma mensagem por pessoa), mesmo com 2 ciclos atrasados.
+      const lista = await listarParaRecuperar(svc, tenantId)
+      expect(lista.items.filter((i) => i.clientId === tutor)).toHaveLength(1)
+    },
+    30_000,
+  )
+
   it(
     'C-015: grava sample_size (intervalos medidos) e a fila de recuperar devolve o ritmo com ela',
     async () => {

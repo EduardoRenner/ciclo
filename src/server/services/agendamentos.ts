@@ -21,7 +21,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 type Cliente = SupabaseClient<Database>
 
 const COLUNAS =
-  'id, tenant_id, client_id, professional_id, service_id, starts_at, ends_at, status, origin, price_cents, confirmed_at, arrived_at, completed_at, canceled_at, canceled_by, cancel_reason, client_note, address, no_show_score, deposit_cents'
+  'id, tenant_id, client_id, professional_id, service_id, starts_at, ends_at, status, origin, price_cents, confirmed_at, arrived_at, completed_at, canceled_at, canceled_by, cancel_reason, client_note, address, no_show_score, deposit_cents, subject_id'
 
 export const EsquemaCriarAgendamento = z
   .object({
@@ -732,7 +732,7 @@ export async function concluirAgendamento(db: Cliente, tenantId: string, id: str
       db,
       tenantId,
       fusoDoSalao,
-      { clientId: agendamento.client_id, serviceId: agendamento.service_id },
+      { clientId: agendamento.client_id, serviceId: agendamento.service_id, subjectId: agendamento.subject_id },
       Temporal.Now.instant().toZonedDateTimeISO(fusoDoSalao).toPlainDate().toString(),
     ).catch((erro: unknown) => {
       console.error(JSON.stringify({ level: 'error', event: 'recompute_ciclo_falhou', appointmentId: id }), erro)

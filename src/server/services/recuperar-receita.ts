@@ -223,6 +223,10 @@ export async function enviarParaRecuperar(
         .eq('tenant_id', tenantId)
         .eq('client_id', item.clientId)
         .eq('service_id', item.serviceId)
+        // AUT-101 (C-023): com sujeito, o mesmo (cliente, serviço) pode ter 2 ciclos (2 animais). A mensagem
+        // vai para o tutor uma vez: vale o mais atrasado. `maybeSingle` sozinho daria erro de "várias linhas".
+        .order('late_days', { ascending: false })
+        .limit(1)
         .maybeSingle()
       if (erroCiclo) throw new AppError('INTERNAL', { cause: erroCiclo })
       if (!linha) continue // já não está mais em risco (concluiu, cancelou) — nada a enviar
@@ -374,6 +378,8 @@ export async function registrarChamadaManual(
         .eq('tenant_id', tenantId)
         .eq('client_id', entrada.clientId)
         .eq('service_id', entrada.serviceId)
+        .order('late_days', { ascending: false })
+        .limit(1)
         .maybeSingle()
     : db
         .from('client_cycles')
