@@ -1,6 +1,8 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
+import { PREFIXOS_REDIRECIONADOS_PARA_ADMIN } from "./src/core/tenants/slugs-reservados";
+
 /** Páginas públicas com token de UMA pessoa (APR-031). A guarda confere contra as pastas `[token]`. */
 export const ROTAS_COM_TOKEN = ["confirmar", "avaliar", "orcamento", "lista-espera", "convite"];
 
@@ -39,8 +41,8 @@ const nextConfig: NextConfig = {
   // `/admin/*` — favoritos e o PWA já instalado no celular apontam pro
   // endereço velho. Redirect permanente, não um `notFound()`.
   async redirects() {
-    const prefixosAntigos = ["hoje", "agenda", "clientes", "recuperar", "comanda", "caixa", "config"];
-    return prefixosAntigos.map((prefixo) => ({
+    // APR-216: a lista vive em `core/tenants/slugs-reservados`, junto da reserva de slug — redirect sem reserva sequestrava o slug do salão.
+    return PREFIXOS_REDIRECIONADOS_PARA_ADMIN.map((prefixo) => ({
       source: `/${prefixo}/:path*`,
       destination: `/admin/${prefixo}/:path*`,
       permanent: true,
