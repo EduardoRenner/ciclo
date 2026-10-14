@@ -7,6 +7,10 @@ import { PREFIXOS_REDIRECIONADOS_PARA_ADMIN } from "./src/core/tenants/slugs-res
 export const ROTAS_COM_TOKEN = ["confirmar", "avaliar", "orcamento", "lista-espera", "convite"];
 
 const nextConfig: NextConfig = {
+  // Sem o cabeçalho `X-Powered-By: Next.js`: ele só diz a quem varre a internet qual stack (e qual
+  // família de CVEs) tentar. Medido em produção em 2026-09-21: estava presente em todas as respostas.
+  // C-016: o conserto ficou na branch local loop/integracao-final (aac4d356) e nunca chegou à main.
+  poweredByHeader: false,
   /**
    * Identificador de build exposto ao cliente (docs/13-CAUSA-RAIZ-LAYOUT-LEGADO.md
    * T1): é o que faz o service worker trocar de nome de cache a cada deploy,
