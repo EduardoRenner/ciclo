@@ -159,7 +159,8 @@ function BarraFixaDeConfirmacao({
           motivoDesabilitado={motivoBloqueio}
           onClick={onConfirmar}
         >
-          Confirmar agendamento
+          {/* APR-118 (I-16): "Confirmar" prometia que estava confirmado; quem confirma é quem atende. */}
+          Pedir este horário
         </Button>
       </div>
     </div>
@@ -633,7 +634,7 @@ export default function Agendar({
           navega por teclado não ganha uma parada extra, e o foco programático funciona.
         */}
         <h2 ref={tituloDoSucesso} tabIndex={-1} className="text-titulo font-bold">
-          Agendamento enviado!
+          Pedido enviado para {nomeDoSalao}
         </h2>
 
         {slotEscolhido && servicoEscolhido ? (
@@ -674,10 +675,14 @@ export default function Agendar({
         <p className="mt-4 max-w-xs text-corpo text-txt-2">
           Seu pedido chegou e já apareceu para a equipe. A confirmação vem de
           quem vai te atender, e pode não ser na hora.
+          {/*
+            APR-118 (F-04, S1): conta nova não tem telefone público, e a frase mandava "chamar por
+            telefone" sem telefone em lugar nenhum. Sem canal, a tela não inventa um.
+          */}
           {saidaDoSucesso ? (
             <> Se não tiver retorno em algumas horas, fale direto:</>
           ) : (
-            <> Se não tiver retorno em algumas horas, é só chamar por telefone.</>
+            <> Se não tiver retorno em algumas horas, procure a {nomeDoSalao} do jeito que você costuma.</>
           )}
         </p>
 
@@ -1189,7 +1194,7 @@ export default function Agendar({
       visivel={mostrarBarraFixa}
       carregando={pendente}
       bloqueada={!nome || !telefone}
-      motivoBloqueio="Preencha seu nome e seu telefone para confirmar."
+      motivoBloqueio="Preencha seu nome e seu telefone para pedir o horário."
       onConfirmar={confirmar}
     />
     </>

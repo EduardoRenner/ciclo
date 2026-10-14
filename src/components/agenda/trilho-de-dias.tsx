@@ -40,7 +40,9 @@ export default function TrilhoDeDias({
             }
           >
             <span className="uppercase">{data.toLocaleDateString('pt-BR', { weekday: 'short', timeZone: 'UTC' }).replace('.', '')}</span>
-            <span className={`tabular text-corpo font-bold ${d === dia ? '' : fechado ? 'text-txt-3' : 'text-txt'}`}>{data.getUTCDate()}</span>
+            {/* APR-118 (A-24): dia fechado é riscado E diz "fechado", em todos os 14 dias, com uma regra só. */}
+            <span className={`tabular text-corpo font-bold ${d === dia ? '' : fechado ? 'text-txt-3 line-through' : 'text-txt'}`}>{data.getUTCDate()}</span>
+            {fechado ? <span className="text-overline lowercase text-txt-3">fechado</span> : null}
           </button>
         )
       })}

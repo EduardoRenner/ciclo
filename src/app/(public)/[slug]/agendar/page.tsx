@@ -22,7 +22,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!perfil) return {}
 
   const titulo = `Agendar em ${perfil.name}`
-  const descricao = `Escolha o serviço, o dia e o horário na ${perfil.name}. Sem ligar, sem esperar resposta.`
+  // APR-118 (F-14): "sem esperar resposta" prometia o que a página não faz — o pedido é confirmado por quem atende.
+  const descricao = `Escolha o serviço, o dia e o horário na ${perfil.name}. Quem atende confirma o seu pedido.`
   const base = process.env.NEXT_PUBLIC_APP_URL
   const url = base ? `${base}/${perfil.slug}/agendar` : undefined
 
