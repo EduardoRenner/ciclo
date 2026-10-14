@@ -125,24 +125,6 @@ export default async function PaginaDoMes() {
         descricao="O que entrou, o que sobrou, de quem depende, o que está parado e o quanto o Motor acertou."
       />
 
-      <MapaDeVazamento linhas={vazamentos} />
-      {margens === null && <p className="-mt-4 mb-6 text-secundario text-txt-2">Não consegui conferir a margem dos serviços agora. O resto está certo; abra de novo daqui a pouco.</p>}
-
-      {/*
-        docs/84 Aposta C — depois de ver onde escapa, testar a mudança antes de decidir. Link, não
-        bloco: a tela do mês já é a mais cheia do painel, e o teste mora na própria tela.
-      */}
-      <Link href="/admin/experimentos" className="mb-6 block">
-        <Card pressionavel className="flex items-center gap-3">
-          <FlaskConical aria-hidden className="size-5 shrink-0 text-acc-2" />
-          <div className="min-w-0 flex-1">
-            <p className="text-corpo font-semibold">Testar antes de decidir</p>
-            <p className="text-secundario text-txt-2">Mude uma coisa por alguns dias e compare com os mesmos dias de antes.</p>
-          </div>
-          <ChevronRight aria-hidden className="size-4 shrink-0 text-txt-3" />
-        </Card>
-      </Link>
-
       <ResumoDoMes
         mes={mes}
         entrouCents={mensal.revenueCents}
@@ -159,10 +141,10 @@ export default async function PaginaDoMes() {
         diaOcioso={diaOcioso}
       />
 
-      {/* APR-114 (I-12): "Ticket médio" e "Voltam de novo" moravam no topo de Clientes, onde ocupavam o lugar da busca. São números de mês, não de pessoa. */}
+      {/* APR-114/122: "Gasto médio por visita" e "Voltam de novo" são números de mês, não de pessoa; com a definição, porque sozinhos não se explicam. */}
       <div className="mt-3 grid grid-cols-2 gap-3">
         <Link href="/admin/clientes" className="block">
-          <StatTile pressionavel rotulo="Ticket médio" valor={dinheiro.format(carteira.ticketMedioCents / 100)} />
+          <StatTile pressionavel rotulo="Gasto médio por visita" valor={dinheiro.format(carteira.ticketMedioCents / 100)} apoio="o que cada visita deixa, em média" />
         </Link>
         <Link href="/admin/clientes" className="block">
           <StatTile
@@ -170,9 +152,33 @@ export default async function PaginaDoMes() {
             rotulo="Voltam de novo"
             valor={`${Math.round(carteira.taxaRetornoBps / 100)}%`}
             progresso={carteira.taxaRetornoBps / 10_000}
+            apoio="de quem veio, quantos vieram mais de uma vez"
           />
         </Link>
       </div>
+
+      {/* APR-122 (I-19, A-23): o número do mês abre a tela; o mapa de onde escapa e o "Testar" vêm depois. */}
+      <div className="mt-6">
+        <MapaDeVazamento linhas={vazamentos} />
+      </div>
+      {margens === null && <p className="-mt-4 mb-6 text-secundario text-txt-2">Não consegui conferir a margem dos serviços agora. O resto está certo; abra de novo daqui a pouco.</p>}
+      {/*
+        docs/84 Aposta C — depois de ver onde escapa, testar a mudança antes de decidir. Só com pelo
+        menos um mês fechado: sem base de comparação o teste não tem com o que comparar, e o link
+        num mês vazio era convite para uma tela sem nada (I-19).
+      */}
+      {serie.pontos.length > 0 ? (
+        <Link href="/admin/experimentos" className="mb-6 block">
+          <Card pressionavel className="flex items-center gap-3">
+            <FlaskConical aria-hidden className="size-5 shrink-0 text-acc-2" />
+            <div className="min-w-0 flex-1">
+              <p className="text-corpo font-semibold">Testar antes de decidir</p>
+              <p className="text-secundario text-txt-2">Mude uma coisa por alguns dias e compare com os mesmos dias de antes.</p>
+            </div>
+            <ChevronRight aria-hidden className="size-4 shrink-0 text-txt-3" />
+          </Card>
+        </Link>
+      ) : null}
     </>
   )
 }
