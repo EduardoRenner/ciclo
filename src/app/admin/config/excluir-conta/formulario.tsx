@@ -12,6 +12,7 @@ import { rotuloDoPapel } from '@/core/auth/rotulo-do-papel'
 import { ASSUNTO_TRANSFERIR_TITULARIDADE, canalDeContato } from '@/lib/contato'
 import { drenarFilaPendente } from '@/lib/offline/api-client'
 import { apagarBancoOffline, listarMutacoes } from '@/lib/offline/db'
+import { avisoAntesDeSair, type AvisoDeSaida, type LeituraDaFila } from '@/core/offline/aviso-de-saida'
 
 type Vinculo = { tenantId: string; role: string }
 type Situacao = { vinculos: Vinculo[]; bloqueios: string[] }
@@ -25,6 +26,8 @@ export default function FormularioExcluirConta() {
   const mostrarToast = useToast()
   const [situacao, setSituacao] = useState<Situacao | 'carregando' | 'falhou'>('carregando')
   const [confirmando, setConfirmando] = useState(false)
+  // APR-222 (G-10): a mesma régua de "Sair" — contar o que está na fila e dizer, em vez de apagar em silêncio.
+  const [avisoDaFila, setAvisoDaFila] = useState<AvisoDeSaida | null>(null)
   const [precisaMfa, setPrecisaMfa] = useState(false)
   const [pendente, iniciar] = useTransition()
 
@@ -148,7 +151,16 @@ export default function FormularioExcluirConta() {
             ) : null}
           </>
         ) : (
-          <Button variante="danger" onClick={() => setConfirmando(true)}>
+          <Button
+            variante="danger"
+            onClick={() => {
+              setConfirmando(true)
+              listarMutacoes().then(
+                (m) => setAvisoDaFila(avisoAntesDeSair({ ok: true, quantidade: m.length } as LeituraDaFila)),
+                () => setAvisoDaFila(avisoAntesDeSair({ ok: false } as LeituraDaFila)),
+              )
+            }}
+          >
             <Trash2 aria-hidden className="size-4" />
             Excluir minha conta
           </Button>
@@ -161,6 +173,22 @@ export default function FormularioExcluirConta() {
             Seu nome, e-mail e login somem. {negocios === 1 ? 'O negócio continua' : 'Os negócios continuam'} funcionando com o
             histórico intacto, só você deixa de conseguir entrar.
           </p>
+          {avisoDaFila && avisoDaFila.tipo !== 'pode_sair' ? (
+            <p role="alert" className="rounded-[var(--radius-sm)] bg-surface-2 p-3 text-secundario text-txt">
+              {avisoDaFila.tipo === 'vai_descartar' ? (
+                <>
+                  <span className="font-semibold">
+                    {avisoDaFila.quantidade === 1 ? '1 alteração guardada neste aparelho ainda não subiu' : `${avisoDaFila.quantidade} alterações guardadas neste aparelho ainda não subiram`}
+                  </span>{' '}
+                  e {avisoDaFila.quantidade === 1 ? 'se perde' : 'se perdem'} com a conta. Para não perder, conecte à internet antes.
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold">Não consegui verificar se há alterações não enviadas.</span> Se houver algo que não subiu, excluir agora descarta.
+                </>
+              )}
+            </p>
+          ) : null}
           <Button variante="danger" largura="cheia" carregando={pendente} onClick={excluir}>
             Excluir mesmo assim
           </Button>
