@@ -93,6 +93,8 @@ export default function DetalheAgendamento({
   const [erroDosHorarios, setErroDosHorarios] = useState<string | null>(null)
   const [slotRemarcar, setSlotRemarcar] = useState<SlotLivre | null>(null)
   const [remarcarManual, setRemarcarManual] = useState(false)
+  // Como no Marcar: enquanto ninguém tocou no trilho, um dia sem vaga pula para o seguinte.
+  const [diaTocado, setDiaTocado] = useState(false)
   const [alternativas, setAlternativas] = useState<string[]>([])
   const pedidoDeHorarios = useRef(0)
   const diasRemarcar = proximosDias(14, hojeNoFuso(fuso))
@@ -110,12 +112,19 @@ export default function DetalheAgendamento({
           setErroDosHorarios(json.error?.message ?? 'Não consegui buscar os horários.')
           return
         }
-        setSlotsRemarcar(json.data?.slots ?? [])
+        const livres = json.data?.slots ?? []
+        const seguinte = diasRemarcar[diasRemarcar.indexOf(diaRemarcar) + 1]
+        if (livres.length === 0 && !diaTocado && seguinte) {
+          setDiaRemarcar(seguinte)
+          return
+        }
+        setSlotsRemarcar(livres)
       })
       .catch(() => {
         if (meuPedido === pedidoDeHorarios.current) setErroDosHorarios('Não consegui falar com o servidor. Confira a conexão e toque no dia de novo.')
       })
-  }, [mostrarRemarcar, remarcarManual, diaRemarcar, agendamento.service_id, agendamento.professional_id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- diasRemarcar nasce de fuso (que ja esta na lista) a cada render
+  }, [mostrarRemarcar, remarcarManual, diaRemarcar, diaTocado, agendamento.service_id, agendamento.professional_id])
   const [erro, setErro] = useState<string | null>(null)
   const [linkAvaliacao, setLinkAvaliacao] = useState<string | null>(null)
   const mostrarToast = useToast()
@@ -360,7 +369,7 @@ export default function DetalheAgendamento({
           ) : null}
           {!remarcarManual ? (
             <>
-              <TrilhoDeDias dias={diasRemarcar} dia={diaRemarcar} fechados={new Set()} aoEscolher={(d) => { setDiaRemarcar(d); setSlotRemarcar(null) }} />
+              <TrilhoDeDias dias={diasRemarcar} dia={diaRemarcar} fechados={new Set()} aoEscolher={(d) => { setDiaTocado(true); setDiaRemarcar(d); setSlotRemarcar(null) }} />
               <p aria-live="polite" className="sr-only">
                 {erroDosHorarios ? '' : slotsRemarcar === null ? 'Buscando horários.' : slotsRemarcar.length === 0 ? 'Sem horários livres nesse dia.' : `${slotsUnicosDe(slotsRemarcar).length} horários livres.`}
               </p>
