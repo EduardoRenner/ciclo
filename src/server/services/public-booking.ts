@@ -21,6 +21,7 @@ import { criarAgendamento } from '@/server/services/agendamentos'
 import { verificarTokenIndicacao } from '@/server/services/indicacao'
 import { lerTokenDeVolta, registrarAberturaDoLinkDeVolta, registrarAgendamentoPeloLinkDeVolta } from '@/server/services/link-de-volta'
 import { notificarEquipe } from '@/server/services/mensageria'
+import { agendarDepois } from '@/server/http/depois'
 import { registrarEvento } from '@/server/services/product-events'
 import { gerarTokenReconhecimento } from '@/server/services/reconhecimento'
 import { AppError } from '@/server/http/errors'
@@ -587,12 +588,16 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.input<typ
     // 0091/0092: o interesse no produto vai JUNTO do push, não só na nota do agendamento — é o
     // sinal mais rápido que existe, chega no celular do profissional no mesmo instante da reserva,
     // antes de ele precisar abrir a agenda pra ver.
-    void notificarEquipe(svc, tenant.id, {
-      title: 'Novo pedido de agendamento',
-      body: `${entrada.name} pediu horário para ${quandoLocal(entrada.startsAt, tenant.timezone)}.${notaProduto ? ` ${notaProduto}` : ''}`,
-    }).catch((erro: unknown) => {
-      console.error(JSON.stringify({ level: 'error', event: 'push_equipe_falhou', tenantId: tenant.id }), erro)
-    })
+    // APR-218: `void` era aposta — a Vercel pode congelar a instância assim que a resposta sai, e o push
+    // da equipe nunca chega. `agendarDepois` usa o `after()` do Next, que segura a instância até acabar.
+    agendarDepois(() =>
+      notificarEquipe(svc, tenant.id, {
+        title: 'Novo pedido de agendamento',
+        body: `${entrada.name} pediu horário para ${quandoLocal(entrada.startsAt, tenant.timezone)}.${notaProduto ? ` ${notaProduto}` : ''}`,
+      }).catch((erro: unknown) => {
+        console.error(JSON.stringify({ level: 'error', event: 'push_equipe_falhou', tenantId: tenant.id }), erro)
+      }),
+    )
 
     /*
      * `docs/34-PAGINA-PUBLICA-PLANO.md`, Fase 2 — "reconhecer quem já é cliente". O token só
