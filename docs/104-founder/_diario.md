@@ -72,7 +72,7 @@ Uma entrada por rodada: o que, por quê, número antes e depois, o que saiu, pr�
   (URL com `cliente` e `servico`), 3 toques até "Marcar horário". "Mensagem" 98–99% dos pontos da
   caixa a 360/390: os 4 que faltam são os cantos fora do raio de 12 px, a forma inteira responde.
 - **Achado fora do plano (Lente 3, "verde não é prova"):** a guarda `lucro-nao-vaza-para-quem-atende`
-  tinha `new RegExp(`${coluna}`)` — `` em template literal é BACKSPACE. Nunca casou nada;
+  tinha `new RegExp(`\b${coluna}\b`)` — `\b` em template literal é BACKSPACE. Nunca casou nada;
   passava vazia desde que nasceu. Consertada e vista reprovando com `profit_cents` injetado na ficha.
   E `pnpm lint` reprovava com 19 erros de arquivos minificados do Tesseract (`public/ocr`, CNV-018)
   que o `.gitignore` escondia e o ESLint varria.
