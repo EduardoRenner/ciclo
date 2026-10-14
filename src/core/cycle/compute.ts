@@ -15,7 +15,7 @@ export type EstadoCiclo = 'on_track' | 'due' | 'late' | 'at_risk' | 'lost'
  * atrás previa, concluiria que o erro mudou, e atribuiria à clientela uma mudança que foi nossa.
  * É a versão que permite separar "o salão mudou" de "nós mudamos".
  */
-export const VERSAO_DO_MOTOR = 2
+export const VERSAO_DO_MOTOR = 3
 
 export type EntradaComputeCycle = {
   /** Atendimentos concluídos daquele cliente naquele serviço, em ordem cronológica. */
@@ -52,6 +52,32 @@ export function mediana(valores: number[]): number {
  * primeira mudança de faixa — a mesma armadilha de "duas cópias da mesma fórmula" já registrada
  * nesta base.
  */
+/**
+ * Pesos dos últimos 5 intervalos, do mais antigo ao mais recente (v3, docs/105-ciclo/C-006).
+ * Quem está desacelerando (21 → 35 dias) era previsto pelo meio da série; com os 2 mais recentes valendo
+ * o dobro, o acerto na semana nesse cliente foi de 85% para 92% no backtest, sem piorar nenhum outro
+ * cenário (varredura de 4 conjuntos de pesos registrada no ciclo). Peso maior que 2 começava a seguir o
+ * "pulo" (o cliente que falta uma vez) e piorava o 'padrão errado'.
+ */
+export const PESOS_RECENTES = [1, 1, 1, 2, 2] as const
+
+/**
+ * Mediana ponderada: o valor em que o peso acumulado (em ordem crescente de valor) chega à metade do
+ * total. Com pesos iguais é a mediana comum. Os pesos alinham pelo FIM da lista (o mais recente pesa mais).
+ */
+export function medianaPonderada(valores: readonly number[], pesos: readonly number[]): number {
+  const p = pesos.slice(-valores.length)
+  const pares = valores.map((v, i) => ({ v, w: p[i] ?? 1 })).sort((a, b) => a.v - b.v)
+  const total = pares.reduce((s, x) => s + x.w, 0)
+  let acumulado = 0
+  for (let i = 0; i < pares.length; i++) {
+    acumulado += pares[i]!.w
+    if (acumulado > total / 2) return pares[i]!.v
+    if (acumulado === total / 2) return (pares[i]!.v + pares[i + 1]!.v) / 2
+  }
+  return pares[pares.length - 1]!.v
+}
+
 export function estadoPorAtraso(lateDays: number): EstadoCiclo {
   if (lateDays < -3) return 'on_track'
   if (lateDays <= 0) return 'due'
@@ -100,7 +126,7 @@ export function computeCycle(entrada: EntradaComputeCycle): ResultadoComputeCycl
   } else if (gaps.length <= 2) {
     personalCycleDays = 0.6 * mediana(gaps) + 0.4 * defaultCycleDays
   } else {
-    personalCycleDays = mediana(gaps.slice(-5))
+    personalCycleDays = medianaPonderada(gaps.slice(-5), PESOS_RECENTES)
   }
 
   // 4. clamp entre 0,5× e 2,5× a referência — um outlier não pode esticar o ciclo pra sempre. Na v2,

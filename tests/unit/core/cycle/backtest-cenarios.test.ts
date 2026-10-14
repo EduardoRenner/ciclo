@@ -77,31 +77,30 @@ describe('o Motor nos cinco cenários (C-001)', () => {
 
 /**
  * Guarda MOT-003: a versão do Motor no ar não pode piorar NENHUM cenário em relação à anterior.
- * Os números da v1 foram medidos neste mesmo arquivo em 14/10/2026 (`docs/105-ciclo/C-001/03-medida.md`)
- * e ficam aqui como piso. Mudou o Motor? Rode o placar, e só baixe um número desta tabela com
+ * O piso é a versão anterior medida neste arquivo (v1 em C-001; v3 em C-006, `docs/105-ciclo/`). Mudou o Motor? Rode o placar, e só baixe um número desta tabela com
  * melhora medida — nunca suba.
  */
-const V1_ERRO_MEDIANO_3MAIS: Record<string, number> = {
+const PISO_ERRO_MEDIANO_3MAIS: Record<string, number> = {
   'regular (21±2)': 1,
-  'deriva (21 → 35)': 5,
+  'deriva (21 → 35)': 4,
   'pulo (21, às vezes 42)': 3,
   'errático (14–45)': 8,
-  'padrão errado (70±5, padrão 21)': 44,
+  'padrão errado (70±5, padrão 21)': 5,
 }
-const V1_ACERTO_3MAIS_PCT: Record<string, number> = {
+const PISO_ACERTO_3MAIS_PCT: Record<string, number> = {
   'regular (21±2)': 100,
-  'deriva (21 → 35)': 85,
-  'pulo (21, às vezes 42)': 73,
+  'deriva (21 → 35)': 92,
+  'pulo (21, às vezes 42)': 74,
   'errático (14–45)': 47,
-  'padrão errado (70±5, padrão 21)': 0,
+  'padrão errado (70±5, padrão 21)': 66,
 }
 
 describe('nenhuma versão do Motor piora um cenário (C-001, MOT-003)', () => {
   const atual = placar({ Motor: previsorDoMotor })
-  it.each(CENARIOS.map((c) => c.nome))('%s: erro mediano e acerto na semana iguais ou melhores que a v1', (nome) => {
+  it.each(CENARIOS.map((c) => c.nome))('%s: erro mediano e acerto na semana iguais ou melhores que a versão anterior', (nome) => {
     const r = atual[nome]!['Motor']!.porFaixa['3+ visitas']!
-    expect(r.erroMedianoDias).toBeLessThanOrEqual(V1_ERRO_MEDIANO_3MAIS[nome]!)
-    expect(Math.round(r.acertoNaSemanaPct)).toBeGreaterThanOrEqual(V1_ACERTO_3MAIS_PCT[nome]!)
+    expect(r.erroMedianoDias).toBeLessThanOrEqual(PISO_ERRO_MEDIANO_3MAIS[nome]!)
+    expect(Math.round(r.acertoNaSemanaPct)).toBeGreaterThanOrEqual(PISO_ACERTO_3MAIS_PCT[nome]!)
   })
 
   it('v2: o cliente de ritmo longo num serviço de padrão errado deixa de ser previsto pelo padrão', () => {
