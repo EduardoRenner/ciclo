@@ -10,7 +10,7 @@ import { executarOnboarding } from '@/server/services/onboarding'
 import { concluirAgendamento, confirmarAgendamento, criarAgendamento, marcarChegada } from '@/server/services/agendamentos'
 import { recomputarCiclosDoTenant, recomputarCicloDeUmAtendimento } from '@/server/services/ciclo'
 import { prestacaoDeContasDoMotor, oscilacaoDaReguaDoTenant, resolverPrevisoes } from '@/server/services/previsao'
-import { listarParaRecuperar } from '@/server/services/recuperar-receita'
+import { listarParaRecuperar, registrarChamadaManual } from '@/server/services/recuperar-receita'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -145,6 +145,10 @@ describe('recomputarCiclosDoTenant', () => {
       // A fila mostra o tutor uma vez (uma mensagem por pessoa), mesmo com 2 ciclos atrasados.
       const lista = await listarParaRecuperar(svc, tenantId)
       expect(lista.items.filter((i) => i.clientId === tutor)).toHaveLength(1)
+
+      // Chamar o tutor com 2 ciclos no mesmo serviço não pode dar "várias linhas" (leitura do mais atrasado).
+      const chamada = await registrarChamadaManual(svc, tenantId, { clientId: tutor, serviceId: servicoId })
+      expect(chamada.registrada).toBe(true)
     },
     30_000,
   )
