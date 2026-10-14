@@ -16,6 +16,8 @@ import { describe, expect, it } from 'vitest'
 const JUSTIFICADAS: Record<string, string> = {
   '/api/v1/cycle/recover/send':
     'envio em lote da Recuperar por canal automático: sem credencial de WhatsApp em produção, a tela usa o link wa.me um a um; a rota fica para quando o canal existir (docs/42)',
+  '/api/v1/subjects/[id]/odometer-readings':
+    'leitura de km do check-in (AUT-103, C-039): a rota vem antes da tela; o botão nasce no check-in pela placa (AUT-401) e no plano do carro (AUT-402), com o pacote Oficina ainda fechado (OFICINA_ABERTA)',
   '/api/v1/waitlist':
     'DECISÃO pendente (docs/98 APR-214): a lista de espera só entra hoje pela página pública (`/api/v1/public/waitlist`); ou a tela do painel ganha "pôr na lista" ou esta rota sai',
   '/api/v1/wallet/debit':

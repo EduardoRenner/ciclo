@@ -126,6 +126,7 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'DELETE v1/services/[id]': 'permite',
   'POST v1/services/reorder': 'permite',
   'POST v1/services': 'bloqueia',
+  'POST v1/subjects/[id]/odometer-readings': 'bloqueia', // leitura de km: linha nova no histórico do carro
   'POST v1/subscription-plans': 'bloqueia',
   // docs/101 T4.6: regras de contagem e OAB da equipe são configuração do próprio escritório
   'PATCH v1/tenant/advocacia': 'permite',

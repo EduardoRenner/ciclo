@@ -167,4 +167,22 @@ describe('0132 · o sujeito do ciclo', () => {
     expect(sobrou.data?.subject_id).toBeNull()
     expect(sobrou.data?.tenant_id).toBe(a.tenantId)
   })
+
+  it('leitura de km (0141): o dono grava e lê a dele, não vê a do outro salão, e não edita nem apaga o histórico', async () => {
+    const carroA = ok(await admin.from('subjects').insert({ tenant_id: a.tenantId, client_id: a.clientId, kind: 'veiculo', name: 'HB20' }).select('id').single(), 'HB20')
+    const carroB = ok(await admin.from('subjects').insert({ tenant_id: b.tenantId, client_id: b.clientId, kind: 'veiculo', name: 'Kwid' }).select('id').single(), 'Kwid')
+    ok(await admin.from('odometer_readings').insert({ tenant_id: b.tenantId, subject_id: carroB.id, read_on: '2026-09-01', km: 9_000 }).select('id').single(), 'km B')
+    const c = await entrar()
+
+    // controle positivo: o mesmo cliente autenticado CONSEGUE gravar — o resto não passa por cegueira
+    const minha = ok(await c.from('odometer_readings').insert({ tenant_id: a.tenantId, subject_id: carroA.id, read_on: '2026-09-01', km: 41_300 }).select('id').single(), 'km A')
+    const visiveis = await c.from('odometer_readings').select('subject_id').in('subject_id', [carroA.id, carroB.id])
+    expect(visiveis.data?.map((l) => l.subject_id)).toEqual([carroA.id])
+
+    const editou = await c.from('odometer_readings').update({ km: 1 }).eq('id', minha.id).select('km')
+    expect(editou.error?.code).toBe('42501')
+    await c.from('odometer_readings').delete().eq('id', minha.id)
+    const ficou = await admin.from('odometer_readings').select('km').eq('id', minha.id).single()
+    expect(ficou.data?.km).toBe(41_300)
+  })
 })

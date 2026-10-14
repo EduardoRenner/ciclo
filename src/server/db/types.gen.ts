@@ -3375,6 +3375,64 @@ export type Database = {
           },
         ]
       }
+      odometer_readings: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          created_by: string | null
+          flag: string | null
+          id: string
+          km: number
+          read_on: string
+          subject_id: string
+          tenant_id: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          flag?: string | null
+          id?: string
+          km: number
+          read_on: string
+          subject_id: string
+          tenant_id: string
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          flag?: string | null
+          id?: string
+          km?: number
+          read_on?: string
+          subject_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "odometer_readings_tenant_id_appointment_id_fkey"
+            columns: ["tenant_id", "appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "odometer_readings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "odometer_readings_tenant_id_subject_id_fkey"
+            columns: ["tenant_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
       package_uses: {
         Row: {
           appointment_id: string | null
