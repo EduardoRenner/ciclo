@@ -153,3 +153,30 @@ Uma entrada por rodada: o que, por quê, número antes e depois, o que saiu, pr�
 - **Onda 1 fechada** fora o que depende do Eduardo: 116 (PR #149 + decisão b) e 126–131 (nome do
   botão, duas colunas). Próxima: seguir a Onda 2 pela ordem de dano (201 fuso do expediente, 204
   desfazer fechamento, 207 "já é cliente", 208 link do orçamento…).
+
+## 2026-10-14 · Rodada 7 · Onda 2: 201, 204, 207, 208, 213, 215, 216, 218
+
+- **APR-201 (fuso do negócio):** aparelho em Manaus, salão em São Paulo: folga das 14:00 gravou
+  **17:00Z (14:00 de SP)**; o padrão dos campos mostrou a hora de SP (4) com o aparelho às 3; digitar
+  "10:00" no expediente gerou **1 PUT** (era um por tecla). Helper `paraInstante`/`paraLocal` só com
+  Intl, 4 casos (inclui horário de verão).
+- **APR-204 (desfazer fechamento):** botão em comanda fechada → confirmação que diz o que muda →
+  200; segunda aba tentando de novo → **409** com toast; banco: `canceled`; caixa do dia volta ao
+  anterior (integração). **Limite honesto, para o Eduardo decidir:** há UM ticket por atendimento
+  (`tickets_um_por_agendamento`), então depois de desfazer não dá para abrir outra comanda para o
+  mesmo atendimento — a confirmação diz isso. "Reabrir" (closed → open com estorno) seria o desenho
+  melhor, mas esbarra na política 0127 (comanda fechada congelada). Decisão de produto.
+- **APR-207:** telefone conhecido com outro nome → "Esse telefone já é de Ana Souza. O horário vai
+  para o cadastro dela." e "Usar o nome do cadastro" preenche (medido).
+- **APR-208/213/215/216/218:** só unitário e guarda (sem tela): E.164 sem "55 55" e sem 55 em número
+  estrangeiro; faltas do assistente contadas do histórico (coluna `no_show_count` nunca é escrita);
+  fim da graça no dia de Brasília (01:30Z → dia 17); slugs sequestrados pelo redirect 308 reservados
+  (lista única importada pelo `next.config.ts`); push para a equipe dentro de `after()` via
+  `agendarDepois` (fora de request, roda na hora). Mutações 216 e 218 vistas reprovando.
+- **Processo (3 lições, todas de ferramenta):** (1) três guardas reprovaram DEPOIS do commit porque
+  o `grep` da suíte engoliu o código de saída — conferir "Tests … passed" com os olhos antes do
+  `git commit`; (2) o `cd` perdido no meio do comando de novo — `git -C` e caminhos absolutos em
+  tudo; (3) `` digitado num heredoc virou byte 0x08 num arquivo de teste (de novo) — montar
+  escapes com `chr(92)` ou usar o Edit.
+- **Próxima:** 202 (datas no fuso em toda tela, guarda estendida), 210/211 (clube e mês congelado),
+  212, 214, 217, 219, 221, 222. 209 e 220 esperam decisão (a; sinal).
