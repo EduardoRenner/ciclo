@@ -408,7 +408,8 @@ export default function Hoje({
             valor={dinheiro.format(resumo.numeroDoDia.cents / 100)}
             apoio={
               <span className="flex flex-col gap-0.5">
-                {resumo.horariosDoDia > 0 ? (
+                {/* Só com algum feito: "0 de 17 feitos" ao lado de "Falta 1" lia como contradição (medido 13/10, seed com horários passados nunca concluídos). */}
+                {resumo.horariosFeitos > 0 ? (
                   <span className="text-txt-2">
                     {resumo.horariosFeitos} de {resumo.horariosDoDia} {resumo.horariosDoDia === 1 ? 'horário feito' : 'horários feitos'}
                   </span>
