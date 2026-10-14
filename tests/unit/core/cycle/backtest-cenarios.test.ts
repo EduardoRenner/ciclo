@@ -34,7 +34,7 @@ describe('o Motor nos cinco cenários (C-001)', () => {
 
 /**
  * Guarda MOT-003: a versão do Motor no ar não pode piorar NENHUM cenário em relação à anterior.
- * O piso é a versão anterior medida neste arquivo (v1 em C-001; v3 em C-006, `docs/105-ciclo/`). Mudou o Motor? Rode o placar, e só baixe um número desta tabela com
+ * O piso é a versão anterior medida neste arquivo (v1 em C-001; v3 em C-006; v4 em C-011, `docs/105-ciclo/`). Mudou o Motor? Rode o placar, e só baixe um número desta tabela com
  * melhora medida — nunca suba.
  */
 const PISO_ERRO_MEDIANO_3MAIS: Record<string, number> = {
@@ -42,14 +42,14 @@ const PISO_ERRO_MEDIANO_3MAIS: Record<string, number> = {
   'deriva (21 → 35)': 4,
   'pulo (21, às vezes 42)': 3,
   'errático (14–45)': 8,
-  'padrão errado (70±5, padrão 21)': 5,
+  'padrão errado (70±5, padrão 21)': 4,
 }
 const PISO_ACERTO_3MAIS_PCT: Record<string, number> = {
   'regular (21±2)': 100,
   'deriva (21 → 35)': 92,
   'pulo (21, às vezes 42)': 74,
   'errático (14–45)': 47,
-  'padrão errado (70±5, padrão 21)': 66,
+  'padrão errado (70±5, padrão 21)': 79,
 }
 
 describe('nenhuma versão do Motor piora um cenário (C-001, MOT-003)', () => {

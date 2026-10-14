@@ -15,7 +15,7 @@ export type EstadoCiclo = 'on_track' | 'due' | 'late' | 'at_risk' | 'lost'
  * atrás previa, concluiria que o erro mudou, e atribuiria à clientela uma mudança que foi nossa.
  * É a versão que permite separar "o salão mudou" de "nós mudamos".
  */
-export const VERSAO_DO_MOTOR = 3
+export const VERSAO_DO_MOTOR = 4
 
 export type EntradaComputeCycle = {
   /** Atendimentos concluídos daquele cliente naquele serviço, em ordem cronológica. */
@@ -101,14 +101,16 @@ export function computeCycle(entrada: EntradaComputeCycle): ResultadoComputeCycl
     return { personalCycleDays: defaultCycleDays, predictedDate: today, lateDays: 0, state: 'on_track' }
   }
 
-  const { gaps, referencia } = intervalosDoRitmo(history, defaultCycleDays)
+  const { gaps, referencia, provadoPorConcordancia } = intervalosDoRitmo(history, defaultCycleDays)
 
-  // 3. 0 gaps → só o padrão. 1-2 → mistura com o padrão. 3+ → mediana dos últimos 5.
+  // 3. 0 gaps → só o padrão. 1-2 → mistura com o padrão (v4: sem mistura quando os 2 concordam fora
+  // da régua do padrão — o padrão ali está errado, misturar puxaria de volta para ele). 3+ → mediana
+  // ponderada dos últimos 5.
   let personalCycleDays: number
   if (gaps.length === 0) {
     personalCycleDays = defaultCycleDays
   } else if (gaps.length <= 2) {
-    personalCycleDays = 0.6 * mediana(gaps) + 0.4 * defaultCycleDays
+    personalCycleDays = provadoPorConcordancia ? mediana(gaps) : 0.6 * mediana(gaps) + 0.4 * defaultCycleDays
   } else {
     personalCycleDays = medianaPonderada(gaps.slice(-5), PESOS_RECENTES)
   }
@@ -137,7 +139,7 @@ export function computeCycle(entrada: EntradaComputeCycle): ResultadoComputeCycl
 export function intervalosDoRitmo(
   history: readonly { date: Temporal.PlainDate }[],
   defaultCycleDays: number,
-): { gapsBrutos: number[]; gaps: number[]; referencia: number; ritmoProvado: boolean } {
+): { gapsBrutos: number[]; gaps: number[]; referencia: number; ritmoProvado: boolean; provadoPorConcordancia: boolean } {
   // 1. gaps = diferenças em dias entre atendimentos consecutivos.
   const gapsBrutos: number[] = []
   for (let i = 1; i < history.length; i++) {
@@ -152,8 +154,20 @@ export function intervalosDoRitmo(
   // os intervalos de quem tem ritmo próprio longo: medido no backtest, cliente de 70 dias num
   // serviço de padrão 21 tinha erro mediano de 44 dias e 0% de acerto na semana. Com 0–2
   // intervalos não há ritmo provado e nada muda: o padrão segue sendo a referência.
-  const ritmoProvado = gapsBrutos.length >= 3
+  //
+  // v4 (docs/105-ciclo/C-011): com exatamente 2 intervalos que CONCORDAM entre si (o maior até 1,5× o
+  // menor) e caem os dois FORA da régua do padrão (acima de 3× ou abaixo de metade), o ritmo também
+  // está provado. Na v3 os dois eram descartados como anomalia e o cliente de 70 dias num serviço de
+  // padrão 21 era previsto para voltar em 21: medido, acerto na semana 66% → 79% nesse cenário, e
+  // nenhum outro cenário mudou um ponto. Exigir os DOIS fora do padrão é o que protege o resto: a
+  // variante sem essa exigência ganhava 1 ponto na deriva e perdia 1 no errático (rejeitada).
+  const [a, b] = gapsBrutos
+  const provadoPorConcordancia =
+    gapsBrutos.length === 2 &&
+    Math.max(a!, b!) <= 1.5 * Math.max(1, Math.min(a!, b!)) &&
+    (Math.min(a!, b!) > 3 * defaultCycleDays || Math.max(a!, b!) < defaultCycleDays / 2)
+  const ritmoProvado = gapsBrutos.length >= 3 || provadoPorConcordancia
   const referencia = ritmoProvado ? mediana(gapsBrutos) : defaultCycleDays
   const gaps = gapsBrutos.filter((g) => g <= 3 * referencia)
-  return { gapsBrutos, gaps, referencia, ritmoProvado }
+  return { gapsBrutos, gaps, referencia, ritmoProvado, provadoPorConcordancia }
 }

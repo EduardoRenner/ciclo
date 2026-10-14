@@ -77,7 +77,7 @@ export const ALFA_DO_ALERTA = 0.5
  * Candidato da v4 (`docs/105-ciclo/C-009`): o estado medido contra a faixa do PRÓPRIO cliente.
  * Antes de `cedo` está em dia; até `prevista + alfa × folga` é hora de voltar; depois disso o atraso
  * conta, com as mesmas faixas de 10 e 30 dias do `estadoPorAtraso`. Ainda não é o estado gravado:
- * entra no ar só com `VERSAO_DO_MOTOR` 4.
+ * entra no ar só numa versão futura do Motor (a 4 foi para os 2 intervalos que concordam, C-011).
  */
 export function estadoPelaFaixa(faixa: FaixaDaPrevisao, hoje: Temporal.PlainDate, temAgendamentoFuturo = false, alfa = ALFA_DO_ALERTA): EstadoCiclo {
   if (temAgendamentoFuturo) return 'on_track'

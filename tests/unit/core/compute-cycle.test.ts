@@ -139,6 +139,18 @@ describe('computeCycle — §5.3', () => {
     expect(r.personalCycleDays).toBe(10)
   })
 
+  it('v4: 2 intervalos que concordam e caem os dois fora da régua do padrão provam o ritmo, sem misturar com o padrão', () => {
+    const ciclo = (gaps: number[]) => computeCycle({ history: historicoDeGaps('2026-01-01', gaps), defaultCycleDays: 21, today: dia('2026-01-01') }).personalCycleDays
+    expect(ciclo([70, 72])).toBe(71)
+    expect(ciclo([8, 9])).toBe(8.5)
+    // Discordam (140 > 1,5 × 70): v3, os dois descartados → padrão.
+    expect(ciclo([70, 140])).toBe(21)
+    // Concordam, mas dentro da régua do padrão: v3, mistura 60/40.
+    expect(ciclo([30, 32])).toBeCloseTo(0.6 * 31 + 0.4 * 21)
+    // Um dentro e um fora: v3.
+    expect(ciclo([60, 70])).toBeCloseTo(0.6 * 60 + 0.4 * 21)
+  })
+
   it('agendamento futuro força on_track mesmo com o cálculo dizendo "lost"', () => {
     const r = computeCycle({
       history: historicoDeGaps('2026-01-01', []),
