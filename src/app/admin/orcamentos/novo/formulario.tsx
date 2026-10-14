@@ -15,6 +15,8 @@ import PhoneInput from '@/components/ui/phone-input'
 import Select from '@/components/ui/select'
 import Textarea from '@/components/ui/textarea'
 import { dinheiro, formatarTelefone } from '@/lib/formato'
+import { linkWhatsApp, linkWhatsAppCompartilhar } from '@/lib/mensagens'
+import { telefoneParaE164 } from '@/core/text/telefone'
 
 type Profissional = { id: string; display_name: string }
 type Item = { description: string; qty: string; unitPriceCents: number }
@@ -40,7 +42,7 @@ export default function FormularioOrcamento({
   const [validade, setValidade] = useState<'sem_validade' | '7' | '15' | '30'>('15')
   const [mensagem, setMensagem] = useState('')
   const [erro, setErro] = useState<string | null>(null)
-  const [linkPronto, setLinkPronto] = useState<{ url: string; whatsapp: string } | null>(null)
+  const [linkPronto, setLinkPronto] = useState<{ url: string; whatsapp: string; totalCents: number } | null>(null)
 
   const clienteId = useSearchParams().get('cliente')
   useEffect(() => {
@@ -103,12 +105,17 @@ export default function FormularioOrcamento({
           headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
           body: JSON.stringify(corpo),
         })
-        const json = (await r.json()) as { data?: { url: string }; error?: { message: string } }
+        const json = (await r.json()) as { data?: { url: string; total_cents: number }; error?: { message: string } }
 
         if (r.ok && json.data) {
           const mensagemWhats = `Oi! Segue o orçamento: ${json.data.url}`
-          const digitos = clienteTelefone.replace(/\D/g, '')
-          setLinkPronto({ url: json.data.url, whatsapp: `https://wa.me/55${digitos}?text=${encodeURIComponent(mensagemWhats)}` })
+          // APR-208 (C-28): E.164 de verdade (sem `55 55`, sem 55 em número estrangeiro); sem telefone
+          // válido, o link abre o seletor de contato. O total mostrado é o que o SERVIDOR gravou.
+          setLinkPronto({
+            url: json.data.url,
+            whatsapp: linkWhatsApp(telefoneParaE164(clienteTelefone), mensagemWhats) ?? linkWhatsAppCompartilhar(mensagemWhats),
+            totalCents: json.data.total_cents ?? totalCents,
+          })
           return
         }
 
@@ -124,7 +131,7 @@ export default function FormularioOrcamento({
   if (linkPronto) {
     return (
       <Card className="flex flex-col gap-3">
-        <p className="text-corpo font-semibold text-txt">Orçamento pronto · {dinheiro.format(totalCents / 100)}</p>
+        <p className="text-corpo font-semibold text-txt">Orçamento pronto · {dinheiro.format(linkPronto.totalCents / 100)}</p>
         <a
           href={linkPronto.whatsapp}
           target="_blank"
