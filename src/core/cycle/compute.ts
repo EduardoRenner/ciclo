@@ -31,6 +31,13 @@ export type ResultadoComputeCycle = {
   predictedDate: Temporal.PlainDate
   lateDays: number
   state: EstadoCiclo
+  /**
+   * Quantos intervalos entraram no ciclo pessoal (passo 3): 0 quando ele é só o padrão do catálogo.
+   * `client_cycles.sample_size` (0092) grava este número; é o que deixa a fila de recuperar dizer
+   * "vem a cada 18 dias" só quando é medido (`core/ciclo/ritmo-do-cliente.ts`). C-015: a 0092 chegou
+   * à main sem este campo e sem escritor (o código ficou na branch melhoria/orcamento-e-motor-2026-09-27).
+   */
+  amostra: number
 }
 
 /**
@@ -98,7 +105,7 @@ export function computeCycle(entrada: EntradaComputeCycle): ResultadoComputeCycl
   // dela — o algoritmo de gaps pressupõe pelo menos um ponto de partida. Um
   // cliente que nunca veio não está "atrasado para voltar": ele nunca foi.
   if (history.length === 0) {
-    return { personalCycleDays: defaultCycleDays, predictedDate: today, lateDays: 0, state: 'on_track' }
+    return { personalCycleDays: defaultCycleDays, predictedDate: today, lateDays: 0, state: 'on_track', amostra: 0 }
   }
 
   const { gaps, referencia, provadoPorConcordancia } = intervalosDoRitmo(history, defaultCycleDays)
@@ -129,7 +136,8 @@ export function computeCycle(entrada: EntradaComputeCycle): ResultadoComputeCycl
   // incomodar quem já vai voltar (sobrepõe o resultado do passo 7).
   const state = entrada.hasFutureAppointment ? 'on_track' : estadoPorAtraso(lateDays)
 
-  return { personalCycleDays, predictedDate, lateDays, state }
+  const amostra = gaps.length <= 2 ? gaps.length : Math.min(gaps.length, PESOS_RECENTES.length)
+  return { personalCycleDays, predictedDate, lateDays, state, amostra }
 }
 
 /**

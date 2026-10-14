@@ -27,6 +27,12 @@ export type ItemRecuperar = {
   serviceName: string
   state: EstadoCiclo
   lateDays: number
+  /**
+   * O que o cartão da fila precisa para dizer "Vem a cada 18 dias, veio faz 31" (`docs/48` C4,
+   * `core/ciclo/ritmo-do-cliente.ts`). A frase é montada na tela, no fuso do salão; aqui só o dado
+   * cru da view. `amostra` = `client_cycles.sample_size`: 0 é "só o padrão", e aí a cadência não é dita.
+   */
+  ritmo: { cicloPessoalDias: number; ultimaVisitaOn: string | null; amostra: number } | null
   valueCents: number
   /** O que SOBRA daquele atendimento × a chance de a pessoa voltar. É o que ordena a lista. */
   profitCents: number
@@ -116,6 +122,7 @@ export async function listarParaRecuperar(
       serviceName: l.service_name!,
       state: l.state!,
       lateDays: l.late_days!,
+      ritmo: l.personal_cycle_days == null ? null : { cicloPessoalDias: l.personal_cycle_days, ultimaVisitaOn: l.last_visit_on, amostra: l.sample_size ?? 0 },
       valueCents: l.value_at_risk_cents!,
       profitCents: l.profit_at_risk_cents ?? 0,
       lastCampaignAt: l.last_campaign_at,

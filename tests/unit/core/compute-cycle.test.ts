@@ -139,6 +139,18 @@ describe('computeCycle — §5.3', () => {
     expect(r.personalCycleDays).toBe(10)
   })
 
+  it('amostra (C-015): quantos intervalos formaram o ciclo pessoal; 0 quando é só o padrão', () => {
+    const amostra = (gaps: number[]) => computeCycle({ history: historicoDeGaps('2026-01-01', gaps), defaultCycleDays: 21, today: dia('2026-01-01') }).amostra
+    expect(computeCycle({ history: [], defaultCycleDays: 21, today: dia('2026-01-01') }).amostra).toBe(0)
+    expect(amostra([])).toBe(0)
+    expect(amostra([20])).toBe(1)
+    expect(amostra([20, 22])).toBe(2)
+    // Descartado como anomalia (> 3× o padrão) não conta.
+    expect(amostra([90])).toBe(0)
+    // 3+: a mediana ponderada olha os últimos 5.
+    expect(amostra([20, 21, 22, 20, 21, 22, 20])).toBe(5)
+  })
+
   it('v4: 2 intervalos que concordam e caem os dois acima da régua do padrão provam o ritmo, sem misturar com o padrão', () => {
     const ciclo = (gaps: number[]) => computeCycle({ history: historicoDeGaps('2026-01-01', gaps), defaultCycleDays: 21, today: dia('2026-01-01') }).personalCycleDays
     expect(ciclo([70, 72])).toBe(71)

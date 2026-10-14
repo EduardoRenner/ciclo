@@ -5,11 +5,13 @@ import { useEffect, useMemo, useState } from 'react'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import { chaveDaFila, proximoDaFila } from '@/core/ciclo/fila-de-chamadas'
+import { fraseDoRitmo, ritmoDoCliente } from '@/core/ciclo/ritmo-do-cliente'
 import { ROTULO_DA_CLASSE, ROTULO_DO_PERFIL } from '@/core/crm/nota-do-cliente'
 import { dinheiro } from '@/lib/formato'
 import { linkWhatsApp, linkWhatsAppCompartilhar, textoDeVolta } from '@/lib/mensagens'
 
-import type { ItemRecuperar } from '@/server/services/recuperar-receita'
+import type { ItemRecuperar } from '@/server/services/recuperar-receita'
+
 import { useFuso } from '@/components/shell/fuso'
 import { hojeNoFuso } from '@/core/agenda/dias'
 
@@ -93,6 +95,20 @@ export default function FilaDeChamadas({
             <p className="text-secundario text-txt-2">
               {atual.serviceName} · {atual.lateDays > 0 ? `${atual.lateDays}d de atraso` : 'na janela'}
             </p>
+            {(() => {
+              // C-015: o POR QUÊ da chamada. Sem intervalo medido (amostra 0) a cadência não é dita.
+              const frase = atual.ritmo
+                ? fraseDoRitmo(
+                    ritmoDoCliente({
+                      cicloPessoalDias: atual.ritmo.cicloPessoalDias,
+                      ultimaVisitaOn: atual.ritmo.ultimaVisitaOn,
+                      hoje: hojeNoFuso(fuso),
+                      visitas: atual.ritmo.amostra + 1,
+                    }),
+                  )
+                : null
+              return frase ? <p className="text-secundario text-txt-2">{frase}</p> : null
+            })()}
             <p className="mt-1 text-secundario text-txt-2">
               {atual.valueCents === 0 && atual.profitCents === 0
                 ? 'Sem valor avulso'

@@ -169,6 +169,7 @@ export async function preverEPersistirCiclos(
           client_id: c.clientId,
           service_id: escolhido.id,
           personal_cycle_days: c.resultado.personalCycleDays,
+          sample_size: c.resultado.amostra,
           last_visit_on: c.ultimaVisita.toString(),
           predicted_on: c.resultado.predictedDate.toString(),
           late_days: c.resultado.lateDays,
