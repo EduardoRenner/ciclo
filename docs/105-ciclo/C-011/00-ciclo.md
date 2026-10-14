@@ -33,3 +33,7 @@ A deriva continua sem conserto que não custe outro cenário: fica registrado, n
 **Nota:** cliente 6 · segredo 8 · engenharia 8. **Próximo (C-012):** banco do automotivo se o Docker
 voltar; senão serviço como software: a mensagem do pet (vacina/vermífugo pelo motivo, "aproveita o
 banho de sexta"), no molde da mensagem do automotivo (C-007).
+
+**Correção (C-013):** a regra entrou aceitando também 2 intervalos abaixo de metade do padrão, sem
+cenário que a medisse. Medida no C-013, essa metade perdia 2 pontos no cliente de sessões iniciais
+curtas e foi removida. Vale só "os dois acima de 3× o padrão"; os números desta página não mudam.

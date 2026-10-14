@@ -103,7 +103,7 @@ export function computeCycle(entrada: EntradaComputeCycle): ResultadoComputeCycl
 
   const { gaps, referencia, provadoPorConcordancia } = intervalosDoRitmo(history, defaultCycleDays)
 
-  // 3. 0 gaps → só o padrão. 1-2 → mistura com o padrão (v4: sem mistura quando os 2 concordam fora
+  // 3. 0 gaps → só o padrão. 1-2 → mistura com o padrão (v4: sem mistura quando os 2 concordam acima
   // da régua do padrão — o padrão ali está errado, misturar puxaria de volta para ele). 3+ → mediana
   // ponderada dos últimos 5.
   let personalCycleDays: number
@@ -156,8 +156,9 @@ export function intervalosDoRitmo(
   // intervalos não há ritmo provado e nada muda: o padrão segue sendo a referência.
   //
   // v4 (docs/105-ciclo/C-011): com exatamente 2 intervalos que CONCORDAM entre si (o maior até 1,5× o
-  // menor) e caem os dois FORA da régua do padrão (acima de 3× ou abaixo de metade), o ritmo também
-  // está provado. Na v3 os dois eram descartados como anomalia e o cliente de 70 dias num serviço de
+  // menor) e caem os dois ACIMA de 3× o padrão, o ritmo também está provado. (O C-011 aceitava também
+  // os dois abaixo de metade do padrão; o C-013 mediu essa metade com cenários de ritmo curto e ela
+  // ganhava 1 ponto no cliente semanal e perdia 2 no de sessões iniciais curtas: removida.) Na v3 os dois eram descartados como anomalia e o cliente de 70 dias num serviço de
   // padrão 21 era previsto para voltar em 21: medido, acerto na semana 66% → 79% nesse cenário, e
   // nenhum outro cenário mudou um ponto. Exigir os DOIS fora do padrão é o que protege o resto: a
   // variante sem essa exigência ganhava 1 ponto na deriva e perdia 1 no errático (rejeitada).
@@ -165,7 +166,7 @@ export function intervalosDoRitmo(
   const provadoPorConcordancia =
     gapsBrutos.length === 2 &&
     Math.max(a!, b!) <= 1.5 * Math.max(1, Math.min(a!, b!)) &&
-    (Math.min(a!, b!) > 3 * defaultCycleDays || Math.max(a!, b!) < defaultCycleDays / 2)
+    Math.min(a!, b!) > 3 * defaultCycleDays
   const ritmoProvado = gapsBrutos.length >= 3 || provadoPorConcordancia
   const referencia = ritmoProvado ? mediana(gapsBrutos) : defaultCycleDays
   const gaps = gapsBrutos.filter((g) => g <= 3 * referencia)

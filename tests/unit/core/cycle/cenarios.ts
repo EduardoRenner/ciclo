@@ -45,3 +45,13 @@ export function gerar(c: Cenario, clientes = 200, visitas = 8, semente = 105): H
     return { datas, padraoDoServico: c.padrao }
   })
 }
+
+/**
+ * C-013: cenários de ritmo CURTO, fora da lista principal (cada placar tem pisos por nome). Existem
+ * porque a v4 (C-011) passou a aceitar 2 intervalos que concordam ABAIXO de metade do padrão, e
+ * nenhum dos cinco cenários acima tinha intervalo curto: a metade de baixo da regra entrou sem prova.
+ */
+export const CENARIOS_CURTOS: Cenario[] = [
+  { nome: 'ritmo curto (7±1, padrão 21)', padrao: 21, intervalo: (r) => normal(r, 7, 1) },
+  { nome: 'sessões iniciais (2× 5±1, depois 21±2)', padrao: 21, intervalo: (r, i) => (i < 2 ? normal(r, 5, 1) : normal(r, 21, 2)) },
+]
