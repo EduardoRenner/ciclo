@@ -116,7 +116,8 @@ export default function FormularioPerfil() {
         type="button"
         onClick={pular}
         disabled={pendente}
-        className="self-center text-label font-semibold text-txt-3 underline underline-offset-2 disabled:opacity-50"
+        // APR-125 (G-35): 48 px de alvo — era só o texto (16–18 px de altura).
+        className="inline-flex min-h-12 items-center self-center px-3 text-label font-semibold text-txt-3 underline underline-offset-2 disabled:opacity-50"
       >
         Pular tudo e ir pro painel
       </button>

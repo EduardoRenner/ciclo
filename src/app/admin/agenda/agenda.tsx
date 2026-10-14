@@ -217,8 +217,9 @@ function FaixaDaSemana({ semana, dia, hoje, hrefDoDia }: { semana: string[]; dia
   const [carregando, iniciar] = useTransition()
   const naTela = tocado && tocado.em === dia ? tocado.d : dia
 
+  // APR-125 (A-11): 7 dias de 48 px no mínimo; a 360 px não cabem (328 úteis) e a faixa desliza, em vez de espremer para 43 px.
   return (
-    <div role="group" aria-label="Dias da semana" data-carregando={carregando || undefined} className="mb-4 flex justify-between gap-1">
+    <div role="group" aria-label="Dias da semana" data-carregando={carregando || undefined} className="mb-4 flex snap-x gap-0.5 overflow-x-auto">
       {semana.map((d) => {
         const data = paraData(d)
         const selecionado = d === naTela
@@ -232,7 +233,7 @@ function FaixaDaSemana({ semana, dia, hoje, hrefDoDia }: { semana: string[]; dia
             }}
             aria-current={selecionado ? 'date' : undefined}
             className={cn(
-              'flex h-16 flex-1 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)]',
+              'flex h-16 min-w-12 flex-1 shrink-0 snap-start flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)]',
               'text-label font-semibold transition duration-[var(--dur-1)] ease-[var(--ease-ios)] active:scale-[.95]',
               selecionado ? 'bg-acc text-on-acc shadow-elevado' : 'bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt',
             )}

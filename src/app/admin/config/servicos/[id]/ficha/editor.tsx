@@ -170,7 +170,7 @@ export default function EditorDaFicha({
       ) : null}
 
       {previsao.produtosSemCusto > 0 ? (
-        <AlertBanner tom="warn" acao={<Link href="/admin/estoque">Registrar compra</Link>}>
+        <AlertBanner tom="warn" acao={<Link href="/admin/estoque" className="inline-flex min-h-12 items-center">Registrar compra</Link>}>
           <p className="text-secundario">
             {previsao.produtosSemCusto === 1
               ? '1 produto da ficha não tem custo registrado, então ele entra como zero nesta conta.'
