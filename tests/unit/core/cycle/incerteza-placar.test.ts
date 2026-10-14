@@ -47,9 +47,9 @@ describe('placar da faixa de incerteza (C-008)', () => {
     expect(linhas).toHaveLength(5)
   })
 
-  it('a faixa própria fica perto da cobertura alvo (75–95%) em TODOS os cenários com ritmo provado; a fixa vai de 44% a 100%', () => {
+  it('a faixa própria fica perto da cobertura alvo (77–95%, o mínimo medido no C-008) em TODOS os cenários com ritmo provado; a fixa vai de 44% a 100%', () => {
     for (const l of linhas) {
-      expect(l['própria: cobertura %'], l.cenario).toBeGreaterThanOrEqual(75)
+      expect(l['própria: cobertura %'], l.cenario).toBeGreaterThanOrEqual(77)
       expect(l['própria: cobertura %'], l.cenario).toBeLessThanOrEqual(95)
     }
   })

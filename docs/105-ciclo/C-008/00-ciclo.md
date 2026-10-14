@@ -27,7 +27,7 @@ no "padrão errado" nenhuma folga ajuda (48%), porque o erro é do padrão, não
 **F5 · Medida:** cobertura passa de 44–100% (fixa) para 77–90% (própria). O cliente regular ganha
 folga de 3 dias em vez de 7: o lembrete pode sair 4 dias antes. O errático, de 44% para 78%: metade
 dos "atrasos" que eram só o ritmo dele deixam de parecer atraso. Custo honesto: na deriva a cobertura
-cai de 92% para 80% (a fixa é larga demais ali por sorte). Guarda: cobertura 75–95% em todo cenário e
+cai de 92% para 80% (a fixa é larga demais ali por sorte). Guarda: cobertura 77–95% (sem a inflação √(1 + 1/n) cai para 75%: a mutação reprova) em todo cenário e
 folga do regular ≤ 3 d (`tests/unit/core/cycle/incerteza-placar.test.ts`). Arnês: os cenários saíram
 do arquivo de teste para `tests/unit/core/cycle/cenarios.ts` (importar um `.test.ts` registrava os
 testes dele de novo).
