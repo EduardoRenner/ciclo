@@ -27,8 +27,9 @@ import { useToast } from '@/components/ui/toast'
 
 
 
-import FormularioProfissional, { type ProfissionalEditavel } from './formulario'
+import FormularioProfissional, { type ProfissionalEditavel } from './formulario'
 import { useFuso } from '@/components/shell/fuso'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 
 
@@ -68,11 +69,11 @@ const ID_LINK_CONVITE = 'link-do-convite'
 
 async function postar(url: string, corpo: unknown) {
 
-  const r = await fetch(url, {
+  const r = await fetchComTentativa(url, {
 
     method: 'POST',
 
-    headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+    headers: { 'content-type': 'application/json' },
 
     body: JSON.stringify(corpo),
 
@@ -173,13 +174,11 @@ export default function ListaProfissionais({
 
       try {
 
-        const r = await fetch(`/api/v1/professionals/${id}`, {
+        const r = await fetchComTentativa(`/api/v1/professionals/${id}`, {
 
           method: 'DELETE',
 
-          headers: { 'idempotency-key': crypto.randomUUID() },
-
-        })
+          })
 
         // A atualização otimista já marcou `active: false` na tela antes desta resposta chegar.
         // Sem checar `r.ok`, um 401/403/500 (que não lança, só o erro de rede lança) deixava a

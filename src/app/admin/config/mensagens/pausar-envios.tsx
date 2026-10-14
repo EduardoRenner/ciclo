@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import Card from '@/components/ui/card'
 import { textoDoEnvioAutomatico } from '@/core/messaging/promessa'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 /**
  * F0 (`docs/25-ESTRATEGIA-E-EXECUCAO.md`): interruptor manual por tenant. O teto diário
@@ -25,9 +26,9 @@ export default function PausarEnvios({ inicial }: { inicial: boolean }) {
     setPausado(novoValor)
 
     try {
-      const r = await fetch('/api/v1/tenant', {
+      const r = await fetchComTentativa('/api/v1/tenant', {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ messaging: { paused: novoValor } }),
       })
       if (!r.ok) {

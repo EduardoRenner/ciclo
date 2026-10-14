@@ -47,6 +47,7 @@ import Fotos from './fotos'
 import Notas from './notas'
 import PacotesCarteira from './pacotes-carteira'
 import Saude from './saude'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Modelo = { id: string; slug: string; title: string; body: string }
 
@@ -182,10 +183,10 @@ export default function Ficha({
   */
   async function anotarChamadaDeVolta() {
     try {
-      const r = await fetch('/api/v1/cycle/recover/manual', {
+      const r = await fetchComTentativa('/api/v1/cycle/recover/manual', {
         method: 'POST',
         keepalive: true,
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ clientId: cliente.id }),
       })
       if (!r.ok) throw new Error(String(r.status))
@@ -275,7 +276,7 @@ export default function Ficha({
         : null,
       link: linkIndicacao,
     }),
-    [cliente.name, proximo, ultimoServico, nomeDoNegocio, metricas.ticketMedioCents, linkIndicacao],
+    [cliente.name, proximo, ultimoServico, nomeDoNegocio, metricas.ticketMedioCents, linkIndicacao, timezone],
   )
 
   /**
@@ -303,9 +304,9 @@ export default function Ficha({
   async function voltarAChamar() {
     setVoltandoAChamar(true)
     try {
-      const r = await fetch(`/api/v1/clients/${cliente.id}`, {
+      const r = await fetchComTentativa(`/api/v1/clients/${cliente.id}`, {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ whatsappOptOut: false }),
       })
       if (!r.ok) throw new Error(String(r.status))
@@ -322,9 +323,9 @@ export default function Ficha({
     setErro(null)
     iniciarSalvamento(async () => {
       try {
-        const r = await fetch(`/api/v1/clients/${cliente.id}`, {
+        const r = await fetchComTentativa(`/api/v1/clients/${cliente.id}`, {
           method: 'PATCH',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             name: nome,
             phone: telefone.trim() || null,

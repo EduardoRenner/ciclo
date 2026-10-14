@@ -13,6 +13,7 @@ import Select from '@/components/ui/select'
 import Sheet from '@/components/ui/sheet'
 import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 export type ServicoEditavel = {
   id: string
@@ -118,9 +119,9 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
     iniciarTransicao(async () => {
       try {
         const url = editando ? `/api/v1/services/${servico.id}` : '/api/v1/services'
-        const r = await fetch(url, {
+        const r = await fetchComTentativa(url, {
           method: editando ? 'PATCH' : 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(corpo),
         })
         const json = (await r.json()) as { data?: ServicoEditavel; error?: { message: string; details?: { fields?: Record<string, string> } } }

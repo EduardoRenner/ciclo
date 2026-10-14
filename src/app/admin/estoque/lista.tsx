@@ -15,6 +15,7 @@ import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
 import { dinheiro } from '@/lib/formato'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 export type ProdutoEstoque = {
   id: string
@@ -296,9 +297,9 @@ function FormularioEntrada({
 
     iniciarSalvamento(async () => {
       try {
-        const r = await fetch('/api/v1/inventory/entries', {
+        const r = await fetchComTentativa('/api/v1/inventory/entries', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             productId: produto.id,
             qty: valor,
@@ -450,9 +451,9 @@ function FormularioProduto({
     iniciarSalvamento(async () => {
       try {
         const url = editando ? `/api/v1/products/${produto.id}` : '/api/v1/products'
-        const r = await fetch(url, {
+        const r = await fetchComTentativa(url, {
           method: editando ? 'PATCH' : 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             name: nome.trim(),
             unit: unidade.trim() || 'un',

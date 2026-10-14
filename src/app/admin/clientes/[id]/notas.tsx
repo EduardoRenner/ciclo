@@ -7,8 +7,9 @@ import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import SectionHeader from '@/components/ui/section-header'
 
-import type { NotaDoCliente } from '@/server/services/notas'
+import type { NotaDoCliente } from '@/server/services/notas'
 import { useFuso } from '@/components/shell/fuso'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 // APR-202 (C-51): no fuso do negócio, não no do aparelho.
 function dataHora(iso: string, fuso: string): string {
@@ -36,9 +37,9 @@ export default function Notas({ clientId, iniciais }: { clientId: string; inicia
     }
     iniciarTransicao(async () => {
       try {
-        const r = await fetch(`/api/v1/clients/${clientId}/notes`, {
+        const r = await fetchComTentativa(`/api/v1/clients/${clientId}/notes`, {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ body: texto.trim() }),
         })
         const json = (await r.json()) as { data?: { id: string; created_at: string }; error?: { message: string } }

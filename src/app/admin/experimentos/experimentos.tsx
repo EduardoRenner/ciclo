@@ -14,6 +14,7 @@ import Select from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast'
 import type { Metrica } from '@/core/experimentos/experimento'
 import type { Experimento } from '@/server/services/experimentos'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 const DIAS_DA_SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'] as const
 const DURACOES = [7, 14, 21, 28] as const
@@ -50,9 +51,9 @@ export default function Experimentos({ inicial, podeCriar, hoje }: { inicial: Ex
     setErroGeral(null)
     iniciarTransicao(async () => {
       try {
-        const r = await fetch('/api/v1/experiments', {
+        const r = await fetchComTentativa('/api/v1/experiments', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ titulo, metrica, weekday: weekday === '' ? null : Number(weekday), startsOn, dias }),
         })
         if (!r.ok) {
@@ -76,7 +77,7 @@ export default function Experimentos({ inicial, podeCriar, hoje }: { inicial: Ex
     setCancelando(id)
     iniciarTransicao(async () => {
       try {
-        const r = await fetch(`/api/v1/experiments/${id}/cancel`, { method: 'POST', headers: { 'idempotency-key': crypto.randomUUID() } })
+        const r = await fetchComTentativa(`/api/v1/experiments/${id}/cancel`, { method: 'POST' })
         if (!r.ok) {
           const json = (await r.json().catch(() => null)) as ErroDaApi | null
           mostrarToast({ tom: 'erro', titulo: 'Não consegui cancelar', descricao: json?.error?.message ?? 'Tente de novo em instantes.' })

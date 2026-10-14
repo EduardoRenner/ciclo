@@ -13,6 +13,7 @@ import { useToast } from '@/components/ui/toast'
 import { lerListaDeNomes, MAX_DA_LISTA, pessoasDosContatos, type ContatoDoCelular, type PessoaDaLista } from '@/core/ciclo/lista-de-nomes'
 import { primeiraVolta } from '@/core/ciclo/primeira-volta'
 import { QUANDO_FOI, type QuandoFoi } from '@/core/ciclo/quando-foi-a-ultima-vez'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 export type ServicoComRitmo = { id: string; nome: string; cycleDays: number }
 
@@ -130,9 +131,9 @@ export default function FormularioQuemJaAtendo({ servicos, servicoPadrao, temCli
 
     iniciarTransicao(async () => {
       try {
-        const r = await fetch('/api/v1/clients/ja-atendo', {
+        const r = await fetchComTentativa('/api/v1/clients/ja-atendo', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             serviceId,
             pessoas: preenchidas.map((p) => ({ nome: p.nome.trim(), telefone: p.telefone.trim() || undefined, quando: p.quando })),

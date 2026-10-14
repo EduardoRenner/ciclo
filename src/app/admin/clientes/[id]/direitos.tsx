@@ -10,6 +10,7 @@ import Card from '@/components/ui/card'
 import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 /**
  * `GET /clients/:id/data-export` e `POST /clients/:id/erase` existem desde o
@@ -84,10 +85,9 @@ export default function DireitosDaCliente({
     setPrecisaMfa(false)
     iniciar(async () => {
       try {
-        const r = await fetch(`/api/v1/clients/${clientId}/erase`, {
+        const r = await fetchComTentativa(`/api/v1/clients/${clientId}/erase`, {
           method: 'POST',
-          headers: { 'idempotency-key': crypto.randomUUID() },
-        })
+          })
         const json = (await r.json()) as { data?: unknown; error?: { code?: string; message?: string } }
         if (!r.ok) {
           setConfirmando(false)

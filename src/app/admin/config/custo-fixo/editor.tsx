@@ -7,6 +7,7 @@ import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { custoPorHoraDaCadeira, type CustoFixoDoTenant } from '@/core/comanda/custo-fixo'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -54,9 +55,9 @@ export default function EditorCustoFixo({ inicial, respondido }: { inicial: Cust
     setErro(null)
     iniciarTransicao(async () => {
       try {
-        const r = await fetch('/api/v1/tenant/fixed-cost', {
+        const r = await fetchComTentativa('/api/v1/tenant/fixed-cost', {
           method: 'PATCH',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ mensalCents: previa.mensalCents, horasPorMes: previa.horasPorMes, cadeiras: previa.cadeiras }),
         })
         const json = (await r.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }

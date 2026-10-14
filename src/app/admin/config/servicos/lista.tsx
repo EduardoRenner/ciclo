@@ -17,6 +17,7 @@ import { formatarPreco, type ModeloDePreco } from '@/core/pricing/formatar'
 import { duracao } from '@/lib/formato'
 
 import FormularioServico, { type ServicoEditavel } from './formulario'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Servico = ServicoEditavel & {
   deposit_bps: number
@@ -65,9 +66,9 @@ export default function ListaServicos({
 
     iniciarSalvamento(async () => {
       try {
-        const r = await fetch('/api/v1/services/reorder', {
+        const r = await fetchComTentativa('/api/v1/services/reorder', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ ids: nova.map((s) => s.id) }),
         })
         if (!r.ok) {

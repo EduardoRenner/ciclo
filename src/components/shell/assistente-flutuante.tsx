@@ -11,6 +11,7 @@ import { acaoTemVolta, linkDaChamada, rotaDaAcao, textoDeFeito } from '@/core/as
 import { linhasDoResumo } from '@/core/assistente/resumo'
 import { duracao } from '@/lib/formato'
 import { cn } from '@/lib/utils'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Sugestao = {
   rotulo: string
@@ -282,7 +283,7 @@ function renderInline(texto: string): React.ReactNode {
  * arbitrário para desenhar, complexidade que este produto não precisa.
  */
 function renderMarkdownLeve(texto: string): React.ReactNode {
-  const blocos = texto.split(/\n{2,}/)
+  const blocos = texto.split(/\n{2}/)
 
   return blocos.map((bloco, i) => {
     const linhas = bloco.split('\n').filter((l) => l.trim().length > 0)
@@ -566,9 +567,9 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
     setTurnos((a) => a.map((t, i) => (i === indice ? { ...t, estadoDaProposta: 'executando' } : t)))
 
     try {
-      const r = await fetch(rota, {
+      const r = await fetchComTentativa(rota, {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify(proposta.dados),
       })
       if (!r.ok) {

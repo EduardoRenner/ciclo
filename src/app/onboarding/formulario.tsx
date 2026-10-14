@@ -8,6 +8,7 @@ import Input from '@/components/ui/input'
 import { SLUG_PROFISSAO_GENERICA } from '@/core/profissoes'
 import { semAcento } from '@/core/text/normalizar'
 import { APP_HOST } from '@/lib/app-url'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 export type Profissao = { id: string; slug: string; nome: string; grupo: string; sinonimos: string[] }
 
@@ -68,9 +69,9 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
     setPendente(true)
     setErro(null)
     try {
-      const resposta = await fetch('/api/v1/onboarding', {
+      const resposta = await fetchComTentativa('/api/v1/onboarding', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           businessName: nome,
           professionId,

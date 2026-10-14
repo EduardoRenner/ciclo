@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 /**
  * "Cancelar assinatura" — um clique, sem modal de confirmação: `docs/18` Fase K manda paridade
@@ -19,9 +20,9 @@ export default function CancelarAssinatura() {
     setPendente(true)
     setErro(null)
     try {
-      const resposta = await fetch('/api/v1/billing/cancelar', {
+      const resposta = await fetchComTentativa('/api/v1/billing/cancelar', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
       })
       const corpo = (await resposta.json().catch(() => null)) as { error?: { message?: string } } | null
       if (!resposta.ok) {

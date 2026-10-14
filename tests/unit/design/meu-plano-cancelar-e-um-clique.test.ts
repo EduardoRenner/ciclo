@@ -27,7 +27,8 @@ describe('meu-plano: cancelar custa o mesmo clique que assinar', () => {
   })
 
   it('o botão chama a rota de cancelar de verdade, num único onClick', () => {
-    expect(botao).toMatch(/fetch\(\s*['"]\/api\/v1\/billing\/cancelar['"]/)
+    // APR-224: a chamada passa por `fetchComTentativa`, que gera e segura a Idempotency-Key pela tentativa.
+    expect(botao).toMatch(/fetchComTentativa\(\s*['"]\/api\/v1\/billing\/cancelar['"]/)
     expect(botao).toMatch(/onClick=\{cancelar\}/)
   })
 
@@ -37,7 +38,7 @@ describe('meu-plano: cancelar custa o mesmo clique que assinar', () => {
 
   it('o checkout de cancelar não usa useTransition e manda idempotency-key', () => {
     expect(botao, 'useTransition + await solto derruba a tela no React 19 (armadilha do CLAUDE.md)').not.toMatch(/useTransition/)
-    expect(botao).toMatch(/['"]idempotency-key['"]/i)
+    expect(botao).toMatch(/await fetchComTentativa\(/)
   })
 
   it('o detector reconhece o defeito que ele impede', () => {

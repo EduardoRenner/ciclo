@@ -16,6 +16,7 @@ import {
   type SistemaAnterior,
   type Tamanho,
 } from '@/core/onboarding/perfil'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 const ROTULO_BASE_EM: Record<BaseEm, string> = {
   cabeca_caderno: 'Na minha cabeça ou num caderno',
@@ -75,9 +76,9 @@ export default function FormularioPerfil() {
   async function enviar(corpo: Corpo, destino: string) {
     setPendente(true)
     try {
-      await fetch('/api/v1/onboarding/perfil', {
+      await fetchComTentativa('/api/v1/onboarding/perfil', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify(corpo),
       })
     } catch {

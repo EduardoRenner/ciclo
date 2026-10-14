@@ -7,6 +7,7 @@ import Card from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 
 import type { ConfigFidelidade } from '@/server/services/fidelidade'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 /**
  * O que transforma fidelidade de "botão que a profissional lembra de apertar" em automação:
@@ -34,9 +35,9 @@ export default function EditorFidelidade({
     setErro(null)
     iniciarTransicao(async () => {
       try {
-        const r = await fetch('/api/v1/tenant/loyalty-config', {
+        const r = await fetchComTentativa('/api/v1/tenant/loyalty-config', {
           method: 'PATCH',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             pointsPerReal: Number(pointsPerReal) || 0,
             referralBonusPoints: Number(referralBonusPoints) || 0,

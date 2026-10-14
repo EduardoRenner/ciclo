@@ -15,44 +15,7 @@ import { describe, expect, it } from 'vitest'
  * base não virar crédito para regressão futura.
  */
 const LINHA_DE_BASE: Record<string, number> = {
-  'src/app/(auth)/verificar/formulario.tsx': 1,
-  'src/app/(public)/[slug]/orcamento/pedido.tsx': 1,
-  'src/app/admin/campanhas/nova/nova.tsx': 1,
-  'src/app/admin/clientes/[id]/direitos.tsx': 1,
-  'src/app/admin/clientes/[id]/ficha.tsx': 3,
-  'src/app/admin/clientes/[id]/fotos.tsx': 6,
-  'src/app/admin/clientes/[id]/notas.tsx': 1,
-  'src/app/admin/clientes/ja-atendo/formulario.tsx': 1,
-  'src/app/admin/config/automacoes/automacoes.tsx': 1,
-  'src/app/admin/config/custo-fixo/editor.tsx': 1,
-  'src/app/admin/config/excluir-conta/formulario.tsx': 1,
-  'src/app/admin/config/mensagens/editor.tsx': 2,
-  'src/app/admin/config/mensagens/pausar-envios.tsx': 1,
-  'src/app/admin/config/meu-plano/assinar-plano.tsx': 1,
-  'src/app/admin/config/meu-plano/cancelar-assinatura.tsx': 1,
-  'src/app/admin/config/modulos/modulos.tsx': 1,
-  'src/app/admin/config/negocio/formulario.tsx': 1,
-  'src/app/admin/config/notificacoes/ativar.tsx': 2,
-  'src/app/admin/config/planos/editor.tsx': 1,
-  'src/app/admin/config/planos/fidelidade-config.tsx': 1,
-  'src/app/admin/config/profissionais/formulario.tsx': 1,
-  'src/app/admin/config/profissionais/lista.tsx': 2,
-  'src/app/admin/config/seguranca/formulario.tsx': 3,
-  'src/app/admin/config/servicos/[id]/ficha/editor.tsx': 1,
-  'src/app/admin/config/servicos/[id]/ficha/sugestao.tsx': 1,
-  'src/app/admin/config/servicos/formulario.tsx': 1,
-  'src/app/admin/config/servicos/lista.tsx': 1,
-  'src/app/admin/config/taxas/editor.tsx': 1,
-  'src/app/admin/estoque/lista.tsx': 2,
-  'src/app/admin/experimentos/experimentos.tsx': 2,
-  'src/app/admin/orcamentos/novo/formulario.tsx': 1,
-  'src/app/admin/recuperar/recuperar.tsx': 2,
-  'src/app/admin/series/lista.tsx': 1,
-  'src/app/onboarding/formulario.tsx': 1,
-  'src/app/onboarding/perfil/formulario.tsx': 1,
-  'src/components/config/editor-expediente.tsx': 3,
-  'src/components/shell/assistente-flutuante.tsx': 1,
-  'src/lib/advocacia/escrever.ts': 1,
+  // APR-224 (14/10): zerada. Os 38 arquivos migraram para `fetchComTentativa`. Arquivo novo com chave na chamada reprova.
 }
 
 /** A chave criada no próprio header — não casa com `chave: crypto.randomUUID()` guardada num ref. */
@@ -84,9 +47,11 @@ describe('chave de idempotência por tentativa (APR-007)', () => {
     expect(contar(`tentativa.current = { corpo, chave: crypto.randomUUID() }`)).toBe(0)
   })
 
-  it('a varredura enxerga a linha de base (não passa vazia)', () => {
-    const total = [...ocorrencias.values()].reduce((a, b) => a + b, 0)
-    expect(total).toBeGreaterThan(0)
+  it('a varredura leu os arquivos — com a linha de base em zero, o piso é o número de arquivos lidos', () => {
+    // APR-224: a linha de base zerou, então "ocorrências > 0" deixou de ser o positivo. O positivo
+    // conhecido é o controle acima (o detector casa com a chave na chamada) mais a varredura ter lido
+    // de fato o `src/` — uma varredura vazia passaria por "zero chave" sem olhar nada.
+    expect(arquivos(join(RAIZ, 'src')).length).toBeGreaterThan(300)
   })
 
   it('nenhum arquivo novo nem contagem maior que a linha de base', () => {

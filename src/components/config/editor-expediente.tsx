@@ -8,6 +8,7 @@ import Card from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { useFuso } from '@/components/shell/fuso'
 import { paraInstante, paraLocal } from '@/core/agenda/instante-local'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Bloco = { weekday: number; opens_at: string; closes_at: string }
 type Folga = { id: string; starts_at: string; ends_at: string; reason: string | null }
@@ -63,9 +64,9 @@ export default function EditorExpediente({
     const meu = ++pedido.current
     iniciarTransicao(async () => {
       try {
-        const r = await fetch(`/api/v1/professionals/${segmentoUrl}/business-hours`, {
+        const r = await fetchComTentativa(`/api/v1/professionals/${segmentoUrl}/business-hours`, {
           method: 'PUT',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             professionalId,
             blocos: novos.map((b) => ({ weekday: b.weekday, opensAt: b.opens_at.slice(0, 5), closesAt: b.closes_at.slice(0, 5) })),
@@ -134,9 +135,9 @@ export default function EditorExpediente({
       // Sem este try, uma piscada de rede re-lançava a Action para o error boundary (React 19):
       // a tela de Horários sumia e levava as datas e o motivo digitados (APR-002, achado C-05).
       try {
-        const r = await fetch('/api/v1/time-off', {
+        const r = await fetchComTentativa('/api/v1/time-off', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ professionalId, startsAt: paraInstante(inicio, fuso), endsAt: paraInstante(fim, fuso), reason: motivo }),
         })
         const json = (await r.json().catch(() => ({}))) as { data?: Folga; error?: { message: string } }
@@ -159,7 +160,7 @@ export default function EditorExpediente({
     setFolgas((atual) => atual.filter((f) => f.id !== id))
     iniciarTransicao(async () => {
       try {
-        const r = await fetch(`/api/v1/time-off/${id}`, { method: 'DELETE', headers: { 'idempotency-key': crypto.randomUUID() } })
+        const r = await fetchComTentativa(`/api/v1/time-off/${id}`, { method: 'DELETE' })
         // Sem isto, a folga sumia da tela otimisticamente e ficava assim pra sempre mesmo se o
         // servidor recusasse — sem try/catch nenhum antes, nem falha de rede revertia. A folga
         // continuava bloqueando horário no banco enquanto a tela mostrava agenda livre.

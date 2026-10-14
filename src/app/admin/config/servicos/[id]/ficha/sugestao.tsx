@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/toast'
 import { dinheiro } from '@/lib/formato'
 import { ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type ProdutoDeRevenda = { id: string; name: string; price_cents: number; stock_qty: number }
 
@@ -40,9 +41,9 @@ export default function SugestaoDeProduto({
     setSelecionado(valor)
     iniciarTransicao(async () => {
       try {
-        const r = await fetch(`/api/v1/services/${serviceId}`, {
+        const r = await fetchComTentativa(`/api/v1/services/${serviceId}`, {
           method: 'PATCH',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ suggestedProductId: valor || null }),
         })
         const json = (await r.json()) as { error?: { message: string } }

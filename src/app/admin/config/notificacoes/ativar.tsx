@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Skeleton from '@/components/ui/skeleton'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 /** `applicationServerKey` do `PushManager.subscribe` exige `Uint8Array`, não a string base64url que o VAPID usa. */
 function base64UrlParaUint8Array(base64Url: string): Uint8Array {
@@ -60,9 +61,9 @@ export default function AtivarPush() {
         applicationServerKey: base64UrlParaUint8Array(chavePublica) as BufferSource,
       })
 
-      const resposta = await fetch('/api/v1/push/subscriptions', {
+      const resposta = await fetchComTentativa('/api/v1/push/subscriptions', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify(inscricao.toJSON()),
       })
       if (!resposta.ok) throw new Error('Não conseguimos salvar a inscrição no servidor.')
@@ -88,9 +89,9 @@ export default function AtivarPush() {
         // ouvir "desativado" na tela. `unsubscribe()` só roda DEPOIS de confirmar que o servidor
         // apagou de verdade — senão o navegador cancela e o registro salvo fica orfão sem ninguém
         // saber, e a próxima tentativa de reativar cria uma segunda inscrição.
-        const resposta = await fetch('/api/v1/push/subscriptions', {
+        const resposta = await fetchComTentativa('/api/v1/push/subscriptions', {
           method: 'DELETE',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ endpoint: inscricao.endpoint }),
         })
         if (!resposta.ok) throw new Error('Não conseguimos desativar no servidor. Tente de novo.')

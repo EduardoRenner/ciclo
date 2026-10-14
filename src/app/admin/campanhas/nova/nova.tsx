@@ -14,6 +14,7 @@ import { dinheiro } from '@/lib/formato'
 import { aplicarVariaveis, linkWhatsApp, precisaDeAgendamento } from '@/lib/mensagens'
 
 import type { AlvoCampanha } from '@/server/services/crm'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Segmento = { valor: string; rotulo: string; descricao: string }
 type Modelo = { id: string; title: string; body: string }
@@ -50,9 +51,9 @@ export default function NovaCampanha({
     if (!segmento || !modelo) return
     iniciarRegistro(async () => {
       try {
-        const r = await fetch('/api/v1/campaigns', {
+        const r = await fetchComTentativa('/api/v1/campaigns', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             name: `${modelo.title} · ${segmento.rotulo}`,
             segment: segmento.valor,

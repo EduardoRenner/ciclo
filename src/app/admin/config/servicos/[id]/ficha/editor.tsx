@@ -13,6 +13,7 @@ import { custoDoServico } from '@/core/comanda/custo-do-servico'
 import { dinheiro } from '@/lib/formato'
 
 import type { ItemDaFicha } from '@/server/services/ficha-de-consumo'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Produto = { id: string; name: string; unit: string; avg_cost_cents: number }
 type Linha = { productId: string; qty: string }
@@ -64,9 +65,9 @@ export default function EditorDaFicha({
           .map((l) => ({ productId: l.productId, qty: Number(l.qty.replace(',', '.')) }))
           .filter((i) => Number.isFinite(i.qty) && i.qty > 0)
 
-        const r = await fetch(`/api/v1/services/${serviceId}/consumption`, {
+        const r = await fetchComTentativa(`/api/v1/services/${serviceId}/consumption`, {
           method: 'PUT',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ itens }),
         })
         const json = (await r.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }

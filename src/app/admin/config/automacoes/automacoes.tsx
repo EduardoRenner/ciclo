@@ -15,6 +15,7 @@ import {
 } from '@/core/automacoes/catalogo'
 import type { ConfigAutomacoes } from '@/core/automacoes/config'
 import { cn } from '@/lib/utils'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 /**
  * O dial do `docs/33 §3.1`, na tela. Três decisões do plano que o componente faz valer:
@@ -42,9 +43,9 @@ export default function Automacoes({ automacoes, config }: { automacoes: Automac
     setSalvando(a.chave)
 
     try {
-      const r = await fetch('/api/v1/tenant/automacoes', {
+      const r = await fetchComTentativa('/api/v1/tenant/automacoes', {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ chave: a.chave, nivel }),
       })
       if (!r.ok) {

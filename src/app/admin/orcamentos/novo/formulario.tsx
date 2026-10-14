@@ -17,6 +17,7 @@ import Textarea from '@/components/ui/textarea'
 import { dinheiro, formatarTelefone } from '@/lib/formato'
 import { linkWhatsApp, linkWhatsAppCompartilhar } from '@/lib/mensagens'
 import { telefoneParaE164 } from '@/core/text/telefone'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Profissional = { id: string; display_name: string }
 type Item = { description: string; qty: string; unitPriceCents: number }
@@ -100,9 +101,9 @@ export default function FormularioOrcamento({
 
     iniciarTransicao(async () => {
       try {
-        const r = await fetch('/api/v1/quotes', {
+        const r = await fetchComTentativa('/api/v1/quotes', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(corpo),
         })
         const json = (await r.json()) as { data?: { url: string; total_cents: number }; error?: { message: string } }

@@ -29,6 +29,7 @@ import { vazioDeRecuperar } from '@/core/ciclo/vazio-de-recuperar'
 import type { ItemRecuperar, ListaRecuperar } from '@/server/services/recuperar-receita'
 
 import FilaDeChamadas from './fila'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Estado = 'due' | 'late' | 'at_risk' | 'lost'
 
@@ -124,9 +125,9 @@ export default function RecuperarReceita({
   */
   async function pararDeChamar(item: ItemRecuperar): Promise<boolean> {
     try {
-      const r = await fetch(`/api/v1/clients/${item.clientId}`, {
+      const r = await fetchComTentativa(`/api/v1/clients/${item.clientId}`, {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ whatsappOptOut: true }),
       })
       if (!r.ok) throw new Error(String(r.status))
@@ -141,10 +142,10 @@ export default function RecuperarReceita({
 
   async function anotarChamada(item: ItemRecuperar) {
     try {
-      const r = await fetch('/api/v1/cycle/recover/manual', {
+      const r = await fetchComTentativa('/api/v1/cycle/recover/manual', {
         method: 'POST',
         keepalive: true,
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ clientId: item.clientId, serviceId: item.serviceId }),
       })
       if (!r.ok) throw new Error(String(r.status))

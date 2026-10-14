@@ -13,8 +13,23 @@
  */
 const tentativas = new Map<string, string>()
 
+/**
+ * APR-224: com os uploads (`FormData`) também passando por aqui, dois envios de fotos DIFERENTES para
+ * a mesma URL, um atrás do outro, não podem dividir a chave — o servidor devolveria a primeira foto
+ * como resposta da segunda. A identidade do multipart é o nome e o tamanho de cada arquivo.
+ */
+export function identidadeDaTentativa(url: string, init: RequestInit): string {
+  const corpo =
+    typeof init.body === 'string'
+      ? init.body
+      : typeof FormData !== 'undefined' && init.body instanceof FormData
+        ? [...init.body.entries()].map(([k, v]) => (typeof v === 'string' ? `${k}=${v}` : `${k}=${v.name}:${v.size}`)).join('&')
+        : ''
+  return `${(init.method ?? 'GET').toUpperCase()} ${url}\n${corpo}`
+}
+
 function identidade(url: string, init: RequestInit): string {
-  return `${(init.method ?? 'GET').toUpperCase()} ${url}\n${typeof init.body === 'string' ? init.body : ''}`
+  return identidadeDaTentativa(url, init)
 }
 
 /** Erro que pede nova tentativa com a MESMA chave: a escrita pode ou não ter acontecido. */

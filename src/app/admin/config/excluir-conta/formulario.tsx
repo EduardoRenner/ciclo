@@ -13,6 +13,7 @@ import { ASSUNTO_TRANSFERIR_TITULARIDADE, canalDeContato } from '@/lib/contato'
 import { drenarFilaPendente } from '@/lib/offline/api-client'
 import { apagarBancoOffline, listarMutacoes } from '@/lib/offline/db'
 import { avisoAntesDeSair, type AvisoDeSaida, type LeituraDaFila } from '@/core/offline/aviso-de-saida'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Vinculo = { tenantId: string; role: string }
 type Situacao = { vinculos: Vinculo[]; bloqueios: string[] }
@@ -57,7 +58,7 @@ export default function FormularioExcluirConta() {
           await drenarFilaPendente().catch(() => undefined)
         }
 
-        const r = await fetch('/api/v1/account', { method: 'DELETE', headers: { 'idempotency-key': crypto.randomUUID() } })
+        const r = await fetchComTentativa('/api/v1/account', { method: 'DELETE' })
         const json = (await r.json()) as { data?: unknown; error?: { code?: string; message?: string } }
         if (!r.ok) {
           setConfirmando(false)

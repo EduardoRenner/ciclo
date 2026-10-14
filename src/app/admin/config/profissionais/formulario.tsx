@@ -7,6 +7,7 @@ import UploadDeFoto from '@/components/config/upload-de-foto'
 import Button from '@/components/ui/button'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 export type ProfissionalEditavel = {
   id: string
@@ -69,9 +70,9 @@ export default function FormularioProfissional({ aberto, aoFechar, profissional,
     iniciarTransicao(async () => {
       try {
         const url = editando ? `/api/v1/professionals/${profissional.id}` : '/api/v1/professionals'
-        const r = await fetch(url, {
+        const r = await fetchComTentativa(url, {
           method: editando ? 'PATCH' : 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(corpo),
         })
         const json = (await r.json()) as {
