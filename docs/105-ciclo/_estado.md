@@ -11,4 +11,4 @@ Primeira coisa a ler depois de um resumo de contexto. O laço e as regras estão
 
 ## Ciclos
 
-- C-001 · (a F1 do próximo turno escreve) · — · — · —
+- C-001 · Dar régua ao Motor (backtest com origem móvel) + Motor v2 · "padrão errado": erro mediano 44 d → 5 d, acerto ±7 0% → 66%; outros 4 cenários iguais · 7/8/8 · próximo: C-002 = relógio múltiplo (tempo + km) com o carro como caso de teste; seed e integração do C-001 quando o Docker voltar
