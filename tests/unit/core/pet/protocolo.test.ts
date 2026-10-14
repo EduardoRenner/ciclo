@@ -62,9 +62,9 @@ describe('protocolo do pet (C-010)', () => {
 })
 
 describe('aproveitar o banho (C-010)', () => {
-  it('item entra no último banho até 7 dias antes de vencer; nunca depois', () => {
+  it('item entra no ÚLTIMO banho até 7 dias antes de vencer (o que menos adianta); nunca depois', () => {
     const r = aproveitarOBanho(
-      [d('2026-10-01'), d('2026-10-08'), d('2026-10-15')],
+      [d('2026-10-01'), d('2026-10-06'), d('2026-10-08'), d('2026-10-15')],
       [
         { item: 'vermifugo', venceEm: d('2026-10-12') },
         { item: 'antipulgas', venceEm: d('2026-10-07') },
@@ -73,7 +73,7 @@ describe('aproveitar o banho (C-010)', () => {
     )
     expect(r.noBanho.map((x) => [x.item, x.banho.toString()])).toEqual([
       ['vermifugo', '2026-10-08'],
-      ['antipulgas', '2026-10-01'],
+      ['antipulgas', '2026-10-06'],
     ])
     expect(r.aParte.map((x) => x.item)).toEqual(['antirrabica'])
   })
