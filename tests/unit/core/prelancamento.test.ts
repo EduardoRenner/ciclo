@@ -326,3 +326,10 @@ describe('ofertaDoCadastro: o que a página pública diz antes de a conta existi
     }
   })
 })
+
+describe('o dia em que o plano acaba é o de Brasília (APR-215)', () => {
+  it('às 22:30 de Brasília ainda é dia 17, mesmo que em UTC já seja 18', () => {
+    expect(diaDeBrasilia(new Date('2026-10-18T01:30:00Z'))).toBe('2026-10-17')
+    expect(descreverDia(diaDeBrasilia(new Date('2026-10-18T01:30:00Z')))).toContain('17')
+  })
+})
