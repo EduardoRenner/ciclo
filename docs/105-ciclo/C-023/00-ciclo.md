@@ -29,3 +29,8 @@ Unidade 4.267.
 **Nota:** cliente 8 · segredo 9 · engenharia 9. **Próximo (C-024):** passo 4 (a fila e a ficha mostram o
 sujeito: "Mel, da Ana, sumiu") + prova no navegador a 390 px; e a suíte de integração que nunca passa
 de uma vez (ciclo próprio de dano vivo).
+
+**Suítes inteiras:** RLS 357 de 357. Integração 625 de 627 (1 pulado): a única falha é
+`job-queue` "1.000 jobs sem duplicar com vários workers", a mesma da rodada do C-022 e isolada verde; não
+toca ciclo. Mutações: o job ignorando o sujeito volta a 1 ciclo ("esperado 2, veio 1"); a leitura de uma
+linha só no envio dá erro interno ao chamar o tutor de 2 animais.
