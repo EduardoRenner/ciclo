@@ -62,6 +62,10 @@ export default function Automacoes({ automacoes, config }: { automacoes: Automac
 
   return (
     <div className="flex flex-col gap-3 pb-8">
+      {/* APR-124 (A §2.5): região viva SEMPRE no DOM — trocar o nível muda o selo e a frase, e o leitor de tela ouve o resumo, não o silêncio. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {`${automacoes.filter(rodaDeVerdade).length} de ${automacoes.length} automações rodando sozinhas${salvando ? '; salvando a escolha' : ''}`}
+      </p>
       {automacoes.map((a) => {
         const nivel = niveis[a.chave]
         const opcoes = niveisDisponiveis(a)

@@ -98,8 +98,8 @@
    */
   --ok: #90dfba;
   --warn: #e2af36;
-  --risk: #e79955;
-  --bad: #e05d52;
+  --risk: #e89d5c; /* APR-124: era #e79955; clareado para manter a separacao de luminancia (0,15) com o --bad legivel sobre a tinta */
+  --bad: #e2675c; /* APR-124: era #e05d52, 4,27:1 sobre a própria tinta a 15% */
   --info: #6da1d5;
 
   --radius: 16px;
@@ -195,10 +195,10 @@
   --on-acc: #ffffff;
   --ring: var(--acc);
 
-  --ok: #2a8148;
+  --ok: #277742; /* APR-124: era #2a8148, 3,98:1 sobre a própria tinta a 15% (axe) */
   --warn: #835800;
   --risk: #934315;
-  --bad: #78120b;
+  --bad: #6e110a; /* APR-124: era #78120b; escurecido para manter a separacao de luminancia (0,10) com o --ok legivel sobre a tinta */
   --info: #2563a0;
 
   /* Sombra de tema claro é curta: o card já se destaca do fundo sozinho. */
