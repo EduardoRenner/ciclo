@@ -86,6 +86,9 @@ export default function FormularioAgendamento({
   const [erroDosHorarios, setErroDosHorarios] = useState<string | null>(null)
   const [slotEscolhido, setSlotEscolhido] = useState<SlotLivre | null>(null)
   const [horarioManual, setHorarioManual] = useState(false)
+  // Enquanto ninguém tocou no trilho, um dia sem vaga pula para o seguinte (como o público abre no
+  // primeiro dia útil): medido, a tela abria em "hoje" às 23h com "Sem horários livres" como primeira frase.
+  const [diaTocado, setDiaTocado] = useState(false)
   const pedidoDeHorarios = useRef(0)
   useEffect(() => {
     if (!serviceId || horarioManual) return
@@ -102,13 +105,19 @@ export default function FormularioAgendamento({
           setErroDosHorarios(json.error?.message ?? 'Não consegui buscar os horários.')
           return
         }
-        setSlots(json.data?.slots ?? [])
+        const livres = json.data?.slots ?? []
+        const seguinte = dias[dias.indexOf(dia) + 1]
+        if (livres.length === 0 && !diaTocado && seguinte) {
+          setDia(seguinte)
+          return
+        }
+        setSlots(livres)
       })
       .catch(() => {
         // A resposta velha não sobrescreve a nova (APR-003), e rede caída não vira "sem horário".
         if (meuPedido === pedidoDeHorarios.current) setErroDosHorarios('Não consegui falar com o servidor. Confira a conexão e toque no dia de novo.')
       })
-  }, [serviceId, professionalId, dia, horarioManual])
+  }, [serviceId, professionalId, dia, horarioManual, dias, diaTocado])
   const resumoDoHorario = slotEscolhido
     ? `${new Intl.DateTimeFormat('pt-BR', { timeZone: fuso, weekday: 'short', day: '2-digit', month: '2-digit' }).format(new Date(slotEscolhido.startsAt))}, às ${horaLocal(slotEscolhido.startsAt, fuso)}`
     : null
@@ -417,7 +426,7 @@ export default function FormularioAgendamento({
 
       {!horarioManual && !repetirAtivo ? (
         <div className="flex flex-col gap-3">
-          <TrilhoDeDias dias={dias} dia={dia} fechados={new Set()} aoEscolher={(d) => { setDia(d); setSlotEscolhido(null) }} />
+          <TrilhoDeDias dias={dias} dia={dia} fechados={new Set()} aoEscolher={(d) => { setDiaTocado(true); setDia(d); setSlotEscolhido(null) }} />
           {/* Vive sempre no DOM: trocar de dia troca a lista inteira sem trocar de rota. */}
           <p aria-live="polite" className="sr-only">
             {erroDosHorarios ? '' : slots === null ? 'Buscando horários.' : slots.length === 0 ? 'Sem horários livres nesse dia.' : `${slotsUnicosDe(slots).length} horários livres.`}
