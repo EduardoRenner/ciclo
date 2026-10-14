@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarPlus, CheckCircle2, ChevronDown, MessageCircle, Phone } from "lucide-react";
+import { CalendarPlus, CheckCircle2, MessageCircle, Phone } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { comMaiuscula, type Vocabulario } from "@/core/text/vocabulario";
@@ -10,7 +10,9 @@ import { saidaDeContato } from "@/lib/mensagens";
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
 import Chip from "@/components/ui/chip";
-import FilterRow from "@/components/ui/filter-row";
+import GradeDeHorarios, { slotsUnicosDe, type SlotLivre } from "@/components/agenda/grade-de-horarios";
+import TrilhoDeDias from "@/components/agenda/trilho-de-dias";
+import { agoraEmMinutos, diasFechadosDe, hojeNoFuso, paraData, primeiroDiaUtil as primeiroDiaUtilDe, proximosDias } from "@/core/agenda/dias";
 import Input from "@/components/ui/input";
 import PhoneInput from "@/components/ui/phone-input";
 import { textoDoCanalDeConfirmacao } from "@/core/messaging/promessa";
@@ -47,79 +49,12 @@ type Servico = {
   suggestedProduct: { id: string; name: string; priceCents: number; inStock: boolean } | null;
 };
 type Profissional = { id: string; displayName: string; photoUrl: string | null };
-type Slot = { startsAt: string; endsAt: string; professionalId: string };
+type Slot = SlotLivre;
 type Reconhecimento = {
   primeiroNome: string;
   diasDesdeUltima: number | null;
   sugestao: { serviceId: string; serviceName: string; professionalId: string | null } | null;
 };
-
-/**
- * "Hoje" é no fuso do salão, não no do aparelho de quem agenda. A versão
- * anterior montava a lista com `toISOString()`, que é UTC: das 21h à meia-noite
- * em Brasília a coluna de hoje sumia do trilho, e um salão que atende de
- * madrugada perdia o próprio dia.
- */
-function hojeNoSalao(timezone: string): string {
-  // `en-CA` formata como `AAAA-MM-DD`, que é exatamente o formato que a API espera.
-  return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(
-    new Date(),
-  );
-}
-
-/** 14 dias corridos a partir de hoje — cobre o horizonte real de quem agenda pelo site, sem paginação. */
-function proximosDias(qtd: number, primeiro: string): string[] {
-  const [ano, mes, dia] = primeiro.split("-").map(Number);
-  return Array.from({ length: qtd }, (_, i) => {
-    const d = new Date(Date.UTC(ano!, mes! - 1, dia!));
-    d.setUTCDate(d.getUTCDate() + i);
-    return d.toISOString().slice(0, 10);
-  });
-}
-
-/** `AAAA-MM-DD` vira data em UTC de propósito: só serve para dizer o dia da semana e o número. */
-function paraData(iso: string): Date {
-  const [ano, mes, dia] = iso.split("-").map(Number);
-  return new Date(Date.UTC(ano!, mes! - 1, dia!));
-}
-
-function diaDaSemana(iso: string): number {
-  return paraData(iso).getUTCDay();
-}
-
-/** Minutos desde a meia-noite, no relógio do salão. */
-function agoraEmMinutos(timezone: string): number {
-  const partes = new Intl.DateTimeFormat("pt-BR", {
-    timeZone: timezone,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(new Date());
-  const valor = (tipo: string) =>
-    Number(partes.find((p) => p.type === tipo)?.value ?? 0);
-  return valor("hour") * 60 + valor("minute");
-}
-
-function paraMinutos(hhmm: string): number {
-  const [h, m] = hhmm.split(":");
-  return Number(h) * 60 + Number(m);
-}
-
-/** Sentinela de "a pessoa fechou a faixa que estava aberta" — distinto de `null`, que é "ainda não mexeu". */
-const NENHUM_PERIODO = "";
-
-function periodo(iso: string, timezone: string): "Manhã" | "Tarde" | "Noite" {
-  const hora = Number(
-    new Intl.DateTimeFormat("pt-BR", {
-      hour: "numeric",
-      hour12: false,
-      timeZone: timezone,
-    }).format(new Date(iso)),
-  );
-  if (hora < 12) return "Manhã";
-  if (hora < 18) return "Tarde";
-  return "Noite";
-}
 
 /**
  * A montagem do arquivo é pura e mora em `src/core` (regra 5 do CLAUDE.md), com teste próprio;
@@ -271,40 +206,13 @@ export default function Agendar({
   indicadaPor: string | null;
 }) {
   const dias = useMemo(
-    () => proximosDias(14, hojeNoSalao(timezone)),
+    () => proximosDias(14, hojeNoFuso(timezone)),
     [timezone],
   );
 
-  const diasFechados = useMemo(() => {
-    const abertos = new Set(hours.map((h) => h.weekday));
-    // Sem expediente cadastrado não dá para afirmar que algum dia está fechado —
-    // nesse caso nenhum dia recebe a marca, e o trilho fica como era.
-    return hours.length === 0
-      ? new Set<string>()
-      : new Set(dias.filter((d) => !abertos.has(diaDaSemana(d))));
-  }, [dias, hours]);
-
-  /*
-   * Abrir no primeiro dia em que o salão atende, não em "hoje" seco: numa
-   * barbearia fechada domingo e segunda, quem entrasse no sábado à noite via
-   * "Sem horários livres nesse dia" antes de qualquer outra coisa — que lê como
-   * "está lotado" e não como "hoje não abre". O dia fechado continua no trilho e
-   * continua clicável (a agenda de um profissional pode fugir do expediente
-   * padrão); só deixa de ser a primeira impressão.
-   */
-  const primeiroDiaUtil = useMemo(() => {
-    const hoje = dias[0];
-    const blocosDeHoje = hoje
-      ? hours.filter((h) => h.weekday === diaDaSemana(hoje))
-      : [];
-    const jaFechouHoje =
-      blocosDeHoje.length > 0 &&
-      blocosDeHoje.every(
-        (h) => paraMinutos(h.closesAt) <= agoraEmMinutos(timezone),
-      );
-    const candidatos = jaFechouHoje ? dias.slice(1) : dias;
-    return candidatos.find((d) => !diasFechados.has(d)) ?? dias[0] ?? "";
-  }, [dias, diasFechados, hours, timezone]);
+  const diasFechados = useMemo(() => diasFechadosDe(dias, hours), [dias, hours]);
+  // A regra (e o porquê) mora em `core/agenda/dias.ts`, com teste.
+  const primeiroDiaUtil = useMemo(() => primeiroDiaUtilDe(dias, hours, diasFechados, agoraEmMinutos(timezone)), [dias, diasFechados, hours, timezone]);
 
   /*
    * Quem tocou num serviço na página do salão já escolheu — abrir no primeiro do catálogo
@@ -325,7 +233,6 @@ export default function Agendar({
     horários de uma vez, de 15 em 15 minutos, todos com o mesmo peso visual — escolher entre eles
     é a decisão mais cara da tela, e a última antes da reserva.
   */
-  const [periodoAberto, setPeriodoAberto] = useState<string | null>(null);
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   // Opcional: o WhatsApp já é o canal principal (`telefone`), então este campo
@@ -846,32 +753,7 @@ export default function Agendar({
    *
    * Com profissional escolhido a API já filtra, então não há duplicata e o `Map` não muda nada.
    */
-  const slotsUnicos = slots
-    ? [...new Map(slots.map((s) => [s.startsAt, s])).values()]
-    : null;
-
-  const slotsPorPeriodo =
-    slotsUnicos && slotsUnicos.length > 0
-      ? (["Manhã", "Tarde", "Noite"] as const).map((p) => ({
-          periodo: p,
-          itens: slotsUnicos.filter((s) => periodo(s.startsAt, timezone) === p),
-        }))
-      : [];
-
-  const periodosComVaga = slotsPorPeriodo.filter((g) => g.itens.length > 0);
-
-  /*
-   * Qual período aparece aberto. `null` = ainda não escolheram, e vale o primeiro com vaga —
-   * medido em 31/08: uma terça na Dom Rocha listava 42 horários de uma vez, de 15 em 15 minutos,
-   * todos com o mesmo peso visual. Escolher entre 42 chips iguais é a decisão mais cara da tela,
-   * e é a última antes da reserva.
-   *
-   * Um período JÁ vem aberto de propósito: colapsar tudo trocaria uma tela cheia por uma tela
-   * vazia, e custaria um toque a mais no caso comum, que é aceitar o próximo horário livre.
-   */
-  /* `null` = ninguém mexeu ainda (vale o primeiro com vaga); `NENHUM_PERIODO` = a pessoa fechou a
-     que estava aberta, e aí nenhuma faixa casa — os dois casos precisam ser distinguíveis. */
-  const periodoVisivel = periodoAberto ?? periodosComVaga[0]?.periodo ?? null;
+  const slotsUnicos = slots ? slotsUnicosDe(slots) : null;
 
   const mostrarBarraFixa = Boolean(slotEscolhido && servicoEscolhido);
 
@@ -1055,50 +937,8 @@ export default function Agendar({
 
       <section ref={passoDiaRef}>
         <Passo numero={professionals.length > 1 ? 3 : 2} titulo="Dia" />
-        <FilterRow rotulo="Escolher o dia">
-          {dias.map((d) => {
-            const data = paraData(d);
-            const fechado = diasFechados.has(d);
-            const nomeDoDia = data.toLocaleDateString("pt-BR", {
-              weekday: "long",
-              timeZone: "UTC",
-            });
-            return (
-              <button
-                key={d}
-                type="button"
-                onClick={() => buscarDisponibilidade(d)}
-                aria-current={d === dia ? "date" : undefined}
-                // Todo dia do trilho parecia igualmente disponível; nos fechados a
-                // pessoa tocava e batia numa mensagem vazia. O rótulo é o mesmo que
-                // o leitor de tela ouve.
-                aria-label={`${nomeDoDia}, dia ${data.getUTCDate()}${fechado ? ", fechado" : ""}`}
-                className={
-                  "flex h-16 w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)] text-label font-semibold transition duration-[var(--dur-1)] ease-[var(--ease-ios)] active:scale-[.95] " +
-                  (d === dia
-                    ? "bg-acc text-on-acc shadow-elevado"
-                    : fechado
-                      ? "bg-surface-2/50 text-txt-3 hover:bg-surface-3"
-                      : "bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt")
-                }
-              >
-                <span className="uppercase">
-                  {data
-                    .toLocaleDateString("pt-BR", {
-                      weekday: "short",
-                      timeZone: "UTC",
-                    })
-                    .replace(".", "")}
-                </span>
-                <span
-                  className={`tabular text-corpo font-bold ${d === dia ? "" : fechado ? "text-txt-3" : "text-txt"}`}
-                >
-                  {data.getUTCDate()}
-                </span>
-              </button>
-            );
-          })}
-        </FilterRow>
+        {/* APR-109: o mesmo trilho do "Marcar" do painel (`components/agenda/trilho-de-dias`). */}
+        <TrilhoDeDias dias={dias} dia={dia} fechados={diasFechados} aoEscolher={buscarDisponibilidade} />
       </section>
 
       {erro ? (
@@ -1191,55 +1031,8 @@ export default function Agendar({
               : "Sem horários livres nesse dia. Tente outra data."}
           </p>
         ) : (
-          /*
-            Uma faixa por período, e só a aberta lista os horários. O período fechado continua
-            dizendo o que a pessoa precisa para escolher — quantos horários tem e a partir de que
-            hora —, então fechar não esconde informação, só adia a lista.
-          */
-          <section className="flex flex-col gap-2">
-            {periodosComVaga.map((grupo) => {
-              const aberto = grupo.periodo === periodoVisivel;
-              const primeiro = horaLocal(grupo.itens[0]!.startsAt, timezone);
-              const temEscolhido = grupo.itens.some((s) => s.startsAt === slotEscolhido?.startsAt);
-              return (
-                <div key={grupo.periodo} className="overflow-hidden rounded-[var(--radius-sm)] border border-line-2">
-                  <button
-                    type="button"
-                    onClick={() => setPeriodoAberto(aberto ? NENHUM_PERIODO : grupo.periodo)}
-                    aria-expanded={aberto}
-                    className="flex min-h-12 w-full items-center gap-3 bg-surface-2 px-4 py-2 text-left transition hover:bg-surface-3"
-                  >
-                    <span className="flex-1 text-corpo font-semibold text-txt">{grupo.periodo}</span>
-                    {/*
-                      O ponto marca o período que contém o horário já escolhido — sem ele, fechar
-                      a faixa faria a escolha sumir de vista sem deixar rastro.
-                    */}
-                    {temEscolhido && !aberto ? <span aria-hidden className="size-2 rounded-full bg-acc" /> : null}
-                    <span className="text-secundario text-txt-3">
-                      {grupo.itens.length} {grupo.itens.length === 1 ? "horário" : "horários"} · a partir de {primeiro}
-                    </span>
-                    <ChevronDown
-                      aria-hidden
-                      className={`size-4 shrink-0 text-txt-3 transition-transform duration-[var(--dur-1)] ${aberto ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  {aberto ? (
-                    <div className="flex flex-wrap gap-2 p-3">
-                      {grupo.itens.map((s) => (
-                        <Chip
-                          key={`${s.startsAt}-${s.professionalId}`}
-                          ligado={slotEscolhido?.startsAt === s.startsAt}
-                          onClick={() => escolherHorario(s)}
-                        >
-                          {horaLocal(s.startsAt, timezone)}
-                        </Chip>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
-          </section>
+          /* APR-109: a mesma grade do "Marcar" do painel (`components/agenda/grade-de-horarios`). */
+          <GradeDeHorarios slots={slotsUnicos ?? []} timezone={timezone} escolhido={slotEscolhido} aoEscolher={escolherHorario} />
         )
       ) : pendente ? (
         <p className="text-secundario text-txt-2">Buscando horários…</p>
