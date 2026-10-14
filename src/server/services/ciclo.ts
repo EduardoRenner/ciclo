@@ -292,7 +292,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
   // limite de corpo da requisição.
   for (let inicio = 0; inicio < linhas.length; inicio += TAMANHO_DO_LOTE) {
     const lote = linhas.slice(inicio, inicio + TAMANHO_DO_LOTE)
-    const { error } = await db.from('client_cycles').upsert(lote, { onConflict: 'tenant_id,client_id,service_id' })
+    const { error } = await db.from('client_cycles').upsert(lote, { onConflict: 'tenant_id,client_id,service_id,subject_id' })
     if (error) throw new AppError('INTERNAL', { cause: error })
   }
 
@@ -440,7 +440,7 @@ export async function recomputarCicloDeUmAtendimento(
       ),
       computed_at: new Date().toISOString(),
     },
-    { onConflict: 'tenant_id,client_id,service_id' },
+    { onConflict: 'tenant_id,client_id,service_id,subject_id' },
   )
   if (error) throw new AppError('INTERNAL', { cause: error })
 }

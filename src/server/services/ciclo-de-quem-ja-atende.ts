@@ -181,7 +181,7 @@ export async function preverEPersistirCiclos(
           ),
         }
       }),
-      { onConflict: 'tenant_id,client_id,service_id' },
+      { onConflict: 'tenant_id,client_id,service_id,subject_id' },
     )
     /*
       O cadastro já entrou e não se desfaz por causa do ciclo. Falhar aqui degrada para "previsão só

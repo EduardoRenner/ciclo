@@ -153,6 +153,7 @@ export const MIGRATIONS_DO_CODIGO: readonly string[] = [
   '0131_mes_congelado_guarda_aluguel_e_gorjeta',
   '0132_sujeito_do_ciclo',
   '0133_sujeito_no_agendamento_e_na_comanda',
+  '0134_ciclo_por_sujeito',
 ]
 
 /** Quantos arquivos existem em `supabase/migrations/`. */

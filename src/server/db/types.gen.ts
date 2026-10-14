@@ -455,6 +455,7 @@ export type Database = {
           sample_size: number
           service_id: string
           state: Database["public"]["Enums"]["cycle_state"]
+          subject_id: string | null
           tenant_id: string
           value_at_risk_cents: number
         }
@@ -470,6 +471,7 @@ export type Database = {
           sample_size?: number
           service_id: string
           state?: Database["public"]["Enums"]["cycle_state"]
+          subject_id?: string | null
           tenant_id: string
           value_at_risk_cents?: number
         }
@@ -485,6 +487,7 @@ export type Database = {
           sample_size?: number
           service_id?: string
           state?: Database["public"]["Enums"]["cycle_state"]
+          subject_id?: string | null
           tenant_id?: string
           value_at_risk_cents?: number
         }
@@ -509,6 +512,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "services"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_cycles_subject_fk"
+            columns: ["tenant_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["tenant_id", "id"]
           },
           {
             foreignKeyName: "client_cycles_tenant_id_fkey"
