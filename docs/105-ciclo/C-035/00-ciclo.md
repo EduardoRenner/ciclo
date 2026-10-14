@@ -26,3 +26,6 @@ integração (serviço com ritmo observado → ciclo 32 em vez de 42). `VERSAO_D
 
 **Nota:** cliente 6 · segredo 9 · engenharia 9. **Próximo (C-036):** expansão — o check-in pela placa
 (AUT-401) começa pela parte pura: placa → veículo existente ou ficha nova em 3 toques.
+
+**Suítes inteiras:** RLS 357 de 357. Integração 629 verdes, 1 pulado, 1 falha (`atribuicao`, "invalid
+response from the upstream server", o gateway local); isolado, 13 de 13.
