@@ -342,7 +342,7 @@ export default function RecuperarReceita({
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-corpo font-semibold">{item.name}</p>
                       <p className="truncate text-secundario text-txt-2">
-                        {item.serviceName} · {RUBRICA_ESTADO[item.state as Estado]} · {item.lateDays > 0 ? `${item.lateDays}d de atraso` : 'na janela'}
+                        {item.subjectName ? `${item.subjectName} · ` : ''}{item.serviceName} · {RUBRICA_ESTADO[item.state as Estado]} · {item.lateDays > 0 ? `${item.lateDays}d de atraso` : 'na janela'}
                       </p>
                       {item.classe && item.nota != null ? (
                         <p className="truncate text-label text-txt-3">
@@ -395,8 +395,8 @@ export default function RecuperarReceita({
                     ) : (
                       <a
                         href={
-                          linkWhatsApp(item.phone, textoDeVolta({ nome: item.name, servico: item.serviceName, link: item.linkVolta })) ??
-                          linkWhatsAppCompartilhar(textoDeVolta({ nome: item.name, servico: item.serviceName, link: item.linkVolta }))
+                          linkWhatsApp(item.phone, textoDeVolta({ nome: item.name, servico: item.serviceName, sujeito: item.subjectName, link: item.linkVolta })) ??
+                          linkWhatsAppCompartilhar(textoDeVolta({ nome: item.name, servico: item.serviceName, sujeito: item.subjectName, link: item.linkVolta }))
                         }
                         target="_blank"
                         rel="noreferrer"

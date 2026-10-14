@@ -5397,6 +5397,8 @@ export type Database = {
           service_id: string | null
           service_name: string | null
           state: Database["public"]["Enums"]["cycle_state"] | null
+          subject_id: string | null
+          subject_name: string | null
           tenant_id: string | null
           value_at_risk_cents: number | null
         }
@@ -5421,6 +5423,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "services"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_cycles_subject_fk"
+            columns: ["tenant_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["tenant_id", "id"]
           },
           {
             foreignKeyName: "client_cycles_tenant_id_fkey"

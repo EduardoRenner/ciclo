@@ -108,6 +108,35 @@ async function inserirAtendimentoConcluido(clientId: string, diasAtras: number, 
 
 describe('recomputarCiclosDoTenant', () => {
   it(
+    'C-025 (AUT-101): o animal em dia não esconde o outro que sumiu — o tutor fica na fila, mostrando quem sumiu',
+    async () => {
+      const tutor = await criarCliente('Tutor Da Mel E Do Thor')
+      const sujeito = async (nome: string) => {
+        const r = await svc.from('subjects').insert({ tenant_id: tenantId, client_id: tutor, kind: 'animal', name: nome }).select('id').single()
+        if (r.error) throw r.error
+        return r.data.id
+      }
+      const mel = await sujeito('Mel')
+      const thor = await sujeito('Thor')
+      for (const dias of [50, 30, 10]) await inserirAtendimentoConcluido(tutor, dias, mel) // em dia
+      for (const dias of [120, 100, 80]) await inserirAtendimentoConcluido(tutor, dias, thor) // sumiu
+
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
+
+      const estados = await svc.from('client_cycles').select('subject_id, state').eq('tenant_id', tenantId).eq('client_id', tutor)
+      const porSujeito = new Map((estados.data ?? []).map((c) => [c.subject_id, c.state]))
+      expect(porSujeito.get(mel)).toBe('on_track')
+      expect(porSujeito.get(thor)).toBe('lost')
+
+      const lista = await listarParaRecuperar(svc, tenantId)
+      const doTutor = lista.items.filter((i) => i.clientId === tutor)
+      expect(doTutor).toHaveLength(1)
+      expect(doTutor[0]!.subjectName).toBe('Thor')
+    },
+    30_000,
+  )
+
+  it(
     'C-023 (AUT-101): tutor com 2 animais no mesmo serviço vira 2 ciclos, cada um no ritmo do seu animal',
     async () => {
       const tutor = await criarCliente('Tutor de Dois')

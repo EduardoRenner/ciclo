@@ -25,6 +25,8 @@ export type ItemRecuperar = {
   /** Pediu para não receber mensagem (`whatsapp_opt_out`). A tela não oferece "Chamar" para ela. */
   optOut: boolean
   serviceName: string
+  /** C-025 (AUT-101): o animal ou o carro do ciclo mais urgente deste cliente; nulo na beleza. */
+  subjectName: string | null
   state: EstadoCiclo
   lateDays: number
   /**
@@ -120,6 +122,7 @@ export async function listarParaRecuperar(
       // Quem pediu "PARAR" já não chega aqui (a view exclui); o campo fica para a tela não mudar.
       optOut: false,
       serviceName: l.service_name!,
+      subjectName: l.subject_name ?? null,
       state: l.state!,
       lateDays: l.late_days!,
       ritmo: l.personal_cycle_days == null ? null : { cicloPessoalDias: l.personal_cycle_days, ultimaVisitaOn: l.last_visit_on, amostra: l.sample_size ?? 0 },

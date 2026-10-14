@@ -93,7 +93,7 @@ export default function FilaDeChamadas({
           <div>
             <p className="text-titulo font-bold">{atual.name}</p>
             <p className="text-secundario text-txt-2">
-              {atual.serviceName} · {atual.lateDays > 0 ? `${atual.lateDays}d de atraso` : 'na janela'}
+              {atual.subjectName ? `${atual.subjectName} · ` : ''}{atual.serviceName} · {atual.lateDays > 0 ? `${atual.lateDays}d de atraso` : 'na janela'}
             </p>
             {(() => {
               // C-015: o POR QUÊ da chamada. Sem intervalo medido (amostra 0) a cadência não é dita.
@@ -120,8 +120,8 @@ export default function FilaDeChamadas({
 
           <a
             href={
-              linkWhatsApp(atual.phone, textoDeVolta({ nome: atual.name, servico: atual.serviceName, link: atual.linkVolta })) ??
-              linkWhatsAppCompartilhar(textoDeVolta({ nome: atual.name, servico: atual.serviceName, link: atual.linkVolta }))
+              linkWhatsApp(atual.phone, textoDeVolta({ nome: atual.name, servico: atual.serviceName, sujeito: atual.subjectName, link: atual.linkVolta })) ??
+              linkWhatsAppCompartilhar(textoDeVolta({ nome: atual.name, servico: atual.serviceName, sujeito: atual.subjectName, link: atual.linkVolta }))
             }
             target="_blank"
             rel="noreferrer"
