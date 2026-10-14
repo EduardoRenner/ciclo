@@ -29,3 +29,8 @@ mensagem (memória "commite antes de mutar"); reaplicada.
 
 **Nota:** cliente 9 · segredo 8 · engenharia 8. **Próximo (C-026):** o sujeito na trilha de previsões
 (prestação de contas do Motor por animal/carro) ou o automotivo no banco (AUT-102 `vehicle_specs` + placa).
+
+**Suítes inteiras:** RLS 357 de 357. Integração 614 verdes, 13 pulados, 2 falhas + 1 arquivo no preparo
+(comanda/aluguel, product-events, seed da demo do escritório) — todas com erro de gravação genérico ou
+"An invalid response was received from the upstream server" (gateway local sob carga). Nenhum toca a
+fila ou o sujeito. Ver C-026.
