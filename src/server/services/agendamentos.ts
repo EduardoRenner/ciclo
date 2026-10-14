@@ -439,6 +439,8 @@ export type LinhaAgendaDia = {
   /** docs/09-PLATAFORMA.md G3+G13 (P2.5) — endereço do atendimento, não do cliente. */
   address: string | null
   professional_id: string
+  /** APR-111: remarcar pela grade busca os horários livres DESTE serviço. */
+  service_id: string
   /** §5.4. `null` até o cálculo rodar (agendamento antigo, ou o cálculo falhou na criação). */
   no_show_score: number | null
   clients: { name: string } | null

@@ -92,7 +92,7 @@ describe('linkWhatsAppDoProximo', () => {
       price_cents: 5000,
       client_note: null,
       address: null,
-      professional_id: 'p1',
+      professional_id: 'p1', service_id: 'servico-1',
       clients: { name: overrides.nome ?? 'Ana', phone_e164: overrides.telefone ?? null, health_records: [] },
       services: { name: 'Corte' },
       professionals: { display_name: 'Bia' },

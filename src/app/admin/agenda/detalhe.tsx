@@ -3,9 +3,14 @@
 import { MapPin, StickyNote } from 'lucide-react'
 import Link from 'next/link'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 
+import GradeDeHorarios, { slotsUnicosDe, type SlotLivre } from '@/components/agenda/grade-de-horarios'
+import TrilhoDeDias from '@/components/agenda/trilho-de-dias'
 import { useFuso } from '@/components/shell/fuso'
+import Chip from '@/components/ui/chip'
+import { hojeNoFuso, proximosDias } from '@/core/agenda/dias'
+import { horaLocal } from '@/lib/formato'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
@@ -73,14 +78,47 @@ export default function DetalheAgendamento({
   aoMudarOtimista: (status: EstadoAgendamento) => void
 }) {
   const [pendente, iniciarTransicao] = useTransition()
+  const fuso = useFuso()
   const [mostrarCancelar, setMostrarCancelar] = useState(false)
   const [mostrarRemarcar, setMostrarRemarcar] = useState(false)
   const [motivo, setMotivo] = useState('')
   const [novoHorario, setNovoHorario] = useState(() => paraInputLocal(agendamento.starts_at))
+  /*
+    APR-111 (docs/98 C-10, I-10): remarcar pela mesma grade do Marcar e do público (APR-110), no
+    mesmo profissional e serviço; "Outro horário" reabre o campo manual. No 409, as alternativas que
+    a API já devolvia (e a tela jogava fora) viram chips tocáveis.
+  */
+  const [diaRemarcar, setDiaRemarcar] = useState(() => hojeNoFuso(fuso))
+  const [slotsRemarcar, setSlotsRemarcar] = useState<SlotLivre[] | null>(null)
+  const [erroDosHorarios, setErroDosHorarios] = useState<string | null>(null)
+  const [slotRemarcar, setSlotRemarcar] = useState<SlotLivre | null>(null)
+  const [remarcarManual, setRemarcarManual] = useState(false)
+  const [alternativas, setAlternativas] = useState<string[]>([])
+  const pedidoDeHorarios = useRef(0)
+  const diasRemarcar = proximosDias(14, hojeNoFuso(fuso))
+  useEffect(() => {
+    if (!mostrarRemarcar || remarcarManual) return
+    const meuPedido = ++pedidoDeHorarios.current
+    setSlotsRemarcar(null)
+    setErroDosHorarios(null)
+    const params = new URLSearchParams({ serviceId: agendamento.service_id, date: diaRemarcar, professionalId: agendamento.professional_id })
+    fetch(`/api/v1/appointments/availability?${params.toString()}`)
+      .then(async (r) => {
+        const json = (await r.json()) as { data?: { slots: SlotLivre[] }; error?: { message: string } }
+        if (meuPedido !== pedidoDeHorarios.current) return
+        if (!r.ok) {
+          setErroDosHorarios(json.error?.message ?? 'Não consegui buscar os horários.')
+          return
+        }
+        setSlotsRemarcar(json.data?.slots ?? [])
+      })
+      .catch(() => {
+        if (meuPedido === pedidoDeHorarios.current) setErroDosHorarios('Não consegui falar com o servidor. Confira a conexão e toque no dia de novo.')
+      })
+  }, [mostrarRemarcar, remarcarManual, diaRemarcar, agendamento.service_id, agendamento.professional_id])
   const [erro, setErro] = useState<string | null>(null)
   const [linkAvaliacao, setLinkAvaliacao] = useState<string | null>(null)
   const mostrarToast = useToast()
-  const fuso = useFuso()
 
   const estadoAtual = agendamento.status as EstadoAgendamento
   // APR-105: um primário só (a próxima ação do estado); o resto secundário; cancelar separado no fim.
@@ -138,20 +176,23 @@ export default function DetalheAgendamento({
     })
   }
 
-  function confirmarRemarcacao() {
+  function confirmarRemarcacao(startsAtIso?: string) {
     setErro(null)
+    setAlternativas([])
+    // O horário da grade vai como veio do servidor (ISO); o manual passa pelo fuso do aparelho, como antes.
+    const startsAt = startsAtIso ?? (!remarcarManual && slotRemarcar ? slotRemarcar.startsAt : new Date(novoHorario).toISOString())
     iniciarTransicao(async () => {
       try {
         const r = await fetchComTentativa(`/api/v1/appointments/${agendamento.id}`, {
           method: 'PATCH',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ startsAt: new Date(novoHorario).toISOString() }),
+          body: JSON.stringify({ startsAt }),
         })
-        const json = (await r.json()) as { error?: { code: string; message: string } }
+        const json = (await r.json()) as { error?: { code: string; message: string; details?: { alternatives?: string[] } } }
         if (!r.ok) {
-          // SLOT_TAKEN é o caso mais comum aqui — a mensagem do servidor já
-          // explica; não precisa de tratamento especial além de mostrar.
+          // SLOT_TAKEN: a API já manda os horários livres mais perto; eles viram chips (APR-111).
           setErro(json.error?.message ?? 'Não consegui remarcar.')
+          setAlternativas(json.error?.details?.alternatives ?? [])
           return
         }
         mostrarToast({ tom: 'ok', titulo: 'Agendamento remarcado' })
@@ -305,15 +346,55 @@ export default function DetalheAgendamento({
 
       {mostrarRemarcar ? (
         <div className="flex flex-col gap-3">
-          <Input
-            rotulo="Novo horário"
-            type="datetime-local"
-            value={novoHorario}
-            onChange={(e) => setNovoHorario(e.target.value)}
-            classNameCampo="tabular"
-          />
-          <Button largura="cheia" carregando={pendente} onClick={confirmarRemarcacao}>
-            Confirmar novo horário
+          {alternativas.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-secundario text-txt-2">Estes estão livres, perto do que você queria:</p>
+              <div className="flex flex-wrap gap-2">
+                {alternativas.map((iso) => (
+                  <Chip key={iso} onClick={() => confirmarRemarcacao(iso)}>
+                    {horaLocal(iso, fuso)}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {!remarcarManual ? (
+            <>
+              <TrilhoDeDias dias={diasRemarcar} dia={diaRemarcar} fechados={new Set()} aoEscolher={(d) => { setDiaRemarcar(d); setSlotRemarcar(null) }} />
+              <p aria-live="polite" className="sr-only">
+                {erroDosHorarios ? '' : slotsRemarcar === null ? 'Buscando horários.' : slotsRemarcar.length === 0 ? 'Sem horários livres nesse dia.' : `${slotsUnicosDe(slotsRemarcar).length} horários livres.`}
+              </p>
+              {erroDosHorarios ? (
+                <p role="alert" className="text-secundario text-bad">{erroDosHorarios}</p>
+              ) : slotsRemarcar === null ? (
+                <p className="text-secundario text-txt-2">Buscando horários…</p>
+              ) : slotsRemarcar.length === 0 ? (
+                <p className="text-secundario text-txt-2">Sem horários livres nesse dia. Tente outro dia, ou use &ldquo;Outro horário&rdquo;.</p>
+              ) : (
+                <GradeDeHorarios slots={slotsUnicosDe(slotsRemarcar)} timezone={fuso} escolhido={slotRemarcar} aoEscolher={setSlotRemarcar} />
+              )}
+              <button type="button" onClick={() => setRemarcarManual(true)} className="flex min-h-12 items-center self-start text-secundario font-semibold text-acc-2 underline underline-offset-2">
+                Outro horário (fora da lista)
+              </button>
+            </>
+          ) : (
+            <Input
+              rotulo="Novo horário"
+              type="datetime-local"
+              value={novoHorario}
+              onChange={(e) => setNovoHorario(e.target.value)}
+              classNameCampo="tabular"
+              ajuda="Encaixe fora dos horários livres. O sistema ainda recusa se o horário estiver ocupado."
+            />
+          )}
+          <Button
+            largura="cheia"
+            carregando={pendente}
+            disabled={!remarcarManual && !slotRemarcar}
+            motivoDesabilitado="Escolha um horário na lista acima."
+            onClick={() => confirmarRemarcacao()}
+          >
+            {slotRemarcar && !remarcarManual ? `Remarcar para ${horaLocal(slotRemarcar.startsAt, fuso)}` : 'Confirmar novo horário'}
           </Button>
           <Button variante="secondary" largura="cheia" disabled={pendente} onClick={() => setMostrarRemarcar(false)}>
             Voltar
