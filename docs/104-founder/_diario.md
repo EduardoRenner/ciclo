@@ -180,3 +180,30 @@ Uma entrada por rodada: o que, por quê, número antes e depois, o que saiu, pr�
   escapes com `chr(92)` ou usar o Edit.
 - **Próxima:** 202 (datas no fuso em toda tela, guarda estendida), 210/211 (clube e mês congelado),
   212, 214, 217, 219, 221, 222. 209 e 220 esperam decisão (a; sinal).
+
+## 2026-10-14 · Rodada 8 · Onda 2 fechada (202, 210, 211, 212, 214, 217, 219, 221, 222, 223)
+
+- **APR-202:** 8 telas formatavam instante no fuso do aparelho; guarda `data-no-fuso-do-negocio`
+  (vista reprovando em 2 listas e na chave do dia da fila de chamadas). A fila de chamadas agora vira
+  o dia na meia-noite do salão.
+- **APR-210:** margem do clube pelo que foi PAGO na comanda; subir a comissão para 90% depois não muda
+  a margem do mês (integração). A guarda "dono único da pergunta materialIncerto" pegou duas vezes —
+  a resposta gravada entra por `custoJaGravado`, no arquivo dono.
+- **APR-211:** migration 0131 (aditiva) — `monthly_profit` ganha `fixed_cost_cents` e `tip_cents`;
+  `contaDoMesFecha` prova que receita − material − taxa − comissão − aluguel = lucro. Local: aplicada
+  via psql + linha em `schema_migrations` (o `db:types` precisa do CLI; tipo gerado ajustado à mão).
+- **APR-214:** 100 rotas de escrita varridas; 3 sem chamador, justificadas (recover/send sem canal,
+  waitlist = DECISÃO, wallet/debit espera 015/017). Guarda reprova rota nova sem chamador.
+- **APR-217:** senha curta diz que é curta, antes (piso 8 na tela) e depois (422 do Supabase traduzido).
+- **APR-212:** dono que atende vê o próprio extrato; sem "chega aqui em breve". **APR-222:** excluir a
+  conta conta a fila e avisa. **APR-215:** fim da graça no dia de Brasília.
+- **APR-223 (R-33) CONFIRMADA:** salão de terça 09–22h, "Tanto faz" às 21:00 → 409 com o defeito
+  (dia em UTC), `pending` com `diaNoFuso`. **APR-219 NÃO reproduzida:** a importação já é idempotente
+  por lote e por pedaço (testes CNV-020). **APR-221 já estava feita** (`opened_on` com `hojeNoFuso`).
+- **Processo:** o `git checkout --` para restaurar uma mutação apagou um conserto NÃO commitado
+  (223) — reaplicado; regra: commitar ANTES de mutar, sempre. O byte-scrub automático tocou num
+  `.xlsx` (restaurado do git): varrer bytes só em `.ts/.tsx/.md`. O `createUser` do Supabase local
+  falhou com "fetch failed" numa rodada (transitório; o teste do clube passou na anterior).
+- **Fica para o Eduardo:** 209 (decisão a), 220 (sinal), waitlist (214), reabrir × cancelar comanda
+  (204). **Próxima:** 224 (38 arquivos para `fetchComTentativa`, por grupo de telas), depois Onda 3
+  (301…313), seguindo a PARTE E do prompt (ciclo infinito).

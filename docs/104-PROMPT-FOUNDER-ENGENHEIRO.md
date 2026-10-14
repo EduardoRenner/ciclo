@@ -167,8 +167,9 @@ uma pesquisa de mercado curta que confirme ou derrube a próxima onda.
 
 # PARTE C · OS PLANOS QUE ESTE MODO EXECUTA (ordem)
 
-1. `docs/98-aprimoramento/08-plano-e-tickets.md`, **Onda 1** em diante (APR-101 a 104 feitos em
-   13/10; próximo APR-105), na ordem da §5 e com as correções da revisão adversarial no fim do arquivo.
+1. `docs/98-aprimoramento/08-plano-e-tickets.md`: Onda 1 FECHADA (14/10, fora 116 e 126–131, que
+   esperam decisão); **Onda 2** feita fora 209/220 (decisão) e 224; depois Ondas 3, 4, 5/6, na ordem
+   da §5 e com as correções da revisão adversarial no fim do arquivo.
 2. `docs/103-conversor/01-plano-e-tickets.md`: Onda F depois de revisão (dinheiro e agenda); CNV-040 e
    041 quando houver arquivo real de concorrente.
 3. As apostas de `docs/104-founder/apostas.md`, quando a prioridade (A2) passar a frente.
@@ -179,3 +180,51 @@ uma pesquisa de mercado curta que confirme ou derrube a próxima onda.
 - `docs/104-founder/apostas.md`: o que está além do plano, com evidência e decisão.
 - **Parar e perguntar** só se: for tocar produção; uma decisão de dinheiro, jurídico ou dado pessoal
   não tiver resposta escrita e a opção mais simples puder causar dano.
+
+# PARTE E · O CICLO INFINITO (o que o loop faz quando o plano acaba)
+
+O plano é um estoque de trabalho, não a fonte. A fonte é o produto medido contra o cliente. Quando
+o estoque baixa, o loop **repõe**, nesta ordem, e nunca para:
+
+## E1. A fila, do mais certo ao mais aberto
+
+1. **Ticket do plano ativo** (PARTE C), pelo critério de A2.
+2. **Aposta registrada** em `docs/104-founder/apostas.md` com evidência FATO e custo P ou M.
+3. **Dívida que a própria rodada abriu**: guarda cega achada, limite documentado no diário, item
+   "[NÃO MEDIDO]" ou "[NÃO VERIFICADO]" — vira ticket com código `APR-9xx` no diário e entra na fila.
+4. **Auditoria de uma tela** (A1, as três lentes, 1 tela por rodada, na ordem do funil: descobrir →
+   entrar → importar → marcar → atender → receber → voltar): roteiro Playwright no build, toques,
+   segundos, o que cobre o quê, axe nas duas paletas, 360 e 390. Cada achado com severidade vira
+   ticket `APR-9xx` ou aposta.
+5. **Pesquisa (A5)**: um concorrente, um estudo ou um dado de mercado por rodada de pesquisa; só vira
+   trabalho com número e com a pergunta de Thiel respondida.
+6. **Plano novo**: quando 1–5 estiverem vazios, escrever `docs/1xx-<tema>/00-diagnostico.md` →
+   `08-plano-e-tickets.md` no mesmo formato do 98 (ID, origem, proposta, arquivos, aceite MEDIDO,
+   teste visto reprovando, migration, dependências, esforço), com revisão adversarial própria antes
+   de executar. Temas candidatos, em ordem: retenção (o que faz a dona abrir o app no 7º dia),
+   distribuição (de onde vem o próximo salão), dinheiro do salão (o que o Mês ainda não responde),
+   confiabilidade (o que falha em silêncio na produção), velocidade percebida.
+
+Nunca pular degrau por preferência: o degrau 4 só começa quando 1–3 estão vazios ou bloqueados por
+decisão do Eduardo. Bloqueio por decisão **não** para o loop (A4): registra, adota o padrão, segue.
+
+## E2. O que toda rodada entrega, sem exceção
+
+- Um commit por ticket, mensagem em português com o código, suíte inteira verde conferida com os
+  olhos ("Tests … passed") ANTES do commit — o `grep` engole o código de saída.
+- Guarda nova vista reprovando (mutação depois do commit, restaurada por `git -C <worktree>
+  checkout --`, nunca `cd &&`; e nunca antes de commitar o conserto).
+- Medida no build de produção a 390 px quando há tela; "[NÃO MEDIDO]" escrito quando não deu.
+- Diário (uma entrada por rodada, número antes e depois) e `_progresso.md` a cada 5 tickets; memória
+  do projeto a cada onda ou a cada 20 tickets; push ao fim de cada rodada.
+
+## E3. Ritmo e proteção do próprio loop
+
+- Pausas ≤ 60 s (`ScheduleWakeup`). Um turno encadeia vários tickets; relatório curto só no fim.
+- A cada 10 tickets, uma rodada de **revisão de processo**: reler as lições de ferramenta do diário
+  (escape decodificado, barra-b virando 0x08, cwd que reseta, heredoc > 8 KB, byte-scrub que pega
+  binário) e checar que nenhuma voltou.
+- A cada onda: as sete perguntas de *Zero to One*, funil antes/depois, pesquisa curta de mercado,
+  atualizar `apostas.md` (promover, rebaixar, riscar com motivo).
+- Se o contexto for resumido: reler este arquivo, a última entrada do diário, o `_progresso.md` e a
+  memória `ciclo-aprimoramento-97` antes de tocar em qualquer coisa.
