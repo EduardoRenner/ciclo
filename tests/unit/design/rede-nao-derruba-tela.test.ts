@@ -84,7 +84,36 @@ function corposDeTransicao(src: string): string[] {
 function corpoTemODefeito(src: string): boolean {
   // APR-203 (C-47): `apiFetch` sem rede grava no IndexedDB, que falha de verdade — a rejeição dentro da
   // transição derruba a tela do mesmo jeito que um `fetch` cru. Os dois contam.
-  return corposDeTransicao(src).some((c) => (c.includes('await fetch') || c.includes('await apiFetch(')) && !c.includes('try {'))
+  return corposDeTransicao(src).some(temChamadaForaDeTry)
+}
+
+/**
+ * Cada `await fetch`/`await apiFetch(` precisa estar DENTRO de um `try` — não basta haver um `try`
+ * em qualquer lugar do corpo. Medido em 2026-10-14 (APR-203): o Marcar tinha o caminho online dentro
+ * de `try` e o offline fora, no mesmo corpo, e a versão anterior deste detector passava verde.
+ */
+function temChamadaForaDeTry(corpo: string): boolean {
+  const chamada = /await (fetch|apiFetch)\(/g
+  for (let m = chamada.exec(corpo); m; m = chamada.exec(corpo)) {
+    const i = m.index
+    // o `try {` mais próximo antes da chamada, e o fim do bloco dele por contagem de chaves
+    const abertura = corpo.lastIndexOf('try {', i)
+    if (abertura < 0) return true
+    let nivel = 0
+    let fim = -1
+    for (let k = abertura + 'try '.length; k < corpo.length; k++) {
+      if (corpo[k] === '{') nivel++
+      else if (corpo[k] === '}') {
+        nivel--
+        if (nivel === 0) {
+          fim = k
+          break
+        }
+      }
+    }
+    if (fim < i) return true
+  }
+  return false
 }
 
 function temFetchDesprotegido(arquivo: string): boolean {
@@ -118,6 +147,21 @@ describe('falha de rede não pode derrubar a tela', () => {
     const comDefeito = `
       startTransition(async () => {
         await apiFetch('/api/v1/x', { method: 'POST', body: {} })
+      })
+    `
+    expect(corpoTemODefeito(comDefeito)).toBe(true)
+  })
+
+  it('um `try` em OUTRO caminho do mesmo corpo não protege a chamada crua (APR-203)', () => {
+    const comDefeito = `
+      startTransition(async () => {
+        if (!navigator.onLine) {
+          await apiFetch('/api/v1/x', { method: 'POST', body: {} })
+          return
+        }
+        try {
+          await fetch('/api/v1/x')
+        } catch {}
       })
     `
     expect(corpoTemODefeito(comDefeito)).toBe(true)
