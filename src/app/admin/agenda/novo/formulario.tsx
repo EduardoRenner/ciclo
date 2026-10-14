@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
@@ -9,6 +9,9 @@ import Chip from '@/components/ui/chip'
 import Input from '@/components/ui/input'
 import PhoneInput from '@/components/ui/phone-input'
 import Select from '@/components/ui/select'
+import GradeDeHorarios, { slotsUnicosDe, type SlotLivre } from '@/components/agenda/grade-de-horarios'
+import TrilhoDeDias from '@/components/agenda/trilho-de-dias'
+import { hojeNoFuso, proximosDias } from '@/core/agenda/dias'
 import { useToast } from '@/components/ui/toast'
 import { comMaiuscula, type Vocabulario } from '@/core/text/vocabulario'
 import { formatarPreco, type ModeloDePreco } from '@/core/pricing/formatar'
@@ -70,6 +73,45 @@ export default function FormularioAgendamento({
   // APR-022: o que ficou guardado neste aparelho, dito por extenso. A tela não sai daqui offline.
   const [guardadoOffline, setGuardadoOffline] = useState<string | null>(null)
   const fuso = useFuso()
+  /*
+    APR-110b (docs/98 I-10): o horário sai de um campo livre de data e hora (que aceitava horário
+    ocupado e só descobria no 409) e vira o mesmo trilho de dias + grade de horários livres do
+    agendar público, pela mesma conta do servidor (APR-110a). "Outro horário" reabre o campo manual
+    para o encaixe fora da lista. A série de recorrência segue pelo campo manual: ela precisa de
+    uma hora de referência, não de um horário livre de um dia.
+  */
+  const [dia, setDia] = useState(() => hojeNoFuso(fuso))
+  const dias = useMemo(() => proximosDias(14, hojeNoFuso(fuso)), [fuso])
+  const [slots, setSlots] = useState<SlotLivre[] | null>(null)
+  const [erroDosHorarios, setErroDosHorarios] = useState<string | null>(null)
+  const [slotEscolhido, setSlotEscolhido] = useState<SlotLivre | null>(null)
+  const [horarioManual, setHorarioManual] = useState(false)
+  const pedidoDeHorarios = useRef(0)
+  useEffect(() => {
+    if (!serviceId || horarioManual) return
+    const meuPedido = ++pedidoDeHorarios.current
+    setSlots(null)
+    setErroDosHorarios(null)
+    const params = new URLSearchParams({ serviceId, date: dia })
+    if (professionalId) params.set('professionalId', professionalId)
+    fetch(`/api/v1/appointments/availability?${params.toString()}`)
+      .then(async (r) => {
+        const json = (await r.json()) as { data?: { slots: SlotLivre[] }; error?: { message: string } }
+        if (meuPedido !== pedidoDeHorarios.current) return
+        if (!r.ok) {
+          setErroDosHorarios(json.error?.message ?? 'Não consegui buscar os horários.')
+          return
+        }
+        setSlots(json.data?.slots ?? [])
+      })
+      .catch(() => {
+        // A resposta velha não sobrescreve a nova (APR-003), e rede caída não vira "sem horário".
+        if (meuPedido === pedidoDeHorarios.current) setErroDosHorarios('Não consegui falar com o servidor. Confira a conexão e toque no dia de novo.')
+      })
+  }, [serviceId, professionalId, dia, horarioManual])
+  const resumoDoHorario = slotEscolhido
+    ? `${new Intl.DateTimeFormat('pt-BR', { timeZone: fuso, weekday: 'short', day: '2-digit', month: '2-digit' }).format(new Date(slotEscolhido.startsAt))}, às ${horaLocal(slotEscolhido.startsAt, fuso)}`
+    : null
 
   // docs/09-PLATAFORMA.md §12: série de recorrência é um agendamento a mais que se repete,
   // não uma tela separada — por isso vive dentro do mesmo formulário, atrás de um toggle.
@@ -198,7 +240,7 @@ export default function FormularioAgendamento({
             }).catch(() => {})
           }
           mostrarToast({ tom: 'ok', titulo: 'Agendamento criado' })
-          router.push('/admin/agenda')
+          router.push(`/admin/agenda?date=${new Intl.DateTimeFormat('en-CA', { timeZone: fuso }).format(new Date(startsAtIso))}`)
           return
         }
 
@@ -282,11 +324,17 @@ export default function FormularioAgendamento({
 
   function aoEnviarFormulario(e: React.FormEvent) {
     e.preventDefault()
-    if (!dataHora) return
     if (repetirAtivo) {
+      if (!dataHora) return
       enviarSerie()
       return
     }
+    // O horário da grade vai como veio do servidor (ISO): nada de ida e volta pelo fuso do aparelho.
+    if (!horarioManual && slotEscolhido) {
+      enviar(slotEscolhido.startsAt)
+      return
+    }
+    if (!dataHora) return
     enviar(paraIso(dataHora))
   }
 
@@ -299,6 +347,38 @@ export default function FormularioAgendamento({
           </Card>
         )}
       </div>
+      <Input
+        rotulo={comMaiuscula(vocabulario.cliente)}
+        value={clienteNome}
+        onChange={(e) => setClienteNome(e.target.value)}
+        placeholder="Nome"
+        autoComplete="name"
+        required
+      />
+      {sugestoes.length > 0 ? (
+        <div role="group" aria-label="Já é cliente?" className="-mt-2 flex flex-col gap-1 rounded-[var(--radius-sm)] border border-line-2 p-1">
+          <span className="px-2 pt-1 text-label font-semibold text-txt-3">Já é cliente?</span>
+          {sugestoes.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => {
+                setClienteNome(c.name)
+                setClienteTelefone(formatarTelefone(c.phone_e164) ?? '')
+                setEscolhido(c.name)
+                setSugestoes([])
+              }}
+              className="flex min-h-12 items-center justify-between gap-3 rounded-[var(--radius-sm)] px-2 text-left hover:bg-surface-2"
+            >
+              <span className="truncate text-corpo font-semibold text-txt">{c.name}</span>
+              <span className="shrink-0 text-secundario text-txt-3">{formatarTelefone(c.phone_e164) ?? ''}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <PhoneInput valor={clienteTelefone} aoMudar={setClienteTelefone} required />
+
       <Select rotulo={comMaiuscula(vocabulario.servico)} value={serviceId} onChange={(e) => setServiceId(e.target.value)} required>
         {servicos.map((s) => (
           <option key={s.id} value={s.id}>
@@ -334,46 +414,38 @@ export default function FormularioAgendamento({
         </Select>
       ) : null}
 
-      <Input
-        rotulo={comMaiuscula(vocabulario.cliente)}
-        value={clienteNome}
-        onChange={(e) => setClienteNome(e.target.value)}
-        placeholder="Nome"
-        autoComplete="name"
-        required
-      />
-      {sugestoes.length > 0 ? (
-        <div role="group" aria-label="Já é cliente?" className="-mt-2 flex flex-col gap-1 rounded-[var(--radius-sm)] border border-line-2 p-1">
-          <span className="px-2 pt-1 text-label font-semibold text-txt-3">Já é cliente?</span>
-          {sugestoes.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => {
-                setClienteNome(c.name)
-                setClienteTelefone(formatarTelefone(c.phone_e164) ?? '')
-                setEscolhido(c.name)
-                setSugestoes([])
-              }}
-              className="flex min-h-12 items-center justify-between gap-3 rounded-[var(--radius-sm)] px-2 text-left hover:bg-surface-2"
-            >
-              <span className="truncate text-corpo font-semibold text-txt">{c.name}</span>
-              <span className="shrink-0 text-secundario text-txt-3">{formatarTelefone(c.phone_e164) ?? ''}</span>
-            </button>
-          ))}
+
+      {!horarioManual && !repetirAtivo ? (
+        <div className="flex flex-col gap-3">
+          <TrilhoDeDias dias={dias} dia={dia} fechados={new Set()} aoEscolher={(d) => { setDia(d); setSlotEscolhido(null) }} />
+          {/* Vive sempre no DOM: trocar de dia troca a lista inteira sem trocar de rota. */}
+          <p aria-live="polite" className="sr-only">
+            {erroDosHorarios ? '' : slots === null ? 'Buscando horários.' : slots.length === 0 ? 'Sem horários livres nesse dia.' : `${slotsUnicosDe(slots).length} horários livres.`}
+          </p>
+          {erroDosHorarios ? (
+            <p role="alert" className="text-secundario text-bad">{erroDosHorarios}</p>
+          ) : slots === null ? (
+            <p className="text-secundario text-txt-2">Buscando horários…</p>
+          ) : slots.length === 0 ? (
+            <p className="text-secundario text-txt-2">Sem horários livres nesse dia. Tente outro dia, ou use &ldquo;Outro horário&rdquo;.</p>
+          ) : (
+            <GradeDeHorarios slots={slotsUnicosDe(slots)} timezone={fuso} escolhido={slotEscolhido} aoEscolher={setSlotEscolhido} />
+          )}
+          <button type="button" onClick={() => setHorarioManual(true)} className="flex min-h-12 items-center self-start text-secundario font-semibold text-acc-2 underline underline-offset-2">
+            Outro horário (fora da lista)
+          </button>
         </div>
-      ) : null}
-
-      <PhoneInput valor={clienteTelefone} aoMudar={setClienteTelefone} required />
-
-      <Input
-        rotulo="Data e horário"
-        type="datetime-local"
-        value={dataHora}
-        onChange={(e) => setDataHora(e.target.value)}
-        required
-        classNameCampo="tabular"
-      />
+      ) : (
+        <Input
+          rotulo="Data e horário"
+          type="datetime-local"
+          value={dataHora}
+          onChange={(e) => setDataHora(e.target.value)}
+          required
+          classNameCampo="tabular"
+          ajuda={repetirAtivo ? undefined : 'Encaixe fora dos horários livres. O sistema ainda recusa se o horário estiver ocupado.'}
+        />
+      )}
 
       {/*
         Travado, e dizendo por quê no mesmo lugar. A alternativa seria mandar a pessoa para
@@ -477,18 +549,25 @@ export default function FormularioAgendamento({
         </Card>
       ) : null}
 
+      {resumoDoHorario && !horarioManual && !repetirAtivo ? (
+        <p className="text-secundario text-txt-2">
+          Marcar para <span className="font-semibold text-txt">{resumoDoHorario}</span>.
+        </p>
+      ) : null}
       <Button
         type="submit"
         largura="cheia"
         carregando={pendente}
-        disabled={servicos.length === 0 || profissionais.length === 0}
+        disabled={servicos.length === 0 || profissionais.length === 0 || (!horarioManual && !repetirAtivo && !slotEscolhido)}
         motivoDesabilitado={
           servicos.length === 0
             ? 'Cadastre pelo menos um serviço em Configurações para poder agendar.'
-            : 'Cadastre pelo menos um profissional em Configurações para poder agendar.'
+            : profissionais.length === 0
+              ? 'Cadastre pelo menos um profissional em Configurações para poder agendar.'
+              : 'Escolha um horário na lista acima.'
         }
       >
-        {repetirAtivo ? 'Criar série' : 'Confirmar agendamento'}
+        {repetirAtivo ? 'Criar série' : 'Marcar horário'}
       </Button>
     </form>
   )
