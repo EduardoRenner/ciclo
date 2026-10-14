@@ -16,3 +16,16 @@ Uma entrada por rodada: o que, por quê, número antes e depois, o que saiu, pr�
 - **O que saiu:** a importação antiga por CSV (rota, serviço, teste), o botão flutuante no celular.
 - **Próxima:** APR-105 (um primário só no detalhe do horário). Na fila das apostas, A-04 (dia do salão
   no servidor) é a mais barata com dano evitado e entra logo depois.
+
+## 2026-10-13 · Rodada 1 · APR-105, o detalhe do horário
+
+- **O que e por quê:** primeiro ticket desbloqueado da Onda 1, e o de maior dano evitado: um toque
+  errado no balcão (Cancelar colado em Chegou) apaga um horário com cliente na frente.
+- **Antes → depois (390 px, build de produção):** primários no "confirmado" 2 → 1; Cancelar de botão
+  vermelho cheio no meio → linha separada no fim, 48 px, com "Ele sai da agenda e o horário fica livre".
+- **Além do ticket (Lente 1):** a captura mostrou que o detalhe NÃO dizia de quem era o horário nem o
+  serviço, e a hora saía no fuso do aparelho. Agora "Marina Bastos · Platinado com Anderson Rocha" e a
+  hora do negócio. Nenhum plano tinha isso: só apareceu porque a tela foi olhada como a recepção olha.
+- **O que saiu:** o segundo primário; o vermelho cheio do cancelar.
+- **Próxima:** APR-106 (cada bloco da Hoje avisa quando falha em vez de mostrar zero): dano evitado
+  alto, porque zero falso na Hoje é número errado na tela mais vista.
