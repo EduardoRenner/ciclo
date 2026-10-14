@@ -158,6 +158,28 @@ export async function fechamentoDiario(db: Cliente, tenantId: string, timezone: 
 }
 
 /** `GET /cash/summary?month=` — `month` no formato `YYYY-MM`. */
+/**
+ * APR-123 (docs/98 I-20): o que foi ATENDIDO no dia e ainda não passou por comanda fechada — é o
+ * aviso do caixa vazio ("Você atendeu R$ X hoje e ainda não fechou as comandas"). Soma o preço de
+ * tabela dos atendimentos concluídos cujo ticket não está fechado (sem ticket, ou ticket aberto);
+ * atendimento com comanda fechada já está no "Entrou" e não entra aqui.
+ */
+export async function atendidoSemComandaDoDia(db: Cliente, tenantId: string, timezone: string, date: string): Promise<{ cents: number; atendimentos: number }> {
+  const dia = Temporal.PlainDate.from(date)
+  const inicio = dia.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
+  const fim = dia.add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
+  const { data, error } = await db
+    .from('appointments')
+    .select('price_cents, tickets ( status )')
+    .eq('tenant_id', tenantId)
+    .eq('status', 'done')
+    .gte('starts_at', inicio)
+    .lt('starts_at', fim)
+  if (error) throw new AppError('INTERNAL', { cause: error })
+  const semComanda = (data ?? []).filter((a) => !(a.tickets as { status: string }[] | null)?.some((t) => t.status === 'closed'))
+  return { cents: semComanda.reduce((soma, a) => soma + a.price_cents, 0), atendimentos: semComanda.length }
+}
+
 export async function resumoMensal(db: Cliente, tenantId: string, timezone: string, month: string): Promise<ResumoCaixa & { month: string }> {
   const { inicio, fim } = janelaDoMes(timezone, month)
   const resumo = await somarTickets(db, tenantId, inicio, fim)
