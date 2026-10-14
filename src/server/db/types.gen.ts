@@ -177,6 +177,7 @@ export type Database = {
           service_id: string
           starts_at: string
           status: Database["public"]["Enums"]["appointment_status"]
+          subject_id: string | null
           tenant_id: string
           updated_at: string
         }
@@ -207,6 +208,7 @@ export type Database = {
           service_id: string
           starts_at: string
           status?: Database["public"]["Enums"]["appointment_status"]
+          subject_id?: string | null
           tenant_id: string
           updated_at?: string
         }
@@ -237,6 +239,7 @@ export type Database = {
           service_id?: string
           starts_at?: string
           status?: Database["public"]["Enums"]["appointment_status"]
+          subject_id?: string | null
           tenant_id?: string
           updated_at?: string
         }
@@ -282,6 +285,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "services"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_subject_fk"
+            columns: ["tenant_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["tenant_id", "id"]
           },
           {
             foreignKeyName: "appointments_tenant_id_fkey"
@@ -4438,6 +4448,64 @@ export type Database = {
           },
         ]
       }
+      subjects: {
+        Row: {
+          active: boolean
+          attributes: Json
+          client_id: string
+          created_at: string
+          id: string
+          identifier: string | null
+          kind: string
+          name: string
+          tenant_id: string
+        }
+        Insert: {
+          active?: boolean
+          attributes?: Json
+          client_id: string
+          created_at?: string
+          id?: string
+          identifier?: string | null
+          kind: string
+          name: string
+          tenant_id: string
+        }
+        Update: {
+          active?: boolean
+          attributes?: Json
+          client_id?: string
+          created_at?: string
+          id?: string
+          identifier?: string | null
+          kind?: string
+          name?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subjects_tenant_id_client_id_fkey"
+            columns: ["tenant_id", "client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "subjects_tenant_id_client_id_fkey"
+            columns: ["tenant_id", "client_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "subjects_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           active: boolean
@@ -4675,6 +4743,7 @@ export type Database = {
           professional_id: string | null
           qty: number
           service_id: string | null
+          subject_id: string | null
           tenant_id: string
           ticket_id: string
           total_cents: number
@@ -4692,6 +4761,7 @@ export type Database = {
           professional_id?: string | null
           qty?: number
           service_id?: string | null
+          subject_id?: string | null
           tenant_id: string
           ticket_id: string
           total_cents: number
@@ -4709,6 +4779,7 @@ export type Database = {
           professional_id?: string | null
           qty?: number
           service_id?: string | null
+          subject_id?: string | null
           tenant_id?: string
           ticket_id?: string
           total_cents?: number
@@ -4735,6 +4806,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "services"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_items_subject_fk"
+            columns: ["tenant_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["tenant_id", "id"]
           },
           {
             foreignKeyName: "ticket_items_tenant_id_fkey"

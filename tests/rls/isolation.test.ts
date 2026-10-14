@@ -392,6 +392,8 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
     ['experiments', { tenant_id: t, titulo: 'Teste de isolamento', metrica: 'atendimentos', starts_on: '2026-10-01', dias: 14, baseline: { de: '2026-09-17', ate: '2026-09-30', atendimentos: 3, atendidoCents: 15000 } }],
     // O lote de importação (0128): contagens e hash do arquivo de um salão não podem aparecer para outro.
     ['import_batches', { tenant_id: t, file_sha256: 'a'.repeat(64), formato: 'csv', origem: 'arquivo', nivel: 'N1', counts: { lidas: 1 }, rows_expected: 1 }],
+    // O sujeito do ciclo (0132): o animal ou o carro de um cliente não pode aparecer para outro negócio.
+    ['subjects', { tenant_id: t, client_id: f.clientId, kind: 'animal', name: 'Rex' }],
     ['business_hours', { tenant_id: t, weekday: 1, opens_at: '09:00', closes_at: '19:00' }],
     ['time_off', { tenant_id: t, starts_at: inicio, ends_at: fim }],
     ['professional_services', { tenant_id: t, professional_id: f.professionalId, service_id: f.serviceId }],

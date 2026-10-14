@@ -241,6 +241,33 @@ describe('eliminarCliente', () => {
   )
 
   it(
+    'AUT-101 (0132): o animal e o carro da cliente ficam sem nome, placa e atributos, e inativos — a linha fica para o histórico',
+    async () => {
+      const { clientId } = await clienteCompleto('Tutora Que Pediu Eliminacao')
+      const placa = `LGP${Math.floor(1000 + Math.random() * 8999)}`
+      const criados = await svc
+        .from('subjects')
+        .insert([
+          { tenant_id: tenantId, client_id: clientId, kind: 'animal', name: 'Mel', attributes: { raca: 'vira-lata' } },
+          { tenant_id: tenantId, client_id: clientId, kind: 'veiculo', name: 'Onix', identifier: placa, attributes: { ano: 2021 } },
+        ])
+        .select('id')
+      if (criados.error) throw criados.error
+      expect(criados.data).toHaveLength(2)
+
+      const resultado = await eliminarCliente(svc, tenantId, clientId)
+      expect(resultado.rowsRedacted.subjects).toBe(2)
+
+      const depois = await svc.from('subjects').select('kind, name, identifier, attributes, active').eq('client_id', clientId).order('kind')
+      expect(depois.data).toEqual([
+        { kind: 'animal', name: 'Eliminado', identifier: null, attributes: {}, active: false },
+        { kind: 'veiculo', name: 'Eliminado', identifier: null, attributes: {}, active: false },
+      ])
+    },
+    30_000,
+  )
+
+  it(
     'TICKET-115: apaga a linha e o arquivo do bucket PÚBLICO vitrine — não só o media privado',
     async () => {
       const { clientId, mediaId } = await clienteCompleto('Para Eliminar Com Foto Publicada')

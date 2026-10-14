@@ -230,6 +230,16 @@ export const TRATAMENTO_NA_ELIMINACAO: Record<string, Record<string, string>> = 
   portfolio_photos: {
     storage_key: 'apaga_linha',
   },
+  // AUT-101 (0132): o animal ou o carro da cliente. A linha FICA (os agendamentos apontam para ela e o
+  // histórico de ciclos não pode ficar órfão), sem nada que identifique: nome e placa viram genéricos,
+  // atributos somem e o sujeito fica inativo. A eliminação anonimiza a ficha (não apaga), então o
+  // `on delete cascade` de `subjects.client_id` NÃO dispara aqui — por isso a escrita explícita.
+  subjects: {
+    kind: 'preserva', // 'animal' | 'veiculo': o tipo, não quem
+    name: 'anonimiza',
+    identifier: 'anonimiza',
+    attributes: 'anonimiza',
+  },
   payments: {
     psp: 'preserva', // registro financeiro: nome do provedor, sem dado pessoal
     psp_charge_id: 'preserva', // id da cobrança no PSP, necessário para conciliação contábil
@@ -539,6 +549,15 @@ async function eliminarComServico(db: Cliente, tenantId: string, clientId: strin
     .select('id')
   if (documentosJuridicos.error) throw new AppError('INTERNAL', { cause: documentosJuridicos.error })
   rowsRedacted.legal_documents = documentosJuridicos.data?.length ?? 0
+
+  const sujeitos = await db
+    .from('subjects')
+    .update({ name: 'Eliminado', identifier: null, attributes: {}, active: false })
+    .eq('tenant_id', tenantId)
+    .eq('client_id', clientId)
+    .select('id')
+  if (sujeitos.error) throw new AppError('INTERNAL', { cause: sujeitos.error })
+  rowsRedacted.subjects = sujeitos.data?.length ?? 0
 
   // ── o cadastro em si
   const agora = new Date().toISOString()

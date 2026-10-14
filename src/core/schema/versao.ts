@@ -151,6 +151,8 @@ export const MIGRATIONS_DO_CODIGO: readonly string[] = [
   '0129_desfazer_lote_de_importacao',
   '0130_fechamento_leva_desconto_e_gorjeta',
   '0131_mes_congelado_guarda_aluguel_e_gorjeta',
+  '0132_sujeito_do_ciclo',
+  '0133_sujeito_no_agendamento_e_na_comanda',
 ]
 
 /** Quantos arquivos existem em `supabase/migrations/`. */
