@@ -234,11 +234,16 @@ const CAMPOS_DO_CLIENTE_PARA_O_MODELO = [
   'marketing_opt_in',
   'whatsapp_opt_out',
   'visits_count',
-  'no_show_count',
+  // APR-213 (E-08, G-08): `no_show_count` nunca é escrita por ninguém (dizia 0 para quem faltou 2×). A conta sai do histórico, em `faltas`.
   'ltv_cents',
   'last_visit_at',
   'created_at',
 ] as const
+
+/** APR-213: faltas contadas do histórico ao vivo — a mesma régua da ficha, nunca a coluna do cron. */
+export function contarFaltas(agendamentos: readonly { status: string }[]): number {
+  return agendamentos.filter((a) => a.status === 'no_show').length
+}
 
 export function soCadastroQueOModeloPrecisa<T extends Record<string, unknown>>(cliente: T): Partial<T> {
   const saida: Partial<T> = {}
@@ -302,7 +307,12 @@ export const FERRAMENTAS: Ferramenta[] = [
       )
       // Só os 10 mais recentes voltam ao modelo — histórico inteiro de anos não cabe no
       // contexto e não muda a resposta de "quando ela veio da última vez".
-      return { cliente: soCadastroQueOModeloPrecisa(cliente), ultimosAgendamentos: agendamentos.slice(-10).reverse(), memoria }
+      return {
+        cliente: soCadastroQueOModeloPrecisa(cliente),
+        faltas: contarFaltas(agendamentos),
+        ultimosAgendamentos: agendamentos.slice(-10).reverse(),
+        memoria,
+      }
     },
   }),
   apagarTipo({
