@@ -30,6 +30,21 @@ describe('relógio múltiplo (C-002)', () => {
     expect(r.porDia).toBeLessThan(45)
   })
 
+  it('a leitura errada é pulada INTEIRA: a seguinte é medida contra a última leitura certa', () => {
+    // 1/1: 10.000 · 11/1: 1.200 (digitado errado) · 4/3: 11.240. Certo: 1.240 km em 62 dias = 20/dia.
+    // Sem pular a errada, as taxas seriam −880 e +193/dia e a mediana daria negativa — controle visto
+    // reprovando em 14/10/2026 (o caso de 4 leituras acima passava mesmo sem o filtro: a mediana absorvia).
+    const r = ritmoDeUso(
+      [
+        { date: d('2026-01-01'), uso: 10_000 },
+        { date: d('2026-01-11'), uso: 1_200 },
+        { date: d('2026-03-04'), uso: 11_240 },
+      ],
+      36,
+    )
+    expect(r.porDia).toBe(20)
+  })
+
   it('com uma leitura só, usa o ritmo de referência e diz que usou', () => {
     expect(ritmoDeUso([{ date: d('2026-01-01'), uso: 5_000 }], 36)).toEqual({ porDia: 36, origem: 'referencia', leituras: 1 })
   })
