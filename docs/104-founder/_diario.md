@@ -130,3 +130,26 @@ Uma entrada por rodada: o que, por quê, número antes e depois, o que saiu, pr�
   arquivo (o `git checkout` falhou fora do worktree) — revertida à mão antes do commit. Regra que
   fica: `git -C <worktree>` em tudo que muda estado, nunca `cd &&`.
 - **Próxima:** APR-124 (aria-live nas subtelas e contraste do selo), APR-125 (alvos de 48 px).
+
+## 2026-10-14 · Rodada 6 · APR-124, 125 e o começo da Onda 2 (205, 203, 206)
+
+- **APR-124:** axe nas 5 subtelas, claro e escuro (cookie `ciclo-tema`), 390 px: a única violação
+  era o selo "Ativa" das Automações no claro — `--ok` a **3,98:1 sobre a própria tinta** (`bg-ok/15`),
+  não sobre a superfície pura, que é o que a guarda media. Guarda estendida à tinta nas duas paletas
+  (vista reprovando: ok claro 3,98, bad escuro 4,27); tokens rebalanceados sem quebrar a separação de
+  luminância para daltônicos (--risk escuro e --bad claro ajustados junto). Depois: **0 violações
+  nas 10 combinações**. Automações ganhou `role="status"` sempre no DOM.
+- **APR-125:** sondagem ponto a ponto num quadrado de 48×48 centrado no alvo, a 360 e 390: "Pular
+  tudo" 156×48 (100%), os 7 dias da Agenda 48×64 (100% — a 360 a faixa desliza em vez de espremer),
+  os 2 links dentro dos parágrafos dos termos 48 de altura (100%, sem `toque-48`). "Registrar
+  compra" (aviso da ficha de consumo) recebeu a classe mas [NÃO MEDIDO]: só aparece com produto sem
+  custo na ficha, e o demo não tem.
+- **APR-205 (Onda 2):** remarcar passava por cima de "Chegou" entre a leitura e o UPDATE. Filtro por
+  status no UPDATE; 0 linhas → 409. Integração com corrida determinística (o UPDATE só roda depois
+  de `marcarChegada`): a chegada vence, o horário não move. Mutação sem o filtro reprova.
+- **APR-203/206:** `await apiFetch` offline sem `try` derrubava o Marcar quando o IndexedDB falha;
+  o vínculo orçamento → agendamento engolia 4xx/5xx em silêncio. Guarda de rede ampliada ao
+  `apiFetch` (vista reprovando com o `try` removido).
+- **Onda 1 fechada** fora o que depende do Eduardo: 116 (PR #149 + decisão b) e 126–131 (nome do
+  botão, duas colunas). Próxima: seguir a Onda 2 pela ordem de dano (201 fuso do expediente, 204
+  desfazer fechamento, 207 "já é cliente", 208 link do orçamento…).
