@@ -67,6 +67,8 @@ export default function FormularioAgendamento({
   // docs/102 M1.10: remarcar quem já é cliente era redigitar nome e telefone inteiros a partir do Hoje.
   const [sugestoes, setSugestoes] = useState<{ id: string; name: string; phone_e164: string | null }[]>([])
   const [escolhido, setEscolhido] = useState<string | null>(null)
+  // APR-207 (F-22): telefone conhecido com outro nome digitado — avisa antes de confirmar, em vez de agendar no cadastro existente em silêncio.
+  const [jaCliente, setJaCliente] = useState<{ id: string; name: string; phone_e164: string | null } | null>(null)
   const [dataHora, setDataHora] = useState('')
   const [alternativas, setAlternativas] = useState<string[] | null>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -405,7 +407,44 @@ export default function FormularioAgendamento({
         </div>
       ) : null}
 
-      <PhoneInput valor={clienteTelefone} aoMudar={setClienteTelefone} required />
+      <PhoneInput
+        valor={clienteTelefone}
+        aoMudar={(v) => {
+          setClienteTelefone(v)
+          setJaCliente(null)
+        }}
+        onBlur={() => {
+          const digitos = clienteTelefone.replace(/\D/g, '')
+          if (clienteId || digitos.length < 10) return
+          fetch(`/api/v1/clients?q=${encodeURIComponent(digitos)}&limit=1`)
+            .then((r) => (r.ok ? (r.json() as Promise<{ data?: { clients?: { id: string; name: string; phone_e164: string | null }[] } }>) : null))
+            .then((json) => {
+              const achado = json?.data?.clients?.[0]
+              // Só avisa quando o nome digitado NÃO é o do cadastro: aí é que a pessoa ia duplicar sem saber.
+              setJaCliente(achado && achado.name.trim().toLowerCase() !== clienteNome.trim().toLowerCase() ? achado : null)
+            })
+            .catch(() => undefined)
+        }}
+        required
+      />
+      {jaCliente ? (
+        <div role="status" className="flex items-center justify-between gap-3 rounded-[var(--radius-sm)] bg-acc-soft px-3 py-2">
+          <p className="min-w-0 text-secundario text-txt">
+            Esse telefone já é de <span className="font-semibold">{jaCliente.name}</span>. O horário vai para o cadastro dela.
+          </p>
+          <button
+            type="button"
+            className="shrink-0 text-label font-semibold text-acc-2 underline underline-offset-2"
+            onClick={() => {
+              setClienteNome(jaCliente.name)
+              setEscolhido(jaCliente.name)
+              setJaCliente(null)
+            }}
+          >
+            Usar o nome do cadastro
+          </button>
+        </div>
+      ) : null}
 
       <Select rotulo={comMaiuscula(vocabulario.servico)} value={serviceId} onChange={(e) => setServiceId(e.target.value)} required>
         {servicos.map((s) => (
