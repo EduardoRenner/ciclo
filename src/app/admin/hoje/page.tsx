@@ -70,6 +70,15 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
 
   const hoje = Temporal.Now.zonedDateTimeISO(timezone).toPlainDate().toString()
 
+  /*
+    APR-106: um bloco que falha vira `null`, e a tela diz "não consegui carregar isto" com "tentar de
+    novo". Antes cada `catch` devolvia um objeto ZERADO e a Hoje desenhava "R$ 0,00" com cara de número
+    apurado (o CLAUDE.md chama isso de zero falso). Continua sem derrubar a tela: só o bloco avisa.
+  */
+  const falhou = (evento: string) => (erro: unknown) => {
+    console.warn(JSON.stringify({ level: 'warn', event: evento }), erro)
+    return null
+  }
   const [resumo, acoes, atribuicao, emRisco, prestacaoDeContas] = await Promise.all([
     resumoDeHoje(db, ctx.tenantId, timezone),
     /*
@@ -80,10 +89,7 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
       schema, por exemplo — e o sintoma seria só uma tela um pouco mais vazia, que ninguém
       reporta.
     */
-    centralDeAcoes(db, ctx.tenantId, ctx.papel).catch((erro: unknown) => {
-      console.warn(JSON.stringify({ level: 'warn', event: 'central_de_acoes_indisponivel' }), erro)
-      return { titulo: '', acoes: [] }
-    }),
+    centralDeAcoes(db, ctx.tenantId, ctx.papel).catch(falhou('central_de_acoes_indisponivel')),
     /*
       F1 (docs/25-ESTRATEGIA-E-EXECUCAO.md): em dia sem movimento, o herói mostra o que o Motor
       de Ciclo já trouxe este mês em vez de R$ 0,00. Mesmo cálculo de `/admin/recuperar`.
@@ -97,10 +103,7 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
       Continua sem derrubar a tela, de propósito. O que muda é não ser mais silencioso: falha
       medida vira linha de log em vez de um zero com cara de número apurado.
     */
-    receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate).catch((erro: unknown) => {
-      console.warn(JSON.stringify({ level: 'warn', event: 'atribuicao_do_ciclo_indisponivel' }), erro)
-      return { totalCents: 0, count: 0, items: [], mensagensNaJanela: 0 }
-    }),
+    receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate).catch(falhou('atribuicao_do_ciclo_indisponivel')),
     /*
       A receita em risco AGORA — a manchete da tela quando ainda nao entrou dinheiro hoje e o Motor
       ainda nao tem atribuicao (`escolherHeroi`). Sai de `listarParaRecuperar`, que e a MESMA funcao
@@ -113,17 +116,11 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
       Mesmo `catch` das outras: falha vira zero e linha de log, nunca erro na tela mais importante
       do app. Zero aqui so faz a manchete cair para "Atendido hoje", que e o comportamento anterior.
     */
-    listarParaRecuperar(db, ctx.tenantId, { limit: 1 }).catch((erro: unknown) => {
-      console.warn(JSON.stringify({ level: 'warn', event: 'receita_em_risco_indisponivel' }), erro)
-      return { totalValueCents: 0, totalProfitCents: 0, count: 0, naHoraDeVoltar: 0, items: [] }
-    }),
+    listarParaRecuperar(db, ctx.tenantId, { limit: 1 }).catch(falhou('receita_em_risco_indisponivel')),
     // docs/45 §1.4: a manchete, não a explicação (essa mora em /admin/recuperar). Mesmo `catch`
     // das outras chamadas — sem amostra suficiente `acertoBps` já vem `null` e o teaser não
     // desenha nada, então uma falha aqui é indistinguível de "ainda sem histórico" para quem olha.
-    prestacaoDeContasDoMotor(db, ctx.tenantId, hoje).catch((erro: unknown) => {
-      console.warn(JSON.stringify({ level: 'warn', event: 'prestacao_de_contas_indisponivel' }), erro)
-      return { conferidas: 0, acertos: 0, acertoBps: null, emAberto: 0, detalhe: { voltouAntes: 0, voltouNaJanela: 0, voltouDepois: 0, naoVoltou: 0 }, erroMedianoDias: null }
-    }),
+    prestacaoDeContasDoMotor(db, ctx.tenantId, hoje).catch(falhou('prestacao_de_contas_indisponivel')),
   ])
 
   // G-05a (docs/60): o segundo evento do funil mínimo — o momento em que o Motor de Ciclo mostra,
@@ -135,7 +132,7 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
   // visita a "Hoje" em qualquer tenant que o Motor já tenha trazido dinheiro de volta (a maioria
   // dos ativos). O comentário já prometia "não bloqueia a tela" — só o código não cumpria.
   // `after()` roda depois da resposta ser enviada: a pessoa vê a tela, o evento grava por trás.
-  if (atribuicao.count > 0) {
+  if (atribuicao && atribuicao.count > 0) {
     const contagem = atribuicao.count
     after(() => registrarPrimeiraOcorrencia(db, ctx.tenantId, 'motor_viu_valor', { count: contagem }))
   }
@@ -179,7 +176,7 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
       <Hoje
         resumo={resumo}
         atribuicao={atribuicao}
-        emRisco={{ totalCents: emRisco.totalValueCents, count: emRisco.count, naHoraDeVoltar: emRisco.naHoraDeVoltar }}
+        emRisco={emRisco ? { totalCents: emRisco.totalValueCents, count: emRisco.count, naHoraDeVoltar: emRisco.naHoraDeVoltar } : null}
         site={ctx.tenant.slug ? { slug: ctx.tenant.slug, nome: ctx.tenant.name } : null}
         prestacaoDeContas={prestacaoDeContas}
       >

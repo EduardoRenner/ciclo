@@ -21,6 +21,7 @@ import { textoDoConviteDoCiclo } from '@/core/billing/convite-do-ciclo'
 
 import DetalheAgendamento from '../agenda/detalhe'
 import CompartilharSite from './compartilhar'
+import BlocoFalhou from './bloco-falhou'
 import PrestacaoTeaser from './prestacao-teaser'
 
 import type { EstadoAgendamento } from '@/core/scheduling/state'
@@ -121,7 +122,7 @@ function TimelineDoDia({ itens }: { itens: LinhaHoje[] }) {
  */
 const ROTULO_DO_ATENDIDO = 'Atendido hoje'
 
-export type HeroiDaHome = 'motor_trouxe' | 'motor_em_risco' | 'atendido'
+export type HeroiDaHome = 'motor_trouxe' | 'motor_em_risco' | 'atendido' | 'indisponivel'
 
 /**
  * Qual número abre a tela — e por que "R$ 0,00" deixou de ser a resposta padrão.
@@ -153,12 +154,15 @@ export type HeroiDaHome = 'motor_trouxe' | 'motor_em_risco' | 'atendido'
  */
 export function escolherHeroi(entrada: {
   atendidoHojeCents: number
-  atribuicaoCount: number
-  valorEmRiscoCents: number
+  /** APR-106: `null` = o bloco não carregou. Não é zero, e a manchete não pode fingir que é. */
+  atribuicaoCount: number | null
+  valorEmRiscoCents: number | null
 }): HeroiDaHome {
   if (entrada.atendidoHojeCents > 0) return 'atendido'
-  if (entrada.atribuicaoCount > 0) return 'motor_trouxe'
-  if (entrada.valorEmRiscoCents > 0) return 'motor_em_risco'
+  if (entrada.atribuicaoCount !== null && entrada.atribuicaoCount > 0) return 'motor_trouxe'
+  if (entrada.valorEmRiscoCents !== null && entrada.valorEmRiscoCents > 0) return 'motor_em_risco'
+  // Sem dinheiro hoje e sem saber do Motor: dizer "R$ 0,00" seria inventar um número.
+  if (entrada.atribuicaoCount === null || entrada.valorEmRiscoCents === null) return 'indisponivel'
   return 'atendido'
 }
 
@@ -179,13 +183,14 @@ export default function Hoje({
   children,
 }: {
   resumo: ResumoHoje
-  atribuicao: ReceitaAtribuida
+  /** APR-106: `null` quando o bloco não carregou; a tela avisa em vez de mostrar zero. */
+  atribuicao: ReceitaAtribuida | null
   /** Total e contagem de `listarParaRecuperar` — a MESMA fonte de `/admin/recuperar`. */
-  emRisco: { totalCents: number; count: number; naHoraDeVoltar: number }
+  emRisco: { totalCents: number; count: number; naHoraDeVoltar: number } | null
   /** docs/62 Fase A2: `null` só quando o tenant ainda não tem slug (não deveria acontecer em /admin, mas o tipo permite). */
   site: { slug: string; nome: string } | null
   /** docs/45 §1.4: a manchete do único recurso que nenhum concorrente pesquisado tem. */
-  prestacaoDeContas: PrestacaoDeContas
+  prestacaoDeContas: PrestacaoDeContas | null
   children?: React.ReactNode
 }) {
   const fuso = useFuso()
@@ -195,8 +200,8 @@ export default function Hoje({
   const faltam = resumo.restOfDay.length
   const heroi = escolherHeroi({
     atendidoHojeCents: resumo.numeroDoDia.cents,
-    atribuicaoCount: atribuicao.count,
-    valorEmRiscoCents: emRisco.totalCents,
+    atribuicaoCount: atribuicao ? atribuicao.count : null,
+    valorEmRiscoCents: emRisco ? emRisco.totalCents : null,
   })
   const destinoDoHeroi = heroi === 'atendido' ? '/admin/caixa' : '/admin/recuperar'
 
@@ -274,8 +279,11 @@ export default function Hoje({
         quanto sobrou?") tem tela desde esta rodada — tocar no número é o gesto
         natural para chegar nela.
       */}
+      {heroi === 'indisponivel' ? (
+        <BlocoFalhou oQue="o número de hoje" className="mb-6" />
+      ) : (
       <Link href={destinoDoHeroi} className="mb-6 block">
-        {heroi === 'motor_trouxe' ? (
+        {heroi === 'motor_trouxe' && atribuicao ? (
           <StatTile
             pressionavel
             heroi
@@ -296,7 +304,7 @@ export default function Hoje({
               </span>
             }
           />
-        ) : heroi === 'motor_em_risco' ? (
+        ) : heroi === 'motor_em_risco' && emRisco ? (
           /*
             "Dá para recuperar" e não "em risco": o rótulo diz o que a pessoa PODE fazer, não o que
             ela está perdendo. É a mesma palavra que `/admin/recuperar` usa no topo — a manchete e o
@@ -353,6 +361,7 @@ export default function Hoje({
           />
         )}
       </Link>
+      )}
 
       {/*
         `docs/82` §11: o convite de colega morava só em "Meu plano", e lá ele fica — mas o momento em
@@ -362,7 +371,7 @@ export default function Hoje({
         indicou (`?origem=convite&ref=`), para a indicação aparecer no placar.
       */}
       {/* Pela ATRIBUIÇÃO, não pelo herói: em dia com receita o herói é "Atendido hoje" (revisão 2026-09-23). */}
-      {atribuicao.count > 0 && site ? (
+      {atribuicao && atribuicao.count > 0 && site ? (
         <p className="-mt-3 mb-6 text-secundario text-txt-2">
           Conhece alguém do ramo que também perde cliente sem saber?{' '}
           <a
@@ -531,7 +540,7 @@ export default function Hoje({
         </section>
       ) : null}
 
-      <PrestacaoTeaser contas={prestacaoDeContas} />
+      {prestacaoDeContas ? <PrestacaoTeaser contas={prestacaoDeContas} /> : <BlocoFalhou oQue="a prestação de contas do Motor" className="mb-5" />}
 
       <Sheet aberto={!!selecionado} aoFechar={(aberto) => !aberto && setSelecionado(null)} titulo="Agendamento">
         {selecionado ? (

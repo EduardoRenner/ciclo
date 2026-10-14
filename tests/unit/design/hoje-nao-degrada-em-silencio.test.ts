@@ -60,6 +60,21 @@ function corposDeCatch(fonte: string): string[] {
   return corpos
 }
 
+/**
+ * APR-106: os quatro `catch` da Hoje passaram a usar UM helper, `falhou('evento')`, definido no próprio
+ * arquivo, que registra e devolve `null` (a tela avisa em vez de desenhar zero). O corpo do `catch`
+ * então é só a chamada: o registro mora no helper. Esta função diz se o helper existe e registra;
+ * sem ele (ou com ele mudo), `.catch(falhou(...))` volta a contar como catch mudo.
+ */
+function helperRegistra(fonte: string): boolean {
+  const def = fonte.indexOf('const falhou = (evento: string) =>')
+  if (def < 0) return false
+  const corpo = fonte.slice(def, fonte.indexOf('return null', def))
+  return /console\.warn\(/.test(corpo) && /event:\s*evento/.test(corpo)
+}
+
+const registra = (corpo: string, fonte: string) => /console\.warn\(/.test(corpo) || (/^\(\s*falhou\('[^']+'\)\s*\)$/.test(corpo.trim()) && helperRegistra(fonte))
+
 describe('a tela mais aberta do app degrada, mas não em silêncio', () => {
   const fonte = semComentarios(readFileSync(HOJE, 'utf8'))
   const corpos = corposDeCatch(fonte)
@@ -74,9 +89,9 @@ describe('a tela mais aberta do app degrada, mas não em silêncio', () => {
     expect(corpos.length, `${HOJE} não tem mais nenhum .catch() — esta guarda precisa ser revista`).toBeGreaterThanOrEqual(2)
   })
 
-  it.each([0, 1])('o catch nº %i registra a falha antes de devolver o padrão', (i) => {
+  it.each([0, 1, 2, 3])('o catch nº %i registra a falha antes de devolver o padrão', (i) => {
     expect(
-      /console\.warn\(/.test(corpos[i] ?? ''),
+      registra(corpos[i] ?? '', fonte),
       'um `.catch()` desta tela devolve valor padrão sem registrar nada. O `count: 0` da atribuição ' +
         'é indistinguível de "não houve atribuição", e sem log a tela volta a abrir com R$ 0,00 ' +
         'para sempre sem ninguém saber.',
@@ -89,7 +104,7 @@ describe('a tela mais aberta do app degrada, mas não em silêncio', () => {
      * cumpriria a asserção acima e continuaria inútil no dia da falha: o log diria que algo
      * quebrou, não o quê.
      */
-    const eventos = [...fonte.matchAll(/event:\s*'([^']+)'/g)].map((m) => m[1])
+    const eventos = [...fonte.matchAll(/(?:event:\s*|falhou\()'([^']+)'/g)].map((m) => m[1])
     expect(eventos.length, 'nenhum evento nomeado nos catch desta tela').toBeGreaterThanOrEqual(2)
     expect(new Set(eventos).size, `os eventos se repetem: ${eventos.join(', ')}`).toBe(eventos.length)
   })
@@ -144,12 +159,12 @@ describe('quem mostra "quanto o Motor trouxe" não transforma falha em zero cala
        * páginas públicas) não engole nada e não precisa registrar — cobrar dele seria ruído, e
        * ruído treina a ignorar alarme.
        */
-      const devolveValor = /=>\s*\(?\s*[{[]/.test(corpo) || /return\s*[{[]/.test(corpo) || /=>\s*new Map/.test(corpo)
+      const devolveValor = /=>\s*\(?\s*[{[]/.test(corpo) || /return\s*[{[]/.test(corpo) || /=>\s*new Map/.test(corpo) || /^\(\s*falhou\(/.test(corpo.trim())
       const relanca = /throw\s/.test(corpo)
       if (!devolveValor || relanca) continue
 
       expect(
-        /console\.warn\(/.test(corpo),
+        registra(corpo, fonte),
         `${arquivo} tem um \`.catch()\` que devolve valor padrão sem registrar. O zero fica ` +
           `indistinguível de "não houve retorno nenhum" — e este é o número que sustenta o preço.`,
       ).toBe(true)

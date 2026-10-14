@@ -110,3 +110,24 @@ describe('linkWhatsAppDoProximo', () => {
     expect(decodeURIComponent(link!)).toContain('Oi Ana!')
   })
 })
+
+describe('escolherHeroi quando um bloco não carregou (APR-106)', () => {
+  it('entrou dinheiro hoje: o número do dia vence mesmo sem saber do Motor', () => {
+    expect(escolherHeroi({ atendidoHojeCents: 5_000, atribuicaoCount: null, valorEmRiscoCents: null })).toBe('atendido')
+  })
+
+  it('sem dinheiro hoje e o bloco do Motor falhou: avisa, não mostra R$ 0,00', () => {
+    expect(escolherHeroi({ atendidoHojeCents: 0, atribuicaoCount: null, valorEmRiscoCents: null })).toBe('indisponivel')
+    expect(escolherHeroi({ atendidoHojeCents: 0, atribuicaoCount: 0, valorEmRiscoCents: null })).toBe('indisponivel')
+    expect(escolherHeroi({ atendidoHojeCents: 0, atribuicaoCount: null, valorEmRiscoCents: 0 })).toBe('indisponivel')
+  })
+
+  it('o bloco que carregou com número positivo ainda vale, mesmo com o outro falhando', () => {
+    expect(escolherHeroi({ atendidoHojeCents: 0, atribuicaoCount: null, valorEmRiscoCents: 30_275 })).toBe('motor_em_risco')
+    expect(escolherHeroi({ atendidoHojeCents: 0, atribuicaoCount: 3, valorEmRiscoCents: null })).toBe('motor_trouxe')
+  })
+
+  it('controle: com os dois carregados e zerados continua R$ 0,00 (o piso de antes)', () => {
+    expect(escolherHeroi({ atendidoHojeCents: 0, atribuicaoCount: 0, valorEmRiscoCents: 0 })).toBe('atendido')
+  })
+})
