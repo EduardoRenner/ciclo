@@ -613,10 +613,17 @@ export async function remarcarAgendamento(
     })
     .eq('id', id)
     .eq('tenant_id', tenantId)
+    // APR-205 (docs/98 C-30): a checagem de status lá em cima leu uma foto; entre ela e este UPDATE
+    // a recepção pode ter marcado "Chegou" noutro aparelho. Sem este filtro, remarcar passava por
+    // cima da chegada e a pessoa sentada na cadeira "mudava" de horário. Com ele, 0 linhas → 409.
+    .eq('status', atual.status)
     .select(COLUNAS)
     .single()
 
   if (!error) return data
+  if (error.code === 'PGRST116') {
+    throw new AppError('CONFLICT', { message: 'Esse horário mudou. Atualize a agenda.' })
+  }
   if (error.code !== '23P01') throw new AppError('INTERNAL', { cause: error })
 
   const config = lerConfiguracoesAgenda(settingsDoTenant)
