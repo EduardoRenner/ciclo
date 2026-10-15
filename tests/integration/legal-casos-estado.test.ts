@@ -36,7 +36,9 @@ async function pessoa(papel: 'owner' | 'professional'): Promise<SupabaseClient<D
 async function caso(extra: Record<string, unknown> = {}): Promise<{ id: string; rv: number }> {
   const r = await admin
     .from('legal_cases')
-    .insert({ tenant_id: T, client_id: clienteId, kind: 'holding', title: 'Holding teste', client_title: 'o planejamento da família', ...extra })
+    // `opened_on` fixo antes de HOJE: o padrão é `current_date`, e a partir de 09/10 o `closed_on = HOJE` caía antes
+    // da abertura e a constraint `closed_on >= opened_on` recusava (os dois testes de encerrar falhavam pela data).
+    .insert({ tenant_id: T, client_id: clienteId, kind: 'holding', title: 'Holding teste', client_title: 'o planejamento da família', opened_on: '2026-10-01', ...extra })
     .select('id, row_version')
     .single()
   return { id: r.data!.id, rv: r.data!.row_version }
