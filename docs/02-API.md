@@ -51,6 +51,7 @@ Base: `/api/v1`. Tudo JSON, `Content-Type: application/json`. Textos de erro em 
 | `OPT_OUT` | 422 | Cliente pediu para não receber mensagem |
 | `VAULT_LOCKED` | 423 | Cofre exige reautenticação |
 | `ASSISTANT_UNAVAILABLE` | 503 | Assistente sem credencial ou provedor fora do ar (docs/26 §4.4) |
+| `EMAIL_UNAVAILABLE` | 503 | Provedor de e-mail recusou o envio da confirmação (docs/98-aprimoramento/11 LOJA-02) |
 | `INTERNAL` | 500 | Nunca vazar stack trace |
 
 #### Paginação

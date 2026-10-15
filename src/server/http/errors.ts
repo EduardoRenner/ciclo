@@ -27,6 +27,12 @@ export const ERROR_CODES = {
   // provedor fora do ar não é bug do CICLO, e a UI trata os dois diferente (esconde o botão do
   // assistente vs. tela de erro genérica).
   ASSISTANT_UNAVAILABLE: { status: 503, message: 'O assistente está indisponível agora.' },
+  // docs/98-aprimoramento/11 LOJA-02: o provedor de e-mail recusou o envio (sem SMTP próprio, o Supabase só entrega
+  // para o time). Distinto de INTERNAL porque a conta não foi o problema: a pessoa só não vai receber o link.
+  EMAIL_UNAVAILABLE: {
+    status: 503,
+    message: 'Não conseguimos enviar o e-mail de confirmação agora. Tente de novo em alguns minutos.',
+  },
   INTERNAL: { status: 500, message: 'Algo deu errado do nosso lado. Tente de novo em instantes.' },
 } as const satisfies Record<string, { status: number; message: string }>
 

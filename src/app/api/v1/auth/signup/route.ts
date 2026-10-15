@@ -54,7 +54,23 @@ export const POST = rota(async (req) => {
     // ficaria esperando uma mensagem que nunca sai.
     if (status >= 500) throw new AppError('INTERNAL', { cause: error })
 
-    console.warn(JSON.stringify({ level: 'warn', event: 'signup_recusado', status }))
+    /*
+     * docs/98-aprimoramento/11 LOJA-02. Sem SMTP próprio o Supabase recusa entregar para quem não é do time da
+     * organização, com 400. Caía na resposta genérica abaixo: a tela dizia "mandamos o link" e nada saía
+     * (produção, 15/10/2026). Isto expõe um pouco mais do que a resposta igual (quem já tem conta confirmada
+     * não dispara envio), mas só enquanto o envio estiver quebrado, e o evento abaixo é o alarme disso.
+     */
+    if (error.code === 'email_address_not_authorized') {
+      console.error(JSON.stringify({ level: 'error', event: 'signup_email_nao_enviado', status, code: error.code }))
+      throw new AppError('EMAIL_UNAVAILABLE')
+    }
+
+    // Recusado pelo formato, não pela existência da conta: não revela nada dizer que o endereço não serve.
+    if (error.code === 'email_address_invalid') {
+      throw AppError.validacao({ email: 'Esse e-mail não pode receber mensagens. Confira se digitou certo.' })
+    }
+
+    console.warn(JSON.stringify({ level: 'warn', event: 'signup_recusado', status, code: error.code }))
   }
 
   // Daqui para baixo a resposta é idêntica para e-mail novo e e-mail já
