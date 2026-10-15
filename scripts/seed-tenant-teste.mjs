@@ -7,10 +7,14 @@
  *
  *   node scripts/seed-tenant-teste.mjs lang-barber barber "Lang Barber" "dono-lang-barber@ciclo.app"
  *   node scripts/seed-tenant-teste.mjs lang-unhas nails "Lang Unhas" "dona-lang-unhas@ciclo.app"
+ *   SEED_SENHA='...' node scripts/seed-tenant-teste.mjs apple-review barber "Barbearia do Revisor" "revisor-apple@ciclo.app" avancado
+ *
+ * O 5º argumento é o plano do CICLO (`gratis` se faltar). LOJA-23 (docs/98-aprimoramento/11): a conta do revisor
+ * da Apple precisa do plano que abre as telas que a revisão vai ver; sem ele o tenant nascia no padrão do banco.
  *
  * Rodar de novo apaga e recria (o tenant cai por slug, o resto vai no cascade).
  */
-import { createHash } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 
 import { createClient } from '@supabase/supabase-js'
@@ -39,13 +43,22 @@ const svc = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE
   auth: { persistSession: false, autoRefreshToken: false },
 })
 
-const [, , SLUG, VERTICAL, NOME, EMAIL] = process.argv
+const [, , SLUG, VERTICAL, NOME, EMAIL, PLANO = 'gratis'] = process.argv
 if (!SLUG || !VERTICAL || !NOME || !EMAIL) {
-  console.error('Uso: node scripts/seed-tenant-teste.mjs <slug> <vertical> "<nome>" "<email>"')
+  console.error('Uso: node scripts/seed-tenant-teste.mjs <slug> <vertical> "<nome>" "<email>" [gratis|essencial|equipe|avancado]')
+  process.exit(1)
+}
+// Os quatro de `src/core/billing/planos.ts` (o enum `plan_tier`); script em Node puro não importa o TS.
+if (!['gratis', 'essencial', 'equipe', 'avancado'].includes(PLANO)) {
+  console.error(`plano desconhecido: ${PLANO}`)
   process.exit(1)
 }
 
-const SENHA = process.env.SEED_SENHA ?? 'teste-ciclo-2026'
+/*
+ * Regra 10 do CLAUDE.md. Era uma senha fixa escrita aqui quando `SEED_SENHA` faltava, num repositório público e num
+ * script que roda contra produção. Sem a variável, sorteia e imprime no fim (mesmo de `seed-demo-escritorio.mjs`).
+ */
+const SENHA = process.env.SEED_SENHA ?? `teste-${randomBytes(9).toString('base64url')}`
 const TZ = 'America/Sao_Paulo'
 const OFFSET = 3
 
@@ -94,6 +107,7 @@ const { data: tenant, error: erroTenant } = await svc
     name: NOME,
     slug: SLUG,
     vertical: VERTICAL,
+    plan: PLANO,
     timezone: TZ,
     phone: '+5511990000000',
     address: 'Rua de Teste, 100 — São Paulo/SP',
@@ -295,7 +309,7 @@ for (const [clientId, dados] of porCliente) {
 
 console.log(
   JSON.stringify(
-    { ok: true, login: { email: EMAIL, senha: SENHA }, site: `/${SLUG}`, tenantId, clientes: clientesCriados.length, agendamentos: agendamentos.length },
+    { ok: true, login: { email: EMAIL, senha: SENHA }, plano: PLANO, site: `/${SLUG}`, tenantId, clientes: clientesCriados.length, agendamentos: agendamentos.length },
     null,
     2,
   ),
