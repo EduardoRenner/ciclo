@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { COOKIE_ORIGEM, VALIDADE_ORIGEM_SEGUNDOS, origemDaUrl, serializarOrigem } from '@/core/aquisicao/origem'
+import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 
 /**
  * Prefixos do app do profissional — as pastas de `src/app/admin/`. A lista é
@@ -245,6 +246,21 @@ function gravarOrigem(resposta: NextResponse, valor: string | null): NextRespons
   return resposta
 }
 
+/**
+ * docs/98-aprimoramento/11 LOJA-20. O app da loja abre a `/` deste domínio, e a `/` é a vitrine: preços,
+ * "comece grátis", FAQ mandando abrir no navegador. `/precos` tem os planos com botão de assinar. Dentro do
+ * app as duas são o que a Apple recusa (3.1.1: caminho de compra fora da loja; 4.2: o app é o site), então
+ * quem chega por elas no app vai para `/entrar`. As outras páginas públicas (perfil do salão, privacidade,
+ * termos) servem dentro do app e ficam.
+ */
+const VITRINE_FORA_DO_APP = new Set(['/', '/precos'])
+
+export function destinoNoAppNativo(pathname: string, userAgent: string | null): string | null {
+  if (!ehRequisicaoDoAppNativo(userAgent)) return null
+  const caminho = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
+  return VITRINE_FORA_DO_APP.has(caminho) ? '/entrar' : null
+}
+
 export async function middleware(req: NextRequest) {
   // Rota de conteúdo estático não leva nonce — ver `ROTAS_DE_CONTEUDO_ESTATICO`.
   const nonce = rotaDeConteudoEstatico(req.nextUrl.pathname)
@@ -273,6 +289,16 @@ export async function middleware(req: NextRequest) {
     const hoje = req.nextUrl.clone()
     hoje.pathname = '/admin/hoje'
     const redirecionamento = NextResponse.redirect(hoje)
+    aplicarCabecalhosDeSeguranca(redirecionamento, csp, semCache)
+    return gravarOrigem(redirecionamento, origem)
+  }
+
+  const noApp = destinoNoAppNativo(req.nextUrl.pathname, req.headers.get('user-agent'))
+  if (noApp) {
+    const destino = req.nextUrl.clone()
+    destino.pathname = noApp
+    destino.search = ''
+    const redirecionamento = NextResponse.redirect(destino)
     aplicarCabecalhosDeSeguranca(redirecionamento, csp, semCache)
     return gravarOrigem(redirecionamento, origem)
   }
