@@ -32,3 +32,9 @@ Nota técnica: `pnpm lint` roda `eslint .` sem ignorar `docs/**`. **Medido na Fa
 
 - **APR-042** (proposta, S2, Onda 1): corrida entre aparelhos no fechamento. Um item lançado ou removido no mesmo instante em que outro aparelho fecha pode ficar fora dos totais congelados (lançado depois da leitura do fechamento) ou sair de uma comanda já fechada (removido depois da leitura). Com a 0127, a compensação da APR-008 (apagar o item lançado tarde) é recusada pela política, então o item órfão fica. Conserto: `aplicar_fechamento_de_comanda` confere que o conjunto de itens atual é o que veio em `p_itens` (senão `CONFLICT`, "a comanda mudou, confira e feche de novo"), e as escritas de item travam a comanda (`select … for share`) e recusam comanda não aberta. Teste: duas sessões, lançar no meio do fechamento.
 - **Teste `job-queue` (1.000 jobs)**: falha intermitente só com outros arquivos em paralelo (fila global); card aberto para isolar.
+
+## Rumo à loja (15/10/2026)
+
+- **Plano único para subir na App Store e no Google Play:** `11-rumo-a-app-store.md`. Junta o plano 98 (84 de 167 tickets com commit, nada na main), o plano da loja (`APP_STORE_READINESS.md`, `docs/64`, parado em 19/09) e o e-mail de cadastro que não chega (SMTP padrão do Supabase só entrega ao time; a rota de cadastro esconde o 400).
+- 7 faixas com porta de saída; 12 lacunas novas da loja (LOJA-20 a LOJA-36), 3 com gravidade A: landing e preços dentro do app (3.1.1), login social em tela embutida (4.8), conta `apple-review` fora de `SLUGS_DE_DEMONSTRACAO` (2.1). O app também roda em iPad e em paisagem sem ter sido pensado para isso.
+- Caminho crítico: a conta Apple Developer. Só o Eduardo abre. Comece por ela.
