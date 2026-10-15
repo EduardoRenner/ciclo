@@ -7,6 +7,8 @@ import { textoDeEspera } from '@/core/http/espera'
 export const ERROR_CODES = {
   UNAUTHENTICATED: { status: 401, message: 'Sua sessão expirou. Entre de novo para continuar.' },
   MFA_REQUIRED: { status: 401, message: 'Confirme o código de verificação em duas etapas para continuar.' },
+  // docs/98-aprimoramento/11 LOJA-27: ação sensível de quem não tem segundo fator; a senha (ou um login novo) confirma.
+  REAUTH_REQUIRED: { status: 401, message: 'Digite sua senha para confirmar.' },
   FORBIDDEN: { status: 403, message: 'Seu perfil não tem acesso a essa ação.' },
   TENANT_MISMATCH: { status: 403, message: 'Esse registro é de outro estabelecimento.' },
   NOT_FOUND: { status: 404, message: 'Não encontramos o que você procura.' },

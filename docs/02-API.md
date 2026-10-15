@@ -36,6 +36,7 @@ Base: `/api/v1`. Tudo JSON, `Content-Type: application/json`. Textos de erro em 
 |---|---|---|
 | `UNAUTHENTICATED` | 401 | Sem sessão válida |
 | `MFA_REQUIRED` | 401 | Ação sensível exige AAL2 |
+| `REAUTH_REQUIRED` | 401 | Confirmar com a senha ou entrar de novo, para quem não tem segundo fator (docs/98-aprimoramento/11 LOJA-27) |
 | `FORBIDDEN` | 403 | Sem permissão para o papel |
 | `TENANT_MISMATCH` | 403 | Recurso é de outro tenant |
 | `NOT_FOUND` | 404 | |
