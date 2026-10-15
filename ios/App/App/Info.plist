@@ -34,6 +34,11 @@
 	-->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<!-- LOJA-25 (docs/98-aprimoramento/11): o seletor de foto da tela embutida oferece câmera e fototeca. -->
+	<key>NSCameraUsageDescription</key>
+	<string>O CICLO usa a câmera só quando você escolhe tirar uma foto: do trabalho no cliente, do seu logo ou do seu time.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>O CICLO abre suas fotos só para você escolher uma imagem: do trabalho no cliente, do seu logo ou do seu time.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
