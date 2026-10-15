@@ -38,6 +38,7 @@ Toda lacuna tem teste novo que foi **visto reprovando** antes do conserto e de n
 | `pnpm typecheck`, `pnpm lint`, `pnpm test:unit` | FATO: verdes (ver o relatório final da sessão para os números da última rodada) |
 | `pnpm build` | FATO: verde |
 | `pnpm test:integration` e `pnpm test:rls` | **Não servem de prova nesta máquina.** FATO: o banco local compartilhado tem 21 migrations (0121 a 0141) que não estão na `main`, vindas de outras branches. Falham 8 arquivos de integração com `42P10` em `client_cycles` e 3 casos de RLS em tabelas que a `main` nem tem (`import_batches`, `odometer_readings`, `subjects`). Nenhum toca o que esta branch mudou. A prova limpa é a CI do PR, que sobe banco do zero |
+| CI do PR #151 (banco limpo) | FATO: 1ª rodada, 541 passaram e 2 falharam, os dois em `legal-casos-estado.test.ts`, que esta branch não toca. Causa: o teste fixa HOJE = 2026-10-08 e o caso nasce com `opened_on = current_date`; desde 09/10 `closed_on` cai antes da abertura e a constraint recusa. Bomba de data, falharia em qualquer branch. Consertado no teste (`opened_on` fixo); visto reprovar sem o conserto e passar com ele no banco local |
 | Navegador | NÃO VERIFICADO: o servidor de prévia desta sessão sobe da pasta `ciclo` (outra sessão, outra branch); o resultado de lá não vale para esta branch e foi descartado |
 | Aparelho (Android/iPhone) | NÃO VERIFICADO |
 
