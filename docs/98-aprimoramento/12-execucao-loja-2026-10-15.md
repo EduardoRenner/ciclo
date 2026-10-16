@@ -55,3 +55,50 @@ Toda lacuna tem teste novo que foi **visto reprovando** antes do conserto e de n
 
 - LOJA-26 depende da decisão iPad e paisagem; o caminho recomendado (só iPhone, só retrato) é uma linha no `project.pbxproj` e quatro no `Info.plist`.
 - Faixa 2 (interface e velocidade nas 10 telas do dono) precisa de navegador apontando para esta branch.
+
+## 6. Rodada 2 (noite de 15/10)
+
+### 6.1 Verificação no navegador, apontando para esta branch
+
+O servidor de prévia da sessão sobe da pasta de outra sessão, então a prova foi feita com Playwright contra o `next start` desta worktree (porta 3041), com um negócio de teste do banco **local** criado e apagado na hora. Roteiro: `medidas/verificar-loja-151.mjs`; resultado: `medidas/verificar-loja-151-resultado.json`.
+
+**FATO: 19 de 19 conferências**, simulando o app (User-Agent com `CicloApp`, iPhone 390x844) e o Safari:
+
+- app: `/` e `/precos` abrem em `/entrar`; sem botão de Google ou Apple; Configurações sem Notificações; Notificações aberta por link sem falar em Safari; Excluir conta sem o erro falso de conexão, `GET /api/v1/account` 200 com `confirmacao: "pronta"` logo depois do login, botão final inteiro na tela (y=712, 48 px); nenhum erro de JavaScript;
+- Safari: landing e `/precos` continuam; Notificações aparece e mostra o Web Push;
+- sem rede (modo avião do Playwright): navegar no painel mostra "Não conseguimos abrir o CICLO agora"; o cache do service worker só tem `/manifest.json`, `/sem-internet.html` e arquivos de `/_next/static`.
+
+**A medição desmentiu uma suposição minha:** `/entrar` e o painel pintam `#faf8f5` debaixo da barra de status. Com os ícones brancos fixos de antes, hora e bateria ficariam invisíveis em todas as telas, não só no painel.
+
+Achado de texto na mesma rodada: "O histórico **de o** negócio" na tela de excluir a conta (corrigido).
+
+### 6.2 Commits novos
+
+| Item | Commit | O que mudou | Evidência |
+| --- | --- | --- | --- |
+| Texto | `24a3ca56` | "o histórico do negócio" | conferência no navegador |
+| LOJA-26 | `c1adcf0f` | iOS só iPhone (`TARGETED_DEVICE_FAMILY = 1`) e só retrato | FATO: guarda de 4 casos, 2 mutações. NÃO VERIFICADO no Xcode |
+| APR-611 | `270c2111` | `public/sem-internet.html`; `server.errorPath` do Capacitor (no iOS o service worker não roda na tela embutida); o SW serve a página quando uma navegação falha sem rede, e a tela autenticada continua fora do cache | FATO: 7 casos novos no teste que roda o `sw.js` de verdade, 2 mutações; `cap sync` copiou a página e a configuração para Android e iOS; conferido sem rede no navegador. NÃO VERIFICADO em aparelho |
+
+A página não promete que a fila offline sobe sozinha: ela só sai no evento `online` com o app aberto. Fechar sem rede e abrir já com rede deixa a fila parada até a próxima troca de conexão. Isso é a APR-021 (depende da 020), de outra onda; não mexi.
+
+### 6.3 Faixa 2: tempo das 10 telas do dono
+
+Roteiro `medidas/medir-telas-loja.mjs`: build de produção desta branch, 390x844, **CPU 4× mais lenta**, banco local (em produção soma a ida à rede e ao banco em `gru1`). Valores em ms; 1ª visita / 2ª visita.
+
+| Tela | TTFB | LCP | CLS | Transferido | Rolagem lateral |
+| --- | --- | --- | --- | --- | --- |
+| Entrar | 390 / 289 | 748 / 412 | 0 | 74 KB | 0 |
+| Cadastro | 320 / 319 | 704 / 456 | 0 | 74 KB | 0 |
+| Hoje | 154 / 168 | 400 / 564 | 0 | 74 KB | 0 |
+| Agenda | 176 / 233 | 588 / 568 | 0 | 62 KB | 0 |
+| Comanda e Receber | 215 / 190 | 296 / 484 | 0 | 46 KB | 0 |
+| Clientes | 158 / 167 | 704 / 544 | 0 | 107 KB | 0 |
+| Recuperar | 220 / 181 | 484 / 392 | 0 | 73 KB | 0 |
+| Caixa | 195 / 167 | 388 / 388 | 0 | 61 KB | 0 |
+| Serviços | 162 / 200 | 564 / 308 | 0 | 95 KB | 0 |
+| Mês | 178 / 230 | 324 / 476 | 0 | 66 KB | 0 |
+
+Troca pela barra de baixo, do toque até o título novo (3 rodadas): a **primeira** ida à Agenda levou **1.044 ms** (meta < 1 s); todas as outras ficaram entre 449 e 510 ms. É o primeiro carregamento do código da tela com CPU lenta; a APR-102 (aba/dia em 51/57 ms) já trata isso na branch da onda 1, então não dupliquei aqui.
+
+Limites desta medida: o banco local tem poucos dados (12 clientes); a APR-418/419 mediu Clientes com 295 fichas em 6,6 s, cenário que esta medida não monta. INP não foi medido (precisa de interação real em cada tela).

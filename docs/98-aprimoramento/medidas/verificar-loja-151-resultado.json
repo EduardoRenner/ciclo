@@ -1,0 +1,97 @@
+[
+  {
+    "nome": "app: / abre em /entrar (LOJA-20)",
+    "ok": true,
+    "detalhe": "http://localhost:3041/entrar"
+  },
+  {
+    "nome": "app: /precos abre em /entrar (LOJA-20)",
+    "ok": true,
+    "detalhe": "http://localhost:3041/entrar"
+  },
+  {
+    "nome": "app: /entrar sem botão de Google ou Apple (LOJA-21)",
+    "ok": true,
+    "detalhe": "0 botões"
+  },
+  {
+    "nome": "app: barra em /entrar (tela clara medida) pede ícones escuros (LOJA-30)",
+    "ok": true,
+    "detalhe": "[250,248,245]"
+  },
+  {
+    "nome": "app: login leva ao painel",
+    "ok": true,
+    "detalhe": "http://localhost:3041/admin/hoje"
+  },
+  {
+    "nome": "app: barra no Hoje (painel claro) pede ícones escuros (LOJA-30)",
+    "ok": true,
+    "detalhe": "[250,248,246]"
+  },
+  {
+    "nome": "app: Configurações sem o item Notificações (LOJA-24)",
+    "ok": true,
+    "detalhe": "0 links"
+  },
+  {
+    "nome": "app: Notificações aberta por link não fala em Safari nem navegador (LOJA-24)",
+    "ok": true,
+    "detalhe": "Notificações Avisos no aparelho, mesmo com o CICLO fechado. Avisos no celular ainda não chegam pelo app Agenda, retornos e alertas continuam"
+  },
+  {
+    "nome": "app: Excluir conta sem segundo fator não mostra erro falso de conexão (LOJA-27)",
+    "ok": true,
+    "detalhe": ""
+  },
+  {
+    "nome": "app: botão \"Excluir mesmo assim\" inteiro dentro da tela de 844 px",
+    "ok": true,
+    "detalhe": "{\"x\":18,\"y\":712,\"width\":354,\"height\":48}"
+  },
+  {
+    "nome": "app: texto da exclusão sem \"de o negócio\"",
+    "ok": true,
+    "detalhe": ""
+  },
+  {
+    "nome": "app: login recente, a folha confirma sem pedir senha (LOJA-27)",
+    "ok": true,
+    "detalhe": "0 campos de senha"
+  },
+  {
+    "nome": "app: nenhum erro de JavaScript na página",
+    "ok": true,
+    "detalhe": ""
+  },
+  {
+    "nome": "navegador: / continua sendo a landing",
+    "ok": true,
+    "detalhe": "http://localhost:3041/"
+  },
+  {
+    "nome": "navegador: /precos continua abrindo",
+    "ok": true,
+    "detalhe": "http://localhost:3041/precos"
+  },
+  {
+    "nome": "navegador: Configurações mostra Notificações",
+    "ok": true,
+    "detalhe": "2 links"
+  },
+  {
+    "nome": "navegador: Notificações mostra o Web Push (não a frase do app)",
+    "ok": true,
+    "detalhe": "Notificações Avisos no aparelho, mesmo com o CICLO fechado. Adicione o CICLO à tela de início para receber notificações Toque no ícone de compartilhar do Safari"
+  },
+  {
+    "nome": "navegador sem rede: painel mostra \"Não conseguimos abrir o CICLO\" (APR-611)",
+    "ok": true,
+    "detalhe": "Não conseguimos abrir o CICLO agora Confira se o celular está com internet e tente de novo. O que você já tinha salvo no"
+  },
+  {
+    "nome": "navegador: nenhuma tela do painel ou da API no cache do SW",
+    "ok": true,
+    "detalhe": "/manifest.json /sem-internet.html /_next/static/chunks/8593-d4edc80f2d71ebd5.js /_next/static/chunks/6891-29ed07cf108cf7f9.js /_next/static/chunks/app/admin/layout-b43c99545c41fb50.js /_next/static/ch"
+  }
+]

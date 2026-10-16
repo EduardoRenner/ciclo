@@ -1,0 +1,51 @@
+[
+  {
+    "trocas": [
+      {
+        "rodada": 1,
+        "para": "Agenda",
+        "ms": 1044
+      },
+      {
+        "rodada": 1,
+        "para": "Clientes",
+        "ms": 474
+      },
+      {
+        "rodada": 1,
+        "para": "Hoje",
+        "ms": 474
+      },
+      {
+        "rodada": 2,
+        "para": "Agenda",
+        "ms": 470
+      },
+      {
+        "rodada": 2,
+        "para": "Clientes",
+        "ms": 510
+      },
+      {
+        "rodada": 2,
+        "para": "Hoje",
+        "ms": 459
+      },
+      {
+        "rodada": 3,
+        "para": "Agenda",
+        "ms": 463
+      },
+      {
+        "rodada": 3,
+        "para": "Clientes",
+        "ms": 455
+      },
+      {
+        "rodada": 3,
+        "para": "Hoje",
+        "ms": 449
+      }
+    ]
+  }
+]
