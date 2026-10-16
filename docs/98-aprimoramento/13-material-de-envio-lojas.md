@@ -94,7 +94,7 @@ Geradas do build de produção desta branch, com um negócio fictício do banco 
 
 As imagens mostram só o que a conta do revisor também mostra (regra 2.3).
 
-**Estado em 15/10 (rascunho, não é a versão final):** geradas com o ensaio completo da seção 6 num Supabase local **isolado** com o esquema da `main` (o banco local compartilhado está 21 migrations à frente e quebrava o Motor). Hoje mostra "3 clientes estão sumindo" e Recuperar mostra a fila. Para a versão final: capturar **de dia** (à noite aparece "Boa noite" e "Nada marcado para hoje"), preencher o custo dos serviços (some o aviso "6 serviços estão sem o custo") (a semente foi corrigida no #151: agora há cliente em cada estado do Motor, e o Recuperar mostra 7 pessoas e R$ 202,65; era R$ 10,80 com três perdidos).
+**Estado em 16/10, de manhã:** refeitas com a semente corrigida (Hoje e Agenda com 3 atendimentos, Recuperar com 7 pessoas e R$ 226,50, profissional "Rafael Costa"). Falta só a ficha técnica dos serviços para sumir o aviso de material. Histórico: geradas com o ensaio completo da seção 6 num Supabase local **isolado** com o esquema da `main` (o banco local compartilhado está 21 migrations à frente e quebrava o Motor). Hoje mostra "3 clientes estão sumindo" e Recuperar mostra a fila. Para a versão final: capturar **de dia** (à noite aparece "Boa noite" e "Nada marcado para hoje"), preencher o custo dos serviços (some o aviso "6 serviços estão sem o custo") (a semente foi corrigida no #151: agora há cliente em cada estado do Motor, e o Recuperar mostra 7 pessoas e R$ 202,65; era R$ 10,80 com três perdidos).
 
 ## 6. Preparar a conta do revisor (LOJA-54), na véspera de cada envio
 
