@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
+import IconeWhatsApp from '@/components/ui/icone-whatsapp'
 import { chaveDaFila, proximoDaFila } from '@/core/ciclo/fila-de-chamadas'
 import { fraseDoRitmo, ritmoDoCliente } from '@/core/ciclo/ritmo-do-cliente'
 import { ROTULO_DA_CLASSE, ROTULO_DO_PERFIL } from '@/core/crm/nota-do-cliente'
@@ -127,8 +128,9 @@ export default function FilaDeChamadas({
               void anotarChamada(atual)
               tratar(atual)
             }}
-            className="flex h-12 items-center justify-center rounded-[var(--radius-sm)] bg-acc text-corpo font-semibold text-on-acc shadow-elevado transition active:scale-[.98]"
+            className="flex h-14 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc text-corpo font-semibold text-on-acc shadow-elevado transition active:scale-[.98]"
           >
+            <IconeWhatsApp className="size-6" />
             Chamar pelo WhatsApp
           </a>
 

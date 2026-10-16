@@ -50,6 +50,12 @@ export default function Sheet({ aberto, aoFechar, titulo, descricao, gatilho, cl
             // dele vivia numa coluna de 560px.
             'fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[85vh] w-full max-w-[560px] overflow-y-auto overscroll-contain',
             'rounded-t-[var(--radius-sheet)] border-t border-line-2 bg-surface shadow-flutuante',
+            // No monitor o painel tem coluna lateral e o conteúdo se centra no que sobra; o sheet
+            // centrado na janela inteira ficava deslocado para a esquerda do conteúdo. Solto do
+            // rodapé, ele também deixa de parecer uma gaveta colada na beirada de uma tela larga.
+            // `raizDoTema` só existe no painel: na página pública não há coluna lateral.
+            'lg:bottom-6 lg:rounded-[var(--radius-sheet)] lg:border',
+            raizDoTema ? 'lg:left-[var(--sidebar-w)]' : '',
             // A folga extra embaixo é a área do gesto de voltar do iPhone.
             'px-[var(--gutter)] pb-[calc(24px+env(safe-area-inset-bottom))] pt-3',
             'duration-[var(--dur-3)] ease-[var(--ease-ios)]',

@@ -140,6 +140,7 @@ export const MIGRATIONS_DO_CODIGO: readonly string[] = [
   '0115_legal_privilegios_minimos',
   '0116_legal_membros_sem_segundo_fator',
   '0117_privilegio_minimo',
+  '0118_comissao_de_produto_por_profissional',
   '0121_quem_sumiu_uma_regra',
   '0122_fechar_comanda_numa_transacao',
   '0123_rls_agendamento_uma_vez_por_consulta',

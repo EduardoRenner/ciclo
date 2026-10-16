@@ -7,7 +7,7 @@ import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const COLUNAS =
-  'id, display_name, photo_key, bio, color, comp_model, commission_bps, rent_cents, accepts_online, active, user_id'
+  'id, display_name, photo_key, bio, color, comp_model, commission_bps, product_commission_bps, rent_cents, accepts_online, active, user_id'
 
 /**
  * `comp_model`/`commission_bps`/`rent_cents` do enum e dos `check` da 0001 —
@@ -23,6 +23,8 @@ export const EsquemaProfissional = z.object({
     .nullish(),
   compModel: z.enum(['commission', 'rent', 'hybrid', 'owner']).default('owner'),
   commissionBps: z.int().min(0).max(10000, 'A comissão não pode passar de 100%.').default(0),
+  /** Comissão sobre produto vendido por esta pessoa. `null` = vale a do negócio. */
+  productCommissionBps: z.int().min(0).max(10000, 'A comissão não pode passar de 100%.').nullish(),
   rentCents: z.int().min(0, 'O aluguel não pode ser negativo.').default(0),
   acceptsOnline: z.boolean().default(true),
 })
@@ -41,6 +43,7 @@ function paraColunas(entrada: EntradaParcial): ColunasProfissional {
   if (entrada.color !== undefined) colunas.color = entrada.color ?? null
   if (entrada.compModel !== undefined) colunas.comp_model = entrada.compModel
   if (entrada.commissionBps !== undefined) colunas.commission_bps = entrada.commissionBps
+  if (entrada.productCommissionBps !== undefined) colunas.product_commission_bps = entrada.productCommissionBps ?? null
   if (entrada.rentCents !== undefined) colunas.rent_cents = entrada.rentCents
   if (entrada.acceptsOnline !== undefined) colunas.accepts_online = entrada.acceptsOnline
   return colunas
