@@ -1,0 +1,174 @@
+[
+  {
+    "nicho": "Cílios",
+    "passos": [
+      {
+        "nome": "entrar",
+        "ms": 2094,
+        "ok": true
+      },
+      {
+        "nome": "primeiros-passos",
+        "ms": 2000,
+        "ok": true
+      },
+      {
+        "nome": "perguntas",
+        "ms": 3086,
+        "ok": true
+      },
+      {
+        "nome": "trazer-20-de-memoria",
+        "ms": 5879,
+        "ok": true
+      },
+      {
+        "nome": "fila",
+        "ms": 573,
+        "ok": true
+      }
+    ],
+    "problemas": [],
+    "botaoMotor": "Pôr 20 pessoas no Motor",
+    "cartao": [
+      "10 pessoas já estão atrasadas para voltar",
+      "O Motor de Ciclo já está acompanhando essa gente. Ver quem são →"
+    ],
+    "daParaRecuperar": "Dá para recuperar R$ 1.200,00",
+    "servicoNaFila": "Manutenção volume russo",
+    "temLucroNaTela": false,
+    "chamarAbreWhatsApp": true,
+    "textoDaMensagem": "Oi, Karina! Faz um tempinho desde seu último horário de manutenção volume russo. Quer marcar essa semana? É só escolher o horário aqui: http://localhost:3000/st",
+    "errosDoConsole": [],
+    "totalSegundos": 13.6
+  },
+  {
+    "nicho": "Sobrancelhas",
+    "passos": [
+      {
+        "nome": "entrar",
+        "ms": 1017,
+        "ok": true
+      },
+      {
+        "nome": "primeiros-passos",
+        "ms": 1569,
+        "ok": true
+      },
+      {
+        "nome": "perguntas",
+        "ms": 2565,
+        "ok": true
+      },
+      {
+        "nome": "trazer-20-de-memoria",
+        "ms": 6539,
+        "ok": true
+      },
+      {
+        "nome": "fila",
+        "ms": 452,
+        "ok": true
+      }
+    ],
+    "problemas": [],
+    "botaoMotor": "Pôr 20 pessoas no Motor",
+    "cartao": [
+      "10 pessoas já estão atrasadas para voltar",
+      "O Motor de Ciclo já está acompanhando essa gente. Ver quem são →"
+    ],
+    "daParaRecuperar": "Dá para recuperar R$ 450,00",
+    "servicoNaFila": "Design simples",
+    "temLucroNaTela": false,
+    "chamarAbreWhatsApp": true,
+    "textoDaMensagem": "Oi, Karina! Faz um tempinho desde seu último horário de design simples. Quer marcar essa semana? É só escolher o horário aqui: http://localhost:3000/design-sobr",
+    "errosDoConsole": [],
+    "totalSegundos": 12.1
+  },
+  {
+    "nicho": "Unhas",
+    "passos": [
+      {
+        "nome": "entrar",
+        "ms": 1579,
+        "ok": true
+      },
+      {
+        "nome": "primeiros-passos",
+        "ms": 1565,
+        "ok": true
+      },
+      {
+        "nome": "perguntas",
+        "ms": 2496,
+        "ok": true
+      },
+      {
+        "nome": "trazer-20-de-memoria",
+        "ms": 6666,
+        "ok": true
+      },
+      {
+        "nome": "fila",
+        "ms": 533,
+        "ok": true
+      }
+    ],
+    "problemas": [],
+    "botaoMotor": "Pôr 20 pessoas no Motor",
+    "cartao": [
+      "20 pessoas já estão atrasadas para voltar",
+      "O Motor de Ciclo já está acompanhando essa gente. Ver quem são →"
+    ],
+    "daParaRecuperar": "Dá para recuperar R$ 900,00",
+    "servicoNaFila": "Manicure simples",
+    "temLucroNaTela": false,
+    "chamarAbreWhatsApp": true,
+    "textoDaMensagem": "Oi, Ana! Faz um tempinho desde seu último horário de manicure simples. Quer marcar essa semana? É só escolher o horário aqui: http://localhost:3000/esmalteria-t",
+    "errosDoConsole": [],
+    "totalSegundos": 12.8
+  },
+  {
+    "nicho": "Barbearia",
+    "passos": [
+      {
+        "nome": "entrar",
+        "ms": 1057,
+        "ok": true
+      },
+      {
+        "nome": "primeiros-passos",
+        "ms": 1545,
+        "ok": true
+      },
+      {
+        "nome": "perguntas",
+        "ms": 2556,
+        "ok": true
+      },
+      {
+        "nome": "trazer-20-de-memoria",
+        "ms": 6637,
+        "ok": true
+      },
+      {
+        "nome": "fila",
+        "ms": 427,
+        "ok": true
+      }
+    ],
+    "problemas": [],
+    "botaoMotor": "Pôr 20 pessoas no Motor",
+    "cartao": [
+      "10 pessoas já estão atrasadas para voltar",
+      "O Motor de Ciclo já está acompanhando essa gente. Ver quem são →"
+    ],
+    "daParaRecuperar": "Dá para recuperar R$ 450,00",
+    "servicoNaFila": "Corte",
+    "temLucroNaTela": false,
+    "chamarAbreWhatsApp": true,
+    "textoDaMensagem": "Oi, Karina! Faz um tempinho desde seu último horário de corte. Quer marcar essa semana? É só escolher o horário aqui: http://localhost:3000/barbeiro-solo-teste-",
+    "errosDoConsole": [],
+    "totalSegundos": 12.2
+  }
+]
