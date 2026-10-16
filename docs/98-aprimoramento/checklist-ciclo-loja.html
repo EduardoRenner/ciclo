@@ -1,0 +1,304 @@
+<title>Rumo à loja CICLO</title>
+<style>
+  /* Layout: lista de tarefas de uma coluna para celular; cada tarefa abre para mostrar o passo a passo. */
+  :root {
+    --bg: #f6f7f4;
+    --surface: #ffffff;
+    --fg: #1a2421;
+    --muted: #55645e;
+    --line: #d9dfda;
+    --accent: #0b7d6f;
+    --on-accent: #ffffff;
+    --warn: #8a5a00;
+    --warn-bg: #fbf1d8;
+    --code-bg: #eef2ef;
+    --done: #8fa59d;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101716; --surface: #18221f; --fg: #e6eeea; --muted: #9db0a8; --line: #2a3733;
+      --accent: #3fc2ae; --on-accent: #06201b; --warn: #f0c36a; --warn-bg: #2f2812; --code-bg: #0d1413; --done: #5d756c;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101716; --surface: #18221f; --fg: #e6eeea; --muted: #9db0a8; --line: #2a3733;
+    --accent: #3fc2ae; --on-accent: #06201b; --warn: #f0c36a; --warn-bg: #2f2812; --code-bg: #0d1413; --done: #5d756c;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.5; padding-inline: 16px; padding-block: 20px 56px; font-size: 16px; }
+  main { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; line-height: 1.2; margin: 0 0 6px; text-wrap: balance; }
+  .sub { color: var(--muted); margin: 0 0 16px; }
+  .progresso { position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); padding-block: 8px; z-index: 2; }
+  .barra { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .barra > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  .conta { font-size: .875rem; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  h2 { font-size: .8125rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 26px 0 8px; }
+  details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; }
+  summary { list-style: none; display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; cursor: pointer; min-height: 48px; }
+  summary::-webkit-details-marker { display: none; }
+  summary:focus-visible, input:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .cx { flex: none; width: 26px; height: 26px; margin-top: 1px; accent-color: var(--accent); }
+  .tit { font-weight: 600; }
+  .meta { display: block; font-weight: 400; font-size: .875rem; color: var(--muted); }
+  details[data-feito="1"] .tit { color: var(--done); text-decoration: line-through; }
+  .corpo { padding: 0 14px 14px 52px; }
+  .corpo ol, .corpo ul { margin: 6px 0; padding-left: 20px; }
+  .corpo li { margin: 4px 0; }
+  .corpo p { margin: 6px 0; }
+  code, .cmd { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .875rem; background: var(--code-bg); border-radius: 6px; padding: 1px 5px; overflow-wrap: anywhere; }
+  .linha { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; }
+  .linha .cmd { flex: 1; min-width: 0; padding: 8px 10px; }
+  .copiar { flex: none; min-height: 44px; min-width: 64px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; font: inherit; font-size: .875rem; cursor: pointer; }
+  .aviso { background: var(--warn-bg); color: var(--warn); border-radius: 8px; padding: 8px 10px; margin: 8px 0; font-size: .9375rem; }
+  a { color: var(--accent); overflow-wrap: anywhere; }
+  .eu { color: var(--accent); font-weight: 600; }
+  footer { margin-top: 28px; color: var(--muted); font-size: .875rem; }
+</style>
+
+<main>
+  <h1>Rumo à loja CICLO</h1>
+  <p class="sub">Só o que depende de você, na ordem. Toque numa tarefa para abrir o passo a passo e marque quando terminar. As marcações ficam só neste aparelho.</p>
+
+  <div class="progresso">
+    <div class="barra"><i id="barra"></i></div>
+    <div class="conta" id="conta">0 de 0 feitas</div>
+  </div>
+
+  <h2>Hoje · sem gastar</h2>
+
+  <details data-id="senhas"><summary><input class="cx" type="checkbox" aria-label="Marcar como feita"><span class="tit">Trocar as senhas das contas de teste<span class="meta">5 minutos · Supabase</span></span></summary>
+    <div class="corpo">
+      <p>Os scripts antigos usavam uma senha escrita no código, num repositório público.</p>
+      <ol>
+        <li>Abra o Supabase, projeto <code>eqzlvthzdjnsbogymcsw</code>, menu <b>Authentication</b>, depois <b>Users</b>.</li>
+        <li>Procure <code>revisor-apple@ciclo.app</code> e digite <code>demo</code> na busca para achar as demonstrações.</li>
+        <li>Em cada uma: <b>Edit user</b>, campo <b>Password</b>, ponha uma senha nova e forte. Guarde só no seu gerenciador de senhas.</li>
+      </ol>
+      <div class="aviso">Não use "Send password recovery": o e-mail ainda não chega (veja a tarefa do envio de e-mail).</div>
+    </div>
+  </details>
+
+  <details data-id="pr"><summary><input class="cx" type="checkbox" aria-label="Marcar como feita"><span class="tit">Liberar o PR #151<span class="meta">10 minutos · GitHub</span></span></summary>
+    <div class="corpo">
+      <ol>
+        <li>Abra <a href="https://github.com/EduardoRenner/ciclo/pull/151">github.com/EduardoRenner/ciclo/pull/151</a>.</li>
+        <li>Confirme que os checks estão verdes (hoje: 5 de 5).</li>
+        <li>Clique em <b>Ready for review</b>, depois em <b>Merge pull request</b>. A Vercel publica sozinha.</li>
+      </ol>
+      <p>Não tem alteração de banco, então não mexe em dados. A data da política de privacidade já está em 16/10/2026: se o merge for em outro dia, me avise e eu troco.</p>
+    </div>
+  </details>
+
+  <details data-id="contato"><summary><input class="cx" type="checkbox" aria-label="Marcar como feita"><span class="tit">Pôr um canal de contato no site<span class="meta">5 minutos · Vercel</span></span></summary>
+    <div class="corpo">
+      <p>A loja exige uma URL de suporte que responda.</p>
+      <ol>
+        <li>Vercel, projeto do CICLO, <b>Settings</b>, <b>Environment Variables</b>, ambiente <b>Production</b>.</li>
+        <li>Crie <code>NEXT_PUBLIC_CONTATO_WHATSAPP</code> com o número só com dígitos, por exemplo <code>5551999999999</code>.</li>
+        <li>Crie <code>NEXT_PUBLIC_CONTATO_EMAIL</code> com o e-mail de suporte.</li>
+        <li><b>Deployments</b>, <b>Redeploy</b> do último de produção.</li>
+        <li>Abra <code>seuciclo.com.br/contato</code> e veja se aparece um canal.</li>
+      </ol>
+    </div>
+  </details>
+
+  <h2>E-mail de cadastro · 1 hora</h2>
+
+  <details data-id="resend"><summary><input class="cx" type="checkbox" aria-label="Marcar como feita"><span class="tit">Criar o envio de e-mail no Resend<span class="meta">grátis até 3.000 por mês</span></span></summary>
+    <div class="corpo">
+      <p>Sem isso, só quem é do seu time no Supabase recebe o link de confirmação.</p>
+      <ol>
+        <li>Crie conta em <a href="https://resend.com">resend.com</a>.</li>
+        <li><b>Domains</b>, <b>Add Domain</b>, <code>seuciclo.com.br</code>. Ele mostra de 3 a 4 registros DNS.</li>
+        <li>Onde o domínio é gerenciado (Registro.br ou Cloudflare), crie os registros exatamente como aparecem.</li>
+        <li>Volte ao Resend e clique em <b>Verify</b>. Pode levar de minutos a horas.</li>
+        <li><b>API Keys</b>, <b>Create</b>, permissão "Sending access". Copie a chave, ela aparece uma vez.</li>
+      </ol>
+    </div>
+  </details>
+
+  <details data-id="smtp"><summary><input class="cx" type="checkbox" aria-label="Marcar como feita"><span class="tit">Ligar o envio no Supabase e testar<span class="meta">10 minutos</span></span></summary>
+    <div class="corpo">
+      <ol>
+        <li>Supabase, <b>Authentication</b>, <b>Emails</b>, <b>SMTP Settings</b>, ligue <b>Custom SMTP</b>.</li>
+        <li>Preencha:</li>
+      </ol>
+      <div class="linha"><span class="cmd">smtp.resend.com</span><button class="copiar" type="button">Copiar</button></div>
+      <ul>
+        <li>Porta: <code>465</code></li>
+        <li>Usuário: <code>resend</code></li>
+        <li>Senha: a chave do Resend</li>
+        <li>Remetente: <code>nao-responda@seuciclo.com.br</code>, nome "CICLO"</li>
+      </ul>
+      <ol start="3">
+        <li>Em <b>Authentication</b>, <b>Rate Limits</b>, suba os e-mails por hora.</li>
+        <li><b>Teste:</b> cadastre um e-mail seu que não seja do time. O link tem de chegar em menos de 1 minuto. Me avise se chegou.</li>
+      </ol>
+    </div>
+  </details>
+
+  <h2>Me responda</h2>
+
+  <details data-id="decisoes"><summary><input class="cx" type="checkbox" aria-label="Marcar como feita"><span class="tit">4 decisões curtas<span class="meta">1 minuto</span></span></summary>
+    <div class="corpo">
+      <ol>
+        <li><b>Conta Apple de pessoa ou de empresa?</b> Pessoa é mais rápido. Empresa pede CNPJ e número D-U-N-S, demora mais, e mostra o nome da empresa como vendedor.</li>
+        <li><b>Codemagic ou Mac</b> para gerar o app do iPhone? Recomendo Codemagic.</li>
+        <li>Se "CICLO" estiver ocupado na App Store, posso usar "CICLO: agenda e retorno"?</li>
+        <li>Seguir com cadastro por confirmação de e-mail? É a recomendação.</li>
+      </ol>
+    </div>
+  </details>
+
+  <h2>Contas · aqui começa a gastar</h2>
+
+  <details data-id="play"><summary><input class="cx" type="checkbox" aria-label="Marcar como feita"><span class="tit">Conta Google Play<span class="meta">US$ 25, uma vez</span></span></summary>
+    <div class="corpo">
+      <ol>
+        <li>Abra <a href="https://play.google.com/console">play.google.com/console</a>, crie a conta de desenvolvedor e pague.</li>
+        <li>Valide a identidade (pede documento).</li>
+      </ol>
+      <div class="aviso">Contas pessoais novas podem exigir um período de teste fechado antes de publicar. Não verifiquei: confira no Play Console antes de prometer prazo.</div>
+    </div>
+  </details>
+
+  <details data-id="apple"><summary><input class="cx" type="checkbox" aria-label="Marcar como feita"><span class="tit">Conta Apple Developer<span class="meta">US$ 99 por ano</span></span></summary>
+    <div class="corpo">
+      <ol>
+        <li>Abra <a href="https://developer.apple.com/programs">developer.apple.com/programs</a>, entre com seu Apple ID e pague. A aprovação leva de horas a dias.</li>
+        <li>Depois, em <a href="https://appstoreconnect.com">appstoreconnect.com</a>, <b>Apps</b>, <b>+</b>, novo app: nome CICLO, idioma português (Brasil).</li>
+        <li>Bundle ID:</li>
+      </ol>
+      <div class="linha"><span class="cmd">br.com.seuciclo.app</span><button class="copiar" type="button">Copiar</button></div>
+      <div class="aviso">O Bundle ID não muda depois da primeira publicação. Só crie quando tiver certeza.</div>
+    </div>
+  </details>
+
+  <details data-id="hospedagem"><summary><input class="cx" type="checkbox" aria-label="Marcar como feita"><span class="tit">Planos pagos da hospedagem<span class="meta">opcional · recomendo antes de ter cliente pagante</span></span></summary>
+    <div class="corpo">
+      <ul>
+        <li>Vercel Hobby é só para uso não comercial. Pro custa US$ 20 por mês.</li>
+        <li>Supabase Free não tem backup. Pro custa US$ 25 por mês e inclui backup.</li>
+      </ul>
+      <p>Com ficha de saúde guardada, ficar sem backup é risco sério. Isso não trava a loja.</p>
+    </div>
+  </details>
+
+  <h2>Android · 15 minutos</h2>
+
+  <details data-id="chave"><summary><input class="cx" type="checkbox" aria-label="Marcar como feita"><span class="tit">Guardar a chave do app<span class="meta">a tarefa mais importante</span></span></summary>
+    <div class="corpo">
+      <p>A chave de upload prova que o app é seu. <b>Se você perder, nunca mais atualiza o app no Google Play.</b></p>
+      <p><span class="eu">Eu já gerei</span> a chave neste computador, na pasta <code>ciclo-loja\android</code>: o arquivo <code>upload.jks</code> e o <code>keystore.properties</code> (com a senha, que eu nunca vi nem escrevi aqui). Os dois estão bloqueados no <code>.gitignore</code> e não sobem para o GitHub.</p>
+      <ol>
+        <li>Copie os dois arquivos para o seu gerenciador de senhas ou nuvem privada.</li>
+        <li>Faça uma segunda cópia em pen drive.</li>
+        <li>Me avise "chave guardada". Quando a conta do Google Play existir, eu gero o pacote assinado.</li>
+      </ol>
+    </div>
+  </details>
+
+  <h2>iPhone</h2>
+
+  <details data-id="codemagic"><summary><input class="cx" type="checkbox" aria-label="Marcar como feita"><span class="tit">Chave de API da Apple para o Codemagic<span class="meta">depois que a conta Apple for aprovada</span></span></summary>
+    <div class="corpo">
+      <ol>
+        <li>No App Store Connect: <b>Users and Access</b>, <b>Integrations</b>, <b>App Store Connect API</b>, crie uma chave.</li>
+        <li>Me avise quando tiver. Eu te guio para colar no Codemagic sem você precisar me mandar a chave.</li>
+      </ol>
+    </div>
+  </details>
+
+  <h2>Na véspera de cada envio</h2>
+
+  <details data-id="revisor"><summary><input class="cx" type="checkbox" aria-label="Marcar como feita"><span class="tit">Preparar a conta do revisor da Apple<span class="meta">5 comandos, contra produção · só você roda</span></span></summary>
+    <div class="corpo">
+      <p>Sem isto o revisor abre telas vazias e a Apple reprova. Eu não tenho acesso à chave de produção, então os comandos são seus. Troque <code>SENHA-NOVA</code> por uma senha nova.</p>
+      <div class="linha"><span class="cmd">SEED_SENHA='SENHA-NOVA' node scripts/seed-tenant-teste.mjs apple-review barber "Barbearia do Revisor" "revisor-apple@ciclo.app" avancado</span><button class="copiar" type="button">Copiar</button></div>
+      <div class="linha"><span class="cmd">node scripts/seed-demo-agenda-futura.mjs apple-review</span><button class="copiar" type="button">Copiar</button></div>
+      <div class="linha"><span class="cmd">node scripts/seed-demo-imagens.mjs apple-review</span><button class="copiar" type="button">Copiar</button></div>
+      <div class="linha"><span class="cmd">node scripts/seed-demo-dinheiro.mjs apple-review</span><button class="copiar" type="button">Copiar</button></div>
+      <ol start="5">
+        <li>Rode o Motor ou espere a rodada da noite. <b>Olhe:</b> "Recuperar" tem de mostrar pessoas e "Clientes" tem de ter "sumido" e "fiel".</li>
+        <li>Entre no celular com a senha que vai na ficha e abra Hoje, Clientes, uma ficha e Agenda.</li>
+      </ol>
+      <div class="aviso">O segundo comando só aceita <code>apple-review</code> depois do merge do PR #151.</div>
+    </div>
+  </details>
+
+  <details data-id="nichos"><summary><input class="cx" type="checkbox" aria-label="Marcar como feita"><span class="tit">Criar as contas de teste dos nichos<span class="meta">esmalteria, cílios e pet shop · depois do merge · só você roda</span></span></summary>
+    <div class="corpo">
+      <p>Já ensaiadas no banco local: nascem com serviços do nicho, 12 clientes fictícios, agenda de hoje e caixa. Rode na pasta do CICLO, contra produção, trocando <code>SENHA</code> por uma senha nova para cada conta. Para cada uma, depois rode também os comandos de agenda, imagens e dinheiro trocando o nome da conta.</p>
+      <div class="linha"><span class="cmd">SEED_SENHA='SENHA' node scripts/seed-tenant-teste.mjs demo-esmalteria-rosa nails "Esmalteria Rosa" "esmalteria-rosa@ciclo.app" equipe</span><button class="copiar" type="button">Copiar</button></div>
+      <div class="linha"><span class="cmd">SEED_SENHA='SENHA' node scripts/seed-tenant-teste.mjs demo-studio-olhar lashes "Studio Olhar Cílios" "studio-olhar@ciclo.app" equipe</span><button class="copiar" type="button">Copiar</button></div>
+      <div class="linha"><span class="cmd">SEED_SENHA='SENHA' node scripts/seed-tenant-teste.mjs demo-pet-amigo banho_tosa "Pet Amigo Banho e Tosa" "pet-amigo@ciclo.app" equipe</span><button class="copiar" type="button">Copiar</button></div>
+      <div class="aviso">O pet shop tem só 2 serviços ("Banho" e "Banho e tosa"), porque é o que o catálogo do CICLO tem para essa profissão. Dá para acrescentar outros depois em Configurações, Serviços.</div>
+    </div>
+  </details>
+
+  <details data-id="testar"><summary><input class="cx" type="checkbox" aria-label="Marcar como feita"><span class="tit">Testar no celular de verdade<span class="meta">quando houver o primeiro app</span></span></summary>
+    <div class="corpo">
+      <ul>
+        <li>Não pode aparecer página inicial nem preço dentro do app.</li>
+        <li>Cadastro com e-mail de fora do time: o link chega.</li>
+        <li>Excluir a conta funciona.</li>
+        <li>Modo avião: aparece "Não conseguimos abrir o CICLO agora".</li>
+      </ul>
+      <p>Mande print de qualquer coisa estranha.</p>
+    </div>
+  </details>
+
+  <details data-id="enviar"><summary><input class="cx" type="checkbox" aria-label="Marcar como feita"><span class="tit">Enviar para revisão<span class="meta">Apple: 1 a 3 dias · Google: horas a dias</span></span></summary>
+    <div class="corpo">
+      <ol>
+        <li>Cole os textos de <code>13-material-de-envio-lojas.md</code> (ficha, privacidade, segurança dos dados, notas ao revisor).</li>
+        <li>URL de privacidade: <code>seuciclo.com.br/privacidade</code>. URL de suporte: <code>seuciclo.com.br/contato</code>.</li>
+        <li><span class="eu">Eu refaço as imagens de dia</span>, com a conta do revisor já preparada, no tamanho de cada loja.</li>
+        <li>Envie. Se reprovarem, me mande a mensagem exata.</li>
+      </ol>
+    </div>
+  </details>
+
+  <footer>Detalhes e evidências: docs/98-aprimoramento, arquivos 11 a 14.</footer>
+</main>
+
+<script>
+(function () {
+  var CHAVE = 'ciclo-loja-checklist';
+  var estado = {};
+  try { estado = JSON.parse(localStorage.getItem(CHAVE) || '{}'); } catch (e) { estado = {}; }
+  var itens = Array.prototype.slice.call(document.querySelectorAll('details[data-id]'));
+  function salvar() { try { localStorage.setItem(CHAVE, JSON.stringify(estado)); } catch (e) {} }
+  function atualizar() {
+    var feitas = itens.filter(function (d) { return estado[d.dataset.id]; }).length;
+    document.getElementById('barra').style.width = (itens.length ? (100 * feitas / itens.length) : 0) + '%';
+    document.getElementById('conta').textContent = feitas + ' de ' + itens.length + ' feitas';
+  }
+  itens.forEach(function (d) {
+    var cx = d.querySelector('.cx');
+    cx.checked = !!estado[d.dataset.id];
+    d.dataset.feito = cx.checked ? '1' : '0';
+    cx.addEventListener('click', function (e) { e.stopPropagation(); });
+    cx.addEventListener('change', function () {
+      estado[d.dataset.id] = cx.checked;
+      d.dataset.feito = cx.checked ? '1' : '0';
+      salvar(); atualizar();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.copiar'), function (b) {
+    b.addEventListener('click', function () {
+      var texto = b.parentNode.querySelector('.cmd').textContent;
+      function ok() { b.textContent = 'Copiado'; setTimeout(function () { b.textContent = 'Copiar'; }, 1500); }
+      function selecionar() {
+        var r = document.createRange(); r.selectNodeContents(b.parentNode.querySelector('.cmd'));
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        b.textContent = 'Selecionado';
+      }
+      try { navigator.clipboard.writeText(texto).then(ok, selecionar); } catch (e) { selecionar(); }
+    });
+  });
+  atualizar();
+})();
+</script>

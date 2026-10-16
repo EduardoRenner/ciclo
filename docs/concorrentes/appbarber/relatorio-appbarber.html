@@ -1,0 +1,255 @@
+<title>AppBarber por dentro</title>
+<style>
+  /* Layout: relatório de leitura em uma coluna, com tabelas roláveis e uma barra de navegação por seção. */
+  :root {
+    --bg: #f7f7f4;
+    --surface: #ffffff;
+    --fg: #1b2420;
+    --muted: #59665f;
+    --line: #dde2dd;
+    --accent: #0b7d6f;
+    --win: #1d7a3e;
+    --win-bg: #e6f4ea;
+    --lose: #a33a2b;
+    --lose-bg: #fbe9e5;
+    --tie: #7a5c00;
+    --tie-bg: #faf2d9;
+    --code: #eef2ef;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101615; --surface: #172120; --fg: #e5ede9; --muted: #9eb0a8; --line: #2a3734;
+      --accent: #43c3af; --win: #7ed39a; --win-bg: #15301f; --lose: #f2a090; --lose-bg: #3a1c17;
+      --tie: #ecc96a; --tie-bg: #33290f; --code: #0d1312; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101615; --surface: #172120; --fg: #e5ede9; --muted: #9eb0a8; --line: #2a3734;
+    --accent: #43c3af; --win: #7ed39a; --win-bg: #15301f; --lose: #f2a090; --lose-bg: #3a1c17;
+    --tie: #ecc96a; --tie-bg: #33290f; --code: #0d1312; color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.55; font-size: 16px; padding-inline: 16px; padding-block: 24px 64px; }
+  main { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 1.75rem; line-height: 1.2; margin: 0 0 6px; text-wrap: balance; }
+  h2 { font-size: 1.25rem; margin: 40px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); text-wrap: balance; }
+  h3 { font-size: 1.0625rem; margin: 22px 0 6px; }
+  p, li { max-width: 68ch; }
+  .sub { color: var(--muted); margin: 0 0 18px; }
+  nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 8px; }
+  nav a { font-size: .875rem; padding: 6px 10px; border: 1px solid var(--line); border-radius: 99px; color: var(--fg); text-decoration: none; background: var(--surface); }
+  nav a:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .resumo { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; }
+  .resumo li { margin: 6px 0; }
+  .tabela { overflow-x: auto; margin: 10px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .9375rem; min-width: 520px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: .8125rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: 0; }
+  td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tag { display: inline-block; font-size: .75rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+  .ganha { background: var(--win-bg); color: var(--win); }
+  .perde { background: var(--lose-bg); color: var(--lose); }
+  .empata { background: var(--tie-bg); color: var(--tie); }
+  .rotulo { font-size: .75rem; color: var(--muted); }
+  .p { font-weight: 700; color: var(--accent); }
+  ol.plano > li { margin: 12px 0; }
+  .fonte { font-size: .8125rem; color: var(--muted); }
+  a { color: var(--accent); overflow-wrap: anywhere; }
+  code { background: var(--code); border-radius: 5px; padding: 1px 5px; font-size: .875rem; }
+  footer { margin-top: 40px; font-size: .875rem; color: var(--muted); }
+</style>
+
+<main>
+  <h1>AppBarber por dentro</h1>
+  <p class="sub">Pesquisa feita em 16/10/2026, só com fontes públicas: site, central de ajuda (171 artigos), termo de uso, Google Play, App Store, Reclame Aqui, Instagram, blog e imprensa. Nada foi contratado nem preenchido. Cada dado tem rótulo: <b>FATO</b> (conferido na fonte) ou <b>NÃO VERIFICADO</b>.</p>
+
+  <nav aria-label="Seções">
+    <a href="#resumo">Resumo</a><a href="#empresa">Empresa</a><a href="#preco">Preço</a><a href="#produto">Produto</a><a href="#reputacao">Reputação</a><a href="#marketing">Marketing</a><a href="#mercado">Mercado</a><a href="#comparacao">CICLO × AppBarber</a><a href="#plano">Plano de ação</a><a href="#limites">Limites</a>
+  </nav>
+
+  <h2 id="resumo">Resumo em um minuto</h2>
+  <div class="resumo">
+    <ul>
+      <li><b>É grande e antigo:</b> desde 2015, Chapecó (SC). O app do cliente final tem mais de 1 milhão de downloads e 132 mil avaliações no Google Play. A força deles é que o cliente da barbearia já tem o app instalado.</li>
+      <li><b>Preço de entrada maior que o nosso:</b> R$ 79,90 por mês para 1 profissional (R$ 55,90 no anual), sem plano grátis. O CICLO cobra R$ 49 no Solo e tem plano grátis.</li>
+      <li><b>O preço real é escondido:</b> clube de assinatura, app com a marca da barbearia, nota fiscal, robô de WhatsApp, totem e API são módulos à parte, sem preço público. WhatsApp automático e SMS são créditos pagos. Taxas de pagamento online não são divulgadas.</li>
+      <li><b>A nota 4,9 nas lojas engana.</b> Quase metade das avaliações 5 estrelas tem menos de 15 letras, e muitas elogiam o barbeiro, não o app. No Reclame Aqui a reputação é <b>Regular (6,6)</b>, puxada por cobrança depois de cancelar assinatura, login quebrado e suporte lento.</li>
+      <li><b>Onde o CICLO ganha de verdade:</b> prever quem vai sumir (Motor de Ciclo), mostrar quanto sobrou de cada atendimento, começar grátis, funcionar sem o cliente baixar app, e servir outros nichos além de barbearia.</li>
+      <li><b>Onde o CICLO perde hoje:</b> pagamento online e sinal, clube com cobrança automática no cartão, nota fiscal, fila por ordem de chegada, multi-unidade e a base de clientes finais com o app instalado.</li>
+    </ul>
+  </div>
+
+  <h2 id="empresa">1. Quem é</h2>
+  <ul>
+    <li><b>FATO.</b> StarApp Sistemas LTDA ME, CNPJ 21.239.503/0001-94, Chapecó (SC). Faz também o AppBeleza, a mesma base para salões, estética e esmalterias. <span class="fonte">Termo de uso; <a href="https://www.reclameaqui.com.br/empresa/app-barber/">Reclame Aqui</a></span></li>
+    <li><b>FATO (números da própria empresa, 2022).</b> Fundada em 2015 pelos irmãos Rafael (CEO) e Luiz Felipe Paim de Carvalho (CTO). Mais de 1 milhão de usuários e 4 mil estabelecimentos somando AppBarber e AppBeleza; mais de 60 fora do Brasil, 40 em Portugal. Só recebeu um aporte pre-seed. <span class="fonte"><a href="https://www.suno.com.br/noticias/starapp-startup-mercado-domestico-internacional/amp/">Suno, 14/05/2022</a></span></li>
+    <li><b>NÃO VERIFICADO.</b> LinkedIn diz "2 a 10 funcionários", mas 46 perfis se ligam à empresa. Equipe provavelmente de dezenas de pessoas.</li>
+    <li><b>FATO.</b> O site não divulga número de barbearias nem resultados. A única promessa numérica é "aumente seu movimento em até 40%", sem fonte.</li>
+  </ul>
+
+  <h2 id="preco">2. Preço</h2>
+  <p><b>FATO</b>, conferido no <a href="https://www.appbarber.com.br/">site</a> em 16/10. Todos os recursos básicos estão em todos os planos; muda só a quantidade de profissionais.</p>
+  <div class="tabela"><table>
+    <thead><tr><th>Profissionais</th><th>Mensal</th><th>Semestral (por mês)</th><th>Anual (por mês)</th><th>CICLO hoje</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td class="n">R$ 79,90</td><td class="n">R$ 67,80</td><td class="n">R$ 55,90</td><td class="n">Grátis (até 50 clientes) ou R$ 49</td></tr>
+      <tr><td>2 a 5</td><td class="n">R$ 109,90</td><td class="n">R$ 93,30</td><td class="n">R$ 76,90</td><td class="n">R$ 99</td></tr>
+      <tr><td>6 a 15</td><td class="n">R$ 164,50</td><td class="n">R$ 139,80</td><td class="n">R$ 115,15</td><td>"fale com a gente"</td></tr>
+      <tr><td>Mais de 15</td><td class="n">R$ 219,90</td><td class="n">R$ 186,80</td><td class="n">R$ 153,90</td><td>"fale com a gente"</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><b>FATO.</b> 30 dias grátis com tudo liberado; sem fidelidade nem multa; sem reembolso do período pago; conta suspensa 2 dias depois de atrasar. <span class="fonte">Termo de uso</span></li>
+    <li><b>FATO.</b> Recepcionista e gestor contam como "profissional" na faixa de preço, mesmo sem atender. <span class="fonte">Central de ajuda</span></li>
+    <li><b>FATO.</b> Módulos à parte, sem preço público: Clube de Assinaturas, Aplicativo Prime (app com a marca da barbearia), Módulo Fiscal, ChatBot, Totem e API. WhatsApp automático e SMS por créditos pagos (artigo "Como compro créditos WhatsApp?"). <span class="fonte">Central de ajuda</span></li>
+    <li><b>FATO.</b> Pagamento online pela subadquirente Zoop, com taxas "fixas e não negociáveis" que não são publicadas. Exige CNPJ: "Não aceitamos CPF". <span class="fonte">Central de ajuda</span></li>
+    <li><b>FATO.</b> Na App Store a compra pelo app aparece com outra tabela (R$ 59,90 a R$ 199,90), diferente do site.</li>
+  </ul>
+  <p><b>Leitura:</b> para o barbeiro sozinho, o CICLO custa 38% menos no mensal (R$ 49 contra R$ 79,90) e tem entrada grátis. No anual deles a diferença cai para R$ 6,90. O custo total do AppBarber com clube, WhatsApp e pagamento online é desconhecido, e isso é argumento: o nosso preço é um número só.</p>
+
+  <h2 id="produto">3. Produto</h2>
+  <h3>O que vem em todos os planos (FATO, central de ajuda)</h3>
+  <ul>
+    <li><b>Agenda:</b> jornada por profissional, encaixe, bloqueio, agendamento recorrente, lista de espera com aviso, <b>fila por ordem de chegada</b> (barbearia sem hora marcada), rodízio de profissionais.</li>
+    <li><b>Lembretes:</b> notificação do app, e-mail e SMS, com link de confirmação. WhatsApp manual (abre a conversa) é grátis; o automático é pago.</li>
+    <li><b>Comanda:</b> em todo agendamento, com produto, desconto, parcelamento, gorjeta, "caixinha", cortesia, fiado e cupom; leitor de código de barras.</li>
+    <li><b>Comissão</b> muito detalhada: por serviço e produto, auxiliar, vales, adiantamentos, salário, descontando ou não a taxa do cartão.</li>
+    <li><b>Estoque</b> com consignado, fracionado, validade e inventário. <b>Financeiro</b> com caixa, sangria, contas a pagar e receber.</li>
+    <li><b>Relatórios:</b> ocupação, ticket médio, taxa de retorno, "dias sem vir". <b>Ficha</b> com assinatura digital (herdada do AppBeleza).</li>
+    <li><b>Marketing:</b> promoções por notificação e SMS, mensagem de retorno automática, aniversariantes, pesquisa de satisfação, fidelidade por pontos, site do estabelecimento com Pixel do Facebook.</li>
+  </ul>
+  <h3>App do cliente final</h3>
+  <ul>
+    <li><b>FATO.</b> Um app só para todas as barbearias ("AppBarber: Cliente"). O cliente cria conta, procura a barbearia e agenda. Funciona como vitrine: mostra outras barbearias da cidade. Há também link e versão web.</li>
+    <li><b>FATO.</b> O "Plano Prime" publica um app com o nome e a logo da barbearia, pela conta da StarApp. Existem dezenas publicados, a maioria com poucos downloads (o maior, Barbearia 23, tem 10 mil+).</li>
+  </ul>
+  <h3>Clube de assinatura (módulo pago)</h3>
+  <ul>
+    <li><b>FATO.</b> Plano pago no balcão ou cobrado automaticamente no cartão; renovação por Pix; bloqueio de inadimplente; uso em várias unidades; três jeitos de pagar comissão sobre assinatura.</li>
+    <li><b>FATO.</b> É a maior fonte de reclamação deles (seção 4).</li>
+  </ul>
+  <h3>O que não tem</h3>
+  <ul>
+    <li><b>FATO</b> (nada nos 171 artigos): integração com maquininha, Reserve com Google, Instagram nativo.</li>
+    <li><b>FATO:</b> nenhuma IA de análise ou previsão. O "ChatBot" é uma recepcionista no WhatsApp; o texto não diz que é IA.</li>
+    <li><b>FATO:</b> nada parecido com o Motor de Ciclo (quem vai sumir e quanto vale trazer de volta) nem com lucro por atendimento descontando material e custo fixo.</li>
+  </ul>
+
+  <h2 id="reputacao">4. Reputação</h2>
+  <div class="tabela"><table>
+    <thead><tr><th>App</th><th>Loja</th><th>Nota</th><th>Avaliações</th><th>Downloads</th></tr></thead>
+    <tbody>
+      <tr><td>AppBarber: Cliente</td><td>Google Play</td><td class="n">4,9</td><td class="n">132 mil</td><td class="n">1 mi+</td></tr>
+      <tr><td>AppBarber: Cliente</td><td>App Store</td><td class="n">4,9</td><td class="n">109 mil</td><td>—</td></tr>
+      <tr><td>AppBarber PRO (dono e barbeiro)</td><td>Google Play</td><td class="n">5,0</td><td class="n">951</td><td class="n">100 mil+</td></tr>
+      <tr><td>AppBarber PRO</td><td>App Store</td><td class="n">4,9</td><td class="n">2,7 mil</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <p class="fonte">App Store do cliente conferida diretamente (4,9 e 109 mil, vendedor StarApp). Os demais números vêm da leitura das páginas das lojas pela pesquisa.</p>
+  <p><b>Por que o 4,9 engana (FATO, amostra de 600 avaliações recentes):</b> 44% das notas 4 e 5 têm até 15 caracteres ("top", "ótimo") e 28% elogiam o barbeiro ou o atendimento, não o app. O app pede avaliação com frequência.</p>
+  <p><b>Reclame Aqui (FATO, 16/10/2026):</b> Regular, nota 6,6 (últimos 6 meses), 68 reclamações em 12 meses (contra 32 em todo 2025), 100% respondidas, 64,9% resolvidas, só 54% voltariam a fazer negócio. Assuntos em 3 anos: cobrança indevida 29,5%, cancelamento 20%.</p>
+
+  <h3>O que mais odeiam</h3>
+  <ol>
+    <li><b>Assinatura que segue cobrando depois de cancelar</b>, e cancelamento que só a barbearia faz. Evidência forte: cerca de 40 das 60 reclamações recentes. A empresa responde que a regra é da barbearia.</li>
+    <li><b>Login e cadastro quebrados:</b> pede login toda vez, SMS que não chega, Google e Apple que não entram. Tema número 1 nas avaliações negativas das lojas (cerca de 74 de 303), de 2022 a 2026.</li>
+    <li><b>Suporte difícil:</b> o cliente final não tem canal; o dono reclama de chat e WhatsApp lentos.</li>
+    <li><b>Bugs e atualizações que pioram:</b> botões escondidos atrás da barra do Android (2025), recadastro forçado (2023), barbeiro sem aviso de agendamento.</li>
+    <li><b>Pagamento travado:</b> "limite de tentativas" no cartão; sem Pix no pagamento comum.</li>
+  </ol>
+  <p>Para o dono, dois incômodos a mais: o app do cliente mostra barbearias concorrentes, e o app do celular faz bem menos que a versão web.</p>
+
+  <h3>O que mais amam</h3>
+  <ol>
+    <li>Agendar sozinho, sem ligar e sem fila.</li>
+    <li>Agenda, comanda, comissão e financeiro organizados.</li>
+    <li>Lembrete no calendário e escolha do profissional.</li>
+    <li>O cliente já tem o app e acha a barbearia.</li>
+    <li>Clube de assinatura integrado (para parte dos donos).</li>
+  </ol>
+
+  <h3>Sinais de que estão perdendo cliente</h3>
+  <ul>
+    <li>Dono há 5 a 6 anos: o app "parou no tempo" e outros já têm WhatsApp integrado sem comprar crédito (Google Play, jan/2026).</li>
+    <li>Dono "vamos sair do aplicativo" por travamento e suporte (Reclame Aqui, jan/2026); outro "prestes a cancelar" (mar/2026).</li>
+    <li>Barbearia que trocou de app depois de cobrança em dobro no clube (abr/2026).</li>
+  </ul>
+
+  <h2 id="marketing">5. Marketing e posicionamento</h2>
+  <ul>
+    <li><b>FATO.</b> Frase principal: "Uma nova experiência para uma antiga tradição." Três promessas repetidas: otimizar seu tempo, fidelizar seu cliente, aumentar seu faturamento.</li>
+    <li><b>FATO.</b> Instagram com cerca de 36 mil seguidores, conteúdo de criadores do meio da barbearia; YouTube com 4,6 mil inscritos e 190 vídeos, a maioria de 4 a 6 anos; podcast "Barbercast"; websérie em troca de e-mail; programa de revenda.</li>
+    <li><b>FATO.</b> O blog ficou parado cerca de 22 meses (mai/2024 a mar/2026) e voltou falando de nota fiscal obrigatória e clube de assinatura.</li>
+    <li><b>FATO</b> (com a ressalva de que a busca usada é dos EUA): nas buscas "sistema para barbearia" e "melhor app para barbearia 2026", o site deles não apareceu no topo; quem aparece são comparativos de concorrentes, incluindo uma página "Alternativa ao AppBarber" da Barbeiro.app.</li>
+    <li><b>NÃO VERIFICADO:</b> anúncios ativos (a biblioteca de anúncios da Meta bloqueou a leitura automática), TikTok e Facebook.</li>
+  </ul>
+
+  <h2 id="mercado">6. O mercado em volta</h2>
+  <div class="tabela"><table>
+    <thead><tr><th>Concorrente</th><th>Entrada</th><th>Diferencial</th><th class="rotulo">Rótulo</th></tr></thead>
+    <tbody>
+      <tr><td>InfinitePay Agendamentos</td><td>Grátis</td><td>Sinal por Pix no agendamento, lembrete no WhatsApp, IA própria; é da maquininha</td><td>FATO</td></tr>
+      <tr><td>Booksy</td><td>R$ 99,99 + R$ 20 por agenda extra</td><td>Marketplace que traz cliente novo</td><td>FATO</td></tr>
+      <tr><td>BestBarbers</td><td>Versão grátis</td><td>App com a marca da barbearia e clube com cobrança automática; cases com números</td><td>FATO</td></tr>
+      <tr><td>Trinks</td><td>R$ 76 a R$ 110</td><td>Gestão completa e marketplace; diz ter 40 mil negócios</td><td>Preço NÃO VERIFICADO</td></tr>
+      <tr><td>Genda</td><td>Grátis; Pro R$ 39,90</td><td>Confirmação por WhatsApp em todos os planos</td><td>FATO (do fornecedor)</td></tr>
+      <tr><td>TopAgenda</td><td>Grátis; R$ 19,90</td><td>Pix e WhatsApp no plano Pro</td><td>FATO (do fornecedor)</td></tr>
+      <tr><td>Simples Agenda</td><td>R$ 59,90</td><td>WhatsApp e Pix no agendamento</td><td>NÃO VERIFICADO</td></tr>
+      <tr><td>Avec, Prit, Barbeiro.app</td><td>R$ 39,90 a R$ 89</td><td>Marketplace, PWA, WhatsApp</td><td>NÃO VERIFICADO</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>Tamanho do mercado:</b> não existe contagem oficial só de barbearias (elas ficam no mesmo CNAE de salões). O Sebrae conta cerca de 236 mil negócios de beleza abertos em 2025, alta de 18% (FATO, inclui salões). No Paraná, 90% das empresas de beleza são MEI (FATO, Sebrae-PR). O número de "200 mil barbearias" que circula é NÃO VERIFICADO.</p>
+  <p><b>Leitura:</b> o mercado já trata "agenda grátis" e "confirmação no WhatsApp" como o básico. A InfinitePay dá agenda grátis com sinal por Pix. Competir por preço de agenda é perder; o que ninguém mostra é quem vai sumir, quanto vale trazer de volta e quanto sobrou.</p>
+
+  <h2 id="comparacao">7. CICLO × AppBarber, recurso a recurso</h2>
+  <p class="fonte">O lado do CICLO foi lido no código em 16/10 (branch do PR #151). Hoje o CICLO está com acesso aberto, sem cobrança.</p>
+  <div class="tabela"><table>
+    <thead><tr><th>Recurso</th><th>AppBarber</th><th>CICLO</th><th>Resultado</th></tr></thead>
+    <tbody>
+      <tr><td>Prever quem vai sumir e quanto vale</td><td>Relatório "dias sem vir"</td><td>Motor de Ciclo com fila, estado e valor</td><td><span class="tag ganha">CICLO ganha</span></td></tr>
+      <tr><td>Quanto sobrou de cada atendimento</td><td>Comissão e taxa de cartão</td><td>Comissão, material, maquininha e custo fixo</td><td><span class="tag ganha">CICLO ganha</span></td></tr>
+      <tr><td>Avisar quando assinante dá prejuízo</td><td>Não</td><td>Sim (margem do clube)</td><td><span class="tag ganha">CICLO ganha</span></td></tr>
+      <tr><td>Começar grátis</td><td>Só 30 dias</td><td>Plano grátis (1 profissional, 50 clientes)</td><td><span class="tag ganha">CICLO ganha</span></td></tr>
+      <tr><td>Preço para quem trabalha sozinho</td><td>R$ 79,90 (R$ 55,90 no anual)</td><td>R$ 49</td><td><span class="tag ganha">CICLO ganha</span></td></tr>
+      <tr><td>Cliente agenda sem baixar app</td><td>Link existe, mas o padrão é o app</td><td>Página do negócio, sem app</td><td><span class="tag ganha">CICLO ganha</span></td></tr>
+      <tr><td>Outros nichos</td><td>Barbearia; salão no AppBeleza</td><td>Barbearia, unhas, cílios, estética, pet, personal e outros, num só produto</td><td><span class="tag ganha">CICLO ganha</span></td></tr>
+      <tr><td>Assistente com IA</td><td>Não</td><td>Sim (depende da chave do Gemini em produção)</td><td><span class="tag ganha">CICLO ganha</span></td></tr>
+      <tr><td>Agenda, comanda, comissão, estoque, fidelidade, lista de espera, avaliação</td><td>Sim</td><td>Sim</td><td><span class="tag empata">Empate</span></td></tr>
+      <tr><td>WhatsApp</td><td>Manual grátis; automático por crédito</td><td>Manual grátis pelo WhatsApp do dono; automático depende da credencial da Meta</td><td><span class="tag empata">Empate</span></td></tr>
+      <tr><td>Clube de assinatura</td><td>Com cobrança automática no cartão e Pix</td><td>Planos e margem do assinante, sem cobrança automática</td><td><span class="tag perde">AppBarber ganha</span></td></tr>
+      <tr><td>Pagamento online e sinal</td><td>Sim (Zoop, só CNPJ)</td><td>Não (sinal em estudo)</td><td><span class="tag perde">AppBarber ganha</span></td></tr>
+      <tr><td>Nota fiscal</td><td>Módulo pago</td><td>Não</td><td><span class="tag perde">AppBarber ganha</span></td></tr>
+      <tr><td>Fila por ordem de chegada e totem</td><td>Sim</td><td>Não</td><td><span class="tag perde">AppBarber ganha</span></td></tr>
+      <tr><td>Várias unidades</td><td>Sim</td><td>Não ligado</td><td><span class="tag perde">AppBarber ganha</span></td></tr>
+      <tr><td>Base de clientes finais com app instalado</td><td>1 mi+ downloads</td><td>Não tem</td><td><span class="tag perde">AppBarber ganha</span></td></tr>
+      <tr><td>App do dono nas lojas</td><td>Sim</td><td>Em preparação (PR #151)</td><td><span class="tag perde">AppBarber ganha</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="plano">8. Plano de ação para o CICLO</h2>
+  <p>Ordem pensada para tirar cliente do AppBarber sem entrar em guerra de agenda grátis. <span class="p">P0</span> é antes de vender, <span class="p">P1</span> nos primeiros meses, <span class="p">P2</span> quando houver demanda.</p>
+  <ol class="plano">
+    <li><span class="p">P0</span> <b>Trazer os clientes do AppBarber em minutos.</b> O cadastro do CICLO já pergunta o sistema anterior e lista o AppBarber, e o conversor universal (docs/103, branch própria) importa planilhas. Falta testar com uma exportação real do AppBarber e dizer isso na página: "traga sua carteira do AppBarber". É o que mais reduz o medo de trocar.</li>
+    <li><span class="p">P0</span> <b>Cancelamento em um toque e cobrança sem surpresa.</b> É a dor número 1 deles. Conferir o fluxo de cancelamento do plano do CICLO de ponta a ponta e escrever a promessa na página de preços: cancela no app, sem ligar, e não cobra mais.</li>
+    <li><span class="p">P0</span> <b>Login que não quebra.</b> É a dor número 2 deles. O e-mail de confirmação do CICLO ainda não chega para quem é de fora (falta o SMTP, LOJA-01). Sem isso, repetimos o defeito deles no primeiro dia.</li>
+    <li><span class="p">P0</span> <b>Mensagem de venda contra eles</b>, com números conferidos: "Sabe quem vai sumir antes de sumir"; "Mostra quanto sobrou, não só quanto entrou"; "R$ 49, sem módulo escondido e sem crédito de WhatsApp"; "Seu cliente agenda sem baixar app nem ver a barbearia do lado". Uma página "CICLO ou AppBarber?" honesta, com a tabela da seção 7, para quem busca a marca deles.</li>
+    <li><span class="p">P1</span> <b>Sinal por Pix aceitando CPF.</b> Eles só aceitam CNPJ, e 90% do setor é MEI ou autônomo. O estudo de "sinal sem cobrar" já existe; a decisão de PSP e taxa é do Eduardo.</li>
+    <li><span class="p">P1</span> <b>Clube com cobrança automática, mas com o cancelamento do lado do cliente.</b> Fecha a principal lacuna e já nasce sem o defeito que gera 40% das reclamações deles. Depende da mesma decisão de pagamento.</li>
+    <li><span class="p">P1</span> <b>Prova social medida.</b> Com os primeiros pilotos, publicar números reais: quantos clientes voltaram pela fila do Recuperar e quanto isso valeu. O AppBarber não mostra nenhum número de resultado.</li>
+    <li><span class="p">P1</span> <b>WhatsApp automático sem crédito escondido.</b> Se ligar a API da Meta, embutir o custo no plano. O mercado (Genda, InfinitePay) já trata confirmação no WhatsApp como básico.</li>
+    <li><span class="p">P2</span> <b>Fila por ordem de chegada</b> para barbearia sem hora marcada.</li>
+    <li><span class="p">P2</span> <b>Nota fiscal.</b> O blog deles fala de nota obrigatória desde setembro de 2026; pesquisar o que muda para MEI antes de decidir.</li>
+    <li><span class="p">P2</span> <b>Várias unidades</b>, quando aparecer a primeira rede interessada.</li>
+    <li><b>Não copiar:</b> o app do cliente que mostra barbearias concorrentes (os donos odeiam), créditos pagos de WhatsApp, módulos sem preço público, e recepcionista contando como profissional na faixa de preço.</li>
+  </ol>
+
+  <h2 id="limites">9. O que ficou sem verificar</h2>
+  <ul>
+    <li>Preços dos módulos à parte (clube, app próprio, nota fiscal, robô, totem, API), dos créditos de WhatsApp e SMS e das taxas da Zoop: não são públicos.</li>
+    <li>Anúncios ativos, TikTok e Facebook: as plataformas bloquearam a leitura automática.</li>
+    <li>Posição deles no Google Brasil: a ferramenta de busca usada é dos EUA.</li>
+    <li>Quantas barbearias usam o AppBarber hoje: o último número (4 mil, somando o AppBeleza) é de 2022.</li>
+  </ul>
+
+  <footer>Arquivos de apoio no repositório: <code>docs/concorrentes/appbarber/</code> (plano, CICLO hoje e este relatório). Fontes principais: <a href="https://www.appbarber.com.br/">appbarber.com.br</a>, <a href="https://appbarber.com.br/funcionalidades">funcionalidades</a>, central de ajuda pública (Zendesk), <a href="https://apps.apple.com/br/app/id6450795073">App Store</a>, <a href="https://play.google.com/store/apps/details?id=br.com.starapp.appbarbercli">Google Play</a>, <a href="https://www.reclameaqui.com.br/empresa/app-barber/">Reclame Aqui</a>, <a href="https://www.instagram.com/appbarber/">Instagram</a>, <a href="https://blog.appbarber.com.br/">blog</a>, <a href="https://www.suno.com.br/noticias/starapp-startup-mercado-domestico-internacional/amp/">Suno</a>, <a href="https://www.barbeiro.app/alternativas/appbarber">Barbeiro.app</a>, <a href="https://www.infinitepay.io/agendamento-automatico">InfinitePay</a>, <a href="https://biz.booksy.com/pt-br/precos">Booksy</a>, <a href="https://bestbarbers.app/">BestBarbers</a>.</footer>
+</main>
