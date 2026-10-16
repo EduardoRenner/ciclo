@@ -2,6 +2,8 @@
 
 Escrito em 16/10/2026 a partir do prompt `prompt-plano-estrategico.md` (v2). Só plano: nada foi construído, nada foi para produção, nenhum cliente foi contatado.
 
+> **16/10/2026: frente passiva.** Pela decisão `docs/108-norte/00-decisao.md`, nada deste plano é construído antes de o alvo principal (profissional solo no caderno) ter 10 pessoas usando. Exceção: atender, com o que existe, um dono do AppBarber que aparecer.
+
 Rótulos: **FATO** (com fonte), **INFERÊNCIA** (de quais fatos), **HIPÓTESE** (com o teste que a decide). Valores em reais são de 16/10/2026.
 
 **Versão 2 (16/10/2026, mesmo dia).** Revisei o plano contra o código de ponta a ponta e escrevi a jornada completa do dono em **[`jornada-do-dono.md`](jornada-do-dono.md)**: baixar o app, criar a conta, trazer os clientes, uso semanal. Achei 5 defeitos que derrubariam a convivência e que a versão 1 não via; estão na seção 3.0. O que mudou está no fim, na seção 13.
