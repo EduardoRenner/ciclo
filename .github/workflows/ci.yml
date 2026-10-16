@@ -253,6 +253,14 @@ jobs:
         run: pnpm test:integration
 
       - name: Teste de isolamento multi-tenant
+        env:
+          # A suíte de RLS passou a criar tenant pelo onboarding (`comanda-fechada-congelada`, APR-009),
+          # que gera o cofre e lança sem KEK: no PR #152 o arquivo inteiro caiu no beforeAll. Os mesmos
+          # valores descartáveis do passo de integração, só para o banco efêmero.
+          VAULT_KEK: Q0lDTE8tQ0ktS0VLLWRlc2NhcnRhdmVsLTMyYnl0ZXM=
+          VAULT_KEK_VERSION: "1"
+          PHONE_HASH_SALT: ci-descartavel-nao-e-segredo
+          PUBLIC_LINK_SIGNING_KEY: ci-descartavel-nao-e-segredo-2
         run: pnpm test:rls
 
       - name: Derrubar o stack
