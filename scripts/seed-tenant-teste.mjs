@@ -161,6 +161,26 @@ if (!servicos || servicos.length === 0) {
 const servico1 = servicos[0]
 const servico2 = servicos[Math.min(1, servicos.length - 1)]
 
+/*
+ * Ficha de consumo. O pacote da vertical cria os insumos SEM custo (migration 0069: o pacote não inventa preço) e
+ * com ficha em só alguns serviços; sem custo e sem ficha o Recuperar avisa "N serviços estão sem o custo do material"
+ * e o lucro sai igual ao preço (`medirMaterialIncerto`). Aqui a semente faz o que o dono faria: registra o custo de
+ * compra de cada insumo e põe a toalha na ficha de quem não tem nenhuma. Custo de insumo sem nome conhecido: R$ 1.
+ */
+const CUSTO_DE_COMPRA = { 'Toalha descartável': 45, 'Navalha descartável': 90, 'Pomada modeladora': 2500, 'Pó descolorante': 12, 'Água oxigenada': 3, Matizador: 6 }
+const { data: insumos, error: erroInsumos } = await svc.from('products').select('id, name').eq('tenant_id', tenantId)
+precisa(erroInsumos, 'ler insumos do pacote')
+for (const p of insumos) {
+  precisa((await svc.from('products').update({ avg_cost_cents: CUSTO_DE_COMPRA[p.name] ?? 100, stock_qty: 200 }).eq('id', p.id)).error, `custo de ${p.name}`)
+}
+const { data: comFicha } = await svc.from('service_products').select('service_id').eq('tenant_id', tenantId)
+const jaTem = new Set((comFicha ?? []).map((f) => f.service_id))
+const toalha = insumos.find((p) => p.name === 'Toalha descartável') ?? insumos[0]
+if (toalha) {
+  const faltam = servicos.filter((s) => !jaTem.has(s.id)).map((s) => ({ tenant_id: tenantId, service_id: s.id, product_id: toalha.id, qty: 1 }))
+  if (faltam.length) precisa((await svc.from('service_products').insert(faltam)).error, 'completar fichas de consumo')
+}
+
 // ─────────────────────────────────────────────────────────────── clientes (12, o bastante pra CRM/Motor de Ciclo terem o que mostrar sem virar outra demo cheia)
 
 const NOMES = [
