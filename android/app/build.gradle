@@ -29,7 +29,8 @@ android {
     signingConfigs {
         release {
             if (arquivoDaChave.exists()) {
-                storeFile file(propriedadesDaChave['storeFile'])
+                // Relativo a `android/` (junto do keystore.properties), não a `android/app/`.
+                storeFile rootProject.file(propriedadesDaChave['storeFile'])
                 storePassword propriedadesDaChave['storePassword']
                 keyAlias propriedadesDaChave['keyAlias']
                 keyPassword propriedadesDaChave['keyPassword']
