@@ -82,6 +82,37 @@ Você vai montar esse plano. **Só planeje:** não escreva código, não crie mi
   - hoje está tudo liberado (`ACESSO_ABERTO = true`).
 - **Aviso de assinante no prejuízo** (`src/core/loyalty/margem-do-clube.ts`), que o AppBarber não tem.
 
+### 1.4 O que já foi decidido (não reabra sem fato novo, e diga qual)
+
+Fonte: `docs/83-ONBOARDING-E-MIGRACAO-PLANO.md` (atualização de 28/09/2026) e `docs/DECISOES.md`.
+
+**Decisões do Eduardo**
+1. **Benefício para quem traz a base: sim.** Um mês do Essencial (hoje Solo) para quem importa com a data da última visita.
+2. **Nomear concorrentes no produto: sim**, só com fato verificável.
+3. **O Eduardo importa pelo WhatsApp para as primeiras contas: sim** ("Me manda que eu faço").
+4. **Foco:** AppBarber, Belasis, BarbUp, caderno e planilha. O Trinks saiu do foco.
+
+**Regras do 83 e do GO-1**
+5. **GO-1** (`.claude/ciclo/growth-opportunities.md`, 21/09): não construir importador por concorrente nem detector de exportação por cabeçalho antes de ter um arquivo real; não importar histórico completo antes de saber se algum concorrente o exporta. O 83 concorda e só melhora roteamento, argumento e confiança.
+6. **A autocrítica do 83 (§7) derrubou argumentos.** Respeite:
+   - "Seu cliente não baixa app" **não serve como argumento de troca**: para quem ganha cliente novo pela vitrine do AppBarber, sair é perder aquisição. Esse dono é candidato a **conviver**, não a trocar.
+   - "Usar junto" só sobrevive se manter custar quase zero: o dono, uma vez por semana.
+   - O argumento mais forte é **a lista de quem sumiu, com os clientes do próprio dono, no minuto em que ele termina de importar**, não uma frase nem uma tabela.
+   - "Leve seus dados quando quiser" só depois que o botão existir. Confira: a tela de Clientes do CICLO já mostra "Baixar todos em planilha"; se for a exportação completa, essa promessa está liberada.
+   - A Belasis (IA de retorno e gerente de conta) **não é o primeiro alvo**.
+
+### 1.5 A premissa que precisa ser testada antes de tudo
+
+O pedido parte de "a maioria dos barbeiros já usa o AppBarber". O docs/83 cita que **cerca de 70% do público usa caderno** (fonte em `docs/07`). As duas coisas podem ser verdade ao mesmo tempo (o AppBarber pode dominar entre quem **tem** sistema), mas o plano muda conforme a resposta.
+
+**Antes de recomendar, estime as duas fatias com o que existe** e rotule o que é palpite:
+- `docs/07`;
+- as respostas da Pergunta 1 do onboarding (`SISTEMAS_ANTERIORES`), se houver dado de produção agregado;
+- a contagem agregada da vitrine por cidade, comparada com o número de barbearias da mesma cidade;
+- conversas registradas com barbeiros.
+
+Proponha o teste mais barato para fechar a dúvida.
+
 ## 2. Regras que não se negociam
 
 - **Evidência:** todo número e toda afirmação levam **FATO** (com fonte: arquivo e linha, ou URL e data), **INFERÊNCIA** (de quais fatos) ou **HIPÓTESE** (com o teste mais barato que a confirma ou derruba). Não invente número de mercado, conversão ou receita. O que está NÃO VERIFICADO continua assim.
