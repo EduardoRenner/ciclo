@@ -27,7 +27,7 @@ A ficha de anotação está em `ficha-de-campo.csv` (abre no Excel ou no Google 
 ## Depois do teste
 
 - **Semana 1:** o Eduardo pergunta em pessoa ou por WhatsApp individual: "Abriu de novo? Alguém voltou?"
-- **Semana 4:** a pergunta do dinheiro: "Se custasse R$ 49 por mês, você pagaria? Por quê?"
+- **Semana 4:** a pergunta do dinheiro: "Se custasse R$ 39 por mês, você pagaria? Por quê?"
 - **Quem largou:** a entrevista curta abaixo.
 
 ### Entrevista de quem largou (5 perguntas)
@@ -52,15 +52,15 @@ A ficha de anotação está em `ficha-de-campo.csv` (abre no Excel ou no Google 
 
 ## Como decidir o nicho no fim das 2 semanas
 
-Para cada grupo (cílios ou unhas × barbeiro solo):
+Para cada grupo (cílios ou unhas × barbeiro solo × barbearia que usa o AppBarber):
 
-| Medida | Cílios ou unhas | Barbeiro solo |
-| --- | --- | --- |
-| Testaram | | |
-| Criaram a conta | | |
-| Trouxeram 20 ou mais | | |
-| Chamaram pelo menos 1 na semana 1 | | |
-| Abriram de novo na semana 2 | | |
+| Medida | Cílios ou unhas | Barbeiro solo | Barbearia com AppBarber |
+| --- | --- | --- | --- |
+| Testaram | | | |
+| Criaram a conta | | | |
+| Trouxeram 20 ou mais | | | |
+| Chamaram pelo menos 1 na semana 1 | | | |
+| Abriram de novo na semana 2 | | | |
 
 **Vence** o grupo com maior proporção em "trouxeram 20 ou mais **e** chamaram pelo menos 1". Empate: cílios e unhas. Escrever a decisão em `docs/DECISOES.md`, com os números.
 

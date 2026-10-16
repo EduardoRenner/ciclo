@@ -38,6 +38,7 @@ Por que este grupo (INFERÊNCIA, a confirmar no teste da seção 4):
 
 **Teste de 2 semanas.**
 - O mesmo teste de 10 minutos, no celular da pessoa, com 10 profissionais de cílios ou unhas e com 10 barbeiros solo.
+- **Terceiro grupo (acrescentado em 16/10):** 5 a 10 barbearias pequenas que já usam o AppBarber, oferecendo o uso junto. Motivo: no teste de rua, uma delas achou R$ 39 para 2 barbeiros barato e gostou da proposta (`05-modelo-de-negocio.md` §3).
 - O roteiro e a ficha de anotação estão em `02-kit-de-campo.md`.
 
 **Vence o grupo** em que mais pessoas, na primeira semana:
@@ -53,7 +54,7 @@ Por que este grupo (INFERÊNCIA, a confirmar no teste da seção 4):
 | Profissionais reais usando (abriram a fila em 2 semanas diferentes) | 10 a 20 |
 | Abrem a fila na semana 4 | Metade |
 | Clientes que voltaram depois de "Chamar", por conta, por mês | 3 ou mais |
-| Pessoas que dizem que pagariam R$ 49 (perguntado, porque tudo está liberado de graça) | 8, o equilíbrio do `docs/88` |
+| Pessoas que dizem que pagariam R$ 39 (perguntado, porque tudo está liberado de graça; preço decidido em `05-modelo-de-negocio.md`) | 8 |
 
 **Se der certo,** liga a cobrança e repete em outra cidade. **Se não der,** a pergunta muda de "qual nicho" para "o produto resolve uma dor que a pessoa sente", e isso se responde com as entrevistas de quem largou.
 
