@@ -187,8 +187,8 @@ export default function Precos() {
         </h1>
         <p className="mt-4 max-w-[52ch] text-corpo text-txt-2">
           Preço na tela, sem cadastro e sem &ldquo;fale com um consultor&rdquo;. Os dois planos têm o produto inteiro,
-          com o Motor de Ciclo e tudo o que ele pede. O que muda é o tamanho da equipe: {NOME_DO_PLANO.essencial} para{' '}
-          {PLANOS.essencial.maxProfissionais} profissional, {NOME_DO_PLANO.equipe} até {PLANOS.equipe.maxProfissionais}.
+          com o Motor de Ciclo e tudo o que ele pede. O que muda é o tamanho da equipe: {NOME_DO_PLANO.essencial} até{' '}
+          {PLANOS.essencial.maxProfissionais} {PLANOS.essencial.maxProfissionais === 1 ? 'profissional' : 'profissionais'}, {NOME_DO_PLANO.equipe} até {PLANOS.equipe.maxProfissionais}.
         </p>
       </section>
 
