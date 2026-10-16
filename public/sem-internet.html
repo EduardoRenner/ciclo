@@ -1,0 +1,72 @@
+<!doctype html>
+<!--
+  APR-611 (docs/98-aprimoramento, pré-requisito da loja). Página que aparece quando o CICLO não abre:
+  - no app (iOS e Android): `server.errorPath` do Capacitor carrega este arquivo do próprio aparelho. No Android ela
+    também aparece quando o servidor responde com erro, por isso o texto não afirma que é falta de internet;
+  - no navegador: o service worker serve este arquivo quando uma navegação falha sem rede.
+  Sem script de propósito: no navegador a resposta leva a CSP com nonce, que bloquearia script inline. Sem fonte
+  nem imagem externa: sem rede, nada de fora carrega.
+-->
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#faf8f5" />
+    <title>Sem conexão · CICLO</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #faf8f5;
+        --surface: #ffffff;
+        --line: rgba(24, 18, 12, 0.1);
+        --txt: #1b1712;
+        --txt-2: #5b544c;
+        --acc: #0b7d6f;
+        --on-acc: #ffffff;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: var(--bg); color: var(--txt); }
+      body {
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: calc(env(safe-area-inset-top) + 24px) 20px calc(env(safe-area-inset-bottom) + 24px);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        line-height: 1.5;
+      }
+      main {
+        width: 100%;
+        max-width: 420px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 28px 22px;
+      }
+      h1 { font-size: 1.375rem; line-height: 1.25; margin: 0 0 12px; }
+      p { margin: 0 0 12px; color: var(--txt-2); font-size: 1rem; }
+      a.botao {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        margin-top: 20px;
+        border-radius: 12px;
+        background: var(--acc);
+        color: var(--on-acc);
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+      }
+      a.botao:focus-visible { outline: 3px solid var(--txt); outline-offset: 3px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Não conseguimos abrir o CICLO agora</h1>
+      <p>Confira se o celular está com internet e tente de novo.</p>
+      <p>O que você já tinha salvo no app sem internet continua guardado neste aparelho.</p>
+      <a class="botao" href="https://seuciclo.com.br/admin/hoje">Tentar de novo</a>
+    </main>
+  </body>
+</html>

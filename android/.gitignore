@@ -53,16 +53,18 @@ captures/
 .idea/navEditor.xml
 
 # Keystore files
-# Uncomment the following lines if you do not want to check your keystore files in.
-#*.jks
-#*.keystore
+# LOJA-31 (docs/98-aprimoramento/11): ativos de propósito. O repositório é público; a chave de upload e as senhas
+# dela ficam só na máquina de quem gera o release (e no backup do Eduardo). Ver `keystore.properties` em build.gradle.
+*.jks
+*.keystore
+keystore.properties
 
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild
 .cxx/
 
 # Google Services (e.g. APIs or Firebase)
-# google-services.json
+google-services.json
 
 # Freeline
 freeline.py

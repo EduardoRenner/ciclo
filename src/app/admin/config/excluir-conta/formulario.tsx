@@ -6,6 +6,7 @@ import { useEffect, useState, useTransition } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
+import Input from '@/components/ui/input'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
 import { rotuloDoPapel } from '@/core/auth/rotulo-do-papel'
@@ -16,7 +17,9 @@ import { avisoAntesDeSair, type AvisoDeSaida, type LeituraDaFila } from '@/core/
 import { fetchComTentativa } from '@/lib/tentativa'
 
 type Vinculo = { tenantId: string; role: string }
-type Situacao = { vinculos: Vinculo[]; bloqueios: string[] }
+/** LOJA-27: o que confirma a exclusão para ESTA conta (`core/auth/confirmar-exclusao.ts`), decidido no servidor. */
+type Confirmacao = 'pronta' | 'senha' | 'entrar_de_novo' | 'segundo_fator'
+type Situacao = { vinculos: Vinculo[]; bloqueios: string[]; confirmacao?: Confirmacao }
 
 /**
  * Mesmo padrão de `clientes/[id]/direitos.tsx` (a tela equivalente do LADO da cliente do salão):
@@ -30,6 +33,9 @@ export default function FormularioExcluirConta() {
   // APR-222 (G-10): a mesma régua de "Sair" — contar o que está na fila e dizer, em vez de apagar em silêncio.
   const [avisoDaFila, setAvisoDaFila] = useState<AvisoDeSaida | null>(null)
   const [precisaMfa, setPrecisaMfa] = useState(false)
+  const [senha, setSenha] = useState('')
+  const [erroDaSenha, setErroDaSenha] = useState<string | null>(null)
+  const [precisaEntrarDeNovo, setPrecisaEntrarDeNovo] = useState(false)
   const [pendente, iniciar] = useTransition()
 
   useEffect(() => {
@@ -49,6 +55,12 @@ export default function FormularioExcluirConta() {
 
   function excluir() {
     setPrecisaMfa(false)
+    setErroDaSenha(null)
+    const pedeSenha = situacao !== 'carregando' && situacao !== 'falhou' && situacao.confirmacao === 'senha'
+    if (pedeSenha && !senha) {
+      setErroDaSenha('Digite sua senha para confirmar.')
+      return
+    }
     iniciar(async () => {
       try {
         // Mesma disciplina de `sair.tsx`: entrega o que estiver pendente antes de a conta sumir —
@@ -58,12 +70,25 @@ export default function FormularioExcluirConta() {
           await drenarFilaPendente().catch(() => undefined)
         }
 
-        const r = await fetchComTentativa('/api/v1/account', { method: 'DELETE' })
-        const json = (await r.json()) as { data?: unknown; error?: { code?: string; message?: string } }
+        const r = await fetchComTentativa('/api/v1/account', {
+          method: 'DELETE',
+          ...(pedeSenha ? { headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password: senha }) } : {}),
+        })
+        const json = (await r.json()) as { data?: unknown; error?: { code?: string; message?: string; details?: { fields?: Record<string, string> } } }
         if (!r.ok) {
+          // Senha errada fica na folha, com o erro no campo: fechar obrigaria a pessoa a começar de novo.
+          const doCampo = json.error?.details?.fields?.password
+          if (doCampo) {
+            setErroDaSenha(doCampo)
+            return
+          }
           setConfirmando(false)
           if (json.error?.code === 'MFA_REQUIRED') {
             setPrecisaMfa(true)
+            return
+          }
+          if (json.error?.code === 'REAUTH_REQUIRED') {
+            setPrecisaEntrarDeNovo(true)
             return
           }
           mostrarToast({ tom: 'erro', titulo: 'Não consegui excluir sua conta', descricao: json.error?.message })
@@ -110,8 +135,8 @@ export default function FormularioExcluirConta() {
     <div className="flex flex-col gap-4">
       <Card className="flex flex-col gap-3">
         <p className="text-secundario text-txt-2">
-          Isto apaga seu login do CICLO para sempre. Não dá para voltar atrás. O histórico de{' '}
-          {negocios === 0 ? 'qualquer negócio' : negocios === 1 ? 'o negócio abaixo' : 'os negócios abaixo'} (agenda, clientes,
+          Isto apaga seu login do CICLO para sempre. Não dá para voltar atrás. O histórico{' '}
+          {negocios === 0 ? 'de qualquer negócio' : negocios === 1 ? 'do negócio abaixo' : 'dos negócios abaixo'} (agenda, clientes,
           caixa) continua intacto, exatamente como quando alguém sai da equipe: só o SEU acesso some.
         </p>
 
@@ -123,11 +148,16 @@ export default function FormularioExcluirConta() {
           </ul>
         ) : null}
 
-        {precisaMfa ? (
+        {precisaMfa || situacao.confirmacao === 'segundo_fator' ? (
           <p role="alert" className="text-secundario text-warn">
-            Antes disso, ligue a verificação em duas etapas na sua conta:{' '}
-            <Link href="/admin/config/seguranca" className="font-semibold text-acc-2">
-              Configurações · Segurança
+            Sua conta tem verificação em duas etapas: saia e entre de novo com o código para poder excluir.
+          </p>
+        ) : null}
+        {precisaEntrarDeNovo || situacao.confirmacao === 'entrar_de_novo' ? (
+          <p role="alert" className="text-secundario text-warn">
+            Por segurança, saia e entre de novo para excluir sua conta. Depois volte a{' '}
+            <Link href="/admin/config/excluir-conta" className="font-semibold text-acc-2">
+              esta tela
             </Link>
             .
           </p>
@@ -189,6 +219,17 @@ export default function FormularioExcluirConta() {
                 </>
               )}
             </p>
+          ) : null}
+          {situacao.confirmacao === 'senha' ? (
+            <Input
+              rotulo="Sua senha"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              erro={erroDaSenha ?? undefined}
+            />
           ) : null}
           <Button variante="danger" largura="cheia" carregando={pendente} onClick={excluir}>
             Excluir mesmo assim

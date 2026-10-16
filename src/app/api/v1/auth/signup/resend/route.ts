@@ -40,6 +40,12 @@ export const POST = rota(async (req) => {
 
   if (error?.status === 429) throw AppError.limiteDeTaxa(60)
 
+  // Mesma razão do cadastro (LOJA-02): com o envio recusado pelo provedor, "reenviado" é promessa falsa.
+  if (error?.code === 'email_address_not_authorized') {
+    console.error(JSON.stringify({ level: 'error', event: 'signup_email_nao_enviado', status: error.status, code: error.code, rota: 'reenviar' }))
+    throw new AppError('EMAIL_UNAVAILABLE')
+  }
+
   // Fora o excesso de tentativas, a resposta é sempre a mesma — se o e-mail já foi confirmado ou
   // nunca existiu, o Supabase recusa em silêncio, e reenviar erro aqui só confundiria quem só
   // quer tentar de novo.

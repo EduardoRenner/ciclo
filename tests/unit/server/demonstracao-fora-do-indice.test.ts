@@ -68,6 +68,13 @@ describe('a regra de demonstração', () => {
     expect(ehDemonstracao('ruivo-barber')).toBe(true)
   })
 
+  it('a conta do revisor da Apple é demonstração', () => {
+    // docs/98-aprimoramento/11 LOJA-22: `apple-review` foi semeado em produção em 16/09 (`docs/64` T-DEMO) e ficou
+    // fora da lista. O código o tratava como negócio de verdade: sitemap, lembretes e campanhas. Um agendamento
+    // do revisor geraria lembrete de WhatsApp de verdade, para um número que ninguém atende.
+    expect(ehDemonstracao('apple-review')).toBe(true)
+  })
+
   it('não pega um negócio de verdade pelo caminho', () => {
     for (const real of ['barbearia-do-ze', 'studio-ana', 'dom-rocha-oficial', 'rocha']) {
       expect(ehDemonstracao(real), `${real} foi tratado como demonstração`).toBe(false)

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 
+import { Capacitor } from '@capacitor/core'
+
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Skeleton from '@/components/ui/skeleton'
@@ -22,7 +24,7 @@ function detectarIosNaoInstalado(): boolean {
   return ehIos && !instalado
 }
 
-type Estado = 'carregando' | 'suportado' | 'inscrito' | 'ios_nao_instalado' | 'sem_suporte' | 'negado'
+type Estado = 'carregando' | 'suportado' | 'inscrito' | 'ios_nao_instalado' | 'app_nativo' | 'sem_suporte' | 'negado'
 
 export default function AtivarPush() {
   const [estado, setEstado] = useState<Estado>('carregando')
@@ -31,6 +33,8 @@ export default function AtivarPush() {
 
   useEffect(() => {
     async function verificar() {
+      // LOJA-24: antes do iOS. A tela embutida do app no iPhone também não tem `standalone`, e caía no Safari.
+      if (Capacitor.isNativePlatform()) return setEstado('app_nativo')
       if (detectarIosNaoInstalado()) return setEstado('ios_nao_instalado')
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) return setEstado('sem_suporte')
       if (Notification.permission === 'denied') return setEstado('negado')
@@ -136,6 +140,10 @@ export default function AtivarPush() {
         </ol>
       </Card>
     )
+  }
+
+  if (estado === 'app_nativo') {
+    return <p className="text-secundario text-txt-2">Avisos no celular ainda não chegam pelo app.</p>
   }
 
   if (estado === 'sem_suporte') {

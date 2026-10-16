@@ -51,6 +51,11 @@ export const POST = rota(async (req) => {
     throw AppError.validacao({ password: `Essa senha é curta ou fraca demais. Use pelo menos ${SENHA_MINIMA} caracteres, sem palavra óbvia.` })
   }
   if (desfecho === 'email_invalido') throw AppError.validacao({ email: 'Confira o e-mail: ele não parece completo.' })
+  if (desfecho === 'envio_indisponivel') {
+    // LOJA-02: alarme próprio, sem o e-mail da pessoa no log; a tela diz que o envio falhou em vez de "mandamos o link".
+    console.error(JSON.stringify({ level: 'error', event: 'signup_email_nao_enviado', status: error?.status ?? null, code: error?.code ?? null }))
+    throw new AppError('EMAIL_UNAVAILABLE')
+  }
   if (desfecho === 'falha') {
     console.warn(JSON.stringify({ level: 'warn', event: 'signup_recusado', status: error?.status ?? null, code: error?.code ?? null }))
     throw new AppError('INTERNAL', { cause: error })

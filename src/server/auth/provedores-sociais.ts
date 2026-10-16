@@ -1,3 +1,4 @@
+import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { exigirEnv } from '@/server/db/server-client'
 
 export const PROVEDORES_SOCIAIS = ['google', 'apple'] as const
@@ -37,4 +38,14 @@ export async function provedoresSociaisAtivos(): Promise<ProvedorSocial[]> {
      */
     return []
   }
+}
+
+/**
+ * docs/98-aprimoramento/11 LOJA-21: o que a tela de entrar e a de cadastro oferecem. Dentro do app nativo, nenhum:
+ * o OAuth abriria na tela embutida, que o Google recusa (`disallowed_useragent`), e oferecer Google lá obrigaria
+ * oferecer Apple também (regra 4.8). Volta a aparecer no app quando houver fluxo nativo.
+ */
+export async function provedoresSociaisParaRequisicao(userAgent: string | null): Promise<ProvedorSocial[]> {
+  if (ehRequisicaoDoAppNativo(userAgent)) return []
+  return provedoresSociaisAtivos()
 }

@@ -79,7 +79,19 @@ const ALVO_PADRAO = [
   'teste-avancado',
   'lang-barber',
 ]
+/*
+ * Este script APAGA todas as comandas, itens e pagamentos do tenant antes de recriar. Aceitava qualquer slug na linha de
+ * comando: um salão de verdade digitado por engano perderia o caixa inteiro (regra 11 do CLAUDE.md). Só conta de
+ * demonstração, a mesma lista de `src/core/tenants/demonstracao.ts` (a guarda `seed-dinheiro-so-demonstracao` confere).
+ */
+const SLUGS_DE_DEMONSTRACAO = [
+  'dom-rocha', 'ruivo-barber', 'teste-essencial', 'teste-equipe', 'teste-avancado', 'lang-barber', 'lang-unhas',
+  'demo-navalha-de-ouro', 'demo-corte-fino', 'demo-dom-estilo', 'demo-studio-bella', 'demo-salao-encanto', 'demo-espaco-vitoria',
+  'demo-alvorada-advocacia', 'apple-review', 'demo-esmalteria-rosa', 'demo-studio-olhar', 'demo-pet-amigo',
+]
 const alvo = process.argv.slice(2).length ? process.argv.slice(2) : ALVO_PADRAO
+const foraDaDemonstracao = alvo.filter((s) => !SLUGS_DE_DEMONSTRACAO.includes(s))
+if (foraDaDemonstracao.length) precisa({ message: `só conta de demonstração: ${foraDaDemonstracao.join(', ')}` }, 'conferir alvo')
 const { data: tenantsAlvo } = await svc.from('tenants').select('id, slug, settings').in('slug', alvo)
 if (!tenantsAlvo?.length) precisa({ message: `nenhum tenant para: ${alvo.join(', ')}` }, 'achar tenants')
 
