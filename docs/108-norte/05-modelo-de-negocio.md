@@ -80,7 +80,7 @@ Rótulos: **FATO** (com fonte), **INFERÊNCIA**, **HIPÓTESE** (com o teste que 
 **O que isso prova e o que não prova:**
 - **Prova:** o preço não assusta, e a proposta "usar junto com o AppBarber" faz sentido para quem a ouve.
 - **Não prova** que eles pagam: "achar barato" numa conversa é diferente de pôr o Pix. É um ponto de dado, não uma amostra.
-- **Muda uma coisa no norte:** a barbearia que usa o AppBarber entra no teste de nicho como **terceiro grupo**, e não só como frente passiva. Custa pouco testar, e houve sinal real (ver `00-decisao.md` §4).
+- **Serve de referência de preço, não de alvo:** no mesmo dia o Eduardo decidiu focar no público feminino (`00-decisao.md`). O que o teste de rua diz sobre R$ 39 vale como sinal de que o preço não assusta quem já paga sistema.
 
 ## 4. A conta, sem ilusão
 
@@ -150,6 +150,13 @@ O custo não é só o Supabase. É pouco, mas existe (FATO, `docs/88`):
 | "Crescer com um nicho só primeiro" | É o `00-decisao.md`. Produto horizontal, venda vertical |
 | WhatsApp: o número banido se troca, mas o portfólio banido é o problema; marketing é caro, utilidade é barata | **Não automatizar "volta" pelo WhatsApp oficial agora:** é marketing, o caro. O `wa.me` do próprio profissional já resolve. Lembrete de horário, que é utilidade, é candidato a pacote pago no futuro |
 | Ele usa Stripe (3% no saque) | Para o CICLO, o Pix Automático do Mercado Pago (cerca de 1%) é melhor: alcança quem não tem cartão. Já é a decisão de 06/09 |
+
+## 6b. Foco feminino: o que muda no modelo
+
+- **O preço não muda.** R$ 39 até 2 profissionais serve à profissional solo e à dupla que divide uma sala. Para a manicure, 2 manicures simples que voltam pagam o mês; para a designer de cílios, uma manutenção já paga.
+- **O argumento de venda muda de "quem sumiu" para "a manutenção que não voltou".** Em cílios e unhas a volta tem nome (manutenção, retoque) e prazo curto; cada uma perdida é a cliente indo refazer em outra.
+- **Canais:** Instagram (o fundador local trouxe a maior parte da base por campanha no Instagram), cursos de extensão de cílios e de unhas, lojas de material de beleza e indicação entre colegas (M6).
+- **O texto do produto continua sem supor gênero.** Tem homem nesses nichos e entre as clientes, e a regra da casa vale (memória "copy PT-BR não supõe gênero"). A comunicação de venda pode falar com elas.
 
 ## 7. O que NÃO fazer
 

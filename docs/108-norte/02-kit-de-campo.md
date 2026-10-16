@@ -41,7 +41,7 @@ A ficha de anotação está em `ficha-de-campo.csv` (abre no Excel ou no Google 
 ## Como chegar nas pessoas
 
 - **Alpha:** só conhecidos do Eduardo e indicação deles.
-- **Teste de nicho:** indicação em cadeia. "Você conhece outra profissional de cílios que poderia testar?"
+- **Teste de nicho:** indicação em cadeia. "Você conhece outra profissional de cílios ou de unhas que poderia testar?" Cursos de extensão de cílios e de unhas e lojas de material do bairro são onde essas profissionais se encontram.
 - **Sempre um a um,** com mensagem pensada para aquela pessoa e a frase "se não quiser, é só me dizer e eu não mando mais".
 - **Nada de** disparo, grupo, lista comprada, vitrine do AppBarber ou reclamação pública.
 - Abordar **quem não é conhecido nem indicado** só depois de conversar com o advogado (`00-decisao.md` §7).
@@ -52,17 +52,17 @@ A ficha de anotação está em `ficha-de-campo.csv` (abre no Excel ou no Google 
 
 ## Como decidir o nicho no fim das 2 semanas
 
-Para cada grupo (cílios ou unhas × barbeiro solo × barbearia que usa o AppBarber):
+Para cada grupo (designer de olhar × unhas):
 
-| Medida | Cílios ou unhas | Barbeiro solo | Barbearia com AppBarber |
-| --- | --- | --- | --- |
-| Testaram | | | |
-| Criaram a conta | | | |
-| Trouxeram 20 ou mais | | | |
-| Chamaram pelo menos 1 na semana 1 | | | |
-| Abriram de novo na semana 2 | | | |
+| Medida | Designer de olhar (cílios e sobrancelha) | Unhas |
+| --- | --- | --- |
+| Testaram | | |
+| Criaram a conta | | |
+| Trouxeram 20 ou mais | | |
+| Chamaram pelo menos 1 na semana 1 | | |
+| Abriram de novo na semana 2 | | |
 
-**Vence** o grupo com maior proporção em "trouxeram 20 ou mais **e** chamaram pelo menos 1". Empate: cílios e unhas. Escrever a decisão em `docs/DECISOES.md`, com os números.
+**Vence** o grupo com maior proporção em "trouxeram 20 ou mais **e** chamaram pelo menos 1". Empate: unhas. Escrever a decisão em `docs/DECISOES.md`, com os números.
 
 ## Linguagem
 
