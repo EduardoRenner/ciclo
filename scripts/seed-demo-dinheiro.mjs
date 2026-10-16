@@ -62,7 +62,19 @@ function rnd(...partes) {
 const escolha = (semente, arr) => arr[Math.floor(rnd(semente) * arr.length)]
 
 const ALVO_PADRAO = ['dom-rocha', 'teste-essencial', 'teste-equipe', 'teste-avancado', 'lang-barber']
+/*
+ * Este script APAGA todas as comandas, itens e pagamentos do tenant antes de recriar. Aceitava qualquer slug na linha de
+ * comando: um salão de verdade digitado por engano perderia o caixa inteiro (regra 11 do CLAUDE.md). Só conta de
+ * demonstração, a mesma lista de `src/core/tenants/demonstracao.ts` (a guarda `seed-dinheiro-so-demonstracao` confere).
+ */
+const SLUGS_DE_DEMONSTRACAO = [
+  'dom-rocha', 'ruivo-barber', 'teste-essencial', 'teste-equipe', 'teste-avancado', 'lang-barber', 'lang-unhas',
+  'demo-navalha-de-ouro', 'demo-corte-fino', 'demo-dom-estilo', 'demo-studio-bella', 'demo-salao-encanto', 'demo-espaco-vitoria',
+  'demo-alvorada-advocacia', 'apple-review', 'demo-esmalteria-rosa', 'demo-studio-olhar', 'demo-pet-amigo',
+]
 const alvo = process.argv.slice(2).length ? process.argv.slice(2) : ALVO_PADRAO
+const foraDaDemonstracao = alvo.filter((s) => !SLUGS_DE_DEMONSTRACAO.includes(s))
+if (foraDaDemonstracao.length) precisa({ message: `só conta de demonstração: ${foraDaDemonstracao.join(', ')}` }, 'conferir alvo')
 const { data: tenantsAlvo } = await svc.from('tenants').select('id, slug').in('slug', alvo)
 if (!tenantsAlvo?.length) precisa({ message: `nenhum tenant para: ${alvo.join(', ')}` }, 'achar tenants')
 
@@ -263,13 +275,20 @@ for (const tnt of tenantsAlvo) {
   console.log(`  ${notas.length} avaliações novas`)
 
   // ── Pacotes vendidos ──────────────────────────────────────────────────────────────────────────
+  // Barbearia tem os pacotes de sempre; os outros nichos (unhas, cílios, pet) usam os dois serviços mais baratos com 15%
+  // de desconto sobre o avulso. Antes quebrava em qualquer conta sem "Barba" e "Corte".
+  const porPreco = [...servicos].sort((a, b) => a.price_cents - b.price_cents)
   const BARBA = servicos.find((s) => s.name === 'Barba')
   const CORTE = servicos.find((s) => s.name === 'Corte')
-  const planos = [
-    { servico: BARBA, total: 4, preco: 12000 },
-    { servico: CORTE, total: 5, preco: 18000 },
-    { servico: CORTE, total: 10, preco: 34000 },
-  ]
+  const pacote = (servico, total) => ({ servico, total, preco: Math.round((servico.price_cents * total * 0.85) / 100) * 100 })
+  const planos =
+    BARBA && CORTE
+      ? [
+          { servico: BARBA, total: 4, preco: 12000 },
+          { servico: CORTE, total: 5, preco: 18000 },
+          { servico: CORTE, total: 10, preco: 34000 },
+        ]
+      : [pacote(porPreco[0], 4), pacote(porPreco[Math.min(1, porPreco.length - 1)], 5), pacote(porPreco[0], 10)]
   const { data: pacotesExistentes } = await svc.from('packages').select('client_id, service_id').eq('tenant_id', T)
   const chavesPacote = new Set((pacotesExistentes ?? []).map((p) => `${p.client_id}:${p.service_id}`))
   const pacotes = []
