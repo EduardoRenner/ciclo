@@ -3,9 +3,9 @@
  * ver `configurar-status-bar-nativo.tsx`), e quem escolhe a cor dos ícones (hora, bateria, sinal) somos nós.
  * Estavam fixos em branco: no tema claro do painel, branco sobre `#faf8f5`, praticamente invisíveis.
  *
- * Decide pela cor medida debaixo da barra, não pelo nome do tema: a frente de casa é escura, o painel segue o
- * cookie, e o "Automático" segue o aparelho. Três regras diferentes, uma pergunta só: qual dos dois ícones
- * contrasta mais com o que está ali.
+ * Decide pela cor medida debaixo da barra, não pelo nome do tema: o painel segue o cookie, o "Automático" segue o
+ * aparelho, e a suposição de que a frente de casa era escura caiu ao medir (`/entrar` pinta `#faf8f5`, 15/10/2026).
+ * Uma pergunta só: qual dos dois ícones contrasta mais com o que está ali.
  */
 
 /** Luminância relativa da WCAG 2.x, de 0 (preto) a 1 (branco). */
