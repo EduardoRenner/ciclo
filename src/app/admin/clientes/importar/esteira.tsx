@@ -97,7 +97,7 @@ function linhaParaEnviar(r: RegistroCanonico, i: number) {
  * contatos, print e foto. A leitura inteira acontece NO APARELHO (`rodarEsteira`, Web Worker); o
  * servidor só recebe as fichas que a pessoa confirmou, em pedaços que não duplicam (CNV-020).
  */
-export default function EsteiraDeImportacao({ servicos, timezone }: { servicos: ServicoParaImportar[]; timezone: string }) {
+export default function EsteiraDeImportacao({ servicos, servicoPadrao, timezone }: { servicos: ServicoParaImportar[]; servicoPadrao: string | null; timezone: string }) {
   const hoje = useMemo(() => new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date()), [timezone])
   const [etapa, setEtapa] = useState<'escolher' | 'lendo' | 'previa' | 'gravando' | 'pronto'>('escolher')
   const [erro, setErro] = useState<string | null>(null)
@@ -106,7 +106,7 @@ export default function EsteiraDeImportacao({ servicos, timezone }: { servicos: 
   const [lido, setLido] = useState<Lido | null>(null)
   const [contexto, setContexto] = useState<ContextoDaEsteira>({ hoje })
   const [ddd, setDdd] = useState('')
-  const [servicoId, setServicoId] = useState(servicos[0]?.id ?? '')
+  const [servicoId, setServicoId] = useState(servicoPadrao ?? servicos[0]?.id ?? '')
   const [declarou, setDeclarou] = useState(false)
   const [progresso, setProgresso] = useState({ feitas: 0, total: 0 })
   const [fim, setFim] = useState<Fim | null>(null)

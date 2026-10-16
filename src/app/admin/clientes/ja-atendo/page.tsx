@@ -57,8 +57,8 @@ export default async function PaginaQuemJaAtendo() {
 
   const comRitmo = servicos
     .filter((s) => (s.cycle_days ?? 0) > 0)
-    .map((s) => ({ id: s.id, nome: s.name, cycleDays: s.cycle_days as number }))
-  const servicoPadrao = servicoPadraoDaBase(comRitmo.map((s) => ({ id: s.id, cycleDays: s.cycleDays, atendimentos: atendimentos.get(s.id) ?? 0 })))
+    .map((s) => ({ id: s.id, nome: s.name, cycleDays: s.cycle_days as number, canonicalKey: s.canonical_key }))
+  const servicoPadrao = servicoPadraoDaBase(comRitmo.map((s) => ({ id: s.id, cycleDays: s.cycleDays, canonicalKey: s.canonicalKey, atendimentos: atendimentos.get(s.id) ?? 0 })))
 
   return (
     <>
