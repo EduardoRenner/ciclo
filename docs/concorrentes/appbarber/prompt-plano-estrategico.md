@@ -1,125 +1,223 @@
-# Prompt: plano estratégico do CICLO diante do AppBarber (conviver ou superar)
+# Prompt: plano de entrada do CICLO no mercado dominado pelo AppBarber (v2)
 
-Copie tudo abaixo da linha e use como pedido numa sessão nova.
+Copie tudo abaixo da linha e use como pedido numa sessão nova. Versão 2, de 16/10/2026: reescrita com medições novas e com o que o código do CICLO já tem para essa entrada.
 
 ---
 
-Você vai montar o plano estratégico do CICLO diante do AppBarber, o maior sistema para barbearias do Brasil. A pergunta central tem duas respostas possíveis, e o plano precisa estudar as duas antes de recomendar:
+## 0. Por que este plano é a fundação do CICLO
 
-- **Caminho A, conviver:** o CICLO entra **ao lado** do AppBarber, como a camada que ele não tem (prever quem vai sumir, trazer de volta, mostrar quanto sobrou), sem pedir que a barbearia troque de sistema.
-- **Caminho B, superar:** o CICLO **substitui** o AppBarber, tirando clientes dele com um produto melhor, mais simples e mais barato.
-- Um caminho C (começar por A e virar B com o tempo) também deve ser avaliado.
+A maioria dos barbeiros que o CICLO quer atender **já usa o AppBarber**. Então a primeira pergunta do negócio não é "como convencer alguém a usar um sistema", e sim "como entrar numa barbearia que já tem sistema". Tudo o que vier depois (preço, produto, marketing, app nas lojas) depende da resposta.
 
-Só planeje. Não escreva código, não crie migration, não mude nada em produção.
+Você vai montar esse plano. **Só planeje:** não escreva código, não crie migration, não mexa em produção, não fale com cliente, não gaste dinheiro. Seja estratégico, desconfie do óbvio, e prefira o caminho que usa o que o CICLO já tem a construir coisa nova.
 
-## 1. Leia antes de começar (é obrigatório, e cite o que usou)
+## 1. O que já sabemos (fatos medidos, use como base e não refaça)
 
-1. `docs/concorrentes/appbarber/relatorio-appbarber.html`: a pesquisa completa (empresa, preço, produto, reputação, marketing, mercado, o site página por página, comparação recurso a recurso e plano de ação inicial).
-2. `docs/concorrentes/appbarber/02-ciclo-hoje.md`: planos, preços e módulos do CICLO lidos do código.
-3. `CLAUDE.md` e `docs/00-BRIEFING.md` do CICLO.
-4. O código, para afirmar o que o CICLO faz hoje. Em especial:
-   - `src/core/billing/planos.ts` (planos e preços);
-   - `src/server/services/quem-ja-atendo.ts` (cadastro "de memória" de quem já atende, pensado para quem usa outro sistema);
-   - `src/core/onboarding/perfil.ts` (`SISTEMAS_ANTERIORES`, que já lista o AppBarber);
-   - `src/core/loyalty/margem-do-clube.ts` (aviso de assinante no prejuízo);
-   - o conversor universal de planilhas (`docs/103`, branch `conversor/esteira-universal`);
-   - a página pública de agendamento (`src/app/(public)/[slug]/agendar`).
-5. Os documentos de estratégia que existirem: `docs/104-founder`, `docs/105`, `docs/82` (motor de distribuição), `docs/87` e `docs/88` (custos e metas), `docs/98-aprimoramento/11` (rumo às lojas).
+### 1.1 Sobre o AppBarber (fontes em `docs/concorrentes/appbarber/relatorio-appbarber.html`)
 
-Se um documento citado não existir, diga que não existe e siga. Não invente o conteúdo.
+**Empresa e preço**
+- StarApp, de Chapecó (SC), no mercado desde 2015.
+- Preço: R$ 79,90 por mês para 1 profissional, R$ 109,90 para 2 a 5, R$ 55,90 no anual (parcelado em 12x). Não tem plano grátis, só 30 dias de teste.
+- Recepcionista e gestor contam como "profissional" na faixa de preço.
+- Vendidos à parte, sem preço público: clube de assinatura, app com a marca da barbearia, nota fiscal, robô de WhatsApp, totem e API. WhatsApp automático e SMS são créditos pagos.
+- Pagamento online pela Zoop, com taxa não divulgada, e só para CNPJ.
 
-## 2. Regras de evidência
+**Reputação**
+- 4,9 nas lojas, mas inflado: 44% das notas altas têm menos de 15 letras.
+- Reclame Aqui "Regular", nota 6,6. As maiores dores, em ordem:
+  1. assinatura que segue cobrando depois de cancelar;
+  2. login quebrado;
+  3. suporte lento;
+  4. bugs a cada atualização.
 
-- Todo número e toda afirmação levam rótulo: **FATO** (com fonte: arquivo e linha, ou URL), **INFERÊNCIA** (dedução de fatos, mostrando de quais) ou **HIPÓTESE** (a testar, com o teste proposto).
-- Não invente número de mercado, de conversão nem de receita. Quando faltar, escreva a hipótese e o jeito mais barato de medir.
-- O que estiver no relatório como NÃO VERIFICADO continua NÃO VERIFICADO no plano.
-- Afirmação sobre o que o CICLO faz só vale se conferida no código, não na memória nem em documento antigo.
+**Cliente final e vitrine**
+- O cliente precisa **criar conta no primeiro clique em "Agendar"**.
+- A vitrine mostra a barbearia concorrente ao lado.
 
-## 3. O que o plano precisa responder
+**Dados e termos**
+- Para tirar a própria base de lá, o dono **pede no chat**.
+- Termo de uso de dezembro de 2020: chamado técnico "sem previsão" e nenhum reembolso.
 
-### 3.1 Caminho A, conviver
+**O que não tem**
+- Nenhuma previsão de quem vai sumir.
+- Nenhum lucro por atendimento.
+- Nenhuma IA de análise.
 
-1. **Qual é a proposta exata?** Por exemplo: "use o AppBarber para agendar e cobrar; use o CICLO para saber quem está sumindo e trazer de volta". Escreva em uma frase que um dono de barbearia entende.
-2. **Como os dados chegam ao CICLO sem retrabalho?** O AppBarber não tem API aberta para todos (a deles exige mais de 4 profissionais, CNPJ e 6 meses de casa, e é módulo pago). Avalie, com custo e risco de cada um:
-   - exportação manual (o dono pede a base no chat deles);
-   - planilha periódica pelo conversor universal;
-   - cadastro "de memória" (`quem-ja-atendo`);
-   - lançamento rápido do atendimento no CICLO;
-   - a API deles, para quem se encaixa.
-   Diga qual o dono aguenta repetir toda semana.
-3. **O que o CICLO precisa ter, e o que precisa NÃO ter, para conviver sem confundir** (por exemplo: esconder agenda e comanda para quem só quer a camada de recuperação). Liste as mudanças de produto.
-4. **Preço e plano:** um plano só da camada de recuperação? Quanto, com que limite, e como isso conversa com Grátis, Solo e Equipe sem canibalizar.
-5. **Riscos:** o AppBarber copiar a função; o dono desistir de alimentar dois sistemas; dados velhos deixarem a previsão errada; LGPD de dados importados de outro sistema.
+### 1.2 Medido hoje (16/10/2026) e ainda não está no relatório
 
-### 3.2 Caminho B, superar
+1. **O AppBarber só importa clientes, serviços e produtos, nunca histórico de atendimentos.** Fonte: artigo "Como solicito a importação de dados?" da central de ajuda deles (`appbarber-appbeleza.zendesk.com`, artigo 9396829609997, atualizado em 03/09/2026). Se eles não importam histórico, provavelmente também não entregam histórico com facilidade na saída. Isso é **INFERÊNCIA**, a confirmar com uma exportação real.
+2. **A vitrine pública deles mostra quem usa o AppBarber, cidade por cidade.** O endereço `sites.appbarber.com.br/api/new-establishment-search?city=<código>` devolve, por negócio:
+   - qual sistema usa (código 2 = AppBarber, 1 = AppBeleza);
+   - se usa o pagamento online deles;
+   - a nota.
+   A busca tem **teto de 120 resultados**: nas capitais o total real é maior e desconhecido.
 
-1. **Por onde atacar**, usando as fraquezas medidas no relatório:
-   - assinatura que segue cobrando depois de cancelar;
-   - login e cadastro quebrados;
-   - suporte lento;
-   - preço escondido em módulos e créditos;
-   - cliente obrigado a criar conta para agendar;
-   - vitrine que mostra a barbearia concorrente;
-   - termos de 2020;
-   - 30 dias de teste contra o nosso plano grátis.
-   Para cada uma: a promessa do CICLO, a prova que o CICLO consegue mostrar hoje e o que falta construir.
-2. **O que o CICLO precisa ter para um dono trocar sem medo**, em ordem. Considere o que eles têm e nós não:
-   - pagamento online e sinal por Pix, aceitando CPF;
+   | Cidade | Negócios | AppBarber | Com pagamento online |
+   | --- | --- | --- | --- |
+   | Chapecó/SC | 87 (número real) | 64 | 11 (13%) |
+   | São Paulo/SP | 120 (teto) | 107 | 31 (26%) |
+   | Rio de Janeiro/RJ | 120 (teto) | 105 | 33 (28%) |
+
+   Em São Paulo, 106 dos 120 aparecem com nota 5,0. Conclusão: **cerca de 3 em cada 4 barbearias do AppBarber não usam o pagamento online deles**. Isso é FATO só para as amostras acima; para o resto é INFERÊNCIA.
+3. A vitrine também mostra **telefone e e-mail públicos** de cada negócio. Ver as regras da seção 2.
+
+### 1.3 O que o CICLO já tem para essa entrada (confira no código antes de usar)
+
+- **`docs/83-ONBOARDING-E-MIGRACAO-PLANO.md`**: plano de entrada para quem vem de outro sistema. Leia inteiro; este plano estende o 83, não o substitui.
+- **Tela `src/app/admin/clientes/vindo-de-outro-sistema/page.tsx`**, com três saídas:
+  1. "Traga agora" (planilha ou memória);
+  2. "Use junto por enquanto" (camada de recuperação ao lado do sistema atual);
+  3. "Me manda que eu faço" (só aparece se houver canal de contato).
+  Também traz pronta a mensagem para pedir a exportação ao suporte do sistema antigo.
+- **`src/server/services/quem-ja-atendo.ts`**, com três portas:
+  - **planilha**;
+  - **memória**: "uns 15 dias atrás" basta, porque o Motor usa o ritmo padrão do serviço;
+  - **`retornos`**: "essa pessoa voltou", sem reabrir cadastro, escrita justamente para quem continua operando no AppBarber.
+- **`src/core/onboarding/perfil.ts`**: `SISTEMAS_ANTERIORES` já lista o AppBarber, mas a escolha **não chega** à tela "vindo de outro sistema" (registrado em `docs/DECISOES.md`).
+- **Conversor universal de planilhas**: `docs/103`, branch `conversor/esteira-universal`, ainda não está na `main`.
+- **Página pública de agendamento sem conta** (`src/app/(public)/[slug]/agendar`): o cliente agenda com nome e telefone.
+- **Planos:**
+  - Grátis: 1 profissional, até 50 clientes;
+  - Solo: R$ 49;
+  - Equipe: R$ 99, até 5 profissionais;
+  - hoje está tudo liberado (`ACESSO_ABERTO = true`).
+- **Aviso de assinante no prejuízo** (`src/core/loyalty/margem-do-clube.ts`), que o AppBarber não tem.
+
+## 2. Regras que não se negociam
+
+- **Evidência:** todo número e toda afirmação levam **FATO** (com fonte: arquivo e linha, ou URL e data), **INFERÊNCIA** (de quais fatos) ou **HIPÓTESE** (com o teste mais barato que a confirma ou derruba). Não invente número de mercado, conversão ou receita. O que está NÃO VERIFICADO continua assim.
+- **Código manda:** afirmação sobre o que o CICLO faz só vale conferida no código. Documento antigo pode estar desatualizado.
+- **Dados da vitrine do AppBarber:**
+  - use só **contagens agregadas** (quantos por cidade, quantos com pagamento online), lidas pela busca normal do site como qualquer visitante;
+  - **não** monte lista de contatos, **não** guarde telefone nem e-mail, **não** varra milhares de cidades.
+  - Se o plano propuser abordar donos de barbearia, a abordagem é um a um, com mensagem pensada para aquele negócio, base legal registrada (legítimo interesse de contato comercial entre empresas, com avaliação escrita), opção clara de não receber mais e nada de disparo em massa nem automação de WhatsApp (as regras da Meta proíbem).
+  - Marque como **DECISÃO DO EDUARDO, COM ADVOGADO** antes de qualquer abordagem.
+- **Ética na comparação:** nada de atacar a marca deles, nada de número sem fonte, nada de prometer resultado que o CICLO não mede. Comparação honesta, com data.
+
+## 3. As perguntas que o plano precisa responder
+
+### 3.1 Quem é o primeiro cliente, exatamente
+
+Não "barbearias". Segmente e escolha **um** primeiro alvo, com motivo:
+
+- dono que trabalha sozinho e paga R$ 79,90 sem usar metade;
+- barbearia de 2 a 5 cadeiras;
+- **barbeiro comissionado ou de cadeira alugada**, que tem a própria carteira mas usa o AppBarber do dono (no AppBarber o profissional nem se cadastra sozinho: é o dono que cria o acesso);
+- quem tem clube de assinatura e sofre com cobrança e cancelamento;
+- quem está de saída (as reclamações públicas mostram donos "prestes a cancelar").
+
+Para cada segmento: tamanho estimado (rotulado), dor principal, o que o CICLO entrega hoje, o que falta e o custo de alcançar.
+
+### 3.2 Caminho A, conviver: o CICLO como camada de recuperação ao lado do AppBarber
+
+1. A proposta numa frase que um barbeiro entende. Por exemplo: "Continue agendando no AppBarber. O CICLO te mostra toda segunda quem está sumindo e quanto vale chamar de volta." Teste outras.
+2. **O fluxo semanal real do dono**, passo a passo e com tempo estimado:
+   - como os clientes entram (pedido de exportação no chat do AppBarber, planilha, memória);
+   - como o CICLO fica sabendo de quem voltou: porta `retornos`, planilha periódica, ou nada (o Motor trabalha só com a estimativa).
+   Diga com franqueza **qual esforço semanal o dono aguenta sem largar**, e desenhe para esse esforço.
+3. O que mudar no produto para conviver sem confundir:
+   - um modo "só recuperação" que esconda agenda e comanda;
+   - a tela "vindo de outro sistema" usando o sistema escolhido no cadastro;
+   - textos que nomeiam o AppBarber;
+   - lembrete semanal da fila.
+   Liste os tickets.
+4. **Preço da convivência:** o Grátis (50 clientes) basta para provar valor? Faz sentido um plano "Recuperação" mais barato que o Solo? Mostre a conta: quanto a fila precisa recuperar por mês para pagar o plano várias vezes, com os preços reais.
+5. **Riscos:** o dono parar de atualizar; previsão errada com dado velho; o AppBarber copiar a fila; LGPD de dados vindos de outro sistema (o dono é o controlador). Para cada risco, a mitigação.
+
+### 3.3 Caminho B, superar: o CICLO no lugar do AppBarber
+
+1. Para cada dor medida no AppBarber (cobrança depois de cancelar, login, suporte, preço escondido, conta obrigatória para o cliente, vitrine com concorrente, exportação pedida no chat, termos de 2020, sem plano grátis): a promessa do CICLO, **a prova que o CICLO mostra hoje** e o que falta construir.
+2. **Lacunas para trocar sem medo**, cada uma marcada como obrigatória, desejável ou dispensável para o primeiro alvo:
+   - pagamento online e sinal por Pix, aceitando CPF (eles só aceitam CNPJ, e 3 em cada 4 nem usam o deles);
    - clube com cobrança automática e cancelamento pelo cliente;
-   - nota fiscal;
+   - nota fiscal (obrigatória desde setembro de 2026, segundo o blog deles: confirmar o que vale para MEI);
    - fila por ordem de chegada;
    - várias unidades;
    - app nas lojas.
-   Para cada item: obrigatório para trocar, desejável ou dispensável, com a justificativa.
-3. **A troca em si:** importar clientes, histórico, serviços e assinantes do AppBarber, migrar o clube sem cobrar em dobro, e avisar o cliente final de que o link mudou. Desenhe a "virada em um dia".
-4. **O que não copiar** (vitrine com concorrente, créditos de WhatsApp, módulos sem preço, recepcionista contando como profissional) e por quê.
-5. **Riscos:** a reação de preço deles (o anual sai a R$ 55,90); a força do app que o cliente já tem instalado; o custo de suporte numa migração; o CICLO crescer em largura e perder o foco no que só ele faz.
+3. **A troca em um dia:** importar clientes e serviços; recriar assinantes sem cobrar em dobro (cancelar lá só depois de cobrar aqui, com data marcada); avisar o cliente final do link novo (mensagem pronta, QR no balcão); manter o histórico do AppBarber como planilha de consulta. Diga o que dá para fazer hoje e o que precisa ser construído.
+4. **O que não copiar:** vitrine com concorrente, crédito de WhatsApp, módulo sem preço, recepcionista contando como profissional, conta obrigatória para o cliente final.
 
-### 3.3 Caminho C, conviver primeiro e superar depois
+### 3.4 Caminho C: conviver primeiro, substituir depois
 
-Em que momento e com que sinais (número de barbearias, uso da camada de recuperação, pedidos de agenda e cobrança) a convivência vira substituição? Defina os gatilhos medidos.
+Defina os **gatilhos medidos** que transformam um usuário de camada de recuperação num candidato a troca. Por exemplo: X semanas usando a fila, Y clientes recuperados, pedido espontâneo de agenda ou de cobrança. Diga o que o produto oferece em cada gatilho (convite, importação assistida, mês grátis), lembrando que mês grátis é decisão de preço do Eduardo.
 
-### 3.4 Comparação e recomendação
+### 3.5 A reação deles
 
-- Uma tabela A, B e C com: custo de construir (em semanas de trabalho, estimado e rotulado), tempo até o primeiro cliente pagante, risco, tamanho do público alcançável, dependência de decisões do Eduardo (pagamento, contas, preço) e quanto cada um reforça o que só o CICLO tem.
-- **Recomende um caminho**, com o motivo em até 5 linhas e o que faria mudar de ideia.
+O que o AppBarber faria ao perceber o CICLO: baixar preço, copiar a fila, criar plano grátis, dificultar a exportação. Para cada reação provável:
+- a probabilidade (rotulada);
+- o impacto;
+- o que mantém o CICLO na frente. Por exemplo, a previsão melhora com o histórico acumulado no CICLO, o que é difícil de copiar de um dia para o outro: verificar se isso é verdade no Motor.
 
-## 4. Posicionamento e mensagem
+### 3.6 Comparação e recomendação
 
-Para o caminho recomendado:
+Tabela A, B e C com:
+- custo de construir (semanas, estimado);
+- tempo até o primeiro pagante;
+- risco;
+- público alcançável;
+- dependência de decisões do Eduardo;
+- quanto reforça o que só o CICLO tem.
 
-1. A frase de posicionamento (uma linha) e três mensagens de apoio, cada uma ligada a um fato do relatório.
-2. A página "CICLO ou AppBarber?" (ou "Use o CICLO junto com o AppBarber", se for o caminho A): estrutura, títulos e a tabela honesta de comparação. Sem atacar a marca deles, sem número sem fonte, sem promessa de resultado que o CICLO não mede.
-3. As 5 objeções mais prováveis do dono de barbearia e a resposta para cada uma.
+**Recomende um caminho em até 5 linhas** e diga o que faria você mudar de ideia.
 
-## 5. Aquisição
+## 4. Posicionamento, prova e objeções
 
-Como chegar aos donos que usam o AppBarber, com custo baixo:
+1. Uma frase de posicionamento e três mensagens de apoio, cada uma ligada a um fato (seção 1).
+2. **A prova antes da promessa:** como mostrar valor em menos de 10 minutos com os dados do próprio dono. Por exemplo: a pessoa digita de memória 20 clientes e já vê a fila e o valor. Use o que existe; aponte o que falta.
+3. A página "Use o CICLO junto com o AppBarber" (caminho A) e/ou "CICLO ou AppBarber?" (caminho B): estrutura, títulos e tabela honesta.
+4. As 7 objeções mais prováveis e a resposta de cada uma. Inclua, no mínimo:
+   - "meus clientes já têm o app";
+   - "não quero dois sistemas";
+   - "e meus dados?";
+   - "o AppBarber é mais completo";
+   - "não tenho tempo".
 
-- busca: quem procura "alternativa ao AppBarber" e "AppBarber preço";
-- Instagram e criadores do meio;
-- eventos (Barber Week, Barber Day);
-- indicação;
-- material gratuito em troca de contato (como a websérie deles, mas com números reais);
-- abordagem a barbearias que já reclamaram em público (sem expor ninguém e respeitando a LGPD).
+## 5. Aquisição com custo perto de zero
 
-Para cada canal: o custo, como medir e o primeiro teste em 2 semanas.
+Para cada canal: como funciona, custo, como medir, e **o primeiro teste de 2 semanas** com critério de sucesso.
+
+- **Busca:** quem procura "alternativa ao AppBarber", "AppBarber preço", "AppBarber cancelar". Hoje essas buscas são ocupadas por comparativos de concorrentes.
+- **O barbeiro como canal:** o comissionado que usa o CICLO grátis na própria carteira leva o CICLO para o dono.
+- **Cidade de teste:** uma cidade média onde o número de usuários do AppBarber é conhecido pela contagem agregada da vitrine (por exemplo, Chapecó, com 64). Defina a meta de participação.
+- **Instagram e criadores do meio**, eventos (Barber Week, Barber Day), indicação com benefício.
+- **Material gratuito** com números reais (como a websérie deles, mas com dado).
+- **Barbearias que reclamaram em público:** só se passar pelas regras da seção 2. Caso contrário, descarte e diga por quê.
 
 ## 6. Plano de execução
 
-1. Fases de 2 semanas, com objetivo, entregas e o critério de "pronto" de cada uma.
-2. Tickets no padrão do CICLO (um ticket, um commit), com prioridade P0 a P2, dependências, tamanho (P, M, G), o arquivo provável e o teste que prova. Separe o que é código do que é decisão do Eduardo e do que é marketing.
-3. Métricas de sucesso, com o valor de partida (medido ou "a medir") e a meta:
-   - barbearias vindas do AppBarber;
-   - tempo da importação;
-   - clientes recuperados pela fila;
+1. Fases de 2 semanas para os primeiros 90 dias. Cada uma com objetivo, entregas e critério de "pronto" medido.
+2. Tickets no padrão do CICLO (um ticket, um commit), separados em **código**, **decisão do Eduardo** e **marketing**, com:
+   - prioridade P0 a P2;
+   - dependências;
+   - tamanho (P, M, G);
+   - arquivo provável;
+   - o teste que prova.
+   Priorize o que usa o que já existe (seção 1.3).
+3. **Métricas**, cada uma com valor de partida (medido ou "a medir") e meta:
+   - donos vindos do AppBarber;
+   - tempo até ver a primeira fila;
+   - clientes recuperados;
    - receita recuperada;
-   - churn nos primeiros 60 dias.
-4. O que precisa do Eduardo, em lista curta e ordenada, com o motivo de cada item.
+   - ativação na semana 1;
+   - permanência em 30 e 60 dias;
+   - conversão de convivência para troca.
+4. **O que precisa do Eduardo**, curto e em ordem. No mínimo:
+   - canal de contato;
+   - SMTP;
+   - preço da convivência;
+   - mês grátis na migração;
+   - PSP para Pix e sinal;
+   - avaliação jurídica da abordagem.
+5. **Experimento-piloto:** 5 a 10 barbearias que usam o AppBarber, numa cidade, por 30 dias, em convivência. Como recrutar (dentro das regras), o que medir toda semana, quando parar, e o critério que decide entre A, B e C.
 
-## 7. Entrega
+## 7. Entrega e revisão
 
-- Escreva em `docs/concorrentes/appbarber/plano-estrategico.md`. Português simples, frases curtas, sem jargão técnico para o que o Eduardo precisa decidir.
-- Comece com um resumo de 10 linhas: o caminho recomendado, por quê, os 5 primeiros passos e as decisões pendentes.
-- No fim, uma seção "O que não sabemos e como descobrir", com os testes mais baratos para cada dúvida.
-- Antes de entregar, releia o plano procurando: número sem rótulo, afirmação sobre o CICLO sem conferir no código, e promessa que o produto ainda não cumpre. Corrija o que achar e diga que fez essa revisão.
+- Escreva em `docs/concorrentes/appbarber/plano-estrategico.md`. Português simples, frases curtas.
+- Comece com um resumo de 10 linhas: o alvo escolhido, o caminho recomendado, por quê, os 5 primeiros passos e as decisões pendentes.
+- Termine com "O que não sabemos e como descobrir", com o teste mais barato para cada dúvida. Inclua obrigatoriamente: o que vem numa exportação real do AppBarber (colunas, se traz a última visita), quantos donos aguentam atualizar a camada de recuperação toda semana, e o preço que o barbeiro comissionado pagaria do próprio bolso.
+- **Antes de entregar, faça uma revisão adversarial do próprio plano** e diga que fez. Procure:
+  - número sem rótulo;
+  - afirmação sobre o CICLO não conferida no código;
+  - promessa que o produto não cumpre;
+  - estratégia que depende de uma suposição não testada sem dizer qual;
+  - qualquer uso dos dados da vitrine fora da seção 2.
+  Corrija o que achar e liste o que mudou.
