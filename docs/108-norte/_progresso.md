@@ -14,6 +14,10 @@ Uma linha por passo. É o primeiro arquivo a ler depois de um resumo de contexto
 | 16/10 | Integração e RLS no Supabase isolado (`sb-norte`, 574xx) | RLS 361/361; integração 641 + 1 pulado; teste de disponibilidade que dependia do seed reescrito | PR #152 |
 | 16/10 | Runbook das migrations 0118 a 0141 | 19 antes do deploy, 3 depois (0127, 0135, 0139) | `docs/runbooks/lote-0118-a-0141.md` |
 | 16/10 | Teste de 10 minutos medido a 390 px nos 4 nichos | Caminho inteiro em ~12 s de máquina; serviço errado em 3 nichos achado e consertado; sem rolagem lateral | `04-teste-10-minutos-medido.md`, PR #152 |
+| 16/10 | Modelo de negócio decidido por delegação (M1–M8) | R$ 39 até 2 / R$ 79 até 6, 30 dias grátis, Pix Automático, indicação, cadastro sem e-mail | `05-modelo-de-negocio.md` §0 |
+| 16/10 | Foco no público feminino (pedido do Eduardo) | Barbearia e barbeiro fora; teste de nicho designer de olhar × unhas | `00-decisao.md`, `01`, `02`, `05` |
+| 16/10 | Código do modelo (M1 preço, M8 cadastro) | Unidade 4.430/4.430; conferido no navegador a 390 px | PR #153 (empilhado sobre o #152) |
+| 16/10 | CI do #152: passo de RLS sem as chaves descartáveis | Corrigido em `ci.yml` | PR #152 |
 | 16/10 | Docker local | Socket quebrado de novo; pasta `run` renomeada (`run.quebrado-20261016-1930`) e Docker reaberto | memória `docker-socket-af-unix-quebrado` |
 
 ## Próximos (ao meu alcance, sem produção)
