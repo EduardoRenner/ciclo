@@ -71,6 +71,10 @@ export const SLUGS_DE_DEMONSTRACAO: readonly string[] = [
   'demo-alvorada-advocacia',
   // docs/98-aprimoramento/11 LOJA-22: a conta do revisor da Apple (`docs/64` T-DEMO), semeada em produção em 16/09.
   'apple-review',
+  // 16/10: uma conta de teste por nicho além de barbearia e salão (`seed-tenant-teste.mjs`).
+  'demo-esmalteria-rosa',
+  'demo-studio-olhar',
+  'demo-pet-amigo',
 ]
 
 /** O tenant deste slug é uma demonstração, e não um negócio de verdade. */

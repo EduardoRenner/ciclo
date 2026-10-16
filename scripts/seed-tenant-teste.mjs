@@ -9,6 +9,10 @@
  *   node scripts/seed-tenant-teste.mjs lang-unhas nails "Lang Unhas" "dona-lang-unhas@ciclo.app"
  *   SEED_SENHA='...' node scripts/seed-tenant-teste.mjs apple-review barber "Barbearia do Revisor" "revisor-apple@ciclo.app" avancado
  *
+ * O 2º argumento é uma vertical com pacote (`barber`, `nails`, `lashes`...) OU o slug de uma profissão do catálogo
+ * (`banho_tosa`, `personal`...): aí o negócio nasce como o cadastro faria, vertical `general` com `profession_id`, os
+ * quatro eixos e os serviços de `apply_profession_pack`.
+ *
  * O 5º argumento é o plano do CICLO (`gratis` se faltar). LOJA-23 (docs/98-aprimoramento/11): a conta do revisor
  * da Apple precisa do plano que abre as telas que a revisão vai ver; sem ele o tenant nascia no padrão do banco.
  *
@@ -101,12 +105,23 @@ const { data: userData, error: erroUser } = await svc.auth.admin.createUser({
 precisa(erroUser, 'criar usuário')
 const userId = userData.user.id
 
+// As 8 verticais com pacote próprio; fora delas, o 2º argumento é profissão do catálogo (mesma regra do onboarding).
+const VERTICAIS_COM_PACOTE = ['barber', 'nails', 'lashes', 'brows', 'waxing', 'aesthetics', 'tattoo', 'hair']
+let profissao = null
+if (!VERTICAIS_COM_PACOTE.includes(VERTICAL)) {
+  const { data, error } = await svc.from('professions').select('id, slug, onde, cobranca, inicio, ritmo').eq('slug', VERTICAL).maybeSingle()
+  precisa(error, 'ler profissão do catálogo')
+  if (!data) precisa({ message: `"${VERTICAL}" não é vertical com pacote nem profissão do catálogo` }, 'conferir vertical')
+  profissao = data
+}
+
 const { data: tenant, error: erroTenant } = await svc
   .from('tenants')
   .insert({
     name: NOME,
     slug: SLUG,
-    vertical: VERTICAL,
+    vertical: profissao ? 'general' : VERTICAL,
+    ...(profissao ? { profession_id: profissao.id, onde: profissao.onde, cobranca: profissao.cobranca, inicio: profissao.inicio, ritmo: profissao.ritmo } : {}),
     plan: PLANO,
     timezone: TZ,
     phone: '+5511990000000',
@@ -118,11 +133,17 @@ precisa(erroTenant, 'criar tenant')
 const tenantId = tenant.id
 
 await svc.from('memberships').insert({ tenant_id: tenantId, user_id: userId, role: 'owner' })
-precisa((await svc.rpc('apply_vertical_pack', { p_tenant: tenantId, p_vertical: VERTICAL })).error, 'pack')
+precisa(
+  (profissao
+    ? await svc.rpc('apply_profession_pack', { p_tenant: tenantId, p_profession_id: profissao.id })
+    : await svc.rpc('apply_vertical_pack', { p_tenant: tenantId, p_vertical: VERTICAL })
+  ).error,
+  'pack',
+)
 
 const { data: donoProf } = await svc
   .from('professionals')
-  .insert({ tenant_id: tenantId, user_id: userId, display_name: NOME, comp_model: 'owner', color: '#8b5cf6' })
+  .insert({ tenant_id: tenantId, user_id: userId, display_name: 'Marina Alves', comp_model: 'owner', color: '#8b5cf6' })
   .select('id')
   .single()
 

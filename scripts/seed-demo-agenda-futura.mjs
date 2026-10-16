@@ -63,7 +63,7 @@ const pick = (sem, arr) => arr[Math.floor(rnd(sem) * arr.length)]
 
 // docs/102 M2.1: a MESMA lista de `src/core/tenants/demonstracao.ts` (o teste `agenda-futura-so-demonstracao`
 // reprova se divergirem). A antiga tinha 7 dos 13: os seis salões `demo-*` nunca eram renovados.
-const SLUGS = ['dom-rocha', 'ruivo-barber', 'teste-essencial', 'teste-equipe', 'teste-avancado', 'lang-barber', 'lang-unhas', 'demo-navalha-de-ouro', 'demo-corte-fino', 'demo-dom-estilo', 'demo-studio-bella', 'demo-salao-encanto', 'demo-espaco-vitoria', 'apple-review']
+const SLUGS = ['dom-rocha', 'ruivo-barber', 'teste-essencial', 'teste-equipe', 'teste-avancado', 'lang-barber', 'lang-unhas', 'demo-navalha-de-ouro', 'demo-corte-fino', 'demo-dom-estilo', 'demo-studio-bella', 'demo-salao-encanto', 'demo-espaco-vitoria', 'apple-review', 'demo-esmalteria-rosa', 'demo-studio-olhar', 'demo-pet-amigo']
 const OFFSET_H = 3 // America/Sao_Paulo = UTC-3 (sem horário de verão desde 2019)
 
 const DIAS_A_FRENTE = 21
