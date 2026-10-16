@@ -128,7 +128,7 @@ const { data: donoProf } = await svc
 
 const { data: outroProf } = await svc
   .from('professionals')
-  .insert({ tenant_id: tenantId, display_name: 'Assistente Teste', comp_model: 'commission', commission_bps: 4000, color: '#22c55e' })
+  .insert({ tenant_id: tenantId, display_name: 'Rafael Costa', comp_model: 'commission', commission_bps: 4000, color: '#22c55e' })
   .select('id')
   .single()
 const profissionais = [donoProf.id, outroProf.id]

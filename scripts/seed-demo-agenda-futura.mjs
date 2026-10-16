@@ -152,7 +152,10 @@ for (const tnt of tenants) {
     const janela = janelaPorDia.get(dow)
     if (!janela) continue // fechado nesse dia da semana
     // Fração acumulada: um dia de cota 2,4 vira 2 ou 3, e a sobra não se perde ao longo da janela.
-    const limiteDoDia = Math.floor(cotaDoDia.get(d) + (rnd('cota', T, d) * 0.999))
+    // O primeiro dia aberto nunca fica vazio: numa carteira pequena a cota de hoje é ~1 e o arredondamento a zerava,
+    // e a demonstração (inclusive a conta do revisor da Apple) abria Hoje e Agenda com "Nada marcado" (medido em 16/10).
+    const piso = d === diasAbertos[0] ? 3 : 0
+    const limiteDoDia = Math.max(piso, Math.floor(cotaDoDia.get(d) + (rnd('cota', T, d) * 0.999)))
     let noDia = 0
 
     for (const prof of profs) {
