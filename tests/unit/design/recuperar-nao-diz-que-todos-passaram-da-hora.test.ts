@@ -30,7 +30,7 @@ describe('quem está na lista de recuperar não é chamado todo de "passou da ho
   })
 
   it('o mapa de vazamento tem o mesmo título', () => {
-    const [linha] = montarMapaDeVazamento({ recuperar: { pessoas: 14, lucroCents: 50_000 }, clube: [], servicosAbaixoDoPiso: [], procurasEmDiaFechado: [], diaOcioso: null })
+    const [linha] = montarMapaDeVazamento({ recuperar: { pessoas: 14, valorCents: 50_000 }, clube: [], servicosAbaixoDoPiso: [], procurasEmDiaFechado: [], diaOcioso: null })
     expect(linha!.chave).toBe('recuperar')
     expect(linha!.titulo).toBe('Clientes para chamar de volta')
   })

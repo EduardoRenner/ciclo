@@ -101,7 +101,7 @@ export default async function PaginaDoMes() {
   const nomeDoServico = new Map(servicos.map((s) => [s.id, s.name]))
   const vazamentos = montarMapaDeVazamento({
     // O MESMO número do cartão "Parado em quem sumiu" logo abaixo — lucro, não receita.
-    recuperar: { pessoas: recuperar.count, lucroCents: recuperar.totalProfitCents },
+    recuperar: { pessoas: recuperar.count, valorCents: recuperar.totalValueCents },
     clube,
     servicosAbaixoDoPiso: margens.flatMap((m) =>
       m.parcelaDominante && nomeDoServico.has(m.serviceId) ? [{ nome: nomeDoServico.get(m.serviceId)!, parcela: m.parcelaDominante }] : [],
@@ -140,7 +140,7 @@ export default async function PaginaDoMes() {
         sobrouCents={mensal.profitCents}
         comandas={mensal.ticketsCount}
         concentracao={concentracao}
-        paradoCents={recuperar.totalProfitCents}
+        paradoCents={recuperar.totalValueCents}
         clientesParados={recuperar.count}
         motor={motor}
         servicosSemMaterial={material.semFicha + material.comProdutoSemCusto}

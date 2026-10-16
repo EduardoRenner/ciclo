@@ -182,7 +182,7 @@ export default function RecuperarReceita({
         gastar o WhatsApp do dia com quem vale menos.
       */}
       <div className="mb-5 grid grid-cols-2 gap-3">
-        <StatTile rotulo="Dá para recuperar" valor={dinheiro.format(lista.totalValueCents / 100)} apoio={`${dinheiro.format(lista.totalProfitCents / 100)} de lucro`} />
+        <StatTile rotulo="Dá para recuperar" valor={dinheiro.format(lista.totalValueCents / 100)} />
         <StatTile rotulo={comMaiuscula(plural(vocabulario.cliente))} valor={String(lista.count)} />
       </div>
 
@@ -365,7 +365,6 @@ export default function RecuperarReceita({
                       ) : (
                         <>
                           <p className="tabular text-corpo font-bold text-acc-2">{dinheiro.format(item.valueCents / 100)}</p>
-                          <p className="tabular text-label text-txt-3">{dinheiro.format(item.profitCents / 100)} de lucro</p>
         </>
                     )}
                     {/*
