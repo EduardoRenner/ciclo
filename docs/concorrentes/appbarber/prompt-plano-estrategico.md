@@ -73,6 +73,10 @@ Você vai montar esse plano. **Só planeje:** não escreva código, não crie mi
   - **memória**: "uns 15 dias atrás" basta, porque o Motor usa o ritmo padrão do serviço;
   - **`retornos`**: "essa pessoa voltou", sem reabrir cadastro, escrita justamente para quem continua operando no AppBarber.
 - **`src/core/onboarding/perfil.ts`**: `SISTEMAS_ANTERIORES` já lista o AppBarber, mas a escolha **não chega** à tela "vindo de outro sistema" (registrado em `docs/DECISOES.md`).
+- **Importador de planilha já consertado para o arquivo que o dono traz** (BL-51, na `main`):
+  - CSV do Excel em português (Windows-1252), em `src/core/text/decodificar-texto.ts`;
+  - data dd/mm/aaaa, em `src/core/tempo/data-informada.ts`.
+  Confira os dois.
 - **Conversor universal de planilhas**: `docs/103`, branch `conversor/esteira-universal`, ainda não está na `main`.
 - **Página pública de agendamento sem conta** (`src/app/(public)/[slug]/agendar`): o cliente agenda com nome e telefone.
 - **Planos:**
@@ -103,7 +107,7 @@ Fonte: `docs/83-ONBOARDING-E-MIGRACAO-PLANO.md` (atualização de 28/09/2026) e 
 
 ### 1.5 A premissa que precisa ser testada antes de tudo
 
-O pedido parte de "a maioria dos barbeiros já usa o AppBarber". O docs/83 cita que **cerca de 70% do público usa caderno** (fonte em `docs/07`). As duas coisas podem ser verdade ao mesmo tempo (o AppBarber pode dominar entre quem **tem** sistema), mas o plano muda conforme a resposta.
+O pedido parte de "a maioria dos barbeiros já usa o AppBarber". O docs/83 cita que **menos de 30% dos salões usam sistema de gestão** (Sebrae via UAI, 18/09/2026; o número é de salões em geral, não só de barbearias), ou seja, cerca de 70% estão no caderno e na memória. As duas coisas podem ser verdade ao mesmo tempo (o AppBarber pode dominar entre quem **tem** sistema), mas o plano muda conforme a resposta.
 
 **Antes de recomendar, estime as duas fatias com o que existe** e rotule o que é palpite:
 - `docs/07`;
@@ -193,6 +197,8 @@ Tabela A, B e C com:
 ## 4. Posicionamento, prova e objeções
 
 1. Uma frase de posicionamento e três mensagens de apoio, cada uma ligada a um fato (seção 1).
+   - O pilar verificável já identificado no docs/83 (§0, item 3): o AppBarber marca "cliente sumido" por **janela fixa escolhida à mão num relatório**, igual para todos. O CICLO calcula **o ritmo de cada cliente em cada serviço** e lista pelo nome quem passou da hora hoje, com o valor.
+   - Use esse pilar como demonstração com os dados do dono, não como frase solta (autocrítica do 83, §7.1).
 2. **A prova antes da promessa:** como mostrar valor em menos de 10 minutos com os dados do próprio dono. Por exemplo: a pessoa digita de memória 20 clientes e já vê a fila e o valor. Use o que existe; aponte o que falta.
 3. A página "Use o CICLO junto com o AppBarber" (caminho A) e/ou "CICLO ou AppBarber?" (caminho B): estrutura, títulos e tabela honesta.
 4. As 7 objeções mais prováveis e a resposta de cada uma. Inclua, no mínimo:
