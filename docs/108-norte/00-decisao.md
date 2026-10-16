@@ -59,7 +59,7 @@ Por que este grupo (INFERÊNCIA, a confirmar no teste da seção 4):
 
 ## 6. O que vem antes de tudo (só o Eduardo pode)
 
-1. **SMTP.** Sem ele ninguém de fora cria conta (FATO: LOJA-02, `EMAIL_UNAVAILABLE`). É o bloqueio número 1.
+1. **SMTP**, e junto os dois modelos de e-mail de `supabase/templates/` colados no painel (Authentication, Email Templates). Sem SMTP ninguém de fora cria conta (FATO: LOJA-02, `EMAIL_UNAVAILABLE`). Sem os modelos, o link de confirmação aberto em outro navegador dá "link inválido" (APR-026). É o bloqueio número 1.
 2. **Revisar e mesclar a pilha.** São 237 commits de trabalho pronto fora do ar desde 08/10, numa cadeia só. A ordem e os riscos estão em `03-guia-da-pilha.md`.
 3. **Canal de contato** (`NEXT_PUBLIC_CONTATO_*`): o "me manda que eu faço" e o socorro do piloto.
 4. **Trocar as senhas** das contas de revisão e de demonstração antes de mostrar a alguém.

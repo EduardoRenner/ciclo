@@ -71,13 +71,15 @@ O dono passa por 8 etapas: descobre, baixa, cria a conta, responde 3 perguntas, 
 | Toca em "Criar conta" e preenche nome, e-mail, telefone e senha | Funciona (FATO, `api/v1/auth/signup`) |
 | Entrar com o Google | Escondido dentro do app (FATO, LOJA-21: a Apple exigiria "Entrar com a Apple" junto). No site aparece só se o Eduardo ligar no Supabase |
 | Recebe o e-mail de confirmação | **QUEBRADO para quem é de fora.** Sem SMTP próprio, o Supabase só entrega para o time da organização. O cadastro agora avisa isso em vez de fingir que mandou (FATO, LOJA-02, `EMAIL_UNAVAILABLE`) |
-| Toca no link do e-mail | **Risco no app (HIPÓTESE forte).** O link abre no navegador do app de e-mail, não dentro do CICLO. A confirmação usa troca de código (`exchangeCodeForSession` em `auth/callback`), que precisa de um dado guardado no navegador onde o cadastro começou. **Provável resultado:** a conta é confirmada, mas a pessoa vê "link inválido" num navegador e continua deslogada no app |
+| Toca no link do e-mail | Na `main`, a confirmação troca um código PKCE (`auth/callback`), que só fecha no navegador onde o cadastro começou: aberto de outro lugar, dá "link inválido". **Já consertado na `onda-1` (APR-026)**, ver abaixo |
 
-**Conserto (JORN-01):** confirmar o cadastro com um **código de 6 dígitos** digitado na própria tela, em vez de um link.
-- O Supabase suporta código no lugar do link (`verifyOtp`).
-- O código vem no mesmo e-mail.
-- Funciona igual no site e no app, em qualquer navegador.
-- **Teste que decide:** criar uma conta no app Android com o e-mail aberto no Gmail. Se o link levar a "link inválido", o conserto é obrigatório antes das lojas.
+**Correção de 16/10 (mesmo dia):** o conserto do link já existe na branch `aprimoramento/onda-1` (APR-026).
+- A rota `/auth/confirmar` troca o `token_hash` do e-mail por sessão com `verifyOtp`, que funciona em qualquer navegador.
+- Os modelos novos de e-mail estão em `supabase/templates/`.
+- **Falta, em produção:** a `onda-1` chegar à `main` e o Eduardo colar os dois modelos no painel do Supabase (Authentication, Email Templates). Até lá, os e-mails seguem caindo no `/auth/callback` antigo.
+- **Dentro do app:** a confirmação acontece no navegador do celular, e a pessoa volta ao app e entra com a senha. Funciona, com um passo a mais.
+
+**JORN-01** (código de 6 dígitos digitado na tela) **só entra se** o teste de campo mostrar gente se perdendo nesse passo a mais.
 
 **Dependência que trava tudo:** o SMTP (decisão do Eduardo, LOJA-01). Sem ele nenhum dono de fora cria conta. É o primeiro item da lista dele.
 
@@ -246,7 +248,7 @@ A troca só faz sentido de verdade para quem tem clube depois da cobrança recor
 | 3 | "Chamar" leva à agenda do CICLO e duplica a agenda | 5 | CONV-10 | Código |
 | 4 | A fila não sabe quem voltou pelo AppBarber | 6 | CONV-01 | Código |
 | 5 | O Motor nunca aprende o ritmo de quem convive | 7 | CONV-08 | Código, com migration |
-| 6 | Link de confirmação aberto fora do app (HIPÓTESE forte) | 2 | JORN-01 | Código, depois do teste |
+| 6 | Link de confirmação aberto fora do app | 2 | APR-026, já na `onda-1`; modelos de e-mail no painel | Eduardo (mesclar e colar os modelos) |
 | 7 | Nenhum lembrete semanal; no app, nenhuma notificação | 6 | CONV-03 por e-mail agora; push nativo depois | Código + SMTP |
 | 8 | Segunda importação não atualiza quem já tem ficha | 6 | CONV-12 | Código |
 | 9 | "Me manda que eu faço" invisível sem canal | 4 | Canal de contato | Eduardo |
