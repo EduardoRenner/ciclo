@@ -194,3 +194,27 @@
 {"level":"warn","request_id":"req_0174b67ce6a34ab6a092b205033a8679","tenant_id":null,"method":"POST","path":"/api/v1/public/demo-dom-estilo/book","code":"SLOT_TAKEN","status":409}
 {"level":"warn","request_id":"req_5452b20b019c4989b3d97e9029d7407d","tenant_id":null,"method":"POST","path":"/api/v1/appointments","code":"VALIDATION_ERROR","status":422}
 {"level":"warn","request_id":"req_68c8020604f94040b4ecbe3747292762","tenant_id":null,"method":"POST","path":"/api/v1/appointments","code":"VALIDATION_ERROR","status":422}
+ ⨯ Error [AppError]: Algo deu errado do nosso lado. Tente de novo em instantes.
+    at e (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\72.js:1:228)
+    at async r (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\5973.js:1:6745)
+    at async p (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\app\admin\config\servicos\page.js:1:28183) {
+  code: 'INTERNAL',
+  status: 500,
+  publicMessage: 'Algo deu errado do nosso lado. Tente de novo em instantes.',
+  details: undefined,
+  headers: undefined,
+  digest: '3235029902',
+  [cause]: [Object]
+}
+ ⨯ Error [AppError]: Algo deu errado do nosso lado. Tente de novo em instantes.
+    at e (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\72.js:1:228)
+    at async r (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\chunks\5973.js:1:6745)
+    at async Q (C:\Users\Usuario\.claude\code\ciclo-aprimoramento\.next\server\app\admin\mes\page.js:2:25040) {
+  code: 'INTERNAL',
+  status: 500,
+  publicMessage: 'Algo deu errado do nosso lado. Tente de novo em instantes.',
+  details: undefined,
+  headers: undefined,
+  digest: '3318211990',
+  [cause]: [Object]
+}

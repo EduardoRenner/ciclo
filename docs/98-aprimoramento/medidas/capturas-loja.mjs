@@ -23,7 +23,7 @@ const TELAS = [
   ['3-ficha-do-cliente', `/admin/clientes/${CLIENTE}`],
   ['4-agenda', '/admin/agenda'],
   ['5-recuperar', '/admin/recuperar'],
-  ['6-caixa', '/admin/caixa'],
+  ['6-mes', '/admin/mes'],
 ]
 const TAMANHOS = [
   ['app-store-6.9', { width: 440, height: 956 }, 3],

@@ -85,7 +85,7 @@ Revisar o inglês e conferir a conta no dia do envio (LOJA-54). Atualizadas para
 
 ## 5. Imagens (LOJA-51)
 
-Geradas do build de produção desta branch, com um negócio fictício do banco local, tema claro, simulando o app (sem a barra do navegador). Roteiro: `medidas/capturas-loja.mjs`; arquivos em `medidas/capturas-loja/`.
+Geradas do build de produção desta branch, com um negócio fictício do banco local, tema claro, simulando o app (sem a barra do navegador). Roteiro: `medidas/capturas-loja.mjs` (a 6ª imagem passou de Caixa para Mês: o Caixa abre no dia de hoje, ainda sem comanda); arquivos em `medidas/capturas-loja/`.
 
 | Loja | Tamanho | Por quê |
 | --- | --- | --- |
@@ -103,5 +103,6 @@ Ensaiado no banco local em 15/10. **FATO:** uma conta recém-semeada abre com o 
 1. `SEED_SENHA='...' node scripts/seed-tenant-teste.mjs apple-review barber "<nome>" "revisor-apple@ciclo.app" avancado` (plano que abre todas as telas; senha nova, fora do repositório).
 2. `node scripts/seed-demo-agenda-futura.mjs apple-review` (só funciona depois do merge do #151, que põe `apple-review` na lista de demonstração).
 3. `node scripts/seed-demo-imagens.mjs apple-review` (logo e capa).
+3b. `node scripts/seed-demo-dinheiro.mjs apple-review` (comandas fechadas: sem ele Caixa, Mês e "Sobrou" abrem zerados).
 4. Rodar o Motor (`/api/cron/recompute-cycles` com o segredo do agendador) ou esperar a rodada da noite, e **conferir que "Recuperar" mostra pessoas** e "Clientes" mostra "sumido" e "fiel". O agendador do CICLO já ficou parado por dias antes (`docs/runbooks`, memória "cron morto"): olhar, não supor.
 5. Entrar no celular com a credencial que vai na ficha e abrir as quatro telas das notas.
