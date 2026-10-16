@@ -54,13 +54,13 @@ type Plano = {
 export const CARTOES: Plano[] = [
   {
     tier: 'essencial',
-    porDia: 'menos de R$ 1,70 por dia, o preço de um corte uma vez por mês',
-    chamada: 'Por mês, um profissional.',
+    porDia: 'R$ 1,30 por dia, menos que uma manutenção por mês',
+    chamada: `Por mês, até ${PLANOS.essencial.maxProfissionais} profissionais.`,
     /*
       "Por conta" e não "quem atende sozinho": escolher um gênero é o erro que a tabela do
       `docs/20-COPY-PLANO.md` §C.4 nomeia, e `copy-nao-supoe-genero` varre `src/lib` também.
     */
-    paraQuem: 'Você atende por conta e quer o produto inteiro, sem escolher módulo.',
+    paraQuem: 'Você atende por conta, ou divide a sala com mais uma pessoa, e quer o produto inteiro sem escolher módulo.',
     inclui: [
       { texto: 'Agenda sem risco de marcar dois no mesmo horário', modulo: 'agenda' },
       { texto: 'Sua página de agendamento com link para a bio, sem o selo do CICLO', modulo: 'public_page', capacidade: 'remover_selo' },
@@ -90,7 +90,7 @@ export const CARTOES: Plano[] = [
     chamada: `Por mês, até ${PLANOS.equipe.maxProfissionais} profissionais.`,
     paraQuem: 'Você contratou alguém e precisa de agenda e acerto separados.',
     inclui: [
-      { texto: 'Tudo do Solo, sem tirar nada' },
+      { texto: 'Tudo do Essencial, sem tirar nada' },
       {
         texto: `Até ${PLANOS.equipe.maxProfissionais} profissionais, cada um com agenda, comissão e extrato próprios`,
         limite: 'profissionais',

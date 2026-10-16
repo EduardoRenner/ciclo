@@ -79,15 +79,15 @@ describe('acessoPagoVigente: o período já pago de quem cancelou', () => {
 
 describe('valorConfereComDegrau: a guarda contra checkout adulterado', () => {
   it('aceita o valor exato do catálogo', () => {
-    expect(valorConfereComDegrau('essencial', 49)).toBe(true)
-    expect(valorConfereComDegrau('equipe', 99)).toBe(true)
+    expect(valorConfereComDegrau('essencial', 39)).toBe(true)
+    expect(valorConfereComDegrau('equipe', 79)).toBe(true)
     expect(valorConfereComDegrau('avancado', 179)).toBe(true)
   })
 
   it('tolera 1 centavo de arredondamento do lado do MP, nada além', () => {
-    expect(valorConfereComDegrau('essencial', 49.01)).toBe(true)
-    expect(valorConfereComDegrau('essencial', 48.99)).toBe(true)
-    expect(valorConfereComDegrau('essencial', 48.5)).toBe(false)
+    expect(valorConfereComDegrau('essencial', 39.01)).toBe(true)
+    expect(valorConfereComDegrau('essencial', 38.99)).toBe(true)
+    expect(valorConfereComDegrau('essencial', 38.5)).toBe(false)
   })
 
   it('recusa o degrau caro por um real — o bug de dinheiro que isto existe para impedir', () => {

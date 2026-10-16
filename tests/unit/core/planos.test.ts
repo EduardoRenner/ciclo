@@ -136,7 +136,8 @@ describe('limite duro × limite suave (§L.1)', () => {
     const r = verificarLimite(BARBEARIA_GRATIS, 'profissionais', 1)
     expect(r.dentro).toBe(false)
     expect(r.severidade).toBe('duro')
-    expect(r.precisaDo).toBe('equipe')
+    // docs/108 M1: o Essencial vai até 2, então é ele que resolve.
+    expect(r.precisaDo).toBe('essencial')
     expect(podeCriar(BARBEARIA_GRATIS, 'profissionais', 1)).toBe(false)
   })
 
@@ -204,14 +205,14 @@ describe('limite duro × limite suave (§L.1)', () => {
 describe('custoPorAtendimento', () => {
   it('cai conforme o volume sobe — é a frase inteira que a seção defende', () => {
     const valores = [60, 150, 300].map((n) => custoPorAtendimento('essencial', n))
-    expect(valores).toEqual([`R$${NBSP}0,82`, `R$${NBSP}0,33`, `R$${NBSP}0,17`])
+    expect(valores).toEqual([`R$${NBSP}0,65`, `R$${NBSP}0,26`, `R$${NBSP}0,13`])
   })
 
   it('arredonda para CIMA, nunca deixando o CICLO parecer mais barato do que é', () => {
-    // 4900/300 = 16,33 centavos. Para baixo daria R$ 0,16 — meio centavo de propaganda.
-    expect(custoPorAtendimento('essencial', 300)).toBe(`R$${NBSP}0,17`)
-    // 9900/7 = 1414,28 centavos. Para baixo daria R$ 14,14.
-    expect(custoPorAtendimento('equipe', 7)).toBe(`R$${NBSP}14,15`)
+    // 3900/7 = 557,14 centavos. Para baixo daria R$ 5,57 — meio centavo de propaganda.
+    expect(custoPorAtendimento('essencial', 7)).toBe(`R$${NBSP}5,58`)
+    // 7900/7 = 1128,57 centavos. Para baixo daria R$ 11,28.
+    expect(custoPorAtendimento('equipe', 7)).toBe(`R$${NBSP}11,29`)
   })
 
   it('mês sem atendimento não tem custo por atendimento — grita em vez de devolver Infinity', () => {

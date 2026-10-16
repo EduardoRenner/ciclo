@@ -91,7 +91,7 @@ describe('llms.txt não vira tabela de preço paralela', () => {
       expect(texto, `o plano ${tier} voltou para a lista de planos do llms.txt`).not.toContain(`- ${NOME_DO_PLANO[tier]}: ${precoDoPlanoPorMes(tier)}`)
     }
     // E o controle positivo: a seção de planos existe e tem as duas linhas, senão a asserção acima passaria vazia.
-    expect((texto.match(/^- (Solo|Equipe): /gm) ?? []).length).toBe(2)
+    expect((texto.match(/^- (Essencial|Equipe): /gm) ?? []).length).toBe(2)
   })
 
   it('diz a oferta de hoje com a mesma função que concede a cortesia, sem prometer "para sempre"', async () => {

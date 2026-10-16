@@ -77,7 +77,7 @@ describe('cliente da API', () => {
     const fetchFalso = vi.fn(async (_url: string, init: RequestInit) => {
       const corpo = JSON.parse(String(init.body)) as Record<string, unknown>
       expect(corpo.external_reference).toBe('tenant-42')
-      expect((corpo.auto_recurring as { transaction_amount: number }).transaction_amount).toBe(99) // Equipe = R$ 99
+      expect((corpo.auto_recurring as { transaction_amount: number }).transaction_amount).toBe(79) // Equipe = R$ 79 (docs/108 M1)
       return new Response(JSON.stringify({ id: 'preapp-1', init_point: 'https://mp.test/checkout/preapp-1' }), { status: 200 })
     })
     vi.stubGlobal('fetch', fetchFalso)

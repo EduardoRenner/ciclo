@@ -97,6 +97,7 @@ describe('exigirLimite — o limite vale no servidor (§L.1)', () => {
       .toBeUndefined()
   })
 
+  // docs/108 M1: o Essencial vai até 2, então é ele que resolve o segundo profissional do grátis.
   it('recusa o segundo profissional no grátis, com 402 e o degrau que resolve', async () => {
     const erro = await exigirLimite(bancoFalso({ plano: 'gratis', profissionais: 1 }), T, 'profissionais').catch(
       (e: unknown) => e,
@@ -105,9 +106,9 @@ describe('exigirLimite — o limite vale no servidor (§L.1)', () => {
     const app = erro as AppError
     expect(app.code).toBe('PLAN_LIMIT')
     expect(app.status).toBe(402)
-    expect(app.details).toMatchObject({ recurso: 'profissionais', limite: 1, usoAtual: 1, precisaDo: 'equipe' })
+    expect(app.details).toMatchObject({ recurso: 'profissionais', limite: 1, usoAtual: 1, precisaDo: 'essencial' })
     // A mensagem tem que dizer o degrau, não só "faça upgrade".
-    expect(app.publicMessage).toContain('Equipe')
+    expect(app.publicMessage).toContain('Essencial')
   })
 
   it('concorda em singular e plural', async () => {
@@ -121,12 +122,12 @@ describe('exigirLimite — o limite vale no servidor (§L.1)', () => {
   // ATUALIZADO em 2026-09-30 (docs/87 D2): o Avançado deixou de ser vendido, então acima de 5
   // não há degrau para apontar: `precisaDo` é nulo e a mensagem manda para "Meu plano", onde o
   // caminho é "fale com a gente". Oferecer um degrau que ninguém consegue comprar seria pior.
-  it('no Equipe o sexto profissional é recusado, e não aponta degrau nenhum (acima de 5, fale com a gente)', async () => {
-    const erro = (await exigirLimite(bancoFalso({ plano: 'equipe', profissionais: 5 }), T, 'profissionais').catch(
+  it('no Equipe o sétimo profissional é recusado, e não aponta degrau nenhum (acima de 6, fale com a gente)', async () => {
+    const erro = (await exigirLimite(bancoFalso({ plano: 'equipe', profissionais: 6 }), T, 'profissionais').catch(
       (e: unknown) => e,
     )) as AppError
     expect(erro.code).toBe('PLAN_LIMIT')
-    expect(erro.details).toMatchObject({ recurso: 'profissionais', limite: 5, precisaDo: null })
+    expect(erro.details).toMatchObject({ recurso: 'profissionais', limite: 6, precisaDo: null })
     expect(erro.publicMessage).toContain('Meu plano')
   })
 
