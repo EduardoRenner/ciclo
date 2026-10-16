@@ -12,6 +12,7 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarModulos } from '@/server/services/modulos'
 
 import { rotuloDoPapel } from '@/core/auth/rotulo-do-papel'
+import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import SeletorDeTema from '@/components/shell/seletor-de-tema'
 import SairDaConta from './sair'
 
@@ -42,7 +43,8 @@ const GRUPOS = [
       { href: '/admin/config/mensagens', titulo: 'Mensagens prontas', descricao: 'Textos que você manda com um toque', icone: MessageSquareText },
       { href: '/admin/config/automacoes', titulo: 'Automações', descricao: 'O que o CICLO faz sozinho, e quanta rédea você dá', icone: Bot },
       { href: '/admin/campanhas', titulo: 'Campanhas', descricao: 'Mandar em lote e ver quanto voltou em receita', icone: Megaphone, modulo: 'campaigns' },
-      { href: '/admin/config/notificacoes', titulo: 'Notificações', descricao: 'Ativar lembretes no aparelho', icone: Bell },
+      // docs/98-aprimoramento/11 LOJA-24: é Web Push, que a tela embutida do app nativo não tem.
+      { href: '/admin/config/notificacoes', titulo: 'Notificações', descricao: 'Ativar lembretes no aparelho', icone: Bell, soNoNavegador: true },
     ],
   },
   {
@@ -117,7 +119,9 @@ export const metadata = { title: "Configurações" }
  * consertar os cinco casos e consertar a pergunta.
  */
 export default async function PaginaConfig() {
-  const ctx = await contextoDoPainel(new Request('https://interno/config', { headers: await headers() }))
+  const cabecalhos = await headers()
+  const ctx = await contextoDoPainel(new Request('https://interno/config', { headers: cabecalhos }))
+  const nativo = ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))
   const db = await criarClienteDoUsuario()
   const modulos = await listarModulos(db, ctx.tenantId)
 
@@ -136,7 +140,7 @@ export default async function PaginaConfig() {
     return v?.estado === 'bloqueado_pelo_plano' ? v.precisaDo : null
   }
 
-  const grupos = GRUPOS.map((g) => ({ ...g, itens: g.itens.filter((i) => visivel('modulo' in i ? i.modulo : undefined)) }))
+  const grupos = GRUPOS.map((g) => ({ ...g, itens: g.itens.filter((i) => visivel('modulo' in i ? i.modulo : undefined) && !(nativo && 'soNoNavegador' in i)) }))
     .filter((g) => g.itens.length > 0)
 
   return (

@@ -63,7 +63,7 @@ const pick = (sem, arr) => arr[Math.floor(rnd(sem) * arr.length)]
 
 // docs/102 M2.1: a MESMA lista de `src/core/tenants/demonstracao.ts` (o teste `agenda-futura-so-demonstracao`
 // reprova se divergirem). A antiga tinha 7 dos 13: os seis salões `demo-*` nunca eram renovados.
-const SLUGS = ['dom-rocha', 'ruivo-barber', 'teste-essencial', 'teste-equipe', 'teste-avancado', 'lang-barber', 'lang-unhas', 'demo-navalha-de-ouro', 'demo-corte-fino', 'demo-dom-estilo', 'demo-studio-bella', 'demo-salao-encanto', 'demo-espaco-vitoria']
+const SLUGS = ['dom-rocha', 'ruivo-barber', 'teste-essencial', 'teste-equipe', 'teste-avancado', 'lang-barber', 'lang-unhas', 'demo-navalha-de-ouro', 'demo-corte-fino', 'demo-dom-estilo', 'demo-studio-bella', 'demo-salao-encanto', 'demo-espaco-vitoria', 'apple-review', 'demo-esmalteria-rosa', 'demo-studio-olhar', 'demo-pet-amigo']
 const OFFSET_H = 3 // America/Sao_Paulo = UTC-3 (sem horário de verão desde 2019)
 
 const DIAS_A_FRENTE = 21
@@ -152,7 +152,10 @@ for (const tnt of tenants) {
     const janela = janelaPorDia.get(dow)
     if (!janela) continue // fechado nesse dia da semana
     // Fração acumulada: um dia de cota 2,4 vira 2 ou 3, e a sobra não se perde ao longo da janela.
-    const limiteDoDia = Math.floor(cotaDoDia.get(d) + (rnd('cota', T, d) * 0.999))
+    // O primeiro dia aberto nunca fica vazio: numa carteira pequena a cota de hoje é ~1 e o arredondamento a zerava,
+    // e a demonstração (inclusive a conta do revisor da Apple) abria Hoje e Agenda com "Nada marcado" (medido em 16/10).
+    const piso = d === diasAbertos[0] ? 3 : 0
+    const limiteDoDia = Math.max(piso, Math.floor(cotaDoDia.get(d) + (rnd('cota', T, d) * 0.999)))
     let noDia = 0
 
     for (const prof of profs) {

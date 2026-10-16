@@ -17,7 +17,7 @@
  * como se fossem estabelecimento de verdade — alguém acha no Google e marca horário num lugar que
  * não existe. Ver o cabeçalho daquele arquivo.
  */
-import { createHash } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 
 import { createClient } from '@supabase/supabase-js'
@@ -46,7 +46,8 @@ const svc = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE
   auth: { persistSession: false, autoRefreshToken: false },
 })
 
-const SENHA = process.env.SEED_SENHA ?? 'DemoCiclo#2026'
+// Regra 10 do CLAUDE.md: sem `SEED_SENHA`, sorteia (era uma senha fixa, num repositório público). Sai impressa no fim.
+const SENHA = process.env.SEED_SENHA ?? `demo-${randomBytes(9).toString('base64url')}`
 const TZ = 'America/Sao_Paulo'
 const OFFSET = 3
 

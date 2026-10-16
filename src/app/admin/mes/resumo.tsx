@@ -189,7 +189,7 @@ export default function ResumoDoMes({
           apoio={
             clientesParados === 0
               ? 'ninguém em atraso hoje'
-              : `de lucro, em ${clientesParados} ${clientesParados === 1 ? 'pessoa que passou do tempo' : 'pessoas que passaram do tempo'}`
+              : `em ${clientesParados} ${clientesParados === 1 ? 'pessoa que passou do tempo' : 'pessoas que passaram do tempo'}`
           }
         />
       </Link>

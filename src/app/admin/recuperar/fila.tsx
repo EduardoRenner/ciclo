@@ -92,7 +92,7 @@ export default function FilaDeChamadas({
             <p className="mt-1 text-secundario text-txt-2">
               {atual.valueCents === 0 && atual.profitCents === 0
                 ? 'Sem valor avulso'
-                : `${dinheiro.format(atual.valueCents / 100)} · ${dinheiro.format(atual.profitCents / 100)} de lucro`}
+                : dinheiro.format(atual.valueCents / 100)}
               {atual.nota != null && atual.classe ? ` · ${ROTULO_DA_CLASSE[atual.classe]} (${atual.nota})` : ''}
               {atual.perfil ? ` · ${ROTULO_DO_PERFIL[atual.perfil]}` : ''}
             </p>

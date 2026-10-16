@@ -155,6 +155,10 @@ const SLUGS_DE_DEMONSTRACAO = [
   'demo-salao-encanto',
   'demo-espaco-vitoria',
   'demo-alvorada-advocacia',
+  'apple-review',
+  'demo-esmalteria-rosa',
+  'demo-studio-olhar',
+  'demo-pet-amigo',
 ]
 const alvo = process.argv.slice(2).length > 0 ? process.argv.slice(2) : SLUGS_DE_DEMONSTRACAO
 const { data: tenants, error: erroTenants } = await svc

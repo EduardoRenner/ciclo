@@ -1,8 +1,9 @@
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 import Selo from '@/components/shell/selo'
 import TelaPublica from '@/components/shell/tela-publica'
-import { provedoresSociaisAtivos } from '@/server/auth/provedores-sociais'
+import { provedoresSociaisParaRequisicao } from '@/server/auth/provedores-sociais'
 import { sessaoAtual } from '@/server/auth/session'
 
 import LoginSocial from '../login-social'
@@ -14,7 +15,7 @@ export default async function PaginaEntrar() {
   const sessao = await sessaoAtual()
   if (sessao) redirect('/admin/hoje')
 
-  const provedores = await provedoresSociaisAtivos()
+  const provedores = await provedoresSociaisParaRequisicao((await headers()).get('user-agent'))
 
   return (
     <TelaPublica>
