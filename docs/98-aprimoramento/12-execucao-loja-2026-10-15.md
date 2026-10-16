@@ -102,3 +102,9 @@ Roteiro `medidas/medir-telas-loja.mjs`: build de produção desta branch, 390x84
 Troca pela barra de baixo, do toque até o título novo (3 rodadas): a **primeira** ida à Agenda levou **1.044 ms** (meta < 1 s); todas as outras ficaram entre 449 e 510 ms. É o primeiro carregamento do código da tela com CPU lenta; a APR-102 (aba/dia em 51/57 ms) já trata isso na branch da onda 1, então não dupliquei aqui.
 
 Limites desta medida: o banco local tem poucos dados (12 clientes); a APR-418/419 mediu Clientes com 295 fichas em 6,6 s, cenário que esta medida não monta. INP não foi medido (precisa de interação real em cada tela).
+
+### 6.4 Integração e RLS provadas nesta máquina
+
+Subi um Supabase local **isolado** só para esta worktree (cópia de `supabase/` no scratchpad com `project_id = "ciclo-loja"` e portas 573xx, studio/analytics/realtime desligados; `npx supabase start --workdir <cópia>`), com as migrations da `main` até a 0117. O banco compartilhado das outras sessões não foi tocado. **FATO:** `pnpm test:integration` 543 passaram e 1 pulado (o pulo já existia); `pnpm test:rls` 322 de 322. Com isso o `pnpm verify` inteiro passa aqui, não só na CI.
+
+O mesmo banco permitiu ensaiar a conta do revisor de ponta a ponta (semente com plano, agenda futura, imagens, Motor): o Motor processou sem falha e o Hoje passou a mostrar "3 clientes estão sumindo". No banco compartilhado o Motor falhava em 26 de 40 negócios pelo esquema adiantado. Roteiro de preparo em `13-material-de-envio-lojas.md` §6.
