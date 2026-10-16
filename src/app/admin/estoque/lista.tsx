@@ -332,9 +332,9 @@ function FormularioVenda({
     setErro(null)
     iniciarSalvamento(async () => {
       try {
-        const r = await fetch(`/api/v1/products/${produto.id}/sale`, {
+        const r = await fetchComTentativa(`/api/v1/products/${produto.id}/sale`, {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ professionalId: quem, qty: qtd, paymentMethod: forma }),
         })
         const json = (await r.json()) as { data?: { stockQty: number | null }; error?: { message: string } }

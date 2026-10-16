@@ -26,6 +26,19 @@ export const EsquemaVendaDeProduto = z.object({
 export type EntradaVendaDeProduto = z.infer<typeof EsquemaVendaDeProduto>
 
 /**
+ * APR-040: com `comanda:own`, o profissional só lança venda no PRÓPRIO nome. Sem isto ele escolhia
+ * o colega no seletor e a comissão do produto ia para quem não vendeu. Mesmo `my_professional_id`
+ * que a RLS e o `exigirComandaPropria` usam.
+ */
+export async function exigirVendaNoProprioNome(db: Cliente, tenantId: string, professionalId: string): Promise<void> {
+  const { data: eu, error } = await db.rpc('my_professional_id', { t: tenantId })
+  if (error) throw new AppError('INTERNAL', { cause: error })
+  if (!eu || eu !== professionalId) {
+    throw new AppError('FORBIDDEN', { message: 'Você só lança venda no seu nome. Para outra pessoa, peça para a recepção ou para o dono.' })
+  }
+}
+
+/**
  * Abre a comanda, lança o item no nome de quem vendeu e fecha. É o fechamento que dá baixa no
  * estoque (`baixarEstoqueDaComanda`) e congela a comissão do item: a venda reaproveita o caminho
  * que a comanda de um atendimento já usa, em vez de uma segunda conta de estoque e de comissão que
