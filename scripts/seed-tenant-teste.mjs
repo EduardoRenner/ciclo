@@ -171,8 +171,15 @@ const NOMES = [
 
 const linhasClientes = NOMES.map((nome, i) => {
   const cadencia = 21 + (i % 3) * 7
-  const ultimaHa = i % 4 === 0 ? cadencia * 3 : i * 2 + 1 // 1 em cada 4 fica "atrasado" pro Motor de Ciclo acusar
-  const tags = i % 4 === 0 ? ['sumido'] : i % 3 === 0 ? ['fiel'] : []
+  /*
+   * Atraso em relação à cadência, um estado do Motor para cada (`estadoPorAtraso` em `src/core/cycle/compute.ts`).
+   * Era "3 cadências atrás" ou "há poucos dias": o Motor só via perdido e em dia, e a conta do revisor da Apple abria
+   * o Recuperar com R$ 10 e três perdidos (medido em 15/10). Folga de 2 dias para o salto de domingo e segunda.
+   */
+  const ATRASO = [45, 0, 6, 20, null, null] // perdido, na hora, atrasado, em risco, em dia, em dia
+  const atraso = ATRASO[i % ATRASO.length]
+  const ultimaHa = atraso === null ? i + 2 : cadencia + atraso
+  const tags = atraso !== null && atraso >= 20 ? ['sumido'] : atraso === null && i % 2 === 0 ? ['fiel'] : []
   const primeiraVisitaHa = ultimaHa + 4 * cadencia
   return {
     tenant_id: tenantId,
