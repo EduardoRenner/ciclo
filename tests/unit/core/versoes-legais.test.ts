@@ -20,12 +20,12 @@ describe('versões legais', () => {
     A data é FIXADA aqui para que mudar a versão legal seja um ato deliberado: quem muda o texto de
     `/termos` ou `/privacidade` troca a constante E esta linha no mesmo commit, e o revisor vê as
     duas. Termos: 03/10/2026, §5 e §6 reescritos para o período de uso sem cobrança e os dois planos
-    (docs/87). Antes: 21/09/2026. Privacidade: 15/10/2026, §3 passa a nomear Vercel, Google (Gemini)
+    (docs/87). Antes: 21/09/2026. Privacidade: 16/10/2026, §3 passa a nomear Vercel, Google (Gemini)
     e Sentry (LOJA-28). Antes: 16/09/2026.
   */
   it('a versão em vigor é a que este teste conhece: mudar o texto legal exige mudar a data aqui, de propósito', () => {
     expect(dataLegivel(VERSOES_LEGAIS.termos)).toBe('3 de outubro de 2026')
-    expect(dataLegivel(VERSOES_LEGAIS.privacidade)).toBe('15 de outubro de 2026')
+    expect(dataLegivel(VERSOES_LEGAIS.privacidade)).toBe('16 de outubro de 2026')
   })
 
   it.each(['termos', 'privacidade'] as const)('/%s lê a data da fonte única, sem data escrita à mão', (doc) => {

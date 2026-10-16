@@ -11,7 +11,7 @@
  */
 export const VERSOES_LEGAIS = {
   termos: '2026-10-03',
-  privacidade: '2026-10-15',
+  privacidade: '2026-10-16',
 } as const
 
 export type DocumentoLegal = keyof typeof VERSOES_LEGAIS
