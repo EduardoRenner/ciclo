@@ -7,7 +7,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { criarProfissional } from '@/server/services/profissionais'
 import { atualizarServico, criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
-import { adicionarItemComanda, atualizarDescontoEGorjeta, buscarComanda, fecharComanda, removerItemComanda } from '@/server/services/comanda'
+import { fechamentoDiario } from '@/server/services/caixa'
+import { adicionarItemComanda, atualizarDescontoEGorjeta, buscarComanda, cancelarComandaFechada, fecharComanda, removerItemComanda } from '@/server/services/comanda'
 
 import type { Database, Json } from '@/server/db/types.gen'
 
@@ -224,6 +225,92 @@ describe('comanda — abrir, itens, desconto, gorjeta, fechar', () => {
   )
 })
 
+
+/**
+ * APR-008 (achado C-14): a comanda fecha em OUTRO aparelho entre a checagem de `status` e a
+ * gravação. O cliente abaixo deixa a checagem passar com a comanda aberta e fecha a comanda logo
+ * depois dela, como a recepção faria. O item, o desconto e a remoção têm que ser recusados, e o
+ * total da comanda fechada não pode mudar.
+ */
+describe('comanda — fechada no meio do caminho (APR-008)', () => {
+  function fechaDepoisDaChecagem(ticketId: string): typeof svc {
+    let fechou = false
+    return new Proxy(svc, {
+      get(alvo, prop, receptor) {
+        if (prop !== 'from') return Reflect.get(alvo, prop, receptor)
+        return (tabela: string) => {
+          const consulta = alvo.from(tabela as 'tickets')
+          if (tabela !== 'tickets' || fechou) return consulta
+          return new Proxy(consulta, {
+            get(q, p2, r2) {
+              const valor = Reflect.get(q, p2, r2) as unknown
+              if (p2 !== 'select' || typeof valor !== 'function') return typeof valor === 'function' ? (valor as (...a: unknown[]) => unknown).bind(q) : valor
+              return (...args: unknown[]) => {
+                const construtor = (valor as (...a: unknown[]) => { then: PromiseLike<unknown>['then'] }).apply(q, args)
+                const thenOriginal = construtor.then.bind(construtor)
+                construtor.then = ((ok: (v: unknown) => unknown, falha: (e: unknown) => unknown) =>
+                  thenOriginal(async (res: unknown) => {
+                    if (!fechou) {
+                      fechou = true
+                      await alvo.from('tickets').update({ status: 'closed' }).eq('id', ticketId)
+                    }
+                    return res
+                  }).then(ok, falha)) as PromiseLike<unknown>['then']
+                return construtor
+              }
+            },
+          })
+        }
+      },
+    }) as typeof svc
+  }
+
+  async function comandaComUmItem() {
+    const ticketId = await abrirTicketVazio()
+    await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+    const antes = (await svc.from('tickets').select('total_cents').eq('id', ticketId).single()).data!.total_cents
+    return { ticketId, antes }
+  }
+
+  it(
+    'item novo: recusado com 409, e o total da comanda fechada não muda',
+    async () => {
+      const { ticketId, antes } = await comandaComUmItem()
+      await expect(
+        adicionarItemComanda(fechaDepoisDaChecagem(ticketId), tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 }),
+      ).rejects.toMatchObject({ code: 'CONFLICT' })
+      const depois = await svc.from('tickets').select('status, total_cents').eq('id', ticketId).single()
+      expect(depois.data).toEqual({ status: 'closed', total_cents: antes })
+      const { count } = await svc.from('ticket_items').select('id', { count: 'exact', head: true }).eq('ticket_id', ticketId)
+      expect(count).toBe(1)
+    },
+    30_000,
+  )
+
+  it(
+    'desconto: recusado com 409, e o total não muda',
+    async () => {
+      const { ticketId, antes } = await comandaComUmItem()
+      await expect(atualizarDescontoEGorjeta(fechaDepoisDaChecagem(ticketId), tenantId, ticketId, { discountCents: 1_000 })).rejects.toMatchObject({ code: 'CONFLICT' })
+      const depois = await svc.from('tickets').select('total_cents, discount_cents').eq('id', ticketId).single()
+      expect(depois.data).toEqual({ total_cents: antes, discount_cents: 0 })
+    },
+    30_000,
+  )
+
+  it(
+    'remover item: recusado com 409, e o item volta',
+    async () => {
+      const { ticketId, antes } = await comandaComUmItem()
+      const item = (await svc.from('ticket_items').select('id').eq('ticket_id', ticketId).single()).data!
+      await expect(removerItemComanda(fechaDepoisDaChecagem(ticketId), tenantId, ticketId, item.id)).rejects.toMatchObject({ code: 'CONFLICT' })
+      const { count } = await svc.from('ticket_items').select('id', { count: 'exact', head: true }).eq('ticket_id', ticketId)
+      expect(count).toBe(1)
+      expect((await svc.from('tickets').select('total_cents').eq('id', ticketId).single()).data!.total_cents).toBe(antes)
+    },
+    30_000,
+  )
+})
 
 /**
  * Achados de dinheiro e de corrida da auditoria de 2026-08-28. Os dois moram aqui porque só o
@@ -579,5 +666,60 @@ describe('o aluguel entra no fechamento, e fica congelado', () => {
       expect(fechado.fixed_cost_cents).toBe(500)
     },
     60_000,
+  )
+})
+
+describe('comanda — desconto e gorjeta no MESMO envio do fechamento (APR-112a)', () => {
+  it(
+    'fechar com discountCents e tipCents grava os dois e o total na mesma transação, sem PATCH antes',
+    async () => {
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+
+      const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash', { discountCents: 1_500, tipCents: 500 })
+      expect(fechado.status).toBe('closed')
+      expect(fechado.discount_cents).toBe(1_500)
+      expect(fechado.tip_cents).toBe(500)
+      expect(fechado.total_cents).toBe(9_000) // 10.000 - 1.500 + 500
+
+      const { ticket } = await buscarComanda(svc, tenantId, ticketId)
+      expect([ticket.discount_cents, ticket.tip_cents, ticket.total_cents]).toEqual([1_500, 500, 9_000])
+    },
+    30_000,
+  )
+
+  it('sem os campos no envio, vale o que já estava gravado (o caminho de antes continua certo)', async () => {
+    const ticketId = await abrirTicketVazio()
+    await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+    await atualizarDescontoEGorjeta(svc, tenantId, ticketId, { discountCents: 1_000, tipCents: 0 })
+    const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash')
+    expect([fechado.discount_cents, fechado.total_cents]).toEqual([1_000, 9_000])
+  }, 30_000)
+})
+
+describe('desfazer o fechamento por compensação (APR-204)', () => {
+  it(
+    'fechar → desfazer: o caixa do dia volta ao que era; desfazer de novo → 409',
+    async () => {
+      const tz = 'America/Sao_Paulo'
+      const hoje = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date())
+      const antes = await fechamentoDiario(svc, tenantId, tz, hoje)
+
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+      await fecharComanda(svc, tenantId, ticketId, 'cash', {})
+      const fechado = await fechamentoDiario(svc, tenantId, tz, hoje)
+      expect(fechado.revenueCents).toBe(antes.revenueCents + 10_000)
+      expect(fechado.ticketsCount).toBe(antes.ticketsCount + 1)
+
+      const cancelado = await cancelarComandaFechada(svc, tenantId, ticketId)
+      expect(cancelado.status).toBe('canceled')
+      const depois = await fechamentoDiario(svc, tenantId, tz, hoje)
+      expect(depois.revenueCents).toBe(antes.revenueCents)
+      expect(depois.ticketsCount).toBe(antes.ticketsCount)
+
+      await expect(cancelarComandaFechada(svc, tenantId, ticketId)).rejects.toMatchObject({ code: 'CONFLICT' })
+    },
+    30_000,
   )
 })

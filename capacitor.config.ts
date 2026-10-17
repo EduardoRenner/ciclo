@@ -36,6 +36,9 @@ const config: CapacitorConfig = {
     // `androidScheme`/`iosScheme` ficam no padrão (`https`) de propósito: a sessão do Supabase
     // depende de cookie `Secure`, e um esquema não-https quebraria o login silenciosamente.
     cleartext: false,
+    // APR-611: página local (de `public/`, copiada pelo `cap sync`) quando o site não abre. Sem ela, o app mostrava
+    // a tela de erro da WebView, e a Apple reprova app que quebra sem conexão.
+    errorPath: 'sem-internet.html',
   },
   /*
    * T1.5 (docs/64 §0.2): o servidor precisa saber, sem confiar no cliente, se um pedido veio do

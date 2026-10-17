@@ -11,6 +11,7 @@ import { acaoTemVolta, linkDaChamada, rotaDaAcao, textoDeFeito } from '@/core/as
 import { linhasDoResumo } from '@/core/assistente/resumo'
 import { duracao } from '@/lib/formato'
 import { cn } from '@/lib/utils'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Sugestao = {
   rotulo: string
@@ -116,6 +117,13 @@ function dinheiroBR(cents: unknown): string | null {
 // que sobe do fundo (`Sheet`): arrastar uma janela pela tela não faz sentido numa largura de
 // 390px onde ela já ocupa quase tudo, e brigaria com o gesto de rolar a página.
 const CORTE_DESKTOP_PX = 1024
+
+/**
+ * APR-101: no celular o assistente sai do canto da tela (cobria "Mensagem" da ficha e o valor do
+ * Caixa) e vira "Perguntar" no topo (`topbar.tsx`). Os dois são irmãos no layout; o topo avisa por
+ * este evento de janela e o painel é o mesmo.
+ */
+export const EVENTO_ABRIR_ASSISTENTE = 'ciclo:abrir-assistente'
 
 /** Tamanho da janela flutuante no desktop — grande o bastante para ler, pequeno o bastante para não tapar a tela toda. */
 const LARGURA_JANELA = 400
@@ -275,7 +283,7 @@ function renderInline(texto: string): React.ReactNode {
  * arbitrário para desenhar, complexidade que este produto não precisa.
  */
 function renderMarkdownLeve(texto: string): React.ReactNode {
-  const blocos = texto.split(/\n{2,}/)
+  const blocos = texto.split(/\n{2}/)
 
   return blocos.map((bloco, i) => {
     const linhas = bloco.split('\n').filter((l) => l.trim().length > 0)
@@ -425,6 +433,16 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
     fimDaListaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [turnos, aberto])
 
+  useEffect(() => {
+    if (!disponivel) return
+    function abrirPeloTopo() {
+      if (ehDesktop && !posicao) setPosicao(posicaoPadrao())
+      setAberto(true)
+    }
+    window.addEventListener(EVENTO_ABRIR_ASSISTENTE, abrirPeloTopo)
+    return () => window.removeEventListener(EVENTO_ABRIR_ASSISTENTE, abrirPeloTopo)
+  }, [disponivel, ehDesktop, posicao])
+
   if (!disponivel) return null
 
   function abrir() {
@@ -549,9 +567,9 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
     setTurnos((a) => a.map((t, i) => (i === indice ? { ...t, estadoDaProposta: 'executando' } : t)))
 
     try {
-      const r = await fetch(rota, {
+      const r = await fetchComTentativa(rota, {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify(proposta.dados),
       })
       if (!r.ok) {
@@ -782,6 +800,8 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
         `touch-none` é obrigatório: sem ele o navegador interpreta o arrasto como rolagem da página
         e o botão escapa do dedo.
       */}
+      {/* APR-101: o botão flutuante é só do computador; no celular quem abre é o "Perguntar" do topo. */}
+      {ehDesktop ? (
       <button
         type="button"
         onClick={abrir}
@@ -804,6 +824,7 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
       >
         <Sparkles aria-hidden className="size-6" />
       </button>
+      ) : null}
 
       {ehDesktop ? (
         aberto && posicao ? (

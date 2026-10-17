@@ -21,6 +21,11 @@
  * `2` se não conseguiu falar com a rota. NÃO substitui o `supabase db push` — só torna o silêncio
  * barulhento.
  *
+ * A rota compara por NOME de migration (APR-030, `src/core/schema/versao.ts`): o `detail` cita as
+ * que faltam e as que sobram. Antes comparava a contagem, e uma faltando no meio somada a uma
+ * aplicada à mão passava como "schema OK". Quando o banco está à frente, o script imprime o que
+ * sobra mesmo saindo `0`.
+ *
  * ## SÓ LEITURA
  *
  * Um `GET` em `/api/health`. Nenhuma credencial, nenhuma escrita.
@@ -41,6 +46,7 @@ async function conferir() {
 
   if (schema.ok) {
     console.log(`schema OK — ${ALVO} diz que o banco está alinhado com o código.`)
+    if (schema.detail) console.log(`  ${schema.detail}`)
     return 0
   }
 

@@ -4,9 +4,10 @@ import Link from 'next/link'
 
 import { CalendarX } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useOptimistic, useState } from 'react'
+import { useOptimistic, useState, useTransition } from 'react'
 
 import AppointmentRow from '@/components/ui/appointment-row'
+import { useFuso } from '@/components/shell/fuso'
 import { useVocabulario } from '@/components/shell/vocabulario'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
@@ -59,6 +60,7 @@ export default function Agenda({
   profissionais: { id: string; display_name: string }[]
   profissionalSelecionado?: string
 }) {
+  const fuso = useFuso()
   const vocabulario = useVocabulario()
   const router = useRouter()
   const atualizarDepois = useAtualizarDepois()
@@ -79,11 +81,15 @@ export default function Agenda({
   )
   const selecionado = appointmentsOtimista.find((a) => a.id === selecionadoId) ?? null
 
-  function navegar(novoDia: string, novoProfissional?: string) {
+  function hrefDoDia(novoDia: string, novoProfissional?: string) {
     const params = new URLSearchParams({ date: novoDia })
     const prof = novoProfissional ?? profissionalSelecionado
     if (prof) params.set('professionalId', prof)
-    router.push(`/admin/agenda?${params.toString()}`)
+    return `/admin/agenda?${params.toString()}`
+  }
+
+  function navegar(novoDia: string, novoProfissional?: string) {
+    router.push(hrefDoDia(novoDia, novoProfissional))
   }
 
   const semana = semanaDe(dia)
@@ -111,45 +117,10 @@ export default function Agenda({
     .join(' ')
 
   return (
-    <div>
-      {/*
-        A faixa da semana é o controle mais tocado da tela. Antes o dia
-        selecionado e "hoje" competiam com dois desenhos parecidos (fundo de
-        acento vs. borda de acento) e nada dizia que a coluna era tocável. Agora
-        o selecionado é sólido, hoje é um ponto sob o número, e o resto é
-        superfície — três estados que se leem de relance, no sol.
-      */}
-      <div role="group" aria-label="Dias da semana" className="mb-4 flex justify-between gap-1">
-        {semana.map((d) => {
-          const data = paraData(d)
-          const selecionado = d === dia
-          return (
-            <button
-              key={d}
-              type="button"
-              onClick={() => navegar(d)}
-              aria-current={selecionado ? 'date' : undefined}
-              className={cn(
-                'flex h-16 flex-1 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)]',
-                'text-label font-semibold transition duration-[var(--dur-1)] ease-[var(--ease-ios)] active:scale-[.95]',
-                selecionado
-                  ? 'bg-acc text-on-acc shadow-elevado'
-                  : 'bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt',
-              )}
-            >
-              <span className="uppercase">{DIAS_SEMANA[data.getUTCDay()]}</span>
-              <span className={cn('tabular text-corpo font-bold', !selecionado && 'text-txt')}>{data.getUTCDate()}</span>
-              <span
-                aria-hidden
-                className={cn(
-                  'size-1 rounded-[var(--radius-pill)]',
-                  d === hoje ? (selecionado ? 'bg-on-acc' : 'bg-acc-2') : 'bg-transparent',
-                )}
-              />
-            </button>
-          )
-        })}
-      </div>
+    // Enquanto o dia novo carrega, tudo menos a faixa de dias esmaece (a lista ainda é a do dia anterior).
+    // Por CSS (`:has`) e não por estado: estado aqui redesenharia a Agenda inteira a cada toque (APR-102).
+    <div className="[&:has(>[data-carregando])>:not([role=group])]:opacity-60 [&>*]:transition-opacity">
+      <FaixaDaSemana semana={semana} dia={dia} hoje={hoje} hrefDoDia={hrefDoDia} />
 
       {profissionais.length > 1 ? (
         <FilterRow rotulo={`Filtrar por ${vocabulario.profissional}`} className="mb-4">
@@ -200,7 +171,7 @@ export default function Agenda({
             <li key={a.id}>
               <button type="button" onClick={() => setSelecionadoId(a.id)} className="block w-full text-left">
                 <AppointmentRow
-                  horario={horaLocal(a.starts_at)}
+                  horario={horaLocal(a.starts_at, fuso)}
                   clienteNome={a.clients?.name ?? 'Cliente'}
                   servicoNome={a.services?.name ?? 'Serviço'}
                   profissionalNome={profissionais.length > 1 ? a.professionals?.display_name : undefined}
@@ -227,6 +198,55 @@ export default function Agenda({
           />
         ) : null}
       </Sheet>
+    </div>
+  )
+}
+
+/**
+ * APR-102: a faixa da semana é o controle mais tocado da tela, e o toque tem de aparecer no mesmo
+ * quadro. Medido no celular 4x mais lento: com o estado do toque dentro da Agenda, cada toque
+ * redesenhava a lista do dia inteira (mediana 161 ms). Aqui o toque e a transição vivem só na faixa;
+ * o resto da tela esmaece por CSS enquanto o dia novo carrega (`data-carregando`).
+ *
+ * O selecionado é sólido, hoje é um ponto sob o número, e o resto é superfície: três estados que se
+ * leem de relance, no sol. O toque só vale enquanto o `dia` da prop é o de quando ele aconteceu.
+ */
+function FaixaDaSemana({ semana, dia, hoje, hrefDoDia }: { semana: string[]; dia: string; hoje: string; hrefDoDia: (d: string) => string }) {
+  const router = useRouter()
+  const [tocado, setTocado] = useState<{ d: string; em: string } | null>(null)
+  const [carregando, iniciar] = useTransition()
+  const naTela = tocado && tocado.em === dia ? tocado.d : dia
+
+  // APR-125 (A-11): 7 dias de 48 px no mínimo; a 360 px não cabem (328 úteis) e a faixa desliza, em vez de espremer para 43 px.
+  return (
+    <div role="group" aria-label="Dias da semana" data-carregando={carregando || undefined} className="mb-4 flex snap-x gap-0.5 overflow-x-auto">
+      {semana.map((d) => {
+        const data = paraData(d)
+        const selecionado = d === naTela
+        return (
+          <button
+            key={d}
+            type="button"
+            onClick={() => {
+              setTocado({ d, em: dia })
+              iniciar(() => router.push(hrefDoDia(d)))
+            }}
+            aria-current={selecionado ? 'date' : undefined}
+            className={cn(
+              'flex h-16 min-w-12 flex-1 shrink-0 snap-start flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)]',
+              'text-label font-semibold transition duration-[var(--dur-1)] ease-[var(--ease-ios)] active:scale-[.95]',
+              selecionado ? 'bg-acc text-on-acc shadow-elevado' : 'bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt',
+            )}
+          >
+            <span className="uppercase">{DIAS_SEMANA[data.getUTCDay()]}</span>
+            <span className={cn('tabular text-corpo font-bold', !selecionado && 'text-txt')}>{data.getUTCDate()}</span>
+            <span
+              aria-hidden
+              className={cn('size-1 rounded-[var(--radius-pill)]', d === hoje ? (selecionado ? 'bg-on-acc' : 'bg-acc-2') : 'bg-transparent')}
+            />
+          </button>
+        )
+      })}
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import PageHeader from '@/components/ui/page-header'
 
+import ExportarConta from './exportar-conta'
 import FormularioExportarClientes from './formulario'
 
 export const dynamic = 'force-dynamic'
@@ -27,7 +28,10 @@ export default async function PaginaExportarClientes() {
         titulo="Baixar meus clientes"
         descricao="Uma planilha com todos os seus clientes, do jeito que você trouxe: para levar quando quiser."
       />
-      <FormularioExportarClientes podeExportar={podeExportar} />
+      <div className="flex flex-col gap-4">
+        <FormularioExportarClientes podeExportar={podeExportar} />
+        <ExportarConta podeExportar={podeExportar} />
+      </div>
     </>
   )
 }

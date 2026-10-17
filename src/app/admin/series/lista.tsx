@@ -11,6 +11,7 @@ import EmptyState from '@/components/ui/empty-state'
 import { useToast } from '@/components/ui/toast'
 
 import type { SerieDaLista } from '@/server/services/recorrencia'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 function LinhaSerie({ serie, aoCancelar }: { serie: SerieDaLista; aoCancelar: (id: string) => Promise<void> }) {
   const [confirmando, setConfirmando] = useState(false)
@@ -75,10 +76,9 @@ export default function ListaSeries({ iniciais }: { iniciais: SerieDaLista[] }) 
   const mostrarToast = useToast()
 
   async function cancelar(id: string) {
-    const r = await fetch(`/api/v1/appointments/series/${id}/cancel`, {
+    const r = await fetchComTentativa(`/api/v1/appointments/series/${id}/cancel`, {
       method: 'POST',
-      headers: { 'idempotency-key': crypto.randomUUID() },
-    })
+      })
     const json = (await r.json()) as { data?: { ocorrenciasCanceladas: number }; error?: { message: string } }
     if (!r.ok) {
       mostrarToast({ tom: 'erro', titulo: 'Não consegui cancelar', descricao: json.error?.message })

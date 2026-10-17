@@ -124,3 +124,14 @@ describe('textoDeVolta (docs/82 §7)', () => {
     )
   })
 })
+
+describe('textoDeVolta com o sujeito (C-025, AUT-101)', () => {
+  it('o animal entra com a grafia original e sem artigo; sem sujeito, o texto não muda', () => {
+    expect(textoDeVolta({ nome: 'Ana Souza', servico: 'Banho', sujeito: 'Mel' })).toBe(
+      'Oi, Ana! Faz um tempinho desde seu último horário de banho para Mel. Quer marcar essa semana?',
+    )
+    expect(textoDeVolta({ nome: 'Ana Souza', servico: 'Banho', sujeito: null })).toBe(textoDeVolta({ nome: 'Ana Souza', servico: 'Banho' }))
+    expect(textoDeVolta({ nome: 'Ana', servico: 'Banho', sujeito: 'Mel' })).not.toMatch(/\bd[ao] Mel\b/)
+  })
+})
+

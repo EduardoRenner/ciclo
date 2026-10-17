@@ -35,6 +35,27 @@ describe('normalizarTelefoneBR', () => {
     expect(normalizarTelefoneBR('98987654321')).toBe('+5598987654321') // MA
   })
 
+  it('CNV-002 (D1): sem DDD não inventa DDD — "99999-0000" não vira +55 99 9999-0000', () => {
+    expect(normalizarTelefoneBR('99999-0000')).toBeNull()
+    expect(normalizarTelefoneBR('98765-4321')).toBeNull()
+    expect(normalizarTelefoneBR('3333-4444')).toBeNull()
+  })
+
+  it('CNV-002: sem DDD, usa o DDD do salão quando quem chama informa', () => {
+    expect(normalizarTelefoneBR('99999-0000', 41)).toBe('+5541999990000')
+    expect(normalizarTelefoneBR('3333-4444', 41)).toBe('+554133334444')
+    expect(normalizarTelefoneBR('99999-0000', 10), 'DDD do salão inexistente não serve').toBeNull()
+    expect(normalizarTelefoneBR('(11) 98765-4321', 41), 'com DDD, o do salão não manda').toBe('+5511987654321')
+  })
+
+  it('CNV-002: 0 de tronco, código de operadora e 55 sem o +', () => {
+    expect(normalizarTelefoneBR('011 98765-4321')).toBe('+5511987654321')
+    expect(normalizarTelefoneBR('0 15 11 98765-4321')).toBe('+5511987654321')
+    expect(normalizarTelefoneBR('0xx11 98765-4321')).toBe('+5511987654321')
+    expect(normalizarTelefoneBR('5511987654321')).toBe('+5511987654321')
+    expect(normalizarTelefoneBR('+55 11 98765 4321')).toBe('+5511987654321')
+  })
+
   it('rejeita número curto demais ou vazio', () => {
     expect(normalizarTelefoneBR('123')).toBeNull()
     expect(normalizarTelefoneBR('')).toBeNull()

@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from 'react'
 
+import { Capacitor } from '@capacitor/core'
+
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Skeleton from '@/components/ui/skeleton'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 /** `applicationServerKey` do `PushManager.subscribe` exige `Uint8Array`, não a string base64url que o VAPID usa. */
 function base64UrlParaUint8Array(base64Url: string): Uint8Array {
@@ -21,7 +24,7 @@ function detectarIosNaoInstalado(): boolean {
   return ehIos && !instalado
 }
 
-type Estado = 'carregando' | 'suportado' | 'inscrito' | 'ios_nao_instalado' | 'sem_suporte' | 'negado'
+type Estado = 'carregando' | 'suportado' | 'inscrito' | 'ios_nao_instalado' | 'app_nativo' | 'sem_suporte' | 'negado'
 
 export default function AtivarPush() {
   const [estado, setEstado] = useState<Estado>('carregando')
@@ -30,6 +33,8 @@ export default function AtivarPush() {
 
   useEffect(() => {
     async function verificar() {
+      // LOJA-24: antes do iOS. A tela embutida do app no iPhone também não tem `standalone`, e caía no Safari.
+      if (Capacitor.isNativePlatform()) return setEstado('app_nativo')
       if (detectarIosNaoInstalado()) return setEstado('ios_nao_instalado')
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) return setEstado('sem_suporte')
       if (Notification.permission === 'denied') return setEstado('negado')
@@ -60,9 +65,9 @@ export default function AtivarPush() {
         applicationServerKey: base64UrlParaUint8Array(chavePublica) as BufferSource,
       })
 
-      const resposta = await fetch('/api/v1/push/subscriptions', {
+      const resposta = await fetchComTentativa('/api/v1/push/subscriptions', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify(inscricao.toJSON()),
       })
       if (!resposta.ok) throw new Error('Não conseguimos salvar a inscrição no servidor.')
@@ -88,9 +93,9 @@ export default function AtivarPush() {
         // ouvir "desativado" na tela. `unsubscribe()` só roda DEPOIS de confirmar que o servidor
         // apagou de verdade — senão o navegador cancela e o registro salvo fica orfão sem ninguém
         // saber, e a próxima tentativa de reativar cria uma segunda inscrição.
-        const resposta = await fetch('/api/v1/push/subscriptions', {
+        const resposta = await fetchComTentativa('/api/v1/push/subscriptions', {
           method: 'DELETE',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ endpoint: inscricao.endpoint }),
         })
         if (!resposta.ok) throw new Error('Não conseguimos desativar no servidor. Tente de novo.')
@@ -135,6 +140,10 @@ export default function AtivarPush() {
         </ol>
       </Card>
     )
+  }
+
+  if (estado === 'app_nativo') {
+    return <p className="text-secundario text-txt-2">Avisos no celular ainda não chegam pelo app.</p>
   }
 
   if (estado === 'sem_suporte') {

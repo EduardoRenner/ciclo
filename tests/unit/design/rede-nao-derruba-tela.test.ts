@@ -43,9 +43,21 @@ function telas(dir: string): string[] {
     // e no Windows o `join` devolveria `\`, que nunca casaria.
     const caminho = `${dir}/${e.name}`
     if (e.isDirectory()) return telas(caminho)
-    return e.name.endsWith('.tsx') ? [caminho] : []
+    return /\.tsx?$/.test(e.name) ? [caminho] : []
   })
 }
+
+/**
+ * Onde o defeito pode morar. Até 13/10/2026 a varredura olhava só `src/app` e não viu
+ * `src/components/config/editor-expediente.tsx`, que derrubava Horários quando a rede piscava
+ * (APR-002, achado C-05): guarda cega de raiz. Cada raiz tem um PISO de arquivos, para a varredura
+ * não passar vazia se uma pasta mudar de nome.
+ */
+const RAIZES: readonly { dir: string; piso: number }[] = [
+  { dir: 'src/app', piso: 200 },
+  { dir: 'src/components', piso: 40 },
+  { dir: 'src/lib', piso: 10 },
+]
 
 /**
  * O corpo de cada callback passado a uma transição, casando chaves — e não um regex de uma linha
@@ -70,14 +82,45 @@ function corposDeTransicao(src: string): string[] {
 }
 
 function corpoTemODefeito(src: string): boolean {
-  return corposDeTransicao(src).some((c) => c.includes('await fetch') && !c.includes('try {'))
+  // APR-203 (C-47): `apiFetch` sem rede grava no IndexedDB, que falha de verdade — a rejeição dentro da
+  // transição derruba a tela do mesmo jeito que um `fetch` cru. Os dois contam.
+  return corposDeTransicao(src).some(temChamadaForaDeTry)
+}
+
+/**
+ * Cada `await fetch`/`await apiFetch(` precisa estar DENTRO de um `try` — não basta haver um `try`
+ * em qualquer lugar do corpo. Medido em 2026-10-14 (APR-203): o Marcar tinha o caminho online dentro
+ * de `try` e o offline fora, no mesmo corpo, e a versão anterior deste detector passava verde.
+ */
+function temChamadaForaDeTry(corpo: string): boolean {
+  const chamada = /await (fetch|apiFetch)\(/g
+  for (let m = chamada.exec(corpo); m; m = chamada.exec(corpo)) {
+    const i = m.index
+    // o `try {` mais próximo antes da chamada, e o fim do bloco dele por contagem de chaves
+    const abertura = corpo.lastIndexOf('try {', i)
+    if (abertura < 0) return true
+    let nivel = 0
+    let fim = -1
+    for (let k = abertura + 'try '.length; k < corpo.length; k++) {
+      if (corpo[k] === '{') nivel++
+      else if (corpo[k] === '}') {
+        nivel--
+        if (nivel === 0) {
+          fim = k
+          break
+        }
+      }
+    }
+    if (fim < i) return true
+  }
+  return false
 }
 
 function temFetchDesprotegido(arquivo: string): boolean {
   return corpoTemODefeito(readFileSync(arquivo, 'utf8'))
 }
 
-const COM_DEFEITO = telas('src/app')
+const COM_DEFEITO = RAIZES.flatMap((r) => telas(r.dir))
   .filter(temFetchDesprotegido)
   .map((f) => f.replace('src/app/', ''))
 
@@ -100,6 +143,30 @@ describe('falha de rede não pode derrubar a tela', () => {
     expect(corpoTemODefeito(comDefeito), 'o scanner deixou de casar `await fetch` sem `try` numa transição').toBe(true)
   })
 
+  it('o detector reconhece `await apiFetch(` sem `try` numa transição (APR-203)', () => {
+    const comDefeito = `
+      startTransition(async () => {
+        await apiFetch('/api/v1/x', { method: 'POST', body: {} })
+      })
+    `
+    expect(corpoTemODefeito(comDefeito)).toBe(true)
+  })
+
+  it('um `try` em OUTRO caminho do mesmo corpo não protege a chamada crua (APR-203)', () => {
+    const comDefeito = `
+      startTransition(async () => {
+        if (!navigator.onLine) {
+          await apiFetch('/api/v1/x', { method: 'POST', body: {} })
+          return
+        }
+        try {
+          await fetch('/api/v1/x')
+        } catch {}
+      })
+    `
+    expect(corpoTemODefeito(comDefeito)).toBe(true)
+  })
+
   it('o detector NÃO acusa quando o fetch está protegido — prova que não é sempre-true', () => {
     const protegido = `
       function f() {
@@ -115,8 +182,10 @@ describe('falha de rede não pode derrubar a tela', () => {
     expect(corpoTemODefeito(protegido), 'o scanner acusou uma transição que já tem try/catch — falso positivo').toBe(false)
   })
 
-  it('o varredor de arquivos ainda encontra as telas do produto', () => {
-    expect(telas('src/app').length, 'não achei telas para varrer').toBeGreaterThan(20)
+  it('o varredor de arquivos ainda encontra os arquivos de cada raiz', () => {
+    for (const r of RAIZES) {
+      expect(telas(r.dir).length, `a varredura de ${r.dir} achou menos arquivos que o piso`).toBeGreaterThanOrEqual(r.piso)
+    }
   })
 
   it('nenhuma tela NOVA entra com o defeito', () => {

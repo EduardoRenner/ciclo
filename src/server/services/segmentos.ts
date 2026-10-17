@@ -8,15 +8,6 @@ type Cliente = SupabaseClient<Database>
 type LinhaSegmento = Database['public']['Views']['v_client_segments']['Row']
 
 /**
- * Tamanho do LOTE DE ESCRITA do upsert. Coincidia com o tamanho de página da leitura porque as
- * duas constantes eram a mesma — mas são decisões diferentes: uma é o teto do PostgREST, a outra é
- * quantas linhas cabem num upsert sem estourar o corpo da requisição. Separadas em 31/08, quando a
- * leitura virou `@/server/db/paginar`.
- */
-const TAMANHO_DO_LOTE = 1000
-
-
-/**
  * TICKET-040. `visits_count`/`ltv_cents`/`last_visit_at` existem em `clients` desde a 0001 mas
  * nunca eram escritos — ficavam sempre em 0/null. Este job (cron diário, `/api/cron/segments`)
  * é quem os mantém frescos, recontando por cliente a partir de `appointments` concluídos. As
@@ -28,6 +19,9 @@ const TAMANHO_DO_LOTE = 1000
  * `tickets.total_cents` — mesma simplificação do TICKET-039, revisar quando a comanda de itens
  * de verdade (TICKET-042) existir.
  */
+/** UPDATEs simultâneos por passada: o cron roda por tenant, e milhares de clientes em série seriam minutos. */
+const ATUALIZACOES_EM_PARALELO = 25
+
 export async function recalcularSegmentosDoTenant(db: Cliente, tenantId: string): Promise<number> {
   const concluidos = await buscarTudoPaginado(() =>
     db.from('appointments').select('client_id, price_cents, starts_at').eq('tenant_id', tenantId).eq('status', 'done').order('id'),
@@ -43,33 +37,48 @@ export async function recalcularSegmentosDoTenant(db: Cliente, tenantId: string)
     porCliente.set(ag.client_id, atual)
   }
 
-  // `name` entra no upsert só porque `INSERT ... ON CONFLICT DO UPDATE` valida NOT NULL na linha
-  // inteira antes de decidir entre inserir e atualizar — mesmo numa atualização de cliente que
-  // já existe, sem incluir `name` o Postgres recusa a linha por violar a constraint.
+  /*
+   * APR-018 (achados E-03, C-24). Era um upsert de TODO cliente com `name` e `last_visit_at:
+   * calculado ?? null`, e isso fazia dois estragos: a última visita trazida da planilha (cliente
+   * importado, ainda sem atendimento aqui) sumia na próxima passada do cron; e o `name` lido no
+   * começo era regravado no fim — uma eliminação LGPD no meio trazia o nome real de volta.
+   *
+   * Agora é UPDATE, só do que mudou, sem `name`, e com `anonymized_at is null` no próprio UPDATE (é o
+   * banco que decide, não a leitura de antes). A última visita só AVANÇA: sem atendimento, fica a
+   * que já está; com atendimento, a mais recente entre a gravada e a calculada.
+   */
   const todosClientes = await buscarTudoPaginado(() =>
-    db.from('clients').select('id, name').eq('tenant_id', tenantId).is('deleted_at', null).order('id'),
+    db
+      .from('clients')
+      .select('id, visits_count, ltv_cents, last_visit_at')
+      .eq('tenant_id', tenantId)
+      .is('deleted_at', null)
+      .is('anonymized_at', null)
+      .order('id'),
   )
 
-  const linhas = todosClientes.map((c) => {
+  const instante = (iso: string | null) => (iso ? new Date(iso).getTime() : null)
+  const mudancas = todosClientes.flatMap((c) => {
     const dados = porCliente.get(c.id)
-    return {
-      id: c.id,
-      name: c.name,
-      visits_count: dados?.visitas ?? 0,
-      ltv_cents: dados?.ltvCents ?? 0,
-      last_visit_at: dados?.ultimaVisita ?? null,
-    }
+    const visitas = dados?.visitas ?? 0
+    const ltv = dados?.ltvCents ?? 0
+    const gravada = instante(c.last_visit_at)
+    const calculada = instante(dados?.ultimaVisita ?? null)
+    const ultima = calculada !== null && (gravada === null || calculada > gravada) ? dados!.ultimaVisita : c.last_visit_at
+    if (visitas === c.visits_count && ltv === c.ltv_cents && instante(ultima) === gravada) return []
+    return [{ id: c.id, visits_count: visitas, ltv_cents: ltv, last_visit_at: ultima }]
   })
 
-  for (let inicio = 0; inicio < linhas.length; inicio += TAMANHO_DO_LOTE) {
-    const lote = linhas.slice(inicio, inicio + TAMANHO_DO_LOTE)
-    // upsert em vez de update: mantém `tenant_id`/demais colunas intactas via `onConflict` na PK
-    // (`id`) — precisa do `tenant_id` só para satisfazer a RLS/`not null`, não muda de valor.
-    const { error } = await db.from('clients').upsert(lote.map((l) => ({ ...l, tenant_id: tenantId })), { onConflict: 'id' })
-    if (error) throw new AppError('INTERNAL', { cause: error })
+  for (let inicio = 0; inicio < mudancas.length; inicio += ATUALIZACOES_EM_PARALELO) {
+    const resultados = await Promise.all(
+      mudancas.slice(inicio, inicio + ATUALIZACOES_EM_PARALELO).map(({ id, ...campos }) =>
+        db.from('clients').update(campos).eq('tenant_id', tenantId).eq('id', id).is('anonymized_at', null),
+      ),
+    )
+    for (const { error } of resultados) if (error) throw new AppError('INTERNAL', { cause: error })
   }
 
-  return linhas.length
+  return todosClientes.length
 }
 
 const MAPA_SEGMENTO = {

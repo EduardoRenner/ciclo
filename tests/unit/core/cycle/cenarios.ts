@@ -1,0 +1,76 @@
+import { Temporal } from '@js-temporal/polyfill'
+
+import type { HistoricoParaBacktest } from '@/core/cycle/backtest'
+
+/**
+ * C-001 (MOT-002): cinco clientelas SINTÉTICAS com processo conhecido, semente fixa. Não é a clientela
+ * real — é o banco de provas que diz se uma mudança no Motor melhora ou piora em cada tipo de cliente.
+ */
+export function mulberry32(semente: number) {
+  let a = semente >>> 0
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0
+    let t = a
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function normal(r: () => number, media: number, desvio: number): number {
+  const u = Math.max(r(), 1e-9)
+  const v = r()
+  return media + desvio * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v)
+}
+
+type Cenario = { nome: string; padrao: number; intervalo: (r: () => number, i: number) => number }
+
+export const CENARIOS: Cenario[] = [
+  { nome: 'regular (21±2)', padrao: 21, intervalo: (r) => normal(r, 21, 2) },
+  { nome: 'deriva (21 → 35)', padrao: 21, intervalo: (r, i) => normal(r, 21 + 2 * i, 2) },
+  { nome: 'pulo (21, às vezes 42)', padrao: 21, intervalo: (r) => (r() < 0.2 ? 42 : normal(r, 21, 2)) },
+  { nome: 'errático (14–45)', padrao: 28, intervalo: (r) => 14 + r() * 31 },
+  { nome: 'padrão errado (70±5, padrão 21)', padrao: 21, intervalo: (r) => normal(r, 70, 5) },
+]
+
+export function gerar(c: Cenario, clientes = 200, visitas = 8, semente = 105): HistoricoParaBacktest[] {
+  const r = mulberry32(semente)
+  return Array.from({ length: clientes }, () => {
+    let dia = Temporal.PlainDate.from('2025-01-06').add({ days: Math.floor(r() * 30) })
+    const datas = [dia]
+    for (let i = 0; i < visitas - 1; i++) {
+      dia = dia.add({ days: Math.max(1, Math.round(c.intervalo(r, i))) })
+      datas.push(dia)
+    }
+    return { datas, padraoDoServico: c.padrao }
+  })
+}
+
+/**
+ * C-013: cenários de ritmo CURTO, fora da lista principal (cada placar tem pisos por nome). Existem
+ * porque a v4 (C-011) passou a aceitar 2 intervalos que concordam ABAIXO de metade do padrão, e
+ * nenhum dos cinco cenários acima tinha intervalo curto: a metade de baixo da regra entrou sem prova.
+ */
+export const CENARIOS_CURTOS: Cenario[] = [
+  { nome: 'ritmo curto (7±1, padrão 21)', padrao: 21, intervalo: (r) => normal(r, 7, 1) },
+  { nome: 'sessões iniciais (2× 5±1, depois 21±2)', padrao: 21, intervalo: (r, i) => (i < 2 ? normal(r, 5, 1) : normal(r, 21, 2)) },
+]
+
+/**
+ * C-027: o OUTRO lado da regra de 1 intervalo fora da régua. No "padrão errado" o intervalo longo é o
+ * ritmo; aqui é um sumiço de verdade logo depois da 1ª visita, e o ritmo depois é o do serviço.
+ */
+export const CENARIOS_DE_UM_INTERVALO: Cenario[] = [
+  { nome: 'sumiço no início (1º intervalo 90–150, depois 21±2)', padrao: 21, intervalo: (r, i) => (i === 0 ? 90 + r() * 60 : normal(r, 21, 2)) },
+]
+
+/**
+ * C-035: a régua CALIBRADA. Em produção o padrão do serviço vira a mediana medida no próprio salão
+ * (`services.cycle_days_observado`); aqui, a mediana de todos os intervalos da população do cenário.
+ */
+export function calibrar(hs: HistoricoParaBacktest[]): HistoricoParaBacktest[] {
+  const todos = hs.flatMap((h) => h.datas.slice(1).map((d, i) => h.datas[i]!.until(d).total('days'))).sort((a, b) => a - b)
+  const meio = Math.floor(todos.length / 2)
+  const regua = Math.round(todos.length % 2 ? todos[meio]! : (todos[meio - 1]! + todos[meio]!) / 2)
+  return hs.map((h) => ({ ...h, padraoDoServico: regua }))
+}

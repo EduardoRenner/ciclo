@@ -1,11 +1,9 @@
-import { ouDoProfissionalOuGeral } from '@/server/db/filtro'
 import { Temporal } from '@js-temporal/polyfill'
 import { cache } from 'react'
 import { z } from 'zod'
 
 import { classificarDemanda } from '@/core/agenda/demanda-nao-atendida'
 import { podeUsarCapacidade } from '@/core/billing/planos'
-import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from '@/core/scheduling/available-slots'
 import type { ModeloDePreco } from '@/core/pricing/formatar'
 import { resolverVocabulario, type Vocabulario } from '@/core/text/vocabulario'
 import { sinalEmCentavos } from '@/core/pricing/sinal'
@@ -15,19 +13,22 @@ import { urlDaVitrine } from '@/core/text/vitrine'
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { listarExpediente } from '@/server/services/expediente'
 import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
-import { negocioEstaPausado, normalizarPlano, paginaIndisponivel } from '@/server/services/planos'
+import { slotsLivresDoDia } from '@/server/services/disponibilidade'
+import { negocioEstaPausado, paginaIndisponivel, planoPagoDoTenant } from '@/server/services/planos'
 import { lerSite } from '@/server/services/site'
 import { normalizarTelefoneBR } from '@/server/services/telefone'
 import { criarAgendamento } from '@/server/services/agendamentos'
 import { verificarTokenIndicacao } from '@/server/services/indicacao'
 import { lerTokenDeVolta, registrarAberturaDoLinkDeVolta, registrarAgendamentoPeloLinkDeVolta } from '@/server/services/link-de-volta'
 import { notificarEquipe } from '@/server/services/mensageria'
+import { agendarDepois } from '@/server/http/depois'
 import { registrarEvento } from '@/server/services/product-events'
 import { gerarTokenReconhecimento } from '@/server/services/reconhecimento'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { diaNoFuso } from '@/core/tempo/dia'
 
 type Cliente = SupabaseClient<Database>
 
@@ -230,10 +231,10 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
       logoUrl: urlDaVitrine(site.logoKey),
       coverUrl: urlDaVitrine(site.coverKey),
       accentColor: { acc, acc2: ACENTO_PADRAO.acc2 === acc ? acc : misturarComBranco(acc, 0.3) },
-      // `remover_selo` é capacidade do primeiro degrau pago (§D.3). `normalizarPlano` cobre a
-      // janela em que o banco ainda responde os nomes anteriores à migration 0040.
+      // `remover_selo` é capacidade do primeiro degrau pago (§D.3). `planoPagoDoTenant` cobre a janela
+      // em que o banco ainda responde os nomes anteriores à migration 0040, e a graça vencida (APR-027b).
       mostrarSelo: podeUsarCapacidade(
-        { plano: normalizarPlano(tenant.plan), eixos: {} },
+        { plano: planoPagoDoTenant(tenant.plan, tenant.settings), eixos: {} },
         'remover_selo',
       ).estado !== 'liberado',
       hours: horarioPadrao.map((h) => ({ weekday: h.weekday, opensAt: h.opens_at, closesAt: h.closes_at })),
@@ -375,10 +376,7 @@ export async function disponibilidadePublica(
     const config = lerConfiguracoesAgenda(tenant.settings)
     // FAQ E62: booking público nunca fura a antecedência mínima — diferente
     // do app do profissional, que pode fazer encaixe manual.
-    const now = Temporal.Now.instant().toString()
 
-    const inicioDia = dia.toZonedDateTime({ timeZone: tenant.timezone, plainTime: '00:00' }).toInstant().toString()
-    const fimDia = dia.add({ days: 1 }).toZonedDateTime({ timeZone: tenant.timezone, plainTime: '00:00' }).toInstant().toString()
 
     /*
      * Um profissional por vez era N+1: o `Promise.all` de baixo paraleliza as TRÊS consultas
@@ -390,77 +388,15 @@ export async function disponibilidadePublica(
      * havia acumulador além do `push`, que virou o retorno. E a lista final é ordenada por
      * `startsAt` no fim de qualquer forma, então a ordem de chegada nunca importou.
      */
-    const porProfissional = await Promise.all(
-      (profissionais ?? []).map(async (prof) => {
-        const [horarios, folgas, agendamentos] = await Promise.all([
-          svc
-            .from('business_hours')
-            .select('professional_id, weekday, opens_at, closes_at')
-            .eq('tenant_id', tenant.id)
-            .eq('weekday', weekdayPg(dia))
-            .or(ouDoProfissionalOuGeral('professional_id', prof.id)),
-          svc
-            .from('time_off')
-            .select('starts_at, ends_at')
-            .eq('tenant_id', tenant.id)
-            .or(ouDoProfissionalOuGeral('professional_id', prof.id))
-            .lt('starts_at', fimDia)
-            .gt('ends_at', inicioDia),
-          svc
-            .from('appointments')
-            .select('starts_at, ends_at')
-            .eq('tenant_id', tenant.id)
-            .eq('professional_id', prof.id)
-            .in('status', ['pending', 'confirmed', 'arrived'])
-            .lt('starts_at', fimDia)
-            .gt('ends_at', inicioDia),
-        ])
-        if (horarios.error) throw new AppError('INTERNAL', { cause: horarios.error })
-        if (folgas.error) throw new AppError('INTERNAL', { cause: folgas.error })
-        if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
-
-        const doProfissional = horarios.data.filter((h) => h.professional_id === prof.id)
-        const doPadrao = horarios.data.filter((h) => h.professional_id === null)
-        const businessHours: IntervaloExpediente[] = (doProfissional.length > 0 ? doProfissional : doPadrao).map((h) => ({
-          opensAt: h.opens_at,
-          closesAt: h.closes_at,
-        }))
-        if (businessHours.length === 0) return { temExpediente: false, slots: [] }
-
-        const timeOff: IntervaloOcupado[] = (folgas.data ?? []).map((f) => ({ start: f.starts_at, end: f.ends_at }))
-        const ocupados: IntervaloOcupado[] = (agendamentos.data ?? []).map((a) => ({ start: a.starts_at, end: a.ends_at }))
-
-        const slots = availableSlots({
-          date,
-          timezone: tenant.timezone,
-          businessHours,
-          timeOff,
-          appointments: ocupados,
-          serviceDurationMin: servico.duration_min,
-          // Achado na auditoria pré-`/admin`: vinha fixo em 0, ignorando o que o
-          // serviço cadastra — o buffer só funcionava no agendamento interno, nunca
-          // no site público. Agora que o formulário de serviço expõe os dois campos
-          // (Fase 2), o dono vai configurar e esperar que valha aqui também.
-          bufferBeforeMin: servico.buffer_before_min,
-          bufferAfterMin: servico.buffer_after_min,
-          slotGranularityMin: config.slotGranularityMin,
-          minLeadTimeMinutes: config.minLeadTimeMinutes,
-          maxAdvanceDays: config.maxAdvanceDays,
-          now,
-          parallelCapacity: servico.parallel_capacity,
-        })
-
-        return {
-          temExpediente: true,
-          slots: slots.map((s) => ({
-            startsAt: s,
-            endsAt: Temporal.Instant.from(s).add({ minutes: servico.duration_min }).toString(),
-            professionalId: prof.id,
-          })),
-        }
-      }),
-    )
-
+    // APR-110a: a MESMA conta do "Marcar" do painel (`disponibilidade.ts`).
+    const porProfissional = await slotsLivresDoDia(svc, {
+      tenantId: tenant.id,
+      timezone: tenant.timezone,
+      settings: tenant.settings,
+      servico,
+      profissionais: profissionais ?? [],
+      date,
+    })
     const todos = porProfissional.flatMap((p) => p.slots).sort((a, b) => (a.startsAt < b.startsAt ? -1 : 1))
 
     if (opcoes.registrarDemanda) {
@@ -573,6 +509,14 @@ export const EsquemaBookingPublico = z.object({
 // deixa OPCIONAL na entrada e OBRIGATÓRIO na saída inferida. `lerCorpo` (rota) aplica o default
 // via `.parse()`; os testes de integração chamam esta função direto, sem passar pelo Zod, e
 // `z.input` é o tipo que reflete o que dá para digitar sem o default.
+/**
+ * O id do negócio pelo endereço público, para a idempotência do `POST book` (APR-004). A chave
+ * guardada é prefixada pelo tenant: sem o id, a mesma chave de dois salões colidiria.
+ */
+export async function idDoTenantPublico(slug: string): Promise<string> {
+  return withNovoTenant(async (svc) => (await tenantPeloSlug(svc, slug)).id)
+}
+
 export async function criarAgendamentoPublico(slug: string, entrada: z.input<typeof EsquemaBookingPublico>) {
   const telefone = normalizarTelefoneBR(entrada.phone)
   if (!telefone) throw AppError.validacao({ phone: 'Telefone inválido. Confira o DDD e o número.' })
@@ -582,7 +526,9 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.input<typ
 
     let professionalId = entrada.professionalId ?? undefined
     if (!professionalId) {
-      const disponiveis = await disponibilidadePublica(slug, entrada.serviceId, entrada.startsAt.slice(0, 10))
+      // APR-223 (R-33): o DIA do horário é o do negócio. `startsAt.slice(0, 10)` era o dia em UTC — às 21h
+      // de Brasília já é amanhã em UTC, a disponibilidade era a do dia errado e "Tanto faz" caía em 409.
+      const disponiveis = await disponibilidadePublica(slug, entrada.serviceId, diaNoFuso(tenant.timezone, new Date(entrada.startsAt)))
       const achado = disponiveis.find((s) => s.startsAt === entrada.startsAt)
       if (!achado) {
         throw new AppError('SLOT_TAKEN', { details: { alternatives: disponiveis.slice(0, 3).map((s) => s.startsAt) } })
@@ -645,12 +591,16 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.input<typ
     // 0091/0092: o interesse no produto vai JUNTO do push, não só na nota do agendamento — é o
     // sinal mais rápido que existe, chega no celular do profissional no mesmo instante da reserva,
     // antes de ele precisar abrir a agenda pra ver.
-    void notificarEquipe(svc, tenant.id, {
-      title: 'Novo pedido de agendamento',
-      body: `${entrada.name} pediu horário para ${quandoLocal(entrada.startsAt, tenant.timezone)}.${notaProduto ? ` ${notaProduto}` : ''}`,
-    }).catch((erro: unknown) => {
-      console.error(JSON.stringify({ level: 'error', event: 'push_equipe_falhou', tenantId: tenant.id }), erro)
-    })
+    // APR-218: `void` era aposta — a Vercel pode congelar a instância assim que a resposta sai, e o push
+    // da equipe nunca chega. `agendarDepois` usa o `after()` do Next, que segura a instância até acabar.
+    agendarDepois(() =>
+      notificarEquipe(svc, tenant.id, {
+        title: 'Novo pedido de agendamento',
+        body: `${entrada.name} pediu horário para ${quandoLocal(entrada.startsAt, tenant.timezone)}.${notaProduto ? ` ${notaProduto}` : ''}`,
+      }).catch((erro: unknown) => {
+        console.error(JSON.stringify({ level: 'error', event: 'push_equipe_falhou', tenantId: tenant.id }), erro)
+      }),
+    )
 
     /*
      * `docs/34-PAGINA-PUBLICA-PLANO.md`, Fase 2 — "reconhecer quem já é cliente". O token só

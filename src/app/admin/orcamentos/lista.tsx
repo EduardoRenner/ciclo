@@ -12,7 +12,8 @@ import EmptyState from '@/components/ui/empty-state'
 import { dinheiro } from '@/lib/formato'
 import { APP_HOST } from '@/lib/app-url'
 
-import type { OrcamentoDaLista } from '@/server/services/orcamentos'
+import type { OrcamentoDaLista } from '@/server/services/orcamentos'
+import { useFuso } from '@/components/shell/fuso'
 
 type Estado = 'ok' | 'warn' | 'risk' | 'bad' | 'info' | 'ciclo'
 
@@ -38,6 +39,7 @@ function linkPublico(token: string): string {
 }
 
 function LinhaOrcamento({ orcamento }: { orcamento: OrcamentoDaLista }) {
+  const fuso = useFuso()
   const router = useRouter()
   const [copiado, setCopiado] = useState(false)
   const selo = SELO[orcamento.status] ?? SELO_PADRAO
@@ -67,7 +69,7 @@ function LinhaOrcamento({ orcamento }: { orcamento: OrcamentoDaLista }) {
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <Badge estado={selo.estado}>{selo.texto}</Badge>
             <span className="tabular text-secundario text-txt-3">
-              {new Date(orcamento.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+              {new Date(orcamento.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', timeZone: fuso })}
             </span>
           </div>
         </Link>

@@ -4,6 +4,7 @@ import { exigirSessao, veioDoLinkDeRecuperacao } from '@/server/auth/session'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { lerCorpo } from '@/server/http/body'
 import { AppError } from '@/server/http/errors'
+import { traduzirErroDeSenha } from '@/core/auth/erro-de-senha'
 import { rota } from '@/server/http/handler'
 
 export const POST = rota(async (req) => {
@@ -27,7 +28,12 @@ export const POST = rota(async (req) => {
 
   const db = await criarClienteDoUsuario()
   const { error } = await db.auth.updateUser({ password })
-  if (error) throw new AppError('INTERNAL', { cause: error })
+  if (error) {
+    // APR-217: senha curta/igual não é erro nosso — vira 422 com a instrução.
+    const traduzido = traduzirErroDeSenha(error.message)
+    if (traduzido) throw AppError.validacao({ password: traduzido })
+    throw new AppError('INTERNAL', { cause: error })
+  }
 
   // Trocar a senha derruba as outras sessões: quem trocou a senha porque
   // desconfiou de invasão precisa que o invasor caia junto.

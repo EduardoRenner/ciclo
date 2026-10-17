@@ -24,7 +24,8 @@ type Ctx = { params: Promise<{ id: string }> }
  */
 export const POST = rota(async (req, params, requestId) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:delete')
+  const escopo = exigirPermissao(ctx.papel, 'client:delete')
+  if (escopo === 'own') throw new AppError('FORBIDDEN', { message: 'Só o dono ou a gerência remove um cliente.' })
   const sessao = await exigirAal2()
 
   const { id } = await (params as Ctx).params

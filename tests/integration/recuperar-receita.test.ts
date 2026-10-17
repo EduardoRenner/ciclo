@@ -361,9 +361,9 @@ describe('registrarChamadaManual (docs/82 §7)', () => {
     const { count } = await svc.from('messages').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('client_id', clientId)
     expect(count).toBe(0)
 
-    // E a lista já avisa a tela, para ela nem oferecer o "Chamar".
+    // APR-035: e ela nem entra na lista nem na contagem de "para chamar" (`v_quem_sumiu`).
     const lista = await listarParaRecuperar(svc, tenantId)
-    expect(lista.items.find((i) => i.clientId === clientId)?.optOut).toBe(true)
+    expect(lista.items.find((i) => i.clientId === clientId)).toBeUndefined()
   }, 30_000)
 
   it('pela ficha (sem serviço): anota no ciclo atrasado da pessoa', async () => {

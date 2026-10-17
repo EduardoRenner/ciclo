@@ -6,12 +6,15 @@ import { Temporal } from '@js-temporal/polyfill'
 import EmptyState from '@/components/ui/empty-state'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
+import StatTile from '@/components/ui/stat-tile'
+import { dinheiro } from '@/lib/formato'
 import { RELATORIO_DA_EQUIPE, avaliarPermissao } from '@/server/auth/rbac'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { montarMapaDeVazamento } from '@/core/caixa/mapa-de-vazamento'
 import { concentracaoDoMes, margemDosServicos, resumoMensal, serieMensalDeLucro, taxaPorFormaDoMes } from '@/server/services/caixa'
 import { margensDoClube } from '@/server/services/clube'
+import { painelDaCarteira } from '@/server/services/crm'
 import { lerCustoFixoDoTenant } from '@/server/services/custo-fixo'
 import { medirMaterialDoCatalogo } from '@/server/services/ficha-de-consumo'
 import { procurasEmDiaFechado } from '@/server/services/demanda-nao-atendida'
@@ -62,7 +65,7 @@ export default async function PaginaDoMes() {
   const hoje = Temporal.Now.instant().toZonedDateTimeISO(timezone).toPlainDate()
   const mes = `${hoje.year}-${String(hoje.month).padStart(2, '0')}`
 
-  const [mensal, concentracao, recuperar, motor, material, serie, custoFixo, taxa, diaOcioso, clube, margens, servicos, procuras] = await Promise.all([
+  const [mensal, concentracao, recuperar, motor, material, serie, custoFixo, taxa, diaOcioso, clube, margens, servicos, procuras, carteira] = await Promise.all([
     resumoMensal(db, ctx.tenantId, timezone, mes),
     // Mesma trava do caixa (`docs/50` L-10): sem `report:team` o número "de quem depende" não sai,
     // e a consulta nem acontece.
@@ -92,18 +95,23 @@ export default async function PaginaDoMes() {
     // docs/84 Aposta B — o mapa de vazamento. Os quatro abaixo são o que ele usa além do que esta
     // página já busca (recuperar, dia ocioso): mesmas funções das telas do clube e dos serviços.
     margensDoClube(db, ctx.tenantId, timezone),
-    margemDosServicos(db, ctx.tenantId, timezone, hoje.toString()),
+    // APR-010: só o mapa de vazamento usa isto. Se falhar, o mapa avisa e o resto do mês abre.
+    margemDosServicos(db, ctx.tenantId, timezone, hoje.toString()).catch((erro: unknown) => {
+      console.warn(JSON.stringify({ level: 'warn', event: 'margem_dos_servicos_falhou', tenantId: ctx.tenantId, tela: 'mes' }), erro)
+      return null
+    }),
     // Nome dos serviços, e só dos ATIVOS: arquivado sai das telas de dinheiro (0093).
     listarServicos(db, ctx.tenantId),
     procurasEmDiaFechado(db, ctx.tenantId, hoje.toString()),
+    painelDaCarteira(db, ctx.tenantId),
   ])
 
   const nomeDoServico = new Map(servicos.map((s) => [s.id, s.name]))
   const vazamentos = montarMapaDeVazamento({
     // O MESMO número do cartão "Parado em quem sumiu" logo abaixo — lucro, não receita.
-    recuperar: { pessoas: recuperar.count, lucroCents: recuperar.totalProfitCents },
+    recuperar: { pessoas: recuperar.count, valorCents: recuperar.totalValueCents },
     clube,
-    servicosAbaixoDoPiso: margens.flatMap((m) =>
+    servicosAbaixoDoPiso: (margens ?? []).flatMap((m) =>
       m.parcelaDominante && nomeDoServico.has(m.serviceId) ? [{ nome: nomeDoServico.get(m.serviceId)!, parcela: m.parcelaDominante }] : [],
     ),
     procurasEmDiaFechado: procuras,
@@ -117,30 +125,13 @@ export default async function PaginaDoMes() {
         descricao="O que entrou, o que sobrou, de quem depende, o que está parado e o quanto o Motor acertou."
       />
 
-      <MapaDeVazamento linhas={vazamentos} />
-
-      {/*
-        docs/84 Aposta C — depois de ver onde escapa, testar a mudança antes de decidir. Link, não
-        bloco: a tela do mês já é a mais cheia do painel, e o teste mora na própria tela.
-      */}
-      <Link href="/admin/experimentos" className="mb-6 block">
-        <Card pressionavel className="flex items-center gap-3">
-          <FlaskConical aria-hidden className="size-5 shrink-0 text-acc-2" />
-          <div className="min-w-0 flex-1">
-            <p className="text-corpo font-semibold">Testar antes de decidir</p>
-            <p className="text-secundario text-txt-2">Mude uma coisa por alguns dias e compare com os mesmos dias de antes.</p>
-          </div>
-          <ChevronRight aria-hidden className="size-4 shrink-0 text-txt-3" />
-        </Card>
-      </Link>
-
       <ResumoDoMes
         mes={mes}
         entrouCents={mensal.revenueCents}
         sobrouCents={mensal.profitCents}
         comandas={mensal.ticketsCount}
         concentracao={concentracao}
-        paradoCents={recuperar.totalProfitCents}
+        paradoCents={recuperar.totalValueCents}
         clientesParados={recuperar.count}
         motor={motor}
         servicosSemMaterial={material.semFicha + material.comProdutoSemCusto}
@@ -149,6 +140,45 @@ export default async function PaginaDoMes() {
         taxa={taxa}
         diaOcioso={diaOcioso}
       />
+
+      {/* APR-114/122: "Gasto médio por visita" e "Voltam de novo" são números de mês, não de pessoa; com a definição, porque sozinhos não se explicam. */}
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <Link href="/admin/clientes" className="block">
+          <StatTile pressionavel rotulo="Gasto médio por visita" valor={dinheiro.format(carteira.ticketMedioCents / 100)} apoio="o que cada visita deixa, em média" />
+        </Link>
+        <Link href="/admin/clientes" className="block">
+          <StatTile
+            pressionavel
+            rotulo="Voltam de novo"
+            valor={`${Math.round(carteira.taxaRetornoBps / 100)}%`}
+            progresso={carteira.taxaRetornoBps / 10_000}
+            apoio="de quem veio, quantos vieram mais de uma vez"
+          />
+        </Link>
+      </div>
+
+      {/* APR-122 (I-19, A-23): o número do mês abre a tela; o mapa de onde escapa e o "Testar" vêm depois. */}
+      <div className="mt-6">
+        <MapaDeVazamento linhas={vazamentos} />
+      </div>
+      {margens === null && <p className="-mt-4 mb-6 text-secundario text-txt-2">Não consegui conferir a margem dos serviços agora. O resto está certo; abra de novo daqui a pouco.</p>}
+      {/*
+        docs/84 Aposta C — depois de ver onde escapa, testar a mudança antes de decidir. Só com pelo
+        menos um mês fechado: sem base de comparação o teste não tem com o que comparar, e o link
+        num mês vazio era convite para uma tela sem nada (I-19).
+      */}
+      {serie.pontos.length > 0 ? (
+        <Link href="/admin/experimentos" className="mb-6 block">
+          <Card pressionavel className="flex items-center gap-3">
+            <FlaskConical aria-hidden className="size-5 shrink-0 text-acc-2" />
+            <div className="min-w-0 flex-1">
+              <p className="text-corpo font-semibold">Testar antes de decidir</p>
+              <p className="text-secundario text-txt-2">Mude uma coisa por alguns dias e compare com os mesmos dias de antes.</p>
+            </div>
+            <ChevronRight aria-hidden className="size-4 shrink-0 text-txt-3" />
+          </Card>
+        </Link>
+      ) : null}
     </>
   )
 }

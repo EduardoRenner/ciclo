@@ -147,6 +147,33 @@ describe('exportarDadosDoCliente', () => {
     },
     30_000,
   )
+
+  it(
+    'CNV-011 (D18): leva também notas, pontos, créditos, comandas com os itens e pagamentos',
+    async () => {
+      const { clientId } = await clienteCompleto('Exportação Inteira')
+      await svc.from('client_notes').insert({ tenant_id: tenantId, client_id: clientId, body: 'gosta de franja curta' })
+      await svc.from('loyalty_entries').insert({ tenant_id: tenantId, client_id: clientId, points: 45, reason: 'atendimento' })
+      await svc.from('wallet_entries').insert({ tenant_id: tenantId, client_id: clientId, amount_cents: 2_000, reason: 'sinal virou crédito' })
+      const t = await svc.from('tickets').insert({ tenant_id: tenantId, client_id: clientId, status: 'closed', total_cents: 4_500, closed_at: new Date().toISOString() }).select('id').single()
+      if (t.error) throw new Error(`seed tickets: ${t.error.message}`)
+      const servico = (await svc.from('services').select('id').eq('tenant_id', tenantId).limit(1).single()).data!.id
+      const it_ = await svc.from('ticket_items').insert({ tenant_id: tenantId, ticket_id: t.data.id, service_id: servico, description: 'Corte', qty: 1, unit_price_cents: 4_500, total_cents: 4_500 })
+      if (it_.error) throw new Error(`seed ticket_items: ${it_.error.message}`)
+      const pg = await svc.from('payments').insert({ tenant_id: tenantId, client_id: clientId, kind: 'deposit', method: 'pix', status: 'paid', amount_cents: 2_000 })
+      if (pg.error) throw new Error(`seed payments: ${pg.error.message}`)
+
+      const e = await exportarDadosDoCliente(svc, tenantId, clientId, { actorId: null, ip: null, userAgent: null })
+
+      expect(e.notes.map((n) => n.body)).toContain('gosta de franja curta')
+      expect(e.loyalty.map((l) => l.points)).toEqual([45])
+      expect(e.wallet.map((w) => w.amount_cents)).toEqual([2_000])
+      expect(e.tickets).toHaveLength(1)
+      expect((e.tickets[0] as { ticket_items: unknown[] }).ticket_items).toHaveLength(1)
+      expect(e.payments.map((p) => p.kind)).toEqual(['deposit'])
+    },
+    30_000,
+  )
 })
 
 describe('eliminarCliente', () => {
@@ -209,6 +236,33 @@ describe('eliminarCliente', () => {
       expect(consentimento.data?.version).toBe('1.0')
       expect(consentimento.data?.ip).toBeNull()
       expect(consentimento.data?.user_agent).toBeNull()
+    },
+    30_000,
+  )
+
+  it(
+    'AUT-101 (0132): o animal e o carro da cliente ficam sem nome, placa e atributos, e inativos — a linha fica para o histórico',
+    async () => {
+      const { clientId } = await clienteCompleto('Tutora Que Pediu Eliminacao')
+      const placa = `LGP${Math.floor(1000 + Math.random() * 8999)}`
+      const criados = await svc
+        .from('subjects')
+        .insert([
+          { tenant_id: tenantId, client_id: clientId, kind: 'animal', name: 'Mel', attributes: { raca: 'vira-lata' } },
+          { tenant_id: tenantId, client_id: clientId, kind: 'veiculo', name: 'Onix', identifier: placa, attributes: { ano: 2021 } },
+        ])
+        .select('id')
+      if (criados.error) throw criados.error
+      expect(criados.data).toHaveLength(2)
+
+      const resultado = await eliminarCliente(svc, tenantId, clientId)
+      expect(resultado.rowsRedacted.subjects).toBe(2)
+
+      const depois = await svc.from('subjects').select('kind, name, identifier, attributes, active').eq('client_id', clientId).order('kind')
+      expect(depois.data).toEqual([
+        { kind: 'animal', name: 'Eliminado', identifier: null, attributes: {}, active: false },
+        { kind: 'veiculo', name: 'Eliminado', identifier: null, attributes: {}, active: false },
+      ])
     },
     30_000,
   )

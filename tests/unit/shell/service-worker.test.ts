@@ -72,7 +72,7 @@ function fakeResponse(opcoes: { ok?: boolean; cacheControl?: string | null; corp
 }
 
 type EventoFake = {
-  request?: { url: string; method: string }
+  request?: { url: string; method: string; mode?: string }
   waitUntil: (p: Promise<unknown>) => void
   respondWith: (p: Promise<unknown>) => void
 }
@@ -310,5 +310,82 @@ describe('service worker — estratégias por tipo de recurso', () => {
     comRede = false
     const resultado = (await disparar(listeners, 'fetch', { request: { url, method: 'GET' } })) as RespostaFake
     expect(resultado._corpo).toBe('versao-boa')
+  })
+})
+
+/**
+ * docs/98-aprimoramento APR-611 (pré-requisito da loja, R-27). Sem rede, navegar no painel dava a página de erro do
+ * navegador (o dinossauro). A tela autenticada continua FORA do cache: o que o SW guarda é só a página estática
+ * `/sem-internet.html`, e ela só é servida quando a rede falhou numa NAVEGAÇÃO. No app iOS o SW não roda (tela
+ * embutida sem domínio "app-bound"): lá a mesma página vem do `server.errorPath` do Capacitor.
+ */
+describe('service worker — página "sem internet" (APR-611)', () => {
+  const PAINEL = 'https://ciclo-umber.vercel.app/admin/hoje'
+
+  it('o install guarda a página sem internet', async () => {
+    const storage = new FakeCacheStorage()
+    const listeners = carregarServiceWorker('sha-novo', storage, async () => fakeResponse())
+    await disparar(listeners, 'install', {})
+    const cache = await storage.open('ciclo-sha-novo')
+    expect(await cache.match('/sem-internet.html')).toBeDefined()
+  })
+
+  it('navegar no painel sem rede mostra a página sem internet', async () => {
+    const storage = new FakeCacheStorage()
+    let comRede = true
+    const listeners = carregarServiceWorker('sha-novo', storage, async () => {
+      if (!comRede) throw new Error('offline')
+      return fakeResponse({ corpo: 'pagina-sem-internet' })
+    })
+    await disparar(listeners, 'install', {})
+    comRede = false
+    const r = (await disparar(listeners, 'fetch', { request: { url: PAINEL, method: 'GET', mode: 'navigate' } })) as RespostaFake
+    expect(r).toBe(await (await storage.open('ciclo-sha-novo')).match('/sem-internet.html'))
+    expect(r).toBeDefined()
+  })
+
+  it('navegar no painel com rede devolve a rede e não grava nada do painel no cache', async () => {
+    const storage = new FakeCacheStorage()
+    const listeners = carregarServiceWorker('sha-novo', storage, async () => fakeResponse({ corpo: 'painel-de-verdade' }))
+    await disparar(listeners, 'install', {})
+    const r = (await disparar(listeners, 'fetch', { request: { url: PAINEL, method: 'GET', mode: 'navigate' } })) as RespostaFake
+    expect(r._corpo).toBe('painel-de-verdade')
+    const cache = await storage.open('ciclo-sha-novo')
+    expect(await cache.match({ url: PAINEL })).toBeUndefined()
+  })
+
+  it('página pública nunca visitada, sem rede: página sem internet em vez de erro do navegador', async () => {
+    const storage = new FakeCacheStorage()
+    let comRede = true
+    const listeners = carregarServiceWorker('sha-novo', storage, async () => {
+      if (!comRede) throw new Error('offline')
+      return fakeResponse({ corpo: 'pagina-sem-internet' })
+    })
+    await disparar(listeners, 'install', {})
+    comRede = false
+    const r = (await disparar(listeners, 'fetch', {
+      request: { url: 'https://ciclo-umber.vercel.app/salao-nunca-aberto', method: 'GET', mode: 'navigate' },
+    })) as RespostaFake
+    expect(r).toBe(await (await storage.open('ciclo-sha-novo')).match('/sem-internet.html'))
+    expect(r).toBeDefined()
+  })
+})
+
+describe('app nativo — página de erro local (APR-611)', () => {
+  const config = readFileSync(path.join(process.cwd(), 'capacitor.config.ts'), 'utf8')
+  const pagina = readFileSync(path.join(process.cwd(), 'public', 'sem-internet.html'), 'utf8')
+
+  it('o Capacitor mostra a página local quando o site não abre', () => {
+    expect(config).toMatch(/errorPath:\s*'sem-internet\.html'/)
+  })
+
+  it('a página não depende de script (a CSP com nonce bloquearia no navegador) e leva de volta ao painel', () => {
+    expect(pagina).not.toMatch(/<script/i)
+    expect(pagina).toMatch(/href="https:\/\/seuciclo\.com\.br\/admin\/hoje"/)
+  })
+
+  it('não afirma que é falta de internet: no Android ela também aparece em erro do servidor', () => {
+    expect(pagina).toMatch(/Não conseguimos abrir o CICLO/)
+    expect(pagina).toMatch(/lang="pt-BR"/)
   })
 })

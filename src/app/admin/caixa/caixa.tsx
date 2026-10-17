@@ -79,8 +79,7 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
   return (
     <>
       <PageHeader
-        overline={ehHoje ? 'Hoje' : undefined}
-        titulo="Caixa"
+        titulo={ehHoje ? 'Caixa de hoje' : 'Caixa do dia'}
         descricao={porExtenso(dia)}
         acao={
           ehHoje ? null : (
@@ -121,10 +120,10 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
         <Card className="mb-6 p-0">
           <EmptyState
             icone={<Receipt aria-hidden className="size-6" />}
-            titulo="Nenhuma comanda fechada nesse dia"
+            titulo={ehHoje ? 'Nenhuma comanda fechada hoje' : 'Nenhuma comanda fechada nesse dia'}
             descricao={
               atendidoCents > 0
-                ? `Você concluiu ${dinheiro.format(atendidoCents / 100)} em atendimentos, mas o caixa só conta o que passou pela comanda: é ela que sabe material e comissão.`
+                ? `Você atendeu ${dinheiro.format(atendidoCents / 100)} ${ehHoje ? 'hoje' : 'nesse dia'} e ainda não fechou as comandas. O caixa só conta o que passou pela comanda: é ela que sabe material e comissão.`
                 : 'O caixa soma o que foi cobrado nas comandas. Feche a comanda do atendimento e o valor aparece aqui.'
             }
             acao={<Link href="/admin/agenda">Ver a agenda</Link>}

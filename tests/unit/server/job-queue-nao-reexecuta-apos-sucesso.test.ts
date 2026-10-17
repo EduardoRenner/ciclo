@@ -14,14 +14,15 @@ import { processarLote } from '@/server/services/job-queue'
  * já tinha completado (mensagem duplicada, cobrança duplicada, o que o handler fizer).
  */
 
-function fakeDb(job: { id: number; kind: string; attempts: number; max_attempts: number }, respostaFinishJob: { error: unknown }) {
+function fakeDb(job: { id: number; kind: string; attempts: number; max_attempts: number }, respostaFinishJob: { error: unknown } | { error: unknown }[]) {
   const chamadasFinishJob: { p_status: string; p_error?: string }[] = []
+  const respostas = Array.isArray(respostaFinishJob) ? [...respostaFinishJob] : null
 
   const rpc = vi.fn((fn: string, args: Record<string, unknown>) => {
     if (fn === 'claim_jobs') return Promise.resolve({ data: [job], error: null })
     if (fn === 'finish_job') {
       chamadasFinishJob.push({ p_status: args.p_status as string, p_error: args.p_error as string | undefined })
-      return Promise.resolve(respostaFinishJob)
+      return Promise.resolve(respostas ? (respostas.shift() ?? { error: null }) : respostaFinishJob)
     }
     throw new Error(`RPC inesperada no fake: ${fn}`)
   })
@@ -47,14 +48,31 @@ describe('processarLote — handler bem-sucedido cuja gravação de `done` falha
 
     expect(handlerRodou, 'o handler tem que ter rodado uma vez — é a premissa do cenário').toBe(1)
 
-    // A asserção que prova o defeito: só houve UMA chamada a finish_job, pedindo 'done' — nunca
-    // uma segunda chamada pedindo 'failed'/'dead' pelo mesmo job.
-    expect(chamadasFinishJob).toHaveLength(1)
-    expect(chamadasFinishJob[0]!.p_status).toBe('done')
+    // A asserção que prova o defeito: toda chamada a finish_job pede 'done' — nunca uma chamada
+    // pedindo 'failed'/'dead' pelo mesmo job. C-024: são 3 tentativas da baixa antes de desistir.
+    expect(chamadasFinishJob).toHaveLength(3)
+    expect(chamadasFinishJob.every((c) => c.p_status === 'done')).toBe(true)
 
     // Nem processado (a gravação falhou) nem contado como falha/morto — fica de fora dos três
     // contadores, porque nenhum deles descreve "trabalho feito, contabilidade pendente".
     expect(resultado).toEqual({ processados: 0, falharam: 0, mortos: 0 })
     expect(avisos.join(' ')).toContain('job_concluido_sem_registro')
+  })
+})
+
+describe('processarLote — a baixa que falha de passagem (C-024)', () => {
+  it('tenta de novo e conta o job: falhou 2 vezes (gateway sob carga), entrou na 3ª', async () => {
+    const job = { id: 2, kind: 'teste', attempts: 0, max_attempts: 5 }
+    const passageiro = { error: { message: 'An invalid response was received from the upstream server' } }
+    const { db, chamadasFinishJob } = fakeDb(job, [passageiro, passageiro, { error: null }])
+    const avisos: unknown[] = []
+    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => avisos.push(args))
+
+    const resultado = await processarLote(db, { teste: async () => {} })
+    vi.restoreAllMocks()
+
+    expect(chamadasFinishJob).toHaveLength(3)
+    expect(resultado).toEqual({ processados: 1, falharam: 0, mortos: 0 })
+    expect(avisos.join(' ')).not.toContain('job_concluido_sem_registro')
   })
 })

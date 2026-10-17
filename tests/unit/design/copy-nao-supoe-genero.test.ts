@@ -497,7 +497,6 @@ const JA_CONSERTADOS = [
   // o dono le a frase no aviso do celular, fora do app, onde nao ha contexto que a conserte.
   'src/app/admin/config/cofre/page.tsx',
   'src/app/admin/config/cofre/trilha.tsx',
-  'src/server/services/importacao-clientes.ts',
   'src/server/services/orcamentos.ts',
   // Os ONZE ultimos, 2026-09-09: a divida chegou a zero. Aqui estava o defeito no lugar onde ele
   // custa mais caro — `llms.txt` e o texto que os proprios modelos leem para descrever o CICLO, e
@@ -521,7 +520,7 @@ const JA_CONSERTADOS = [
   'src/app/(public)/[slug]/agendar/alternador-de-exemplo.tsx',
   'src/app/admin/clientes/[id]/direitos.tsx',
   'src/app/admin/clientes/[id]/ficha.tsx',
-  'src/app/admin/clientes/importar/importador.tsx',
+  'src/app/admin/clientes/importar/esteira.tsx',
   'src/app/admin/config/mensagens/editor.tsx',
   'src/app/admin/config/page.tsx',
   'src/app/admin/config/servicos/page.tsx',

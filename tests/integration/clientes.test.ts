@@ -245,3 +245,47 @@ describe('exportação da base inteira para CSV (P3)', () => {
     30_000,
   )
 })
+
+describe('lista em ordem alfabética com cursor composto (APR-114)', () => {
+  it(
+    'A, B e C inseridos fora de ordem saem em ordem, e a segunda página continua de onde a primeira parou',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      for (const nome of [`Zz Cesar ${marca}`, `Zz Ana ${marca}`, `Zz Bia ${marca}`]) {
+        await criarCliente(svc, tenantId, { name: nome, phone: null, tags: ['apr114'], marketingOptIn: false })
+      }
+      const tudo = await listarClientes(svc, tenantId, { tag: 'apr114' })
+      expect(tudo.map((c) => c.name)).toEqual([`Zz Ana ${marca}`, `Zz Bia ${marca}`, `Zz Cesar ${marca}`])
+
+      const primeira = await listarClientes(svc, tenantId, { tag: 'apr114', limite: 2 })
+      expect(primeira.map((c) => c.name)).toEqual([`Zz Ana ${marca}`, `Zz Bia ${marca}`])
+      const segunda = await listarClientes(svc, tenantId, { tag: 'apr114', limite: 2, cursor: primeira[1]!.id })
+      expect(segunda.map((c) => c.name)).toEqual([`Zz Cesar ${marca}`])
+    },
+    30_000,
+  )
+
+  it(
+    'dois homônimos não se perdem entre uma página e outra',
+    async () => {
+      const a = await criarCliente(svc, tenantId, { name: 'Zz Mesmo Nome', phone: null, tags: ['apr114-h'], marketingOptIn: false })
+      const b = await criarCliente(svc, tenantId, { name: 'Zz Mesmo Nome', phone: null, tags: ['apr114-h'], marketingOptIn: false })
+      const primeira = await listarClientes(svc, tenantId, { tag: 'apr114-h', limite: 1 })
+      const segunda = await listarClientes(svc, tenantId, { tag: 'apr114-h', limite: 1, cursor: primeira[0]!.id })
+      expect(new Set([primeira[0]!.id, segunda[0]!.id])).toEqual(new Set([a.id, b.id]))
+    },
+    30_000,
+  )
+
+  it(
+    'os últimos 4 dígitos do telefone acham a pessoa',
+    async () => {
+      await criarCliente(svc, tenantId, { name: 'Zz Quatro Digitos', phone: '(11) 97777-4242', tags: [], marketingOptIn: false })
+      const achados = await listarClientes(svc, tenantId, { busca: '4242' })
+      expect(achados.map((c) => c.name)).toContain('Zz Quatro Digitos')
+      const nada = await listarClientes(svc, tenantId, { busca: '9191' })
+      expect(nada.map((c) => c.name)).not.toContain('Zz Quatro Digitos')
+    },
+    30_000,
+  )
+})

@@ -43,6 +43,12 @@ const eslintConfig = [
        */
       "android/**",
       "ios/**",
+      /*
+       * CNV-018: o leitor de texto de imagem (Tesseract) é COPIADO para cá pelo
+       * `scripts/copiar-ocr.mjs` no build; o `.gitignore` já esconde, o ESLint varria. Medido em
+       * 2026-10-14: 19 erros e 1.145 avisos, todos em 4 arquivos minificados de terceiro.
+       */
+      "public/ocr/**",
     ],
   },
 

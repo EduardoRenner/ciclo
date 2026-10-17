@@ -82,7 +82,8 @@ describe('o agendamento público não promete canal que não entrega', () => {
      */
     const copy = copyDaPagina()
     expect(
-      /por telefone|ligar|ligue|chamar no/i.test(copy),
+      // APR-118: sem canal cadastrado a instrução é "procure a {salão}"; com canal, "fale direto" + botão.
+      /por telefone|ligar|ligue|chamar no|fale direto|procure a /i.test(copy),
       'a página precisa dizer O QUE FAZER se ninguém confirmar — tirar a promessa falsa não pode virar silêncio',
     ).toBe(true)
   })
@@ -117,5 +118,28 @@ describe('a tela de sucesso dá a saída que a frase promete', () => {
     const trecho = copy.slice(copy.indexOf('saidaDoSucesso'))
     expect(trecho).toMatch(/href=\{saidaDoSucesso\.href\}/)
     expect(trecho).toMatch(/saidaDoSucesso\.rotulo/)
+  })
+})
+
+/*
+ * APR-118 (docs/98 F-04, S1; I-16; F-14). Conta nova não tem telefone público: a tela de sucesso
+ * dizia "é só chamar por telefone" para um telefone que não existe em lugar nenhum. E o botão dizia
+ * "Confirmar agendamento" quando quem confirma é quem atende; o metadado prometia "sem esperar
+ * resposta". Cada asserção casa com a FRASE, nunca com uma palavra que aparece em rótulo ou comentário.
+ */
+describe('o pedido público não se apresenta como confirmado nem manda ligar para telefone que não existe', () => {
+  it('a tela de sucesso não manda "chamar por telefone": a saída é só a de `saidaDeContato`, que só existe com canal', () => {
+    expect(/chamar por telefone/.test(copyDaPagina()), 'voltou a frase para um telefone que a conta nova não tem').toBe(false)
+  })
+
+  it('o botão pede o horário; "Confirmar agendamento" prometia o que quem atende ainda vai decidir', () => {
+    const copy = copyDaPagina()
+    expect(/Pedir este horário/.test(copy)).toBe(true)
+    expect(/Confirmar agendamento/.test(copy)).toBe(false)
+  })
+
+  it('o metadado da página não promete "sem esperar resposta"', () => {
+    const pagina = semComentarios(readFileSync('src/app/(public)/[slug]/agendar/page.tsx', 'utf8'))
+    expect(/sem esperar resposta/i.test(pagina)).toBe(false)
   })
 })

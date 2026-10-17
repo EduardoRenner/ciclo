@@ -1,7 +1,10 @@
 import { Temporal } from '@js-temporal/polyfill'
 
-import { compararComCostume, type ComparacaoComCostume } from '@/core/ciclo/comparacao-com-costume'
+import { entradasDoEntrou, numeroDoDia } from '@/core/caixa/entrou'
+import { compararComCostumeAteAgora, type ComparacaoComCostume, type DiaPassado } from '@/core/ciclo/comparacao-com-costume'
+import { buscarTudoPaginado } from '@/server/db/paginar'
 import { listarAlertasDeEstoque, type AlertaEstoque } from '@/server/services/alertas-estoque'
+import { vendasDePacote } from '@/server/services/caixa'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -18,7 +21,7 @@ type Cliente = SupabaseClient<Database>
   a forma mais silenciosa de vazar dado de saúde.
 */
 const COLUNAS_HOJE =
-  'id, starts_at, ends_at, status, price_cents, client_note, address, professional_id, clients ( name, phone_e164, health_records ( has_alert ) ), services ( name ), professionals ( display_name )'
+  'id, starts_at, ends_at, status, price_cents, client_note, address, professional_id, service_id, clients ( name, phone_e164, health_records ( has_alert ) ), services ( name ), professionals ( display_name )'
 
 /** Mesmo formato de `LinhaAgendaDia` (TICKET-022) — dá para abrir no mesmo `DetalheAgendamento` da tela de agenda, sem duplicar o sheet de ações. */
 export type LinhaHoje = {
@@ -31,6 +34,7 @@ export type LinhaHoje = {
   /** docs/09-PLATAFORMA.md G3+G13 (P2.5) — endereço do atendimento, não do cliente. */
   address: string | null
   professional_id: string
+  service_id: string
   /**
    * `phone` entra aqui (docs/62 Fase A) pro WhatsApp direto no card "A seguir" — diferente do
    * `alert_label` que saiu na Unidade 10, telefone não é dado de saúde e quem vê `/admin/hoje` já
@@ -54,7 +58,15 @@ export type ResumoHoje = {
    * faturamento.
    */
   revenueTodayCents: number
+  /**
+   * APR-036a: o número do dia que a tela mostra. "Entrou hoje" (a MESMA conta do Caixa, `entrouCents`)
+   * quando o negócio usa comanda; "Atendido hoje" (`revenueTodayCents`) quando não usa.
+   */
+  numeroDoDia: { rotulo: 'Entrou hoje' | 'Atendido hoje'; cents: number }
   nextClient: LinhaHoje | null
+  /** APR-108: "3 de 7 horários feitos" na linha do número do dia. Cancelado e expirado não contam no total. */
+  horariosFeitos: number
+  horariosDoDia: number
   /** Confirmações pendentes que começam nas próximas 3 horas — o que precisa de atenção agora, não o dia inteiro. */
   alerts: LinhaHoje[]
   /** O que ainda vem hoje, dali para frente, na ordem em que acontece. */
@@ -111,7 +123,7 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
   // de ser o que a média descreve.
   const inicioDaJanelaDeComparacao = hoje.subtract({ days: 56 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
 
-  const [{ data, error }, stockAlerts, { count: indicacoesEsteMes, error: erroIndicacoes }, { data: diasPassados, error: erroDiasPassados }] =
+  const [{ data, error }, stockAlerts, { count: indicacoesEsteMes, error: erroIndicacoes }, diasPassados, comandas, vendas] =
     await Promise.all([
       db.from('appointments').select(COLUNAS_HOJE).eq('tenant_id', tenantId).gte('starts_at', inicioDoDia.toString()).lt('starts_at', fimDoDia.toString()).order('starts_at'),
       listarAlertasDeEstoque(db, tenantId, hoje.toString()),
@@ -123,17 +135,34 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
         .not('referred_by', 'is', null)
         .gte('created_at', inicioDoMes.toString())
         .lt('created_at', inicioDoMesSeguinte.toString()),
-      db
-        .from('appointments')
-        .select('starts_at, price_cents')
-        .eq('tenant_id', tenantId)
-        .eq('status', 'done')
-        .gte('starts_at', inicioDaJanelaDeComparacao.toString())
-        .lt('starts_at', inicioDoDia.toString()),
+      // APR-013: paginado — 8 semanas de atendimentos passam de mil num salão cheio, e a média do
+      // costume saía calculada sobre uma parte, sem erro.
+      buscarTudoPaginado(() =>
+        db
+          .from('appointments')
+          .select('starts_at, price_cents')
+          .eq('tenant_id', tenantId)
+          .eq('status', 'done')
+          .gte('starts_at', inicioDaJanelaDeComparacao.toString())
+          .lt('starts_at', inicioDoDia.toString())
+          .order('id'),
+      ),
+      // APR-036a: as comandas da mesma janela — para o "Entrou hoje" e para o costume na mesma base.
+      buscarTudoPaginado(() =>
+        db
+          .from('tickets')
+          .select('status, total_cents, payment_method, closed_at')
+          .eq('tenant_id', tenantId)
+          .not('closed_at', 'is', null)
+          .gte('closed_at', inicioDaJanelaDeComparacao.toString())
+          .lt('closed_at', fimDoDia.toString())
+          .order('id'),
+      ),
+      // APR-016b: as vendas de pacote da mesma janela — a outra metade do "Entrou".
+      vendasDePacote(db, tenantId, inicioDaJanelaDeComparacao.toString(), fimDoDia.toString()),
     ])
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (erroIndicacoes) throw new AppError('INTERNAL', { cause: erroIndicacoes })
-  if (erroDiasPassados) throw new AppError('INTERNAL', { cause: erroDiasPassados })
 
   const linhas = (data ?? []) as unknown as LinhaHoje[]
 
@@ -144,14 +173,36 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
    * mesmo dia da semana de hoje ("domingo compara com domingos") e soma cada dia numa entrada só.
    * O resultado é a amostra que `compararComCostume` decide se é grande o bastante pra mostrar.
    */
-  const somaPorDia = new Map<string, number>()
-  for (const a of diasPassados ?? []) {
-    const dataLocal = Temporal.Instant.from(a.starts_at).toZonedDateTimeISO(timezone).toPlainDate()
-    if (dataLocal.dayOfWeek !== hoje.dayOfWeek) continue
-    const chave = dataLocal.toString()
-    somaPorDia.set(chave, (somaPorDia.get(chave) ?? 0) + a.price_cents)
+  // APR-034: cada dia guarda os atendimentos com o minuto local de início, para a comparação contar
+  // só o que já tinha acontecido até o mesmo minuto de agora (`compararComCostumeAteAgora`).
+  const porDia = new Map<string, DiaPassado['atendimentos'][number][]>()
+  for (const a of diasPassados) {
+    const local = Temporal.Instant.from(a.starts_at).toZonedDateTimeISO(timezone)
+    if (local.dayOfWeek !== hoje.dayOfWeek) continue
+    const chave = local.toPlainDate().toString()
+    porDia.set(chave, [...(porDia.get(chave) ?? []), { minutoDoDia: local.hour * 60 + local.minute, cents: a.price_cents }])
   }
-  const receitasDeMesmoDiaDaSemana = [...somaPorDia.values()]
+  const diasDeAtendimento: DiaPassado[] = [...porDia.values()].map((atendimentos) => ({ atendimentos }))
+
+  // APR-036a: quem usa comanda vê "Entrou", e o costume é medido em comandas também (mesma base do
+  // número mostrado). Comanda estornada sai de `entrouCents`, então o estorno muda a Hoje junto.
+  // APR-016b: as entradas saem de `entradasDoEntrou` (comandas + vendas de pacote), a mesma lista que
+  // o Caixa soma — o número de hoje e o costume não têm uma segunda regra.
+  const usaComanda = comandas.length > 0
+  const entradas = entradasDoEntrou(
+    comandas.map((c) => ({ status: c.status, totalCents: c.total_cents, paymentMethod: c.payment_method, closedAt: c.closed_at })),
+    vendas,
+  ).filter((e): e is { cents: number; em: string } => e.em !== null)
+  const entrouHojeCents = entradas.filter((e) => Temporal.Instant.compare(Temporal.Instant.from(e.em), inicioDoDia) >= 0).reduce((soma, e) => soma + e.cents, 0)
+  const porDiaDeComanda = new Map<string, DiaPassado['atendimentos'][number][]>()
+  for (const e of entradas) {
+    const local = Temporal.Instant.from(e.em).toZonedDateTimeISO(timezone)
+    if (local.dayOfWeek !== hoje.dayOfWeek || Temporal.PlainDate.compare(local.toPlainDate(), hoje) >= 0) continue
+    const chave = local.toPlainDate().toString()
+    porDiaDeComanda.set(chave, [...(porDiaDeComanda.get(chave) ?? []), { minutoDoDia: local.hour * 60 + local.minute, cents: e.cents }])
+  }
+  const diasDeComanda: DiaPassado[] = [...porDiaDeComanda.values()].map((atendimentos) => ({ atendimentos }))
+  const agoraLocal = agora.toZonedDateTimeISO(timezone)
 
   const aindaPorVir = linhas.filter(
     (a) =>
@@ -167,11 +218,16 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
   return {
     revenueTodayCents,
     nextClient: aindaPorVir[0] ?? null,
+    horariosFeitos: linhas.filter((a) => a.status === 'done').length,
+    horariosDoDia: linhas.filter((a) => !['canceled', 'expired'].includes(a.status)).length,
     alerts,
     restOfDay: aindaPorVir,
     stockAlerts,
     indicacoesEsteMes: indicacoesEsteMes ?? 0,
     totalAgendamentosHoje: linhas.length,
-    comparacaoComCostume: compararComCostume(receitasDeMesmoDiaDaSemana, revenueTodayCents),
+    numeroDoDia: numeroDoDia({ usaComanda, entrouHojeCents, atendidoHojeCents: revenueTodayCents }),
+    comparacaoComCostume: usaComanda
+      ? compararComCostumeAteAgora(diasDeComanda, entrouHojeCents, agoraLocal.hour * 60 + agoraLocal.minute)
+      : compararComCostumeAteAgora(diasDeAtendimento, revenueTodayCents, agoraLocal.hour * 60 + agoraLocal.minute),
   }
 }

@@ -36,6 +36,7 @@ Base: `/api/v1`. Tudo JSON, `Content-Type: application/json`. Textos de erro em 
 |---|---|---|
 | `UNAUTHENTICATED` | 401 | Sem sessão válida |
 | `MFA_REQUIRED` | 401 | Ação sensível exige AAL2 |
+| `REAUTH_REQUIRED` | 401 | Confirmar com a senha ou entrar de novo, para quem não tem segundo fator (docs/98-aprimoramento/11 LOJA-27) |
 | `FORBIDDEN` | 403 | Sem permissão para o papel |
 | `TENANT_MISMATCH` | 403 | Recurso é de outro tenant |
 | `NOT_FOUND` | 404 | |
@@ -51,6 +52,7 @@ Base: `/api/v1`. Tudo JSON, `Content-Type: application/json`. Textos de erro em 
 | `OPT_OUT` | 422 | Cliente pediu para não receber mensagem |
 | `VAULT_LOCKED` | 423 | Cofre exige reautenticação |
 | `ASSISTANT_UNAVAILABLE` | 503 | Assistente sem credencial ou provedor fora do ar (docs/26 §4.4) |
+| `EMAIL_UNAVAILABLE` | 503 | Provedor de e-mail recusou o envio da confirmação (docs/98-aprimoramento/11 LOJA-02) |
 | `INTERNAL` | 500 | Nunca vazar stack trace |
 
 #### Paginação
@@ -106,7 +108,9 @@ POST   /api/v1/clients                { name, phone, email?, birthDate?, source?
 GET    /api/v1/clients/:id            → ficha 360° (sem cofre)
 PATCH  /api/v1/clients/:id
 DELETE /api/v1/clients/:id            soft delete
-POST   /api/v1/clients/import         multipart CSV → { imported, skipped, errors[] }
+POST   /api/v1/imports                { fileSha256, formato, origem, nivel, counts, rowsExpected } → { lote, jaExistia }  (docs/103)
+POST   /api/v1/imports/:id/rows       { linhas[≤500], ultimo, servicoId? } → { gravadas, jaGravadas, puladas[], erros[], lote }
+POST   /api/v1/imports/:id/undo       até 7 dias → { removidas, mantidas }
 POST   /api/v1/clients/merge          { keepId, mergeId }   (duplicadas)
 GET    /api/v1/clients/:id/timeline?cursor=
 POST   /api/v1/clients/export         🔐 AAL2 + auditado + 1×/mês

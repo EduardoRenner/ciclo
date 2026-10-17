@@ -28,9 +28,20 @@ type Cliente = SupabaseClient<Database>
  */
 
 /** Uma previsão pronta para virar linha, montada por quem já calculou o ciclo. */
+/**
+ * A chave de uma combinação (cliente, serviço, SUJEITO) — a MESMA no job (`ciclo.ts`) e no casamento das
+ * previsões (C-030). Uma fórmula só: duas cópias divergiriam em silêncio. Sem sujeito, o terceiro pedaço é
+ * vazio.
+ */
+export function chaveDaCombinacao(clientId: string, serviceId: string, subjectId: string | null | undefined): string {
+  return `${clientId}:${serviceId}:${subjectId ?? ''}`
+}
+
 export type PrevisaoParaRegistrar = {
   clientId: string
   serviceId: string
+  /** C-030: o animal/carro do ciclo; nulo na beleza. */
+  subjectId?: string | null
   /** A visita que originou a previsão — é o que torna a linha única. */
   lastVisitOn: string
   predictedOn: string
@@ -56,6 +67,7 @@ export async function registrarPrevisoes(db: Cliente, tenantId: string, previsoe
     tenant_id: tenantId,
     client_id: p.clientId,
     service_id: p.serviceId,
+    subject_id: p.subjectId ?? null,
     last_visit_on: p.lastVisitOn,
     predicted_on: p.predictedOn,
     personal_cycle_days: p.personalCycleDays,
@@ -67,7 +79,7 @@ export async function registrarPrevisoes(db: Cliente, tenantId: string, previsoe
     const { error } = await db
       .from('cycle_predictions')
       .upsert(linhas.slice(inicio, inicio + TAMANHO_DO_LOTE), {
-        onConflict: 'tenant_id,client_id,service_id,last_visit_on',
+        onConflict: 'tenant_id,client_id,service_id,subject_id,last_visit_on',
         ignoreDuplicates: true,
       })
     if (error) throw new AppError('INTERNAL', { cause: error })
@@ -100,7 +112,7 @@ export async function resolverPrevisoes(
   const abertas = await buscarTudoPaginado(() =>
     db
       .from('cycle_predictions')
-      .select('id, client_id, service_id, last_visit_on')
+      .select('id, client_id, service_id, subject_id, last_visit_on')
       .eq('tenant_id', tenantId)
       .is('resolved_at', null)
       .order('id'),
@@ -109,7 +121,7 @@ export async function resolverPrevisoes(
 
   const atualizacoes: { id: string; actual_return_on: string }[] = []
   for (const aberta of abertas) {
-    const visitas = historicoPorCombinacao.get(`${aberta.client_id}:${aberta.service_id}`)
+    const visitas = historicoPorCombinacao.get(chaveDaCombinacao(aberta.client_id, aberta.service_id, aberta.subject_id))
     if (!visitas) continue
 
     // A primeira visita ESTRITAMENTE depois da que originou a previsão. Duas visitas no mesmo dia

@@ -9,6 +9,7 @@ import { comIdempotencia } from '@/server/http/idempotency'
 import { EsquemaPontos, extratoDePontos, lancarPontos } from '@/server/services/fidelidade'
 import { exigirModulo } from '@/server/services/planos'
 import { UUID } from '@/core/text/uuid'
+import { exigirClienteDoProfissional } from '@/server/services/clientes'
 
 type Ctx = { params: Promise<{ id: string }> }
 
@@ -20,20 +21,22 @@ async function idValidado(ctx: unknown): Promise<string> {
 
 export const GET = rota(async (req, params) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:read')
+  const escopo = exigirPermissao(ctx.papel, 'client:read')
 
   const id = await idValidado(params)
   const db = await criarClienteDoUsuario()
+  if (escopo === 'own') await exigirClienteDoProfissional(db, ctx.tenantId, id)
   return extratoDePontos(db, ctx.tenantId, id)
 })
 
 export const POST = rota(async (req, params, requestId) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:update')
+  const escopo = exigirPermissao(ctx.papel, 'client:update')
 
   const id = await idValidado(params)
   const entrada = await lerCorpo(req, EsquemaPontos)
   const db = await criarClienteDoUsuario()
+  if (escopo === 'own') await exigirClienteDoProfissional(db, ctx.tenantId, id)
 
   /*
    * §L.2.1: o módulo vale no SERVIDOR, e só na ESCRITA. Ler o extrato continua liberado — o que

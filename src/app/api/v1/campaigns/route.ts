@@ -7,10 +7,12 @@ import { lerCorpo } from '@/server/http/body'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
 import { EsquemaCampanha, registrarCampanha } from '@/server/services/crm'
+import { AppError } from '@/server/http/errors'
 
 export const POST = rota(async (req, _params, requestId) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:update')
+  const escopo = exigirPermissao(ctx.papel, 'client:update')
+  if (escopo === 'own') throw new AppError('FORBIDDEN', { message: 'Campanha e mensagem automática são do negócio: quem mexe é o dono ou a gerência.' })
 
   const entrada = await lerCorpo(req, EsquemaCampanha)
   const db = await criarClienteDoUsuario()

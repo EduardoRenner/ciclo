@@ -181,7 +181,9 @@ enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
-minimum_password_length = 10
+# APR-025: o MESMO piso de `SENHA_MINIMA` (src/server/auth/password.ts); há guarda comparando os dois.
+# Produção é configurada no painel do Supabase e precisa do mesmo número.
+minimum_password_length = 8
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
 password_requirements = ""
@@ -244,6 +246,17 @@ otp_expiry = 3600
 # pass = "env(SENDGRID_API_KEY)"
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
+
+# APR-026: recuperação e confirmação por `token_hash` (rota /auth/confirmar), que funcionam aberto
+# em OUTRO navegador. Em produção, o mesmo conteúdo vai no painel do Supabase (Authentication →
+# Email Templates): o config.toml só vale para o Supabase local.
+[auth.email.template.recovery]
+subject = "Criar senha nova no CICLO"
+content_path = "./supabase/templates/recuperar-senha.html"
+
+[auth.email.template.confirmation]
+subject = "Confirme seu e-mail no CICLO"
+content_path = "./supabase/templates/confirmar-cadastro.html"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

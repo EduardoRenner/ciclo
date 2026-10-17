@@ -13,6 +13,7 @@ import { useToast } from '@/components/ui/toast'
 import { lerListaDeNomes, MAX_DA_LISTA, pessoasDosContatos, type ContatoDoCelular, type PessoaDaLista } from '@/core/ciclo/lista-de-nomes'
 import { primeiraVolta } from '@/core/ciclo/primeira-volta'
 import { QUANDO_FOI, type QuandoFoi } from '@/core/ciclo/quando-foi-a-ultima-vez'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 export type ServicoComRitmo = { id: string; nome: string; cycleDays: number }
 
@@ -28,6 +29,8 @@ type Resultado = {
    */
   atualizados: number
   jaExistiam: string[]
+  repetidosNaLista: string[]
+  telefoneNaoReconhecido: string[]
   previsao: { comDataInformada: number; jaDevendoVoltar: number; cyclesGravados: number; proximaVolta: string | null } | null
 }
 
@@ -128,9 +131,9 @@ export default function FormularioQuemJaAtendo({ servicos, servicoPadrao, temCli
 
     iniciarTransicao(async () => {
       try {
-        const r = await fetch('/api/v1/clients/ja-atendo', {
+        const r = await fetchComTentativa('/api/v1/clients/ja-atendo', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             serviceId,
             pessoas: preenchidas.map((p) => ({ nome: p.nome.trim(), telefone: p.telefone.trim() || undefined, quando: p.quando })),
@@ -212,6 +215,16 @@ export default function FormularioQuemJaAtendo({ servicos, servicoPadrao, temCli
           {resultado.jaExistiam.length > 0 ? (
             <p className="mt-1 text-secundario text-txt-2">
               {resultado.jaExistiam.length === 1 ? 'Já tinha ficha' : 'Já tinham ficha'}: {resultado.jaExistiam.join(', ')}.
+            </p>
+          ) : null}
+          {resultado.repetidosNaLista.length > 0 ? (
+            <p className="mt-1 text-secundario text-txt-2">
+              Mesmo telefone de outra linha da lista, entrou só uma vez: {resultado.repetidosNaLista.join(', ')}.
+            </p>
+          ) : null}
+          {resultado.telefoneNaoReconhecido.length > 0 ? (
+            <p className="mt-1 text-secundario text-warn">
+              Entrou sem telefone, porque o número não parecia um telefone: {resultado.telefoneNaoReconhecido.join(', ')}. Dá para corrigir na ficha.
             </p>
           ) : null}
         </Card>

@@ -22,7 +22,7 @@ export const COR_BARRA: Record<EstadoAgendamento, string> = {
 }
 
 /** O rótulo do estado repete a cor da barra em texto — §4: nunca só cor. */
-const COR_ROTULO: Record<EstadoAgendamento, string> = {
+export const COR_ROTULO: Record<EstadoAgendamento, string> = {
   pending: 'text-warn',
   confirmed: 'text-ok',
   arrived: 'text-info',
@@ -32,7 +32,7 @@ const COR_ROTULO: Record<EstadoAgendamento, string> = {
   expired: 'text-txt-3',
 }
 
-const ROTULO_ESTADO: Record<EstadoAgendamento, string> = {
+export const ROTULO_ESTADO: Record<EstadoAgendamento, string> = {
   pending: 'Aguardando',
   confirmed: 'Confirmado',
   arrived: 'Chegou',

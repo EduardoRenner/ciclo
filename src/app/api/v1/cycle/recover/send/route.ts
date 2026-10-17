@@ -11,7 +11,8 @@ import { comIdempotencia } from '@/server/http/idempotency'
 
 export const POST = rota(async (req, _ctx, requestId) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:read')
+  const escopo = exigirPermissao(ctx.papel, 'client:read')
+  if (escopo === 'own') throw new AppError('FORBIDDEN', { message: 'Avisar pelo sistema é do negócio: quem manda é o dono, a gerência ou a recepção.' })
 
   const entrada = await lerCorpo(req, EsquemaEnviarRecuperar)
   const db = await criarClienteDoUsuario()

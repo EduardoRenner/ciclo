@@ -13,8 +13,11 @@ import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
 import { useVocabulario } from '@/components/shell/vocabulario'
+import { FORMAS_DE_PAGAMENTO, NOME_DA_FORMA, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
 import { comMaiuscula } from '@/core/text/vocabulario'
 import { dinheiro } from '@/lib/formato'
+import { fetchComTentativa } from '@/lib/tentativa'
+import { useFuso } from '@/components/shell/fuso'
 
 type Props = {
   clientId: string
@@ -25,17 +28,24 @@ type Props = {
   podeLancar: boolean
 }
 
-function dataCurta(iso: string): string {
-  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+// APR-202 (C-51): no fuso do negócio, não no do aparelho.
+function dataCurta(iso: string, fuso: string): string {
+  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', timeZone: fuso })
 }
 
 /**
  * Pacotes (TICKET-046) e carteira (TICKET-047) existiam com rota, serviço e teste, e esta seção
- * era **só leitura**: dava para ver o saldo e nunca para lançar um. Consumir acontece na comanda,
- * mas *vender* o pacote e *creditar* a carteira (sinal virado crédito, cortesia, fiado pago) só
- * existiam como endpoint — na prática, funcionalidade inacessível. Ver `docs/12-AUDITORIA-DE-PRODUTO.md`.
+ * era **só leitura**: dava para ver o saldo e nunca para lançar um. *Vender* o pacote e *creditar*
+ * a carteira (sinal virado crédito, cortesia, fiado pago) só existiam como endpoint — na prática,
+ * funcionalidade inacessível. Ver `docs/12-AUDITORIA-DE-PRODUTO.md`.
+ *
+ * APR-015: os avisos diziam "use na comanda", e a comanda NÃO sabe do pacote nem do crédito
+ * (`packages/[id]/use` e `wallet/debit` não tinham chamador). Quem acreditava cobrava o atendimento
+ * E o pacote. Enquanto o épico de pacote (APR-016/017) não liga isso à comanda, o desconto da
+ * sessão acontece AQUI, pelo "Usar 1 sessão", e é isso que os avisos dizem.
  */
 export default function PacotesCarteira({ clientId, pacotes, saldoCarteiraCents, servicos, podeLancar }: Props) {
+  const fuso = useFuso()
   const [abrindo, setAbrindo] = useState<'pacote' | 'credito' | null>(null)
 
   return (
@@ -63,7 +73,8 @@ export default function PacotesCarteira({ clientId, pacotes, saldoCarteiraCents,
                 {p.restantes}/{p.total}
               </p>
             </div>
-            {p.expiresOn ? <p className="mt-0.5 text-secundario text-txt-3">Vence em {dataCurta(p.expiresOn)}</p> : null}
+            {p.expiresOn ? <p className="mt-0.5 text-secundario text-txt-3">Vence em {dataCurta(p.expiresOn, fuso)}</p> : null}
+            {podeLancar && p.restantes > 0 ? <UsarSessao pacote={p} /> : null}
           </Card>
         ))}
 
@@ -96,6 +107,42 @@ export default function PacotesCarteira({ clientId, pacotes, saldoCarteiraCents,
   )
 }
 
+/** APR-015: o caminho que os avisos descrevem — a rota existia sem chamador. */
+function UsarSessao({ pacote }: { pacote: Props['pacotes'][number] }) {
+  const router = useRouter()
+  const mostrarToast = useToast()
+  const [usando, iniciar] = useTransition()
+
+  function usar() {
+    iniciar(async () => {
+      try {
+        const r = await fetchComTentativa(`/api/v1/packages/${pacote.id}/use`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({}),
+        })
+        const json = (await r.json()) as { error?: { message?: string; details?: { fields?: Record<string, string> } } }
+        if (!r.ok) {
+          const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
+          mostrarToast({ tom: 'erro', titulo: 'Não descontei a sessão', descricao: campo ?? json.error?.message ?? 'Tente de novo.' })
+          return
+        }
+        const restam = pacote.restantes - 1
+        mostrarToast({ tom: 'ok', titulo: 'Sessão descontada', descricao: `${pacote.serviceName}: restam ${restam} de ${pacote.total}.` })
+        router.refresh()
+      } catch {
+        mostrarToast({ tom: 'erro', titulo: 'Não consegui falar com o servidor', descricao: 'A sessão não foi descontada. Confira a conexão e tente de novo.' })
+      }
+    })
+  }
+
+  return (
+    <Button tamanho="sm" variante="secondary" className="mt-2" onClick={usar} carregando={usando}>
+      Usar 1 sessão
+    </Button>
+  )
+}
+
 function VenderPacote({
   clientId,
   servicos,
@@ -114,6 +161,9 @@ function VenderPacote({
   // fácil abater de um número certo do que digitar o total do zero.
   const [pagoCents, setPagoCents] = useState((servicos[0]?.priceCents ?? 0) * 4)
   const [vence, setVence] = useState('')
+  // APR-016b: a venda entra no caixa do dia; sem forma escolhida, não dá para saber a taxa. Começa
+  // vazia de propósito, como no fechamento da comanda: ninguém confirma uma forma que não escolheu.
+  const [forma, setForma] = useState<FormaDePagamento | ''>('')
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, iniciar] = useTransition()
 
@@ -141,19 +191,24 @@ function VenderPacote({
       setErro('O pacote precisa ter de 1 a 100 sessões.')
       return
     }
+    if (pagoCents > 0 && !forma) {
+      setErro('Diga como ela pagou o pacote.')
+      return
+    }
     setErro(null)
 
     iniciar(async () => {
       try {
-        const r = await fetch('/api/v1/packages', {
+        const r = await fetchComTentativa('/api/v1/packages', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             clientId,
             serviceId,
             totalSessions: quantidade,
             paidCents: pagoCents,
             expiresOn: vence || undefined,
+            paymentMethod: pagoCents > 0 && forma ? forma : undefined,
           }),
         })
         const json = (await r.json()) as { error?: { message?: string; details?: { fields?: Record<string, string> } } }
@@ -162,7 +217,7 @@ function VenderPacote({
           return
         }
         aoFechar()
-        mostrarToast({ tom: 'ok', titulo: 'Pacote vendido', descricao: 'As sessões já podem ser usadas na comanda.' })
+        mostrarToast({ tom: 'ok', titulo: 'Pacote registrado', descricao: `${quantidade} sessões. Em cada atendimento, toque em “Usar 1 sessão” na aba Fidelidade da ficha.` })
         router.refresh()
       } catch {
         // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
@@ -173,7 +228,7 @@ function VenderPacote({
   }
 
   return (
-    <Sheet aberto aoFechar={(aberto) => !aberto && aoFechar()} titulo="Vender pacote" descricao="Sessões pagas na frente, consumidas na comanda.">
+    <Sheet aberto aoFechar={(aberto) => !aberto && aoFechar()} titulo="Vender pacote" descricao="Sessões pagas na frente. Cada atendimento desconta uma na aba Fidelidade da ficha.">
       <div className="flex flex-col gap-3">
         <Select rotulo={comMaiuscula(vocabulario.servico)} value={serviceId} onChange={(e) => trocarServico(e.target.value)}>
           {servicos.map((s) => (
@@ -184,6 +239,16 @@ function VenderPacote({
         </Select>
         <Input rotulo="Quantas sessões" value={sessoes} onChange={(e) => trocarSessoes(e.target.value)} inputMode="numeric" />
         <MoneyInput rotulo="Quanto ela pagou" centavos={pagoCents} aoMudar={setPagoCents} ajuda="Já vem no preço cheio das sessões; ajuste se houver desconto." />
+        {pagoCents > 0 ? (
+          <Select rotulo="Como ela pagou" value={forma} onChange={(e) => setForma(e.target.value as FormaDePagamento | '')} ajuda="Entra no caixa de hoje.">
+            <option value="">Escolha</option>
+            {FORMAS_DE_PAGAMENTO.map((f) => (
+              <option key={f} value={f}>
+                {NOME_DA_FORMA[f]}
+              </option>
+            ))}
+          </Select>
+        ) : null}
         <Input rotulo="Vence em (opcional)" type="date" value={vence} onChange={(e) => setVence(e.target.value)} />
 
         {erro ? (
@@ -221,9 +286,9 @@ function LancarCredito({ clientId, aoFechar }: { clientId: string; aoFechar: () 
 
     iniciar(async () => {
       try {
-        const r = await fetch('/api/v1/wallet/credit', {
+        const r = await fetchComTentativa('/api/v1/wallet/credit', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ clientId, amountCents: valorCents, reason: motivo.trim() }),
         })
         const json = (await r.json()) as { error?: { message?: string; details?: { fields?: Record<string, string> } } }
@@ -232,7 +297,7 @@ function LancarCredito({ clientId, aoFechar }: { clientId: string; aoFechar: () 
           return
         }
         aoFechar()
-        mostrarToast({ tom: 'ok', titulo: 'Crédito lançado', descricao: 'O saldo aparece na comanda dela.' })
+        mostrarToast({ tom: 'ok', titulo: 'Crédito lançado', descricao: 'O saldo fica na aba Fidelidade da ficha. Na hora de cobrar, desconte do valor.' })
         router.refresh()
       } catch {
         setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')

@@ -7,7 +7,7 @@ import { custoFixoDoAtendimento, lerCustoFixo } from '@/core/comanda/custo-fixo'
 import { calcularTaxaDaMaquininha, FORMAS_DE_PAGAMENTO, lerTaxasDePagamento, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
 import { AppError } from '@/server/http/errors'
 import { congelarMesesFechados } from '@/server/services/caixa'
-import { baixarEstoqueDaComanda, estornarBaixaDaComanda } from '@/server/services/estoque'
+import { consumoDaComanda, estornarBaixaDaComanda } from '@/server/services/estoque'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -35,6 +35,13 @@ export type EntradaItemComanda = z.infer<typeof EsquemaItemComanda>
  */
 export const EsquemaFechamento = z.object({
   paymentMethod: z.enum(FORMAS_DE_PAGAMENTO, { message: 'Diga como foi pago para poder fechar.' }),
+  /**
+   * APR-112a: desconto e gorjeta vêm no MESMO envio do fechamento. Antes só entravam por um PATCH
+   * separado (o `onBlur` do campo), e quem digitava o desconto e tocava direto em "Receber" fechava
+   * sem o desconto (docs/98 C-13). Opcionais: sem eles vale o que já está na comanda.
+   */
+  discountCents: z.number().int().nonnegative().optional(),
+  tipCents: z.number().int().nonnegative().optional(),
 })
 export type EntradaFechamentoComanda = z.infer<typeof EsquemaFechamento>
 
@@ -153,7 +160,7 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
      * mesma classe de `fee_cents`, `actor_label` e `deposit_cents`).
      *
      * O estrago do `?? 0` era duplo. O insumo entrava na comanda a R$ 0,00 — item de graça na
-     * conta de quem atende — e `baixarEstoqueDaComanda` descontava o estoque dele. Só que a ficha
+     * conta de quem atende — e a baixa do fechamento descontava o estoque dele. Só que a ficha
      * de consumo do serviço (`service_products`) JÁ desconta o mesmo insumo: uma navalha usada uma
      * vez saía duas vezes do estoque, e o custo dela já estava em `material_cost_cents`.
      *
@@ -205,25 +212,56 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
     .single()
   if (erroInsert) throw new AppError('INTERNAL', { cause: erroInsert })
 
-  await recalcularSubtotal(db, tenantId, ticketId)
+  try {
+    await recalcularSubtotal(db, tenantId, ticketId)
+  } catch (erro) {
+    // Fechou no meio do caminho: o item que ESTA chamada acabou de inserir sai, e a comanda
+    // fechada fica exatamente como foi fechada.
+    await db.from('ticket_items').delete().eq('tenant_id', tenantId).eq('id', item.id)
+    throw erro
+  }
   return item
 }
 
 export async function removerItemComanda(db: Cliente, tenantId: string, ticketId: string, itemId: string): Promise<void> {
   await buscarTicketAberto(db, tenantId, ticketId)
 
-  const { error } = await db.from('ticket_items').delete().eq('tenant_id', tenantId).eq('ticket_id', ticketId).eq('id', itemId)
+  const { data: removido, error } = await db.from('ticket_items').delete().eq('tenant_id', tenantId).eq('ticket_id', ticketId).eq('id', itemId).select('*')
   if (error) throw new AppError('INTERNAL', { cause: error })
 
-  await recalcularSubtotal(db, tenantId, ticketId)
+  try {
+    await recalcularSubtotal(db, tenantId, ticketId)
+  } catch (erro) {
+    // Fechou no meio do caminho: o item volta, e a comanda fechada fica como foi fechada.
+    if (removido?.length) await db.from('ticket_items').insert(removido.map((linha) => ({ ...linha, tenant_id: tenantId })))
+    throw erro
+  }
+}
+
+/**
+ * APR-008 (achado C-14): a recepção fecha num aparelho e o profissional lança item ou desconto no
+ * outro. A checagem de `status` era feita antes e a escrita gravava por `id` só: o item entrava
+ * em comanda FECHADA e o `total_cents` mudava depois de taxa e comissão congeladas. Agora toda
+ * escrita de total exige `status = 'open'` NA PRÓPRIA escrita e conta as linhas: zero linha é
+ * comanda fechada no meio do caminho, não sucesso (lição "update de zero linhas não é erro").
+ */
+function comandaFechadaNoCaminho(): AppError {
+  return new AppError('CONFLICT', { message: 'Esta comanda já foi fechada. Atualize a tela.' })
 }
 
 async function recalcularSubtotal(db: Cliente, tenantId: string, ticketId: string): Promise<void> {
   const { ticket, items } = await buscarComanda(db, tenantId, ticketId)
   const { subtotalCents, totalCents } = calcularTotaisComanda({ items: items.map((i) => ({ totalCents: i.total_cents })), discountCents: ticket.discount_cents, tipCents: ticket.tip_cents })
 
-  const { error } = await db.from('tickets').update({ subtotal_cents: subtotalCents, total_cents: totalCents }).eq('tenant_id', tenantId).eq('id', ticketId)
+  const { data, error } = await db
+    .from('tickets')
+    .update({ subtotal_cents: subtotalCents, total_cents: totalCents })
+    .eq('tenant_id', tenantId)
+    .eq('id', ticketId)
+    .eq('status', 'open')
+    .select('id')
   if (error) throw new AppError('INTERNAL', { cause: error })
+  if (!data?.length) throw comandaFechadaNoCaminho()
 }
 
 export async function atualizarDescontoEGorjeta(db: Cliente, tenantId: string, ticketId: string, entrada: EntradaDescontoGorjeta) {
@@ -233,8 +271,9 @@ export async function atualizarDescontoEGorjeta(db: Cliente, tenantId: string, t
   if (entrada.discountCents !== undefined) atualizacao.discount_cents = entrada.discountCents
   if (entrada.tipCents !== undefined) atualizacao.tip_cents = entrada.tipCents
 
-  const { error } = await db.from('tickets').update(atualizacao).eq('tenant_id', tenantId).eq('id', ticketId)
+  const { data, error } = await db.from('tickets').update(atualizacao).eq('tenant_id', tenantId).eq('id', ticketId).eq('status', 'open').select('id')
   if (error) throw new AppError('INTERNAL', { cause: error })
+  if (!data?.length) throw comandaFechadaNoCaminho()
 
   await recalcularSubtotal(db, tenantId, ticketId)
 }
@@ -250,6 +289,11 @@ async function resolverCommissionBps(db: Cliente, tenantId: string, item: { serv
   if (item.product_id) {
     const { data: tenant } = await db.from('tenants').select('settings, timezone').eq('id', tenantId).maybeSingle()
     const settings = (tenant?.settings ?? {}) as Settings
+    // A comissão de produto da PESSOA, quando o dono definiu uma, vale sobre a do negócio.
+    if (item.professional_id) {
+      const { data: pessoa } = await db.from('professionals').select('product_commission_bps').eq('tenant_id', tenantId).eq('id', item.professional_id).maybeSingle()
+      if (pessoa?.product_commission_bps !== null && pessoa?.product_commission_bps !== undefined) return pessoa.product_commission_bps
+    }
     return settings.product_commission_bps ?? PRODUCT_COMMISSION_BPS_PADRAO
   }
   if (!item.service_id || !item.professional_id) return 0
@@ -268,27 +312,52 @@ async function resolverCommissionBps(db: Cliente, tenantId: string, item: { serv
 }
 
 /**
+ * APR-038: `comanda:own` é alcance, não verbo (`rbac.ts`). Com `restrict_professional_view`
+ * desligado (o padrão), a RLS deixa o profissional enxergar e atualizar a comanda do colega — quem
+ * segura "só a própria" é esta checagem, com o mesmo `my_professional_id` que a RLS usa.
+ */
+export async function exigirComandaPropria(db: Cliente, tenantId: string, ticketId: string): Promise<void> {
+  const [{ data: eu, error: erroEu }, { data: ticket, error: erroTicket }] = await Promise.all([
+    db.rpc('my_professional_id', { t: tenantId }),
+    db.from('tickets').select('professional_id').eq('tenant_id', tenantId).eq('id', ticketId).maybeSingle(),
+  ])
+  if (erroEu) throw new AppError('INTERNAL', { cause: erroEu })
+  if (erroTicket) throw new AppError('INTERNAL', { cause: erroTicket })
+  if (!ticket) throw new AppError('NOT_FOUND', { message: 'Essa comanda não existe mais.' })
+  if (!eu || ticket.professional_id !== eu) {
+    throw new AppError('FORBIDDEN', { message: 'Só quem atendeu fecha esta comanda. Peça para a recepção ou para o dono.' })
+  }
+}
+
+/**
  * TICKET-042: "fechar congela preço e comissão" — a partir daqui a linha nunca muda, mesmo que o
  * percentual de comissão do profissional ou o preço do serviço mudem depois. `payments`/webhook
  * (TICKET-043) é quem move `closed` pra `paid`; aqui só fecha o carrinho.
  */
-export async function fecharComanda(db: Cliente, tenantId: string, ticketId: string, formaDePagamento: FormaDePagamento) {
-  const { ticket, items } = await buscarComanda(db, tenantId, ticketId)
-  if (ticket.status !== 'open') throw new AppError('INVALID_TRANSITION', { message: 'Essa comanda já foi fechada.' })
+export async function fecharComanda(
+  db: Cliente,
+  tenantId: string,
+  ticketId: string,
+  formaDePagamento: FormaDePagamento,
+  ajustes: { discountCents?: number; tipCents?: number } = {},
+) {
+  const { ticket: gravado, items } = await buscarComanda(db, tenantId, ticketId)
+  if (gravado.status !== 'open') throw new AppError('INVALID_TRANSITION', { message: 'Essa comanda já foi fechada.' })
   if (items.length === 0) throw AppError.validacao({ items: 'Adicione pelo menos um item antes de fechar.' })
+  // APR-112a: o desconto e a gorjeta DESTE envio mandam; a RPC grava os dois na mesma transação do fechamento.
+  const ticket = { ...gravado, discount_cents: ajustes.discountCents ?? gravado.discount_cents, tip_cents: ajustes.tipCents ?? gravado.tip_cents }
 
   const { data: tenant } = await db.from('tenants').select('settings, timezone').eq('id', tenantId).maybeSingle()
   const commissionBase = ((tenant?.settings as Settings | null)?.commission_base ?? 'gross') as BaseComissao
   const feeBps = lerTaxasDePagamento(tenant?.settings)[formaDePagamento]
 
   let commissaoTotalCents = 0
+  const comissaoPorItem: { id: string; commission_bps: number; commission_cents: number }[] = []
   for (const item of items) {
     const commissionBps = await resolverCommissionBps(db, tenantId, item)
     const commissionCents = calcularComissaoItem({ totalCents: item.total_cents, costCents: item.cost_cents, commissionBps, commissionBase })
     commissaoTotalCents += commissionCents
-
-    const { error } = await db.from('ticket_items').update({ commission_bps: commissionBps, commission_cents: commissionCents }).eq('tenant_id', tenantId).eq('id', item.id)
-    if (error) throw new AppError('INTERNAL', { cause: error })
+    comissaoPorItem.push({ id: item.id, commission_bps: commissionBps, commission_cents: commissionCents })
   }
 
   const { subtotalCents, totalCents } = calcularTotaisComanda({ items: items.map((i) => ({ totalCents: i.total_cents })), discountCents: ticket.discount_cents, tipCents: ticket.tip_cents })
@@ -332,38 +401,45 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
     fixedCostCents,
   })
 
-  // `.eq('status', 'open')` no próprio UPDATE, e não só na leitura acima: entre o
-  // `buscarComanda` e este ponto rodam N consultas de comissão, uma por item. Duas requisições
-  // simultâneas passavam as duas pela verificação de estado e fechavam a mesma comanda duas
-  // vezes — e `baixarEstoqueDaComanda` não é idempotente, então o estoque descia em dobro sem
-  // nada reprovar. É a mesma correção que o achado S11 fez no débito de carteira: quem decide o
-  // estado é o banco, numa operação só.
-  const { data: fechado, error } = await db
-    .from('tickets')
-    .update({
-      status: 'closed',
-      subtotal_cents: subtotalCents,
-      total_cents: totalCents,
-      commission_cents: commissaoTotalCents,
-      material_cost_cents: custoTotalCents,
-      payment_method: formaDePagamento,
-      fixed_cost_cents: fixedCostCents,
-      fee_bps: feeBps,
-      fee_cents: feeCents,
-      profit_cents: profitCents,
-      closed_at: new Date().toISOString(),
-    })
-    .eq('tenant_id', tenantId)
-    .eq('id', ticketId)
-    .eq('status', 'open')
-    .select('*')
-    .maybeSingle()
-  if (error) throw new AppError('INTERNAL', { cause: error })
-  if (!fechado) throw new AppError('INVALID_TRANSITION', { message: 'Essa comanda já foi fechada.' })
+  const campos = {
+    discount_cents: ticket.discount_cents,
+    tip_cents: ticket.tip_cents,
+    subtotal_cents: subtotalCents,
+    total_cents: totalCents,
+    commission_cents: commissaoTotalCents,
+    material_cost_cents: custoTotalCents,
+    payment_method: formaDePagamento,
+    fixed_cost_cents: fixedCostCents,
+    fee_bps: feeBps,
+    fee_cents: feeCents,
+    profit_cents: profitCents,
+  }
 
-  // §5.6/TICKET-044: baixa DEPOIS de fechar, nunca ao abrir — uma comanda aberta pode ganhar e
-  // perder item várias vezes antes de fechar, e nada disso deveria mexer em estoque de verdade.
-  await baixarEstoqueDaComanda(db, tenantId, ticketId)
+  /*
+   * APR-033: comissão por item, totais e estoque numa transação só (`aplicar_fechamento_de_comanda`,
+   * 0122). Se qualquer parte falha, NADA muda — a comanda continua aberta e a nova tentativa fecha
+   * de verdade. Antes eram escritas em sequência: com a baixa falhando no meio, a comanda ficava
+   * fechada, o estoque pela metade e a nova tentativa dizia "já foi fechada" (C-15). A função trava
+   * a linha (`for update` com `status = 'open'`), então duas requisições simultâneas não fecham nem
+   * baixam em dobro, e confere o papel por dentro, com o JWT de quem chama: o profissional baixa o
+   * estoque da PRÓPRIA comanda sem precisar da RLS de `products`, que é só de dono e gerente (R-04).
+   *
+   * §5.6/TICKET-044: a baixa é no fechamento, nunca ao abrir — uma comanda aberta ganha e perde
+   * item várias vezes antes de fechar.
+   */
+  const { data: fechadoRpc, error: erroFechamento } = await db.rpc('aplicar_fechamento_de_comanda', {
+    p_tenant: tenantId,
+    p_ticket: ticketId,
+    p_itens: comissaoPorItem,
+    p_ticket_campos: campos,
+    p_consumo: await consumoDaComanda(db, tenantId, ticketId),
+  })
+  if (erroFechamento) {
+    if (erroFechamento.hint === 'INVALID_TRANSITION') throw new AppError('INVALID_TRANSITION', { message: 'Essa comanda já foi fechada.' })
+    if (erroFechamento.code === '42501') throw new AppError('FORBIDDEN', { message: erroFechamento.message })
+    throw new AppError('INTERNAL', { cause: erroFechamento })
+  }
+  const fechado = fechadoRpc as Database['public']['Tables']['tickets']['Row']
 
   /*
    * O congelamento do mês fechado (`0071`) pega carona aqui, e o motivo é a regra 6 do `CLAUDE.md`:
@@ -395,6 +471,8 @@ export async function cancelarComandaFechada(db: Cliente, tenantId: string, tick
   const { data: ticket, error: erroTicket } = await db.from('tickets').select('status').eq('tenant_id', tenantId).eq('id', ticketId).maybeSingle()
   if (erroTicket) throw new AppError('INTERNAL', { cause: erroTicket })
   if (!ticket) throw new AppError('NOT_FOUND')
+  // APR-204: desfazer duas vezes (dois toques, dois aparelhos) é conflito, não transição inválida — a tela diz "já foi desfeita".
+  if (ticket.status === 'canceled') throw new AppError('CONFLICT', { message: 'Essa comanda já foi desfeita.' })
   if (ticket.status !== 'closed') throw new AppError('INVALID_TRANSITION', { message: 'Só dá para cancelar uma comanda fechada e ainda não paga.' })
 
   // Mesma razão do `fecharComanda`: a troca de estado vem ANTES do estorno, e com
@@ -410,7 +488,7 @@ export async function cancelarComandaFechada(db: Cliente, tenantId: string, tick
     .select('*')
     .maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
-  if (!cancelado) throw new AppError('INVALID_TRANSITION', { message: 'Só dá para cancelar uma comanda fechada e ainda não paga.' })
+  if (!cancelado) throw new AppError('CONFLICT', { message: 'Essa comanda mudou enquanto você desfazia. Abra de novo.' })
 
   await estornarBaixaDaComanda(db, tenantId, ticketId)
 

@@ -1,7 +1,9 @@
 import { Temporal } from '@js-temporal/polyfill'
 
 import { atribuirReceita, type AgendamentoElegivel, type CampanhaEnviada } from '@/core/attribution/compute'
-import { AppError } from '@/server/http/errors'
+import { montarPagamentosPorOutroMeio, visitaSemVendaAvulsa, type PagamentosPorOutroMeio } from '@/core/attribution/venda-avulsa'
+import { diaNoFuso } from '@/core/tempo/dia'
+import { buscarTudoPaginado } from '@/server/db/paginar'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -10,40 +12,28 @@ type Cliente = SupabaseClient<Database>
 
 const JANELA_DIAS = 30
 
-type ElegibilidadeDeVendaAvulsa = {
-  assinantesAtivos: Set<string>
-  combinacoesComPacote: Set<string>
-}
-
 /**
- * Mesma classe de `ciclo.ts` (`docs/DECISOES.md` 2026-09-18): assinante ativo do clube e cliente
- * com sessão de pacote sobrando não geram venda avulsa — o agendamento deles conta na atribuição
- * de receita com valor zero, não com o `price_cents` de catálogo. Compartilhada entre
- * `receitaAtribuidaAoCiclo` e `receitaPorCampanha`, que fazem exatamente a mesma pergunta sobre
- * janelas diferentes de agendamentos.
+ * O que já estava pago por outro meio (pacote ou clube), para a visita contar com valor zero na
+ * atribuição. APR-014: a regra é sobre o DIA da visita (`core/attribution/venda-avulsa.ts`), e não
+ * sobre o saldo de hoje — com o saldo de hoje, consumir a última sessão transformava visitas antigas
+ * em "preço cheio" e o número do Motor subia sozinho.
  *
- * Chamada de dentro do `Promise.all` do chamador, não com `await` isolado antes dele — as duas
- * buscas daqui já rodam em paralelo entre si, e mantê-la como mais um braço do `Promise.all` de
- * fora preserva o paralelismo com `messages`/`appointments` também.
+ * Chamada de dentro do `Promise.all` do chamador (paralelo com `messages`/`appointments`); as duas
+ * leituras daqui são paginadas (APR-012).
  */
-async function elegibilidadeDeVendaAvulsa(db: Cliente, tenantId: string, hoje: string): Promise<ElegibilidadeDeVendaAvulsa> {
-  const [assinaturasAtivas, pacotesComSaldo] = await Promise.all([
-    db.from('client_subscriptions').select('client_id').eq('tenant_id', tenantId).eq('status', 'active'),
-    db
-      .from('packages')
-      .select('client_id, service_id, total_sessions, used_sessions')
-      .eq('tenant_id', tenantId)
-      .or(`expires_on.is.null,expires_on.gte.${hoje}`),
+async function pagamentosPorOutroMeio(db: Cliente, tenantId: string, timezone: string): Promise<PagamentosPorOutroMeio> {
+  const [usos, assinaturas] = await Promise.all([
+    buscarTudoPaginado(() => db.from('package_uses').select('appointment_id, used_at, packages(client_id, service_id)').eq('tenant_id', tenantId).order('id')),
+    buscarTudoPaginado(() => db.from('client_subscriptions').select('client_id, started_on, canceled_on').eq('tenant_id', tenantId).order('id')),
   ])
-  if (assinaturasAtivas.error) throw new AppError('INTERNAL', { cause: assinaturasAtivas.error })
-  if (pacotesComSaldo.error) throw new AppError('INTERNAL', { cause: pacotesComSaldo.error })
-
-  return {
-    assinantesAtivos: new Set((assinaturasAtivas.data ?? []).map((a) => a.client_id)),
-    combinacoesComPacote: new Set(
-      (pacotesComSaldo.data ?? []).filter((p) => p.used_sessions < p.total_sessions).map((p) => `${p.client_id}:${p.service_id}`),
-    ),
-  }
+  return montarPagamentosPorOutroMeio(
+    usos.flatMap((u) => {
+      const pacote = u.packages as { client_id: string; service_id: string } | null
+      if (!pacote) return []
+      return [{ appointmentId: u.appointment_id, clientId: pacote.client_id, serviceId: pacote.service_id, dia: diaNoFuso(timezone, new Date(u.used_at)) }]
+    }),
+    assinaturas.map((a) => ({ clientId: a.client_id, inicio: a.started_on, fim: a.canceled_on })),
+  )
 }
 
 export type ItemReceitaAtribuida = {
@@ -128,7 +118,6 @@ export async function receitaAtribuidaAoCiclo(
   const inicioBuscaInstante = Temporal.PlainDate.from(inicioBusca).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
   const fimBuscaInstante = Temporal.PlainDate.from(ate).add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
 
-  const hoje = Temporal.Now.plainDateISO().toString()
 
   /*
     `docs/DECISOES.md` 2026-09-18, mesma classe do achado em `ciclo.ts`: `appointments.price_cents`
@@ -138,39 +127,44 @@ export async function receitaAtribuidaAoCiclo(
     paga por outro mecanismo, mesmo que a campanha tenha de fato motivado a volta.
   */
   const [mensagens, agendamentos, elegibilidade] = await Promise.all([
-    db
-      .from('messages')
-      .select('client_id, sent_at, campaign_id')
-      .eq('tenant_id', tenantId)
-      .eq('kind', 'campaign')
-      .eq('status', 'sent')
-      .gte('sent_at', inicioBuscaInstante)
-      .lt('sent_at', fimBuscaInstante),
-    db
-      .from('appointments')
-      .select('id, client_id, service_id, created_at, price_cents, clients(name)')
-      .eq('tenant_id', tenantId)
-      .eq('status', 'done')
-      .gte('created_at', inicioBuscaInstante)
-      .lt('created_at', fimBuscaInstante),
-    elegibilidadeDeVendaAvulsa(db, tenantId, hoje),
+    // APR-012 (achado E-02): paginado. Acima de 1.000 linhas no período, o PostgREST devolvia as
+    // primeiras mil e "o Motor trouxe R$ X" saía menor, sem erro nenhum.
+    buscarTudoPaginado(() =>
+      db
+        .from('messages')
+        .select('client_id, sent_at, campaign_id')
+        .eq('tenant_id', tenantId)
+        .eq('kind', 'campaign')
+        .eq('status', 'sent')
+        .gte('sent_at', inicioBuscaInstante)
+        .lt('sent_at', fimBuscaInstante)
+        .order('id'),
+    ),
+    buscarTudoPaginado(() =>
+      db
+        .from('appointments')
+        .select('id, client_id, service_id, starts_at, created_at, price_cents, clients(name)')
+        .eq('tenant_id', tenantId)
+        .eq('status', 'done')
+        .gte('created_at', inicioBuscaInstante)
+        .lt('created_at', fimBuscaInstante)
+        .order('id'),
+    ),
+    pagamentosPorOutroMeio(db, tenantId, timezone),
   ])
-  if (mensagens.error) throw new AppError('INTERNAL', { cause: mensagens.error })
-  if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
 
-  const { assinantesAtivos, combinacoesComPacote } = elegibilidade
 
-  const campanhas: CampanhaEnviada[] = (mensagens.data ?? [])
+  const campanhas: CampanhaEnviada[] = mensagens
     .filter((m): m is { client_id: string; sent_at: string; campaign_id: string | null } => m.client_id !== null && m.sent_at !== null)
     .map((m) => ({ clientId: m.client_id, sentAt: Temporal.Instant.from(m.sent_at), campaignId: m.campaign_id }))
 
   const nomePorCliente = new Map<string, string>()
   const elegiveis: AgendamentoElegivel[] = []
-  for (const ag of agendamentos.data ?? []) {
+  for (const ag of agendamentos) {
     if (!ag.client_id) continue
     const cliente = ag.clients as { name: string } | null
     nomePorCliente.set(ag.client_id, cliente?.name ?? '')
-    const semVendaAvulsa = assinantesAtivos.has(ag.client_id) || combinacoesComPacote.has(`${ag.client_id}:${ag.service_id}`)
+    const semVendaAvulsa = visitaSemVendaAvulsa({ id: ag.id, clientId: ag.client_id, serviceId: ag.service_id, dia: diaNoFuso(timezone, new Date(ag.starts_at)) }, elegibilidade)
     elegiveis.push({
       id: ag.id,
       clientId: ag.client_id,
@@ -228,31 +222,33 @@ export type ResultadoPorCampanha = { bookedCount: number; revenueCents: number }
  * durante a transição custaria mais do que vale.
  */
 export async function receitaPorCampanha(db: Cliente, tenantId: string): Promise<Map<string, ResultadoPorCampanha>> {
-  const hoje = Temporal.Now.plainDateISO().toString()
+  // O dia da visita (pacote e clube, APR-014) é o do negócio, não o do servidor.
+  const { data: tenant } = await db.from('tenants').select('timezone').eq('id', tenantId).maybeSingle()
+  const timezone = tenant?.timezone ?? 'America/Sao_Paulo'
 
-  // Mesmo motivo de `receitaAtribuidaAoCiclo`, acima: assinante ativo do clube ou com sessão de
-  // pacote sobrando não gera venda avulsa.
+  // Mesmo motivo de `receitaAtribuidaAoCiclo`, acima: visita paga por pacote ou clube não gera
+  // venda avulsa.
   const [mensagens, agendamentos, elegibilidade] = await Promise.all([
-    db.from('messages').select('client_id, sent_at, campaign_id').eq('tenant_id', tenantId).eq('kind', 'campaign').eq('status', 'sent').not('campaign_id', 'is', null),
-    db.from('appointments').select('id, client_id, service_id, created_at, price_cents').eq('tenant_id', tenantId).eq('status', 'done'),
-    elegibilidadeDeVendaAvulsa(db, tenantId, hoje),
+    // APR-012: paginado — e aqui sem janela de data, o primeiro lugar a passar de mil linhas.
+    buscarTudoPaginado(() =>
+      db.from('messages').select('client_id, sent_at, campaign_id').eq('tenant_id', tenantId).eq('kind', 'campaign').eq('status', 'sent').not('campaign_id', 'is', null).order('id'),
+    ),
+    buscarTudoPaginado(() => db.from('appointments').select('id, client_id, service_id, starts_at, created_at, price_cents').eq('tenant_id', tenantId).eq('status', 'done').order('id')),
+    pagamentosPorOutroMeio(db, tenantId, timezone),
   ])
-  if (mensagens.error) throw new AppError('INTERNAL', { cause: mensagens.error })
-  if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
 
-  const { assinantesAtivos, combinacoesComPacote } = elegibilidade
 
-  const campanhas: CampanhaEnviada[] = (mensagens.data ?? [])
+  const campanhas: CampanhaEnviada[] = mensagens
     .filter((m): m is { client_id: string; sent_at: string; campaign_id: string } => m.client_id !== null && m.sent_at !== null && m.campaign_id !== null)
     .map((m) => ({ clientId: m.client_id, sentAt: Temporal.Instant.from(m.sent_at), campaignId: m.campaign_id }))
 
-  const elegiveis: AgendamentoElegivel[] = (agendamentos.data ?? [])
+  const elegiveis: AgendamentoElegivel[] = agendamentos
     .filter((ag): ag is typeof ag & { client_id: string } => ag.client_id !== null)
     .map((ag) => ({
       id: ag.id,
       clientId: ag.client_id,
       createdAt: Temporal.Instant.from(ag.created_at),
-      valueCents: assinantesAtivos.has(ag.client_id) || combinacoesComPacote.has(`${ag.client_id}:${ag.service_id}`) ? 0 : ag.price_cents,
+      valueCents: visitaSemVendaAvulsa({ id: ag.id, clientId: ag.client_id, serviceId: ag.service_id, dia: diaNoFuso(timezone, new Date(ag.starts_at)) }, elegibilidade) ? 0 : ag.price_cents,
     }))
 
   const resultado = new Map<string, ResultadoPorCampanha>()

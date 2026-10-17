@@ -7,6 +7,7 @@ import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Input from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Fator = { id: string; status: string; createdAt: string }
 type Cadastro = { factorId: string; qrCode: string; secret: string }
@@ -31,7 +32,7 @@ export default function FormularioSeguranca({ fatoresIniciais }: { fatoresInicia
     setErro(null)
     setPendente(true)
     try {
-      const r = await fetch('/api/v1/auth/mfa/enroll', { method: 'POST', headers: { 'idempotency-key': crypto.randomUUID() } })
+      const r = await fetchComTentativa('/api/v1/auth/mfa/enroll', { method: 'POST' })
       const json = (await r.json()) as { data?: Cadastro; error?: { message: string } }
       if (!r.ok || !json.data) {
         setErro(json.error?.message ?? 'Não consegui gerar o QR code.')
@@ -49,9 +50,9 @@ export default function FormularioSeguranca({ fatoresIniciais }: { fatoresInicia
     setErro(null)
     setPendente(true)
     try {
-      const r = await fetch('/api/v1/auth/mfa/verify', {
+      const r = await fetchComTentativa('/api/v1/auth/mfa/verify', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ factorId: cadastro.factorId, code: codigo }),
       })
       const json = (await r.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
@@ -73,7 +74,7 @@ export default function FormularioSeguranca({ fatoresIniciais }: { fatoresInicia
     setErro(null)
     setPendente(true)
     try {
-      const r = await fetch(`/api/v1/auth/mfa/factors/${factorId}`, { method: 'DELETE', headers: { 'idempotency-key': crypto.randomUUID() } })
+      const r = await fetchComTentativa(`/api/v1/auth/mfa/factors/${factorId}`, { method: 'DELETE' })
       const json = (await r.json()) as { error?: { code: string; message: string } }
       if (!r.ok) {
         // MFA_REQUIRED aqui significa: a sessão atual só provou a senha, não o segundo fator

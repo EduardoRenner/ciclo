@@ -4,6 +4,8 @@
 
 import { Link2, Plus, Users } from 'lucide-react'
 
+import Link from 'next/link'
+
 import { useState, useTransition } from 'react'
 
 
@@ -26,6 +28,8 @@ import { useToast } from '@/components/ui/toast'
 
 
 import FormularioProfissional, { type ProfissionalEditavel } from './formulario'
+import { useFuso } from '@/components/shell/fuso'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 
 
@@ -65,11 +69,11 @@ const ID_LINK_CONVITE = 'link-do-convite'
 
 async function postar(url: string, corpo: unknown) {
 
-  const r = await fetch(url, {
+  const r = await fetchComTentativa(url, {
 
     method: 'POST',
 
-    headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+    headers: { 'content-type': 'application/json' },
 
     body: JSON.stringify(corpo),
 
@@ -91,13 +95,20 @@ export default function ListaProfissionais({
 
   convitesIniciais,
 
+  podeGerenciar,
+
 }: {
 
   profissionaisIniciais: Profissional[]
 
   convitesIniciais: Convite[]
 
+  /** APR-041: sem `professional:update`, nada de Cadastrar/Convidar/Desativar/editar — a API recusaria. */
+
+  podeGerenciar: boolean
+
 }) {
+  const fuso = useFuso()
 
   const [profissionais, setProfissionais] = useState(profissionaisIniciais)
 
@@ -163,13 +174,11 @@ export default function ListaProfissionais({
 
       try {
 
-        const r = await fetch(`/api/v1/professionals/${id}`, {
+        const r = await fetchComTentativa(`/api/v1/professionals/${id}`, {
 
           method: 'DELETE',
 
-          headers: { 'idempotency-key': crypto.randomUUID() },
-
-        })
+          })
 
         // A atualização otimista já marcou `active: false` na tela antes desta resposta chegar.
         // Sem checar `r.ok`, um 401/403/500 (que não lança, só o erro de rede lança) deixava a
@@ -303,25 +312,29 @@ export default function ListaProfissionais({
 
         </div>
 
-        <div className="flex gap-2">
+        {podeGerenciar ? (
 
-          <Button variante="secondary" onClick={() => setEditando('novo')}>
+          <div className="flex gap-2">
 
-            <Plus aria-hidden className="size-4" />
+            <Button variante="secondary" onClick={() => setEditando('novo')}>
 
-            Cadastrar
+              <Plus aria-hidden className="size-4" />
 
-          </Button>
+              Cadastrar
 
-          <Button variante="secondary" onClick={() => setSheetConvite(true)}>
+            </Button>
 
-            <Link2 aria-hidden className="size-4" />
+            <Button variante="secondary" onClick={() => setSheetConvite(true)}>
 
-            Convidar
+              <Link2 aria-hidden className="size-4" />
 
-          </Button>
+              Convidar
 
-        </div>
+            </Button>
+
+          </div>
+
+        ) : null}
 
       </div>
 
@@ -337,17 +350,21 @@ export default function ListaProfissionais({
 
             titulo="Ninguém no time ainda"
 
-            descricao="Convide alguém ou cadastre um profissional que não usa o app."
+            descricao={podeGerenciar ? 'Convide alguém ou cadastre um profissional que não usa o app.' : 'Quem cadastra e convida o time é o dono do negócio.'}
 
             acao={
 
-              <Button onClick={() => setSheetConvite(true)}>
+              podeGerenciar ? (
 
-                <Link2 aria-hidden className="size-4" />
+                <Button onClick={() => setSheetConvite(true)}>
 
-                Convidar
+                  <Link2 aria-hidden className="size-4" />
 
-              </Button>
+                  Convidar
+
+                </Button>
+
+              ) : undefined
 
             }
 
@@ -365,7 +382,7 @@ export default function ListaProfissionais({
 
               <Card className="flex items-center justify-between gap-3">
 
-                <button type="button" onClick={() => setEditando(p)} className="flex min-h-12 min-w-0 flex-1 flex-col justify-center text-left">
+                <button type="button" onClick={() => podeGerenciar && setEditando(p)} disabled={!podeGerenciar} aria-disabled={!podeGerenciar} className="flex min-h-12 min-w-0 flex-1 flex-col justify-center text-left">
 
                   <span className="flex items-center gap-2">
 
@@ -385,15 +402,27 @@ export default function ListaProfissionais({
 
                 </button>
 
-                {p.active ? (
+                {/* APR-024: expediente e folgas de cada profissional só abriam digitando a URL. */}
 
-                  <Button variante="secondary" onClick={() => desativar(p.id)} disabled={pendente}>
+                <div className="flex shrink-0 flex-col items-end gap-1">
 
-                    Desativar
+                  <Link href={`/admin/config/profissionais/${p.id}`} aria-label={`Expediente e folgas de ${p.display_name}`} className="flex min-h-12 items-center px-2 text-label font-semibold text-acc-2 underline">
 
-                  </Button>
+                    Expediente e folgas
 
-                ) : null}
+                  </Link>
+
+                  {p.active && podeGerenciar ? (
+
+                    <Button variante="secondary" onClick={() => desativar(p.id)} disabled={pendente}>
+
+                      Desativar
+
+                    </Button>
+
+                  ) : null}
+
+                </div>
 
               </Card>
 
@@ -435,7 +464,7 @@ export default function ListaProfissionais({
 
                       {rotuloDoPapel(c.role)} · vence em{' '}
 
-                      {new Date(c.expires_at).toLocaleDateString('pt-BR')}
+                      {new Date(c.expires_at).toLocaleDateString('pt-BR', { timeZone: fuso })}
 
                     </p>
 

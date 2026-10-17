@@ -1,5 +1,6 @@
 import { headers } from 'next/headers'
 
+import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarConvites } from '@/server/services/convites'
@@ -22,7 +23,8 @@ export default async function PaginaProfissionais() {
     <>
       <PageHeader titulo="Time" descricao="Quem atende, expediente e quem você já convidou." />
 
-      <ListaProfissionais profissionaisIniciais={profissionais} convitesIniciais={convites} />
+      {/* APR-041: a tela só oferece o que o papel pode fazer — a API recusaria no toque. */}
+      <ListaProfissionais profissionaisIniciais={profissionais} convitesIniciais={convites} podeGerenciar={avaliarPermissao(ctx.papel, 'professional:update') !== null} />
     </>
   )
 }

@@ -221,7 +221,7 @@ const PERGUNTAS = [
     */
     pergunta: 'Eu já tenho minha lista de clientes. Dá para trazer?',
     resposta:
-      'Dá, e não precisa de planilha. Cole a lista (do bloco de notas ou de uma conversa) ou escreva os nomes, com mais ou menos quando cada pessoa veio pela última vez. Vale de memória, não precisa ser exato. No Android, dá para escolher direto dos contatos. Tem planilha? Importe o arquivo, com a coluna da última visita. É essa data que faz a lista de quem sumiu nascer cheia no primeiro dia.',
+      'Dá, e não precisa de planilha. Cole a lista (do bloco de notas ou de uma conversa) ou escreva os nomes, com mais ou menos quando cada pessoa veio pela última vez. Vale de memória, não precisa ser exato. No Android, dá para escolher direto dos contatos. Tem planilha, PDF ou print da lista do sistema antigo? Importe do jeito que veio, com a data da última visita. É essa data que faz a lista de quem sumiu nascer cheia no primeiro dia.',
   },
   {
     pergunta: 'Em quanto tempo a lista de quem sumiu fica útil?',

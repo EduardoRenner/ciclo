@@ -6,12 +6,13 @@ import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
 import { UUID } from '@/core/text/uuid'
+import { exigirClienteDoProfissional } from '@/server/services/clientes'
 
 type Ctx = { params: Promise<{ id: string; kind: string }> }
 
 export const DELETE = rota(async (req, params) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:update')
+  const escopo = exigirPermissao(ctx.papel, 'client:update')
 
   const { id, kind } = await (params as Ctx).params
   if (!UUID.test(id)) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
@@ -20,6 +21,7 @@ export const DELETE = rota(async (req, params) => {
   }
 
   const db = await criarClienteDoUsuario()
+  if (escopo === 'own') await exigirClienteDoProfissional(db, ctx.tenantId, id)
   return comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}/consents/${kind}` }, () =>
     revogarConsentimento(db, ctx.tenantId, id, kind as (typeof TIPOS_CONSENTIMENTO_CLIENTE)[number]),
   )

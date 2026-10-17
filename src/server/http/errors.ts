@@ -7,6 +7,8 @@ import { textoDeEspera } from '@/core/http/espera'
 export const ERROR_CODES = {
   UNAUTHENTICATED: { status: 401, message: 'Sua sessão expirou. Entre de novo para continuar.' },
   MFA_REQUIRED: { status: 401, message: 'Confirme o código de verificação em duas etapas para continuar.' },
+  // docs/98-aprimoramento/11 LOJA-27: ação sensível de quem não tem segundo fator; a senha (ou um login novo) confirma.
+  REAUTH_REQUIRED: { status: 401, message: 'Digite sua senha para confirmar.' },
   FORBIDDEN: { status: 403, message: 'Seu perfil não tem acesso a essa ação.' },
   TENANT_MISMATCH: { status: 403, message: 'Esse registro é de outro estabelecimento.' },
   NOT_FOUND: { status: 404, message: 'Não encontramos o que você procura.' },
@@ -27,6 +29,12 @@ export const ERROR_CODES = {
   // provedor fora do ar não é bug do CICLO, e a UI trata os dois diferente (esconde o botão do
   // assistente vs. tela de erro genérica).
   ASSISTANT_UNAVAILABLE: { status: 503, message: 'O assistente está indisponível agora.' },
+  // docs/98-aprimoramento/11 LOJA-02: o provedor de e-mail recusou o envio (sem SMTP próprio, o Supabase só entrega
+  // para o time). Distinto de INTERNAL porque a conta não foi o problema: a pessoa só não vai receber o link.
+  EMAIL_UNAVAILABLE: {
+    status: 503,
+    message: 'Não conseguimos enviar o e-mail de confirmação agora. Tente de novo em alguns minutos.',
+  },
   INTERNAL: { status: 500, message: 'Algo deu errado do nosso lado. Tente de novo em instantes.' },
 } as const satisfies Record<string, { status: number; message: string }>
 

@@ -8,6 +8,7 @@ import Card from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { PALETA_PRESET } from '@/core/text/cor'
 import { APP_HOST } from '@/lib/app-url'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Tenant = {
   name: string
@@ -62,9 +63,9 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
 
     iniciarTransicao(async () => {
       try {
-        const r = await fetch('/api/v1/tenant', {
+        const r = await fetchComTentativa('/api/v1/tenant', {
           method: 'PATCH',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(corpo),
         })
         const json = (await r.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }

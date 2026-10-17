@@ -528,3 +528,62 @@ describe('POST /api/v1/public/:slug/book — a rota inteira', () => {
     30_000,
   )
 })
+
+/**
+ * APR-004 (achado C-04): a resposta do 1º pedido se perde, a cliente toca de novo. Sem a chave, o
+ * 2º pedido dava 409 "horário já reservado" para o horário DELA, e ela marcava outro. Com a chave
+ * por intenção, o reenvio devolve o MESMO agendamento. Outra pessoa no mesmo horário segue 409.
+ */
+describe('POST /api/v1/public/:slug/book — reenvio com Idempotency-Key', () => {
+  function reqComChave(corpo: unknown, chave: string, ip: string): Request {
+    return new Request(`https://interno/api/v1/public/${slug}/book`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': ip, 'idempotency-key': chave },
+      body: JSON.stringify(corpo),
+    })
+  }
+
+  it(
+    'mesma chave 2×: um agendamento só, mesma resposta; token de reconhecimento só na 1ª',
+    async () => {
+      const chave = randomUUID()
+      const corpo = corpoBooking('09:30', '11988330001')
+      const r1 = await reservar(reqComChave(corpo, chave, '203.0.113.41'), ctx())
+      const r2 = await reservar(reqComChave(corpo, chave, '203.0.113.42'), ctx())
+      expect(r1.status).toBe(200)
+      expect(r2.status).toBe(200)
+      const j1 = (await r1.json()) as { data: { appointmentId: string; reconhecimentoToken: string | null } }
+      const j2 = (await r2.json()) as { data: { appointmentId: string; reconhecimentoToken: string | null } }
+      expect(j2.data.appointmentId).toBe(j1.data.appointmentId)
+      expect(j1.data.reconhecimentoToken).toBeTruthy()
+      expect(j2.data.reconhecimentoToken).toBeNull()
+
+      const { count } = await svc
+        .from('appointments')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId)
+        .eq('starts_at', new Date(`${DIA}T09:30:00-03:00`).toISOString())
+      expect(count).toBe(1)
+
+      // A resposta guardada para a chave não leva o telefone nem o token (R-06).
+      const guardada = await svc.from('idempotency_keys').select('response_body').eq('key', `${tenantId}:${chave}`).single()
+      const texto = JSON.stringify(guardada.data?.response_body)
+      expect(texto).not.toContain('11988330001')
+      expect(texto).toContain('"reconhecimentoToken":null')
+    },
+    30_000,
+  )
+
+  it(
+    'outra pessoa, outra chave, mesmo horário: continua 409 com alternativas',
+    async () => {
+      const r1 = await reservar(reqComChave(corpoBooking('16:30', '11988330002'), randomUUID(), '203.0.113.43'), ctx())
+      expect(r1.status).toBe(200)
+      const r2 = await reservar(reqComChave(corpoBooking('16:30', '11988330003'), randomUUID(), '203.0.113.44'), ctx())
+      expect(r2.status).toBe(409)
+      const j2 = (await r2.json()) as { error: { code: string } }
+      expect(j2.error.code).toBe('SLOT_TAKEN')
+    },
+    30_000,
+  )
+})

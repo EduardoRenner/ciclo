@@ -8,6 +8,7 @@ import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from 
 import { transicaoValida, type EstadoAgendamento } from '@/core/scheduling/state'
 import { weekdayPg } from '@/core/tempo/dia'
 import { recomputarCicloDeUmAtendimento } from '@/server/services/ciclo'
+import { adicionarItemComanda } from '@/server/services/comanda'
 import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
 import { pontuarAtendimentoConcluido } from '@/server/services/fidelidade'
 import { calcularScoreDeRisco } from '@/server/services/risco'
@@ -20,7 +21,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 type Cliente = SupabaseClient<Database>
 
 const COLUNAS =
-  'id, tenant_id, client_id, professional_id, service_id, starts_at, ends_at, status, origin, price_cents, confirmed_at, arrived_at, completed_at, canceled_at, canceled_by, cancel_reason, client_note, address, no_show_score, deposit_cents'
+  'id, tenant_id, client_id, professional_id, service_id, starts_at, ends_at, status, origin, price_cents, confirmed_at, arrived_at, completed_at, canceled_at, canceled_by, cancel_reason, client_note, address, no_show_score, deposit_cents, subject_id'
 
 export const EsquemaCriarAgendamento = z
   .object({
@@ -422,7 +423,7 @@ export async function criarAgendamento(
 const ESTADOS_VALIDOS = new Set<EstadoAgendamento>(['pending', 'confirmed', 'arrived', 'done', 'no_show', 'canceled', 'expired'])
 
 const COLUNAS_AGENDA_DIA =
-  'id, starts_at, ends_at, status, price_cents, deposit_cents, origin, client_note, address, professional_id, no_show_score, clients ( name ), services ( name ), professionals ( display_name )'
+  'id, starts_at, ends_at, status, price_cents, deposit_cents, origin, client_note, address, professional_id, service_id, no_show_score, clients ( name ), services ( name ), professionals ( display_name )'
 
 export type LinhaAgendaDia = {
   id: string
@@ -438,6 +439,8 @@ export type LinhaAgendaDia = {
   /** docs/09-PLATAFORMA.md G3+G13 (P2.5) — endereço do atendimento, não do cliente. */
   address: string | null
   professional_id: string
+  /** APR-111: remarcar pela grade busca os horários livres DESTE serviço. */
+  service_id: string
   /** §5.4. `null` até o cálculo rodar (agendamento antigo, ou o cálculo falhou na criação). */
   no_show_score: number | null
   clients: { name: string } | null
@@ -610,10 +613,17 @@ export async function remarcarAgendamento(
     })
     .eq('id', id)
     .eq('tenant_id', tenantId)
+    // APR-205 (docs/98 C-30): a checagem de status lá em cima leu uma foto; entre ela e este UPDATE
+    // a recepção pode ter marcado "Chegou" noutro aparelho. Sem este filtro, remarcar passava por
+    // cima da chegada e a pessoa sentada na cadeira "mudava" de horário. Com ele, 0 linhas → 409.
+    .eq('status', atual.status)
     .select(COLUNAS)
     .single()
 
   if (!error) return data
+  if (error.code === 'PGRST116') {
+    throw new AppError('CONFLICT', { message: 'Esse horário mudou. Atualize a agenda.' })
+  }
   if (error.code !== '23P01') throw new AppError('INTERNAL', { cause: error })
 
   const config = lerConfiguracoesAgenda(settingsDoTenant)
@@ -722,7 +732,7 @@ export async function concluirAgendamento(db: Cliente, tenantId: string, id: str
       db,
       tenantId,
       fusoDoSalao,
-      { clientId: agendamento.client_id, serviceId: agendamento.service_id },
+      { clientId: agendamento.client_id, serviceId: agendamento.service_id, subjectId: agendamento.subject_id },
       Temporal.Now.instant().toZonedDateTimeISO(fusoDoSalao).toPlainDate().toString(),
     ).catch((erro: unknown) => {
       console.error(JSON.stringify({ level: 'error', event: 'recompute_ciclo_falhou', appointmentId: id }), erro)
@@ -767,6 +777,25 @@ export async function concluirAgendamento(db: Cliente, tenantId: string, id: str
   }
   if (erroTicket) throw new AppError('INTERNAL', { cause: erroTicket })
   if (!ticket) throw new AppError('INTERNAL')
+
+  /*
+   * A comanda nasce COM o serviço e o preço combinados no agendamento (APR-006, achado C-01). Antes
+   * nascia vazia: a tela pré-escolhia o 1º serviço do catálogo e cobrava o preço de HOJE, não o
+   * congelado em `appointments.price_cents` — "Corte + barba R$ 70" virava "Barba R$ 35".
+   * Só na comanda nova: a que já existia (reenvio, outra aba) não ganha item duplicado. Falhar
+   * aqui não desfaz a conclusão; a comanda fica vazia como era antes, e o erro vai para o log.
+   */
+  if (agendamento.service_id) {
+    await adicionarItemComanda(db, tenantId, ticket.id, {
+      serviceId: agendamento.service_id,
+      professionalId: agendamento.professional_id,
+      qty: 1,
+      unitPriceCents: agendamento.price_cents,
+      discountCents: 0,
+    }).catch((erro: unknown) => {
+      console.error(JSON.stringify({ level: 'error', event: 'item_da_comanda_nova_falhou', appointmentId: id }), erro)
+    })
+  }
 
   return { appointment: agendamento, ticket }
 }

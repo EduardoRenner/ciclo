@@ -102,7 +102,6 @@ const ISENTAS: { rota: string; porque: string }[] = [
   // ── Não escreve.
   { rota: 'assistant', porque: 'só lê: as ferramentas do modelo são de leitura, e há guarda própria disso' },
   { rota: 'assistant/rapido', porque: 'atalho determinístico sobre serviços de leitura, sem escrita' },
-  { rota: 'clients/import/preview', porque: 'lê o CSV e devolve a prévia; não toca no banco' },
 
   // ── Repetir deixa o MESMO estado, e o corpo é o estado inteiro.
   { rota: 'tenant/automacoes', porque: 'PATCH de configuração: o corpo é o estado final, repetir não soma' },
@@ -118,13 +117,11 @@ const ISENTAS: { rota: string; porque: string }[] = [
   //    só embala JSON — ela fixa `content-type: application/json` e é ela que gera a
   //    `idempotency-key`. Estas rotas são chamadas por `fetch` direto, nunca são reenviadas
   //    sozinhas, e o que sobra é o toque duplo humano.
-  { rota: 'clients/import', porque: 'multipart fora da fila offline; e a importação já pula telefone repetido' },
   { rota: 'tenant/vitrine', porque: 'multipart fora da fila offline' },
   { rota: 'tenant/vitrine/entidade', porque: 'multipart fora da fila offline' },
 
   // ── Públicas, e a trava é do BANCO, não do header: quem chama é anônimo e pode mandar a chave
   //    que quiser. `appointments_no_overlap` recusa o segundo agendamento no mesmo horário.
-  { rota: 'public/[slug]/book', porque: 'anônimo escolhe a própria chave; a trava real é a constraint de sobreposição' },
   { rota: 'public/[slug]/quote-request', porque: 'anônimo escolhe a própria chave; o balde por IP é a trava' },
   { rota: 'public/waitlist/claim/[token]', porque: 'anônimo; o encaixe é fechado por estado e pela constraint de sobreposição' },
   /*

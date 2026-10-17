@@ -5,6 +5,7 @@ import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { criarAgendamento } from '@/server/services/agendamentos'
+import { lerHorarioParaConfirmar } from '@/server/services/confirmacao-publica'
 import { gerarTokenConfirmacao } from '@/server/services/confirmacao-token'
 import { criarProfissional } from '@/server/services/profissionais'
 import { definirExpediente } from '@/server/services/expediente'
@@ -209,6 +210,34 @@ describe('cancelar por token público (G12, docs/09-PLATAFORMA.md)', () => {
 
       const rConfirm = await confirmarPorToken(req('token-forjado-xyz', 'confirm'), ctx('token-forjado-xyz'))
       expect(rConfirm.status).toBe(404)
+    },
+    30_000,
+  )
+})
+
+describe('a página de confirmar sabe QUAL horário antes de qualquer toque (APR-117)', () => {
+  it(
+    'lê serviço, profissional, quando e onde pelo id do agendamento',
+    async () => {
+      const agendamento = await novoAgendamento('11:00')
+      const horario = await lerHorarioParaConfirmar(svc, agendamento.id)
+      expect(horario).toMatchObject({
+        status: 'pending',
+        startsAt: `${DIA}T14:00:00+00:00`,
+        professionalName: 'Barbeiro de Teste',
+        businessName: 'Salão da Confirmação',
+        timezone: TZ,
+        slug,
+      })
+      expect(horario?.serviceName).toBeTruthy()
+    },
+    30_000,
+  )
+
+  it(
+    'agendamento que não existe devolve null (a página cai no erro com saída, não em 500)',
+    async () => {
+      expect(await lerHorarioParaConfirmar(svc, randomUUID())).toBeNull()
     },
     30_000,
   )

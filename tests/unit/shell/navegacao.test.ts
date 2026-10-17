@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { paiDaRota } from '@/components/shell/navegacao'
+import { origemDoVoltar, paiDaRota } from '@/components/shell/navegacao'
 
 /**
  * O app é um PWA `standalone`: instalado, não existe botão de voltar do
@@ -90,5 +90,28 @@ describe('paiDaRota', () => {
     const raizes = ['/admin/hoje', '/admin/agenda', '/admin/clientes', '/admin/recuperar']
     const semSaida = rotas.filter((r) => paiDaRota(r) === null && !raizes.includes(r))
     expect(semSaida).toEqual([])
+  })
+})
+
+describe('o voltar segue a origem (APR-121)', () => {
+  it('Campanhas aberta pela Recuperar volta para a Recuperar, não para Configurações', () => {
+    expect(paiDaRota('/admin/campanhas', 'recuperar')).toEqual({ href: '/admin/recuperar', rotulo: 'Recuperar' })
+    expect(paiDaRota('/admin/campanhas')).toEqual({ href: '/admin/config', rotulo: 'Configurações' })
+  })
+
+  it('orçamento novo aberto pela ficha volta para a ficha daquela pessoa', () => {
+    const id = '0b6e1a2c-3d4e-4f50-8a6b-7c8d9e0f1a2b'
+    expect(paiDaRota('/admin/orcamentos/novo', `cliente:${id}`)).toEqual({ href: `/admin/clientes/${id}`, rotulo: 'Ficha' })
+  })
+
+  it('origem desconhecida ou mal formada é ignorada — nada de voltar para endereço arbitrário', () => {
+    expect(origemDoVoltar('https://evil.example')).toBeNull()
+    expect(origemDoVoltar('cliente:../../admin')).toBeNull()
+    expect(origemDoVoltar('')).toBeNull()
+    expect(paiDaRota('/admin/campanhas', '/admin/outra')).toEqual({ href: '/admin/config', rotulo: 'Configurações' })
+  })
+
+  it('raiz de aba continua sem voltar mesmo com origem', () => {
+    expect(paiDaRota('/admin/hoje', 'recuperar')).toBeNull()
   })
 })

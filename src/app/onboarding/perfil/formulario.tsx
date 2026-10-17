@@ -16,6 +16,7 @@ import {
   type SistemaAnterior,
   type Tamanho,
 } from '@/core/onboarding/perfil'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 const ROTULO_BASE_EM: Record<BaseEm, string> = {
   cabeca_caderno: 'Na minha cabeça ou num caderno',
@@ -75,9 +76,9 @@ export default function FormularioPerfil() {
   async function enviar(corpo: Corpo, destino: string) {
     setPendente(true)
     try {
-      await fetch('/api/v1/onboarding/perfil', {
+      await fetchComTentativa('/api/v1/onboarding/perfil', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify(corpo),
       })
     } catch {
@@ -116,7 +117,8 @@ export default function FormularioPerfil() {
         type="button"
         onClick={pular}
         disabled={pendente}
-        className="self-center text-label font-semibold text-txt-3 underline underline-offset-2 disabled:opacity-50"
+        // APR-125 (G-35): 48 px de alvo — era só o texto (16–18 px de altura).
+        className="inline-flex min-h-12 items-center self-center px-3 text-label font-semibold text-txt-3 underline underline-offset-2 disabled:opacity-50"
       >
         Pular tudo e ir pro painel
       </button>

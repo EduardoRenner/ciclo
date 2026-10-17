@@ -57,8 +57,8 @@ export default async function PaginaQuemJaAtendo() {
 
   const comRitmo = servicos
     .filter((s) => (s.cycle_days ?? 0) > 0)
-    .map((s) => ({ id: s.id, nome: s.name, cycleDays: s.cycle_days as number }))
-  const servicoPadrao = servicoPadraoDaBase(comRitmo.map((s) => ({ id: s.id, cycleDays: s.cycleDays, atendimentos: atendimentos.get(s.id) ?? 0 })))
+    .map((s) => ({ id: s.id, nome: s.name, cycleDays: s.cycle_days as number, canonicalKey: s.canonical_key }))
+  const servicoPadrao = servicoPadraoDaBase(comRitmo.map((s) => ({ id: s.id, cycleDays: s.cycleDays, canonicalKey: s.canonicalKey, atendimentos: atendimentos.get(s.id) ?? 0 })))
 
   return (
     <>
@@ -87,9 +87,9 @@ export default async function PaginaQuemJaAtendo() {
             com o mesmo peso faria a maioria parar para escolher um caminho que não é dela.
           */}
           <p className="mt-6 text-secundario text-txt-3">
-            Já tem tudo numa planilha?{' '}
+            Já tem a lista num arquivo?{' '}
             <Link href="/admin/clientes/importar" className="toque-48 whitespace-nowrap font-semibold text-txt-2 underline underline-offset-2">
-              Importe de um arquivo CSV
+              Importe o arquivo, PDF ou print
             </Link>
             .
           </p>

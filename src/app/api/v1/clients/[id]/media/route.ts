@@ -7,6 +7,8 @@ import { lerJson } from '@/server/http/body'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
 import { UUID } from '@/core/text/uuid'
+import { exigirClienteDoProfissional } from '@/server/services/clientes'
+import { criarClienteDoUsuario } from '@/server/db/server-client'
 
 type Ctx = { params: Promise<{ id: string }> }
 const TAMANHO_MAXIMO = 10 * 1024 * 1024
@@ -19,9 +21,10 @@ async function idValidado(ctx: unknown): Promise<string> {
 
 export const GET = rota(async (req, params) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:read')
+  const escopo = exigirPermissao(ctx.papel, 'client:read')
 
   const id = await idValidado(params)
+  if (escopo === 'own') await exigirClienteDoProfissional(await criarClienteDoUsuario(), ctx.tenantId, id)
   return listarMediaDoCliente(ctx.tenantId, id)
 })
 
@@ -40,9 +43,10 @@ export const GET = rota(async (req, params) => {
  */
 export const POST = rota(async (req, params) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:update')
+  const escopo = exigirPermissao(ctx.papel, 'client:update')
 
   const id = await idValidado(params)
+  if (escopo === 'own') await exigirClienteDoProfissional(await criarClienteDoUsuario(), ctx.tenantId, id)
 
   const form = await req.formData().catch(() => null)
   const arquivo = form?.get('file')

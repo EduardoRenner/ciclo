@@ -12,6 +12,7 @@ import Textarea from '@/components/ui/textarea'
 
 import { comMaiuscula, type Vocabulario } from '@/core/text/vocabulario'
 import { linkWhatsApp } from '@/lib/mensagens'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Servico = { id: string; name: string }
 
@@ -45,9 +46,9 @@ export default function PedidoDeOrcamento({
     setErro(null)
     iniciarTransicao(async () => {
       try {
-        const r = await fetch(`/api/v1/public/${slug}/quote-request`, {
+        const r = await fetchComTentativa(`/api/v1/public/${slug}/quote-request`, {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             message: mensagem,
             name: nome,

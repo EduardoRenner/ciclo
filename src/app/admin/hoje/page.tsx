@@ -1,6 +1,4 @@
-import { ExternalLink } from 'lucide-react'
 import { headers } from 'next/headers'
-import Link from 'next/link'
 import { after } from 'next/server'
 import { Temporal } from '@js-temporal/polyfill'
 
@@ -21,14 +19,6 @@ import HojeDaAdvocacia from './advocacia'
 import CentralDeAcoes from './central-de-acoes'
 import CompartilharSite from './compartilhar'
 import Hoje from './hoje'
-
-/** Saudação pelo horário do salão, não pelo do servidor (que roda em UTC na Vercel). */
-function saudacao(timezone: string): string {
-  const hora = Number(new Intl.DateTimeFormat('pt-BR', { hour: 'numeric', hour12: false, timeZone: timezone }).format(new Date()))
-  if (hora < 12) return 'Bom dia'
-  if (hora < 18) return 'Boa tarde'
-  return 'Boa noite'
-}
 
 export const metadata = { title: "Hoje" }
 
@@ -70,6 +60,15 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
 
   const hoje = Temporal.Now.zonedDateTimeISO(timezone).toPlainDate().toString()
 
+  /*
+    APR-106: um bloco que falha vira `null`, e a tela diz "não consegui carregar isto" com "tentar de
+    novo". Antes cada `catch` devolvia um objeto ZERADO e a Hoje desenhava "R$ 0,00" com cara de número
+    apurado (o CLAUDE.md chama isso de zero falso). Continua sem derrubar a tela: só o bloco avisa.
+  */
+  const falhou = (evento: string) => (erro: unknown) => {
+    console.warn(JSON.stringify({ level: 'warn', event: evento }), erro)
+    return null
+  }
   const [resumo, acoes, atribuicao, emRisco, prestacaoDeContas] = await Promise.all([
     resumoDeHoje(db, ctx.tenantId, timezone),
     /*
@@ -80,10 +79,7 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
       schema, por exemplo — e o sintoma seria só uma tela um pouco mais vazia, que ninguém
       reporta.
     */
-    centralDeAcoes(db, ctx.tenantId, ctx.papel).catch((erro: unknown) => {
-      console.warn(JSON.stringify({ level: 'warn', event: 'central_de_acoes_indisponivel' }), erro)
-      return { titulo: '', acoes: [] }
-    }),
+    centralDeAcoes(db, ctx.tenantId, ctx.papel).catch(falhou('central_de_acoes_indisponivel')),
     /*
       F1 (docs/25-ESTRATEGIA-E-EXECUCAO.md): em dia sem movimento, o herói mostra o que o Motor
       de Ciclo já trouxe este mês em vez de R$ 0,00. Mesmo cálculo de `/admin/recuperar`.
@@ -97,10 +93,7 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
       Continua sem derrubar a tela, de propósito. O que muda é não ser mais silencioso: falha
       medida vira linha de log em vez de um zero com cara de número apurado.
     */
-    receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate).catch((erro: unknown) => {
-      console.warn(JSON.stringify({ level: 'warn', event: 'atribuicao_do_ciclo_indisponivel' }), erro)
-      return { totalCents: 0, count: 0, items: [], mensagensNaJanela: 0 }
-    }),
+    receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate).catch(falhou('atribuicao_do_ciclo_indisponivel')),
     /*
       A receita em risco AGORA — a manchete da tela quando ainda nao entrou dinheiro hoje e o Motor
       ainda nao tem atribuicao (`escolherHeroi`). Sai de `listarParaRecuperar`, que e a MESMA funcao
@@ -113,17 +106,11 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
       Mesmo `catch` das outras: falha vira zero e linha de log, nunca erro na tela mais importante
       do app. Zero aqui so faz a manchete cair para "Atendido hoje", que e o comportamento anterior.
     */
-    listarParaRecuperar(db, ctx.tenantId, { limit: 1 }).catch((erro: unknown) => {
-      console.warn(JSON.stringify({ level: 'warn', event: 'receita_em_risco_indisponivel' }), erro)
-      return { totalValueCents: 0, totalProfitCents: 0, count: 0, items: [] }
-    }),
+    listarParaRecuperar(db, ctx.tenantId, { limit: 1 }).catch(falhou('receita_em_risco_indisponivel')),
     // docs/45 §1.4: a manchete, não a explicação (essa mora em /admin/recuperar). Mesmo `catch`
     // das outras chamadas — sem amostra suficiente `acertoBps` já vem `null` e o teaser não
     // desenha nada, então uma falha aqui é indistinguível de "ainda sem histórico" para quem olha.
-    prestacaoDeContasDoMotor(db, ctx.tenantId, hoje).catch((erro: unknown) => {
-      console.warn(JSON.stringify({ level: 'warn', event: 'prestacao_de_contas_indisponivel' }), erro)
-      return { conferidas: 0, acertos: 0, acertoBps: null, emAberto: 0, detalhe: { voltouAntes: 0, voltouNaJanela: 0, voltouDepois: 0, naoVoltou: 0 }, erroMedianoDias: null }
-    }),
+    prestacaoDeContasDoMotor(db, ctx.tenantId, hoje).catch(falhou('prestacao_de_contas_indisponivel')),
   ])
 
   // G-05a (docs/60): o segundo evento do funil mínimo — o momento em que o Motor de Ciclo mostra,
@@ -135,7 +122,7 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
   // visita a "Hoje" em qualquer tenant que o Motor já tenha trazido dinheiro de volta (a maioria
   // dos ativos). O comentário já prometia "não bloqueia a tela" — só o código não cumpria.
   // `after()` roda depois da resposta ser enviada: a pessoa vê a tela, o evento grava por trás.
-  if (atribuicao.count > 0) {
+  if (atribuicao && atribuicao.count > 0) {
     const contagem = atribuicao.count
     after(() => registrarPrimeiraOcorrencia(db, ctx.tenantId, 'motor_viu_valor', { count: contagem }))
   }
@@ -155,31 +142,16 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
         ser a saudação, que datava a tela e ancora o "agora"; o nome vira apoio,
         que ainda importa para quem gerencia mais de uma unidade.
       */}
-      <PageHeader
-        overline={data}
-        titulo={saudacao(timezone)}
-        descricao={ctx.tenant.name}
-        acao={
-          ctx.tenant.slug ? (
-            <div className="flex items-center gap-1">
-              <Link
-                href={`/${ctx.tenant.slug}`}
-                target="_blank"
-                className="flex h-12 items-center gap-1 text-label font-semibold text-acc-2 transition active:scale-[.97]"
-              >
-                Ver meu site
-                <ExternalLink aria-hidden className="size-3.5" />
-              </Link>
-              <CompartilharSite slug={ctx.tenant.slug} nome={ctx.tenant.name} />
-            </div>
-          ) : null
-        }
-      />
+      {/*
+        APR-108: cabeçalho de uma linha. A saudação e o nome do negócio tinham peso zero na pergunta
+        "o que faço agora?" e empurravam o dia para baixo; "Ver meu site" foi para o menu.
+      */}
+      <PageHeader overline={data} titulo="Hoje" acao={ctx.tenant.slug ? <CompartilharSite slug={ctx.tenant.slug} nome={ctx.tenant.name} /> : null} />
 
       <Hoje
         resumo={resumo}
         atribuicao={atribuicao}
-        emRisco={{ totalCents: emRisco.totalValueCents, count: emRisco.count }}
+        emRisco={emRisco ? { totalCents: emRisco.totalValueCents, count: emRisco.count, naHoraDeVoltar: emRisco.naHoraDeVoltar } : null}
         site={ctx.tenant.slug ? { slug: ctx.tenant.slug, nome: ctx.tenant.name } : null}
         prestacaoDeContas={prestacaoDeContas}
       >

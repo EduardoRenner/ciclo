@@ -69,6 +69,7 @@ type Fixture = {
   serviceId: string
   productId: string
   clientId: string
+  subjectId: string
   appointmentId: string
   ticketId: string
   ticketItemId: string
@@ -211,6 +212,11 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
       .select('id')
       .single(),
     'clients',
+  ).id
+
+  f.subjectId = exigir(
+    await admin.from('subjects').insert({ tenant_id: t, client_id: f.clientId, kind: 'veiculo', name: 'Onix', identifier: 'ABC1D23' }).select('id').single(),
+    'subjects',
   ).id
 
   const inicio = new Date(Date.now() + 86_400_000).toISOString()
@@ -390,6 +396,12 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
     ['client_scores', { tenant_id: t, client_id: f.clientId, score: 50, tier: 'prata', profile: 'regular', parts: [], algo_version: 1 }],
     // Os testes do dono (0098): o antes congelado é a série de atendimentos de um salão — não pode vazar.
     ['experiments', { tenant_id: t, titulo: 'Teste de isolamento', metrica: 'atendimentos', starts_on: '2026-10-01', dias: 14, baseline: { de: '2026-09-17', ate: '2026-09-30', atendimentos: 3, atendidoCents: 15000 } }],
+    // O lote de importação (0128): contagens e hash do arquivo de um salão não podem aparecer para outro.
+    ['import_batches', { tenant_id: t, file_sha256: 'a'.repeat(64), formato: 'csv', origem: 'arquivo', nivel: 'N1', counts: { lidas: 1 }, rows_expected: 1 }],
+    // O sujeito do ciclo (0132): o animal ou o carro de um cliente não pode aparecer para outro negócio.
+    ['subjects', { tenant_id: t, client_id: f.clientId, kind: 'animal', name: 'Rex' }],
+    // A leitura de km (0141): o histórico do hodômetro de um carro não pode aparecer para outra oficina.
+    ['odometer_readings', { tenant_id: t, subject_id: f.subjectId, read_on: '2026-10-01', km: 41300 }],
     ['business_hours', { tenant_id: t, weekday: 1, opens_at: '09:00', closes_at: '19:00' }],
     ['time_off', { tenant_id: t, starts_at: inicio, ends_at: fim }],
     ['professional_services', { tenant_id: t, professional_id: f.professionalId, service_id: f.serviceId }],

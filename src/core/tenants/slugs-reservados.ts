@@ -21,7 +21,16 @@
  * verdade. Rota nova nasce reprovando até entrar aqui — que é a única forma de a lista não voltar a
  * envelhecer sozinha.
  */
+/**
+ * APR-216 (docs/98 C-43, G-39): o app do profissional morava na raiz (`/hoje`, `/agenda`…) e o
+ * `next.config.ts` redireciona esses prefixos para `/admin/*` com 308. Um salão com slug `agenda`
+ * nunca abriria a própria página: o redirect sequestra antes da rota `[slug]`. A lista mora aqui e
+ * o `next.config.ts` a importa, para as duas nunca divergirem.
+ */
+export const PREFIXOS_REDIRECIONADOS_PARA_ADMIN = ['hoje', 'agenda', 'clientes', 'recuperar', 'comanda', 'caixa', 'config'] as const
+
 export const SLUGS_RESERVADOS: ReadonlySet<string> = new Set([
+  ...PREFIXOS_REDIRECIONADOS_PARA_ADMIN,
   // Pastas que existem hoje em `src/app/`.
   'admin',
   'api',

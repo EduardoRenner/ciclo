@@ -3,6 +3,7 @@ import { lerDorPrincipal, priorizarPelaDor } from '@/core/onboarding/perfil'
 import { z } from 'zod'
 
 import { alertaDoCliente, rotuloDoAlerta } from '@/server/services/anamnese'
+import { vendasDePacoteDoCliente } from '@/server/services/caixa'
 import { statusConsentimentos } from '@/server/services/consentimentos'
 import { assinaturaAtiva, extratoDePontos, lerConfigFidelidade, type AssinaturaDoCliente, type ExtratoPontos } from '@/server/services/fidelidade'
 import { listarMediaDoCliente } from '@/server/services/media'
@@ -18,6 +19,7 @@ import { custoFixoEstaConfigurado } from '@/core/comanda/custo-fixo'
 import { taxaEstaConfigurada } from '@/core/comanda/taxa-de-pagamento'
 import { avaliarPermissao } from '@/server/auth/rbac'
 
+import { entrouCents } from '@/core/caixa/entrou'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { acaoDoMotor } from '@/core/ciclo/acao-do-motor'
 import { quandoVolta } from '@/core/ciclo/primeira-volta'
@@ -60,6 +62,11 @@ export type FichaCliente = {
     createdAt: string
   }
   metricas: {
+    /**
+     * APR-036b: o valor que a ficha mostra. "Entrou" (a MESMA conta do Caixa e da Hoje,
+     * `entrouCents`) quando a pessoa tem comanda; "Valor atendido" (preço de tabela) quando não tem.
+     */
+    valorDaFicha: { rotulo: 'Entrou' | 'Valor atendido'; cents: number }
     ltvCents: number
     visitas: number
     faltas: number
@@ -89,6 +96,7 @@ export type FichaCliente = {
     startsAt: string
     status: EstadoAgendamento
     priceCents: number
+    serviceId: string | null
     serviceName: string
     professionalName: string
   }[]
@@ -174,11 +182,13 @@ export async function fichaDoCliente(
     rotuloDoCofre,
     servicosBruto,
     comandasBruto,
+    comandasDoEntrou,
+    vendasDaPessoa,
     equipeBruto,
   ] = await Promise.all([
     db
       .from('appointments')
-      .select('id, starts_at, status, price_cents, services(name), professionals(display_name)')
+      .select('id, starts_at, status, price_cents, service_id, services(name), professionals(display_name)')
       .eq('tenant_id', tenantId)
       .eq('client_id', clientId)
       .order('starts_at', { ascending: false })
@@ -271,6 +281,19 @@ export async function fichaDoCliente(
             .order('id'),
         )
       : Promise.resolve(null),
+    // APR-036b: o "Entrou" da pessoa, para todo mundo que vê a ficha — SEM `profit_cents`, que só sai
+    // na consulta de cima, condicionada. Estornada vem junto: sai do "Entrou" e conta como uso de comanda.
+    buscarTudoPaginado(() =>
+      db
+        .from('tickets')
+        .select('status, total_cents, payment_method')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', clientId)
+        .in('status', ['closed', 'paid', 'canceled'])
+        .order('id'),
+    ),
+    // APR-016b: o pacote que a pessoa comprou é dinheiro que entrou dela.
+    vendasDePacoteDoCliente(db, tenantId, clientId),
     // P4: "sempre com a dona" no negócio de uma pessoa só é ruído — só conta quem atende hoje.
     db.from('professionals').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('active', true).is('deleted_at', null),
   ])
@@ -280,6 +303,8 @@ export async function fichaDoCliente(
     startsAt: a.starts_at,
     status: a.status,
     priceCents: a.price_cents,
+    // APR-115: "Marcar de novo" abre o Marcar com o ÚLTIMO serviço feito já escolhido.
+    serviceId: a.service_id,
     serviceName: a.services?.name ?? 'Serviço removido',
     professionalName: a.professionals?.display_name ?? '—',
   }))
@@ -310,6 +335,13 @@ export async function fichaDoCliente(
   )
   const nomePorServico = new Map((servicosBruto.data ?? []).map((s) => [s.id, s.name]))
 
+  const comandasPagas = comandasDoEntrou.filter((t) => t.status === 'closed' || t.status === 'paid')
+  const usaComanda = comandasDoEntrou.length > 0 || vendasDaPessoa.length > 0
+  const entrouDaPessoa = entrouCents(
+    comandasDoEntrou.map((t) => ({ status: t.status, totalCents: t.total_cents, paymentMethod: t.payment_method })),
+    vendasDaPessoa,
+  )
+
   return {
     cliente: {
       id: cliente.id,
@@ -333,11 +365,21 @@ export async function fichaDoCliente(
       createdAt: cliente.created_at,
     },
     metricas: {
+      valorDaFicha: usaComanda ? { rotulo: 'Entrou', cents: entrouDaPessoa } : { rotulo: 'Valor atendido', cents: ltvCents },
       ltvCents,
       visitas,
       faltas,
-      // Ticket médio sobre visitas concluídas — dividir por 0 na cliente que nunca veio daria NaN na tela.
-      ticketMedioCents: visitas > 0 ? Math.round(ltvCents / visitas) : 0,
+      // Ticket médio: por comanda paga quando há comanda, por visita concluída quando não há. Dividir
+      // por 0 na cliente que nunca veio daria NaN na tela. APR-016b: o valor das COMANDAS, não o
+      // "Entrou" — a venda de um pacote de R$ 320 antes da primeira sessão não é um atendimento de
+      // R$ 320. Sem pacote, é o mesmo número de antes.
+      ticketMedioCents: usaComanda
+        ? comandasPagas.length > 0
+          ? Math.round(comandasPagas.reduce((soma, t) => soma + t.total_cents, 0) / comandasPagas.length)
+          : 0
+        : visitas > 0
+          ? Math.round(ltvCents / visitas)
+          : 0,
       ultimaVisita,
       lucro: comandasBruto
         ? lucroDoCliente({
@@ -471,13 +513,12 @@ export async function publicoDaCampanha(
   }
 
   if (segmento === 'sumidos') {
-    const { data: ciclos, error } = await db
-      .from('client_cycles')
-      .select('client_id')
-      .eq('tenant_id', tenantId)
-      .in('state', ['late', 'at_risk', 'lost'])
-    if (error) throw new AppError('INTERNAL', { cause: error })
-    return elegiveisEntre([...new Set((ciclos ?? []).map((c) => c.client_id))])
+    // APR-013 + APR-035: a MESMA regra do Recuperar e do alarme da Hoje (`v_quem_sumiu`), e paginada —
+    // acima de mil ciclos atrasados, o público da campanha saía cortado sem aviso.
+    const ciclos = await buscarTudoPaginado(() =>
+      db.from('v_quem_sumiu').select('client_id').eq('tenant_id', tenantId).in('state', ['late', 'at_risk', 'lost']).order('client_id').order('service_id'),
+    )
+    return elegiveisEntre([...new Set(ciclos.map((c) => c.client_id).filter((id): id is string => id !== null))])
   }
 
   if (segmento === 'aniversariantes' || segmento === 'ticket_alto' || segmento === 'primeira_visita') {
@@ -682,7 +723,8 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
     // alarme dizia "147 clientes estão sumindo" num salão com 55 — e levava para uma lista que
     // mostrava outro número. `ja_atrasado` exclui quem só está vencendo hoje: ainda não sumiu.
     db.rpc('resumo_central_de_acoes', { p_tenant: tenantId }).single(),
-    db.from('loyalty_entries').select('client_id, points').eq('tenant_id', tenantId),
+    // APR-013: paginado — livro-razão que só cresce; acima de mil lançamentos o saldo saía errado.
+    buscarTudoPaginado(() => db.from('loyalty_entries').select('client_id, points').eq('tenant_id', tenantId).order('id')),
     listarOrcamentos(db, tenantId),
     contextoDePlano(db, tenantId),
     // `settings` não vem em `contextoDePlano` (que seleciona só as colunas de plano) e o card de
@@ -757,7 +799,7 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
   // Saldo por cliente somado em memória — `loyalty_entries` de um salão típico não passa de
   // poucos milhares de linhas, não justifica uma view agregada só para este contador.
   const saldoPorCliente = new Map<string, number>()
-  for (const l of resgataveis.data ?? []) {
+  for (const l of resgataveis) {
     if (!l.client_id) continue
     saldoPorCliente.set(l.client_id, (saldoPorCliente.get(l.client_id) ?? 0) + l.points)
   }

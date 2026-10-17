@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { MINIMO_DE_PROCURAS, montarMapaDeVazamento, type EntradaDoMapa } from '@/core/caixa/mapa-de-vazamento'
 
-const VAZIO: EntradaDoMapa = { recuperar: { pessoas: 0, lucroCents: 0 }, clube: [], servicosAbaixoDoPiso: [], procurasEmDiaFechado: [], diaOcioso: null }
+const VAZIO: EntradaDoMapa = { recuperar: { pessoas: 0, valorCents: 0 }, clube: [], servicosAbaixoDoPiso: [], procurasEmDiaFechado: [], diaOcioso: null }
 
 describe('mapa de vazamento (docs/84 Aposta B)', () => {
   it('nada qualifica: lista vazia — nunca "tudo certo" forçado nem vilão fabricado', () => {
@@ -11,7 +11,7 @@ describe('mapa de vazamento (docs/84 Aposta B)', () => {
 
   it('R$ só onde o dinheiro é MEDIDO; margem, dia parado e dia procurado entram como fato, sem R$ (docs/84 §7.1 e veto de preço)', () => {
     const mapa = montarMapaDeVazamento({
-      recuperar: { pessoas: 12, lucroCents: 84_000 },
+      recuperar: { pessoas: 12, valorCents: 84_000 },
       clube: [{ margemCents: -3_000, noPrejuizo: true }, { margemCents: -1_500, noPrejuizo: true }, { margemCents: 2_000, noPrejuizo: false }],
       servicosAbaixoDoPiso: [{ nome: 'Coloração', parcela: 'material' }],
       procurasEmDiaFechado: [{ weekday: 0, procuras: 5 }],
@@ -29,7 +29,7 @@ describe('mapa de vazamento (docs/84 Aposta B)', () => {
   })
 
   it('o maior R$ vem primeiro', () => {
-    const mapa = montarMapaDeVazamento({ ...VAZIO, recuperar: { pessoas: 1, lucroCents: 1_000 }, clube: [{ margemCents: -9_000, noPrejuizo: true }] })
+    const mapa = montarMapaDeVazamento({ ...VAZIO, recuperar: { pessoas: 1, valorCents: 1_000 }, clube: [{ margemCents: -9_000, noPrejuizo: true }] })
     expect(mapa.map((l) => l.chave)).toEqual(['clube', 'recuperar'])
   })
 

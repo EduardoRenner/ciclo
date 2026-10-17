@@ -296,15 +296,34 @@ export async function reivindicarEncaixe(db: Cliente, token: string) {
     .maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (!entrada) throw new AppError('NOT_FOUND', { message: 'Esse link de encaixe não é mais válido.' })
-  if (entrada.fulfilled_at) throw new AppError('NOT_FOUND', { message: 'Esse encaixe já foi usado.' })
 
   const { data: tenantRow, error: erroTenant } = await db
     .from('tenants')
-    .select('settings')
+    .select('settings, name, slug')
     .eq('id', oferta.tenantId)
     .maybeSingle()
   if (erroTenant) throw new AppError('INTERNAL', { cause: erroTenant })
   if (!tenantRow) throw new AppError('NOT_FOUND', { message: 'Esse encaixe não existe mais.' })
+  // APR-119 (F-18): o erro leva o negócio junto, para a tela dar uma saída ("Ver a página de X").
+  const negocio = { slug: tenantRow.slug, negocio: tenantRow.name }
+
+  if (entrada.fulfilled_at) {
+    // APR-119 (F-18): a MESMA pessoa reabrindo o link (o WhatsApp guarda) via "já foi usado" como se
+    // tivesse perdido a vaga. Se o horário que ela garantiu ainda está de pé, a resposta é ele.
+    const { data: garantido, error: erroGarantido } = await db
+      .from('appointments')
+      .select('*')
+      .eq('tenant_id', oferta.tenantId)
+      .eq('client_id', entrada.client_id)
+      .eq('starts_at', oferta.startsAt)
+      .eq('origin', 'waitlist')
+      .not('status', 'in', '("canceled","expired")')
+      .limit(1)
+      .maybeSingle()
+    if (erroGarantido) throw new AppError('INTERNAL', { cause: erroGarantido })
+    if (garantido) return { agendamento: garantido, jaGarantido: true, timezone: oferta.timezone }
+    throw new AppError('NOT_FOUND', { message: 'Esse encaixe já foi usado.', details: negocio })
+  }
 
   const agendamento = await criarAgendamento(
     db,
@@ -331,5 +350,5 @@ export async function reivindicarEncaixe(db: Cliente, token: string) {
     .eq('tenant_id', oferta.tenantId)
   if (erroFulfil) throw new AppError('INTERNAL', { cause: erroFulfil })
 
-  return agendamento
+  return { agendamento, jaGarantido: false, timezone: oferta.timezone }
 }

@@ -51,6 +51,13 @@ function contraste(a: string, b: string): number {
   return (claro + 0.05) / (escuro + 0.05)
 }
 
+/** `bg-ok/15` sobre a superfície: a cor do estado a 15% misturada com a superfície — o fundo REAL do selo. */
+function tinta(cor: string, superficie: string, parte = 0.15): string {
+  const c = [1, 3, 5].map((i) => parseInt(cor.slice(i, i + 2), 16))
+  const s = [1, 3, 5].map((i) => parseInt(superficie.slice(i, i + 2), 16))
+  return '#' + c.map((v, i) => Math.round(v * parte + s[i]! * (1 - parte)).toString(16).padStart(2, '0')).join('')
+}
+
 const BG = token('bg')
 const SURFACE = token('surface')
 const SURFACE_2 = token('surface-2')
@@ -71,6 +78,8 @@ describe('contraste dos tokens (WCAG AA)', () => {
     // então os dois contam — medir só contra o fundo mais escuro superestima.
     expect(contraste(token(nome), BG), `${nome} sobre --bg`).toBeGreaterThanOrEqual(minimo)
     expect(contraste(token(nome), SURFACE), `${nome} sobre --surface`).toBeGreaterThanOrEqual(minimo)
+    // APR-124 (A-17, G-33): o texto semântico também vive sobre `--surface-2` (selos de estado, chips).
+    expect(contraste(token(nome), SURFACE_2), `${nome} sobre --surface-2`).toBeGreaterThanOrEqual(minimo)
   })
 
   it.each(['ok', 'warn', 'risk', 'bad', 'info', 'acc-2'])(
@@ -80,6 +89,9 @@ describe('contraste dos tokens (WCAG AA)', () => {
       // que fica praticamente na cor da superfície.
       expect(contraste(token(nome), SURFACE)).toBeGreaterThanOrEqual(4.5)
       expect(contraste(token(nome), SURFACE_2)).toBeGreaterThanOrEqual(4.5)
+      // APR-124 (G-33): o selo escreve com a cor SOBRE A TINTA dela (`bg-ok/15`), não sobre a superfície
+      // pura. Medido com axe na build: "Ativa" no claro dava 3,98:1 e "bad" no escuro 4,27:1.
+      expect(contraste(token(nome), tinta(token(nome), SURFACE)), `${nome} sobre a própria tinta a 15%`).toBeGreaterThanOrEqual(4.5)
     },
   )
 
@@ -158,6 +170,11 @@ describe('a paleta CLARA também passa no WCAG AA', () => {
 
   it('as quatro superfícies claras são distintas', () => {
     expect(new Set([BG_C, SURFACE_C, SURFACE_2_C, SURFACE_3_C]).size).toBe(4)
+  })
+
+  it.each(['ok', 'warn', 'risk', 'bad', 'info', 'acc-2'])('--%s claro serve como texto de selo sobre a própria tinta', (nome) => {
+    expect(contraste(tokenClaro(nome), SURFACE_C), `${nome} claro sobre --surface`).toBeGreaterThanOrEqual(4.5)
+    expect(contraste(tokenClaro(nome), tinta(tokenClaro(nome), SURFACE_C)), `${nome} claro sobre a própria tinta a 15%`).toBeGreaterThanOrEqual(4.5)
   })
 
   it.each(['txt', 'txt-2', 'txt-3'])('--%s claro tem 4,5:1 sobre as quatro superfícies', (nome) => {

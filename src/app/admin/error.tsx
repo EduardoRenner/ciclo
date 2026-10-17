@@ -78,7 +78,7 @@ export default function ErroDoApp({ reset }: { error: Error & { digest?: string 
       <p className="mt-1 max-w-[42ch] text-secundario text-txt-2">{FRASE_DA_CAUSA[causa]}</p>
       {detalhe ? (
         // Linha discreta: quem cuida do salão ignora, quem cuida do sistema lê aqui o que fazer.
-        <p className="mt-2 max-w-[52ch] font-mono text-[11px] leading-relaxed text-txt-3">{detalhe}</p>
+        <p className="mt-2 max-w-[52ch] font-mono text-label leading-relaxed text-txt-3">{detalhe}</p>
       ) : null}
       <div className="mt-5 flex flex-wrap justify-center gap-3">
         <Button onClick={() => reset()}>

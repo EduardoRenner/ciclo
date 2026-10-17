@@ -73,8 +73,10 @@
 
 ## Fase 3 · Só depois do primeiro sinal real (não adiantar)
 
-10. Apps mobile (Capacitor) — já orçado (~R$140 + R$550-600/ano), mas **decisão consciente foi
-    adiar** até domínio/CNPJ/pagamento resolverem (`docs/ciclo-apps-mobile-lojas`).
+10. Apps mobile (Capacitor) — já orçado (~R$140 + R$550-600/ano). A decisão de adiar foi revista: o
+    embrulho Capacitor existe desde 15/09 (`docs/64-APP-STORE-CAPACITOR-PLANO.md`) e o caminho até a
+    loja, com o que ainda depende do Eduardo, está em `docs/98-aprimoramento/11-rumo-a-app-store.md`
+    (branch `aprimoramento/plano-2026-10-13-docs`). Este item fica aqui como histórico.
 11. Multi-unidade, integrações de terceiros, features de escala — nada disso importa sem ninguém
     pagando ainda.
 

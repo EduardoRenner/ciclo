@@ -13,6 +13,6 @@ type Ctx = { params: Promise<{ token: string }> }
 export const POST = rota(async (req, ctx) => {
   const { token } = await (ctx as Ctx).params
   await limitarRotaPublica(req, 'reivindicar', LIMITE_ACAO)
-  const agendamento = await withNovoTenant((svc) => reivindicarEncaixe(svc, token))
-  return { appointment: agendamento }
+  const { agendamento, jaGarantido, timezone } = await withNovoTenant((svc) => reivindicarEncaixe(svc, token))
+  return { appointment: agendamento, jaGarantido, timezone }
 })

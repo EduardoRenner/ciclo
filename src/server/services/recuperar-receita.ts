@@ -8,6 +8,7 @@ import type { MotivoPulado } from '@/core/ciclo/resumo-do-envio'
 import type { Classe, Perfil } from '@/core/crm/nota-do-cliente'
 import { enviarComFallback } from '@/server/services/mensageria'
 import { registrarEvento } from '@/server/services/product-events'
+import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -24,9 +25,23 @@ export type ItemRecuperar = {
   /** Pediu para não receber mensagem (`whatsapp_opt_out`). A tela não oferece "Chamar" para ela. */
   optOut: boolean
   serviceName: string
+  /** C-025 (AUT-101): o animal ou o carro do ciclo mais urgente deste cliente; nulo na beleza. */
+  subjectName: string | null
   state: EstadoCiclo
   lateDays: number
+  /**
+   * O que o cartão da fila precisa para dizer "Vem a cada 18 dias, veio faz 31" (`docs/48` C4,
+   * `core/ciclo/ritmo-do-cliente.ts`). A frase é montada na tela, no fuso do salão; aqui só o dado
+   * cru da view. `amostra` = `client_cycles.sample_size`: 0 é "só o padrão", e aí a cadência não é dita.
+   */
+  ritmo: { cicloPessoalDias: number; ultimaVisitaOn: string | null; amostra: number } | null
   valueCents: number
+  /**
+   * C-037 (pedido do Eduardo, 14/10): o preço CHEIO do serviço, sem a redução pela chance de voltar —
+   * é o número que a tela de Recuperar mostra. 0 quando a próxima visita não gera venda avulsa
+   * (assinante do clube, pacote com sessão), a mesma regra do `valueCents`.
+   */
+  fullValueCents: number
   /** O que SOBRA daquele atendimento × a chance de a pessoa voltar. É o que ordena a lista. */
   profitCents: number
   lastCampaignAt: string | null
@@ -40,9 +55,17 @@ export type ItemRecuperar = {
 
 export type ListaRecuperar = {
   totalValueCents: number
+  /** C-037: a soma do preço cheio de cada pessoa da lista — o que entra se todas voltarem. */
+  totalFullValueCents: number
   /** A soma do lucro em risco — o que de fato sobra se todo mundo dessa lista voltar. */
   totalProfitCents: number
   count: number
+  /**
+   * APR-035: quantas da lista estão só "na hora de voltar" (`due`). Elas entram na lista e não no
+   * alarme "estão sumindo" (0058, `ja_atrasado`) — a Hoje mostra a diferença em vez de deixar dois
+   * números brigando na mesma tela.
+   */
+  naHoraDeVoltar: number
   items: ItemRecuperar[]
 }
 
@@ -60,31 +83,28 @@ export async function listarParaRecuperar(
   tenantId: string,
   opcoes: { state?: EstadoCiclo; limit?: number } = {},
 ): Promise<ListaRecuperar> {
-  let consulta = db.from('v_recover_revenue').select('*').eq('tenant_id', tenantId)
-  if (opcoes.state) consulta = consulta.eq('state', opcoes.state)
+  // APR-035: a mesma regra do alarme da Hoje (`v_quem_sumiu`, 0121) — apagada, opt-out, quem tem
+  // ciclo em dia e ciclo sem previsão saem NO BANCO, num lugar só.
+  // APR-013: paginado — a lista de quem sumiu passava de mil linhas (cliente × serviço) e o total
+  // do Recuperar saía menor, sem erro.
+  const consulta = () => {
+    const q = db.from('v_quem_sumiu').select('*').eq('tenant_id', tenantId)
+    return (opcoes.state ? q.eq('state', opcoes.state) : q).order('client_id').order('service_id')
+  }
 
-  /*
-   * A segunda consulta existe porque `v_recover_revenue` filtra `on_track` FORA — de dentro dela
-   * é impossível saber se a cliente tem algum ciclo saudável. Sem essa informação, quem vem todo
-   * mês cortar o cabelo entrava na lista de "atrasadas para voltar" por causa de uma progressiva
-   * que fez uma vez em março. Ver `core/ciclo/quem-recuperar.ts` para os números medidos.
-   */
-  const [{ data, error }, { data: saudaveis, error: erroSaudaveis }, { data: semMensagem, error: erroOptOut }] = await Promise.all([
-    consulta,
-    db.from('client_cycles').select('client_id').eq('tenant_id', tenantId).eq('state', 'on_track'),
-    // `v_recover_revenue` não traz o opt-out, e mudar a view pede migration. Quem pediu "PARAR" é
-    // pouca gente por salão: uma leitura curta no mesmo lote, sem ida de rede a mais em série.
-    db.from('clients').select('id').eq('tenant_id', tenantId).eq('whatsapp_opt_out', true),
+  const [data, servicos] = await Promise.all([
+    buscarTudoPaginado(consulta),
+    db.from('services').select('id, price_cents').eq('tenant_id', tenantId),
   ])
-  if (error) throw new AppError('INTERNAL', { cause: error })
-  if (erroSaudaveis) throw new AppError('INTERNAL', { cause: erroSaudaveis })
-  if (erroOptOut) throw new AppError('INTERNAL', { cause: erroOptOut })
-  const optOuts = new Set((semMensagem ?? []).map((c) => c.id))
+  if (servicos.error) throw new AppError('INTERNAL', { cause: servicos.error })
+  const precoPorServico = new Map((servicos.data ?? []).map((s) => [s.id, s.price_cents ?? 0]))
+  // Preço cheio só onde há venda avulsa: o job grava `value_at_risk_cents` 0 para assinante e pacote.
+  const precoCheio = (l: { service_id: string | null; value_at_risk_cents: number | null }) =>
+    (l.value_at_risk_cents ?? 0) > 0 ? (precoPorServico.get(l.service_id!) ?? 0) : 0
 
   // A view não declara FK nem `not null` para o PostgREST/gerador de tipos,
   // mas toda coluna aqui vem de `join`s obrigatórios sobre colunas `not null`
   // (0001) — o `!` é seguro, não uma aposta.
-  const comCicloEmDia = new Set((saudaveis ?? []).map((l) => l.client_id))
   /*
     `docs/48` C3: quem ordena a fila é o LUCRO em risco, não a receita. As duas continuam existindo
     lado a lado (`0067`) porque respondem perguntas diferentes — "quanto está parado" é o número
@@ -92,7 +112,8 @@ export async function listarParaRecuperar(
   */
   const linhas = quemRecuperar(
     (data ?? []).map((l) => ({ ...l, clientId: l.client_id!, ordemCents: l.profit_at_risk_cents ?? 0 })),
-    comCicloEmDia,
+    // Quem tem ciclo em dia já saiu na view; `quemRecuperar` segue reduzindo a uma linha por cliente.
+    new Set<string>(),
   )
 
   /*
@@ -102,22 +123,29 @@ export async function listarParaRecuperar(
    */
   const totalValueCents = linhas.reduce((soma, l) => soma + (l.value_at_risk_cents ?? 0), 0)
   const totalProfitCents = linhas.reduce((soma, l) => soma + l.ordemCents, 0)
+  const totalFullValueCents = linhas.reduce((soma, l) => soma + precoCheio(l), 0)
   const limite = opcoes.limit ?? LIMITE_PADRAO
 
   return {
     totalValueCents,
+    totalFullValueCents,
     totalProfitCents,
     count: linhas.length,
+    naHoraDeVoltar: linhas.filter((l) => l.state === 'due').length,
     items: linhas.slice(0, limite).map((l) => ({
       clientId: l.client_id!,
       serviceId: l.service_id!,
       name: l.client_name!,
       phone: l.phone_e164,
-      optOut: optOuts.has(l.client_id!),
+      // Quem pediu "PARAR" já não chega aqui (a view exclui); o campo fica para a tela não mudar.
+      optOut: false,
       serviceName: l.service_name!,
+      subjectName: l.subject_name ?? null,
       state: l.state!,
       lateDays: l.late_days!,
+      ritmo: l.personal_cycle_days == null ? null : { cicloPessoalDias: l.personal_cycle_days, ultimaVisitaOn: l.last_visit_on, amostra: l.sample_size ?? 0 },
       valueCents: l.value_at_risk_cents!,
+      fullValueCents: precoCheio(l),
       profitCents: l.profit_at_risk_cents ?? 0,
       lastCampaignAt: l.last_campaign_at,
     })),
@@ -217,6 +245,10 @@ export async function enviarParaRecuperar(
         .eq('tenant_id', tenantId)
         .eq('client_id', item.clientId)
         .eq('service_id', item.serviceId)
+        // AUT-101 (C-023): com sujeito, o mesmo (cliente, serviço) pode ter 2 ciclos (2 animais). A mensagem
+        // vai para o tutor uma vez: vale o mais atrasado. `maybeSingle` sozinho daria erro de "várias linhas".
+        .order('late_days', { ascending: false })
+        .limit(1)
         .maybeSingle()
       if (erroCiclo) throw new AppError('INTERNAL', { cause: erroCiclo })
       if (!linha) continue // já não está mais em risco (concluiu, cancelou) — nada a enviar
@@ -368,6 +400,8 @@ export async function registrarChamadaManual(
         .eq('tenant_id', tenantId)
         .eq('client_id', entrada.clientId)
         .eq('service_id', entrada.serviceId)
+        .order('late_days', { ascending: false })
+        .limit(1)
         .maybeSingle()
     : db
         .from('client_cycles')

@@ -13,7 +13,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  *
  * Mora num módulo só porque há DUAS portas de entrada para a mesma base e elas não podem divergir:
  *
- *   - a planilha (`importacao-clientes.ts`), para quem tem CSV;
+ *   - a esteira (`lote-de-importacao.ts`), para quem tem planilha, contatos, print ou qualquer arquivo;
  *   - a memória (`quem-ja-atendo.ts`), para quem tem a clientela na cabeça — que é a maioria.
  *
  * Duplicar esta fórmula seria criar duas definições do mesmo cálculo, cada uma com a sua guarda,
@@ -120,27 +120,42 @@ export async function preverEPersistirCiclos(
     "hipótese mais conservadora" já documentada em `comissaoDeCadaProfissional` (`ciclo.ts`), não
     uma decisão nova.
   */
-  const [materialDoServico, assinaturasAtivas, pacotesComSaldo] = await Promise.all([
-    db.from('service_products').select('qty, products(avg_cost_cents)').eq('tenant_id', tenantId).eq('service_id', escolhido.id),
-    db.from('client_subscriptions').select('client_id').eq('tenant_id', tenantId).eq('status', 'active'),
-    db
-      .from('packages')
-      .select('client_id, total_sessions, used_sessions')
-      .eq('tenant_id', tenantId)
-      .eq('service_id', escolhido.id)
-      .or(`expires_on.is.null,expires_on.gte.${hoje.toString()}`),
-  ])
+  /*
+    docs/103 D19: assinaturas e pacotes só DESTAS pessoas, em fatias. Ler os do salão inteiro esbarrava
+    no corte silencioso de 1.000 linhas do PostgREST (APR-012): num salão com mais assinantes que isso,
+    alguém com clube ativo ganharia "valor em risco" cheio.
+  */
+  const ids = [...new Set(pessoas.map((p) => p.clientId))]
+  const assinantes: { client_id: string }[] = []
+  const pacotesDestas: { client_id: string; total_sessions: number; used_sessions: number }[] = []
+  for (let i = 0; i < ids.length; i += TAMANHO_DO_LOTE) {
+    const fatia = ids.slice(i, i + TAMANHO_DO_LOTE)
+    const [assinaturas, pacotes] = await Promise.all([
+      db.from('client_subscriptions').select('client_id').eq('tenant_id', tenantId).eq('status', 'active').in('client_id', fatia).limit(TAMANHO_DO_LOTE),
+      db
+        .from('packages')
+        .select('client_id, total_sessions, used_sessions')
+        .eq('tenant_id', tenantId)
+        .eq('service_id', escolhido.id)
+        .or(`expires_on.is.null,expires_on.gte.${hoje.toString()}`)
+        .in('client_id', fatia)
+        .limit(TAMANHO_DO_LOTE * 10),
+    ])
+    if (assinaturas.error) throw new AppError('INTERNAL', { cause: assinaturas.error })
+    if (pacotes.error) throw new AppError('INTERNAL', { cause: pacotes.error })
+    assinantes.push(...(assinaturas.data ?? []))
+    pacotesDestas.push(...(pacotes.data ?? []))
+  }
+  const materialDoServico = await db.from('service_products').select('qty, products(avg_cost_cents)').eq('tenant_id', tenantId).eq('service_id', escolhido.id)
   if (materialDoServico.error) throw new AppError('INTERNAL', { cause: materialDoServico.error })
-  if (assinaturasAtivas.error) throw new AppError('INTERNAL', { cause: assinaturasAtivas.error })
-  if (pacotesComSaldo.error) throw new AppError('INTERNAL', { cause: pacotesComSaldo.error })
 
   const materialCents = custoDoServico(
     (materialDoServico.data ?? []).map((l) => ({ qty: l.qty, avgCostCents: l.products?.avg_cost_cents ?? 0 })),
     1,
   ).custoCents
-  const assinantesAtivos = new Set(assinaturasAtivas.data.map((a) => a.client_id))
+  const assinantesAtivos = new Set(assinantes.map((a) => a.client_id))
   const clientesComPacote = new Set(
-    pacotesComSaldo.data.filter((p) => p.used_sessions < p.total_sessions).map((p) => p.client_id),
+    pacotesDestas.filter((p) => p.used_sessions < p.total_sessions).map((p) => p.client_id),
   )
 
   let cyclesGravados = 0
@@ -154,6 +169,7 @@ export async function preverEPersistirCiclos(
           client_id: c.clientId,
           service_id: escolhido.id,
           personal_cycle_days: c.resultado.personalCycleDays,
+          sample_size: c.resultado.amostra,
           last_visit_on: c.ultimaVisita.toString(),
           predicted_on: c.resultado.predictedDate.toString(),
           late_days: c.resultado.lateDays,
@@ -165,7 +181,7 @@ export async function preverEPersistirCiclos(
           ),
         }
       }),
-      { onConflict: 'tenant_id,client_id,service_id' },
+      { onConflict: 'tenant_id,client_id,service_id,subject_id' },
     )
     /*
       O cadastro já entrou e não se desfaz por causa do ciclo. Falhar aqui degrada para "previsão só

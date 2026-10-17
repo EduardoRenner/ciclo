@@ -41,6 +41,15 @@ export const GET = rota(async (req, _ctx, requestId) => {
   exigirPermissao(ctx.papel, 'client:export')
   const sessao = await exigirAal2()
 
+  const db = await criarClienteDoUsuario()
+  // O dia da última visita sai no fuso do SALÃO (ver `LinhaClienteParaExportar.lastVisit`).
+  const { data: tenant, error: erroTenant } = await db.from('tenants').select('timezone').eq('id', ctx.tenantId).maybeSingle()
+  if (erroTenant) throw new AppError('INTERNAL', { cause: erroTenant })
+  const linhas = await listarTodosClientesParaExportar(db, ctx.tenantId, tenant?.timezone ?? 'America/Sao_Paulo')
+  const csv = clientesParaCsv(linhas)
+
+  // CNV-011 (D15): a cota do mês só é gasta DEPOIS de o arquivo existir. Antes, um erro na leitura
+  // gastava a vez do mês sem entregar nada, e a nova tentativa dava 429 por 30 dias.
   const { permitido } = await limitador(`client-export:tenant:${ctx.tenantId}`, { limite: 1, janelaSegundos: JANELA_DO_LIMITE_SEGUNDOS })
   if (!permitido) {
     // Não usa `AppError.limiteDeTaxa`: `textoDeEspera` (`core/http/espera.ts`) não tem frase para
@@ -52,13 +61,6 @@ export const GET = rota(async (req, _ctx, requestId) => {
       details: { retryAfterSeconds: JANELA_DO_LIMITE_SEGUNDOS },
     })
   }
-
-  const db = await criarClienteDoUsuario()
-  // O dia da última visita sai no fuso do SALÃO (ver `LinhaClienteParaExportar.lastVisit`).
-  const { data: tenant, error: erroTenant } = await db.from('tenants').select('timezone').eq('id', ctx.tenantId).maybeSingle()
-  if (erroTenant) throw new AppError('INTERNAL', { cause: erroTenant })
-  const linhas = await listarTodosClientesParaExportar(db, ctx.tenantId, tenant?.timezone ?? 'America/Sao_Paulo')
-  const csv = clientesParaCsv(linhas)
 
   await writeAudit(
     {

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="pt-BR">
+  <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color: #1c1917; line-height: 1.5">
+    <p>Oi!</p>
+    <p>Pediram uma senha nova para a sua conta no CICLO. Toque no botão para criar a senha nova:</p>
+    <p>
+      <a
+        href="{{ .SiteURL }}/auth/confirmar?token_hash={{ .TokenHash }}&type=recovery&next=/nova-senha"
+        style="display: inline-block; padding: 12px 20px; border-radius: 10px; background: #0f766e; color: #ffffff; text-decoration: none; font-weight: 600"
+        >Criar senha nova</a
+      >
+    </p>
+    <p>Pode abrir no celular ou no computador, não precisa ser no mesmo aparelho em que você pediu. O link vale por 1 hora.</p>
+    <p>Não foi você? É só ignorar este e-mail: a sua senha continua a mesma.</p>
+  </body>
+</html>

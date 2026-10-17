@@ -72,3 +72,6 @@ supabase/.env
 /scratch_*.txt
 *.local.mjs
 .claude/settings.local.json
+
+# CNV-018: leitor de texto de imagem copiado no build (scripts/copiar-ocr.mjs)
+/public/ocr/

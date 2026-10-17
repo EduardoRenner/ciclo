@@ -1,13 +1,16 @@
 'use client'
 
-import { CalendarClock, ChevronLeft, Megaphone, Menu, Package, Scissors, Settings, Users, Wallet } from 'lucide-react'
+import { CalendarClock, ChevronLeft, ExternalLink, Megaphone, Menu, Package, Scissors, Settings, Sparkles, Users, Wallet } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
 
 import Sheet from '@/components/ui/sheet'
 
+import { ATALHOS_DO_MENU } from '@/core/navegacao/atalhos-do-menu'
+
+import { EVENTO_ABRIR_ASSISTENTE } from './assistente-flutuante'
 import { paiDaRota } from './navegacao'
 import wordmark from '../../../public/marca/ciclo-wordmark-aqua.png'
 import wordmarkClaro from '../../../public/marca/ciclo-wordmark-aqua-claro.png'
@@ -19,15 +22,15 @@ import wordmarkClaro from '../../../public/marca/ciclo-wordmark-aqua-claro.png'
  * de fora dela e é usado com frequência — o resto (fidelidade, notificações, segurança...)
  * continua em "Configurações", o último item da lista.
  */
-const ATALHOS = [
-  { href: '/admin/caixa', titulo: 'Caixa', icone: Wallet },
-  { href: '/admin/config/servicos', titulo: 'Serviços', icone: Scissors },
-  { href: '/admin/config/profissionais', titulo: 'Time', icone: Users },
-  { href: '/admin/campanhas', titulo: 'Campanhas', icone: Megaphone },
-  { href: '/admin/estoque', titulo: 'Estoque', icone: Package },
-  { href: '/admin/series', titulo: 'Recorrência', icone: CalendarClock },
-  { href: '/admin/config', titulo: 'Configurações', icone: Settings },
-] as const
+const ICONES: Record<string, typeof Wallet> = {
+  '/admin/caixa': Wallet,
+  '/admin/config/servicos': Scissors,
+  '/admin/config/profissionais': Users,
+  '/admin/campanhas': Megaphone,
+  '/admin/estoque': Package,
+  '/admin/series': CalendarClock,
+  '/admin/config': Settings,
+}
 
 /**
  * Barra do topo. Deixou de ser um enfeite de marca e virou **navegação**: na
@@ -44,9 +47,43 @@ const ATALHOS = [
  * Continua sem buscar dado nenhum de propósito — não pode virar fetch novo em
  * toda tela do app.
  */
-export default function Topbar() {
+/**
+ * APR-101: no celular o assistente abre daqui, não de um botão flutuante por cima da ação da tela.
+ * A partir de 1024 px some (`lg:hidden`) e vale o botão flutuante, que lá tem folga até a coluna.
+ */
+function BotaoPerguntar({ className = '' }: { className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_ASSISTENTE))}
+      className={'flex h-12 shrink-0 items-center gap-1.5 rounded-[var(--radius-pill)] px-3 text-secundario font-semibold text-acc-2 transition hover:bg-surface-2 active:scale-[.97] lg:hidden ' + className}
+    >
+      <Sparkles aria-hidden className="size-4" />
+      Perguntar
+    </button>
+  )
+}
+
+/**
+ * `atalhos`: os `href` que o layout liberou para este negócio e este papel (APR-103,
+ * `core/navegacao/atalhos-do-menu.ts`). Sem ele (sem contexto, ou a consulta de módulos falhou), a
+ * lista inteira, como antes.
+ */
+/** Lê `?de=` e entrega para a Topbar; separado para o `useSearchParams` ficar sob Suspense. */
+function LeitorDeOrigem({ aoLer }: { aoLer: (de: string | null) => void }) {
+  const de = useSearchParams().get('de')
+  useEffect(() => {
+    aoLer(de)
+  }, [de, aoLer])
+  return null
+}
+
+export default function Topbar({ atalhos, site }: { atalhos?: string[]; site?: { href: string } }) {
   const pathname = usePathname()
-  const pai = paiDaRota(pathname)
+  // APR-121: a origem (`?de=`) decide o voltar; `useSearchParams` fica num componente próprio sob
+  // Suspense porque a Topbar também vive em páginas estáticas (o 404 do painel).
+  const [de, setDe] = useState<string | null>(null)
+  const pai = paiDaRota(pathname, de)
   const [menuAberto, setMenuAberto] = useState(false)
 
   return (
@@ -56,6 +93,9 @@ export default function Topbar() {
         'pt-[env(safe-area-inset-top)] backdrop-blur-xl backdrop-saturate-150'
       }
     >
+      <Suspense fallback={null}>
+        <LeitorDeOrigem aoLer={setDe} />
+      </Suspense>
       {pai ? (
         <Link
           href={pai.href}
@@ -64,7 +104,8 @@ export default function Topbar() {
           <ChevronLeft aria-hidden className="size-5" />
           {pai.rotulo}
         </Link>
-      ) : (
+      ) : null}
+      {pai ? <BotaoPerguntar className="ml-auto" /> : (
         <>
           <div className="flex h-12 items-center">
             {/* Lockup completo (redesenho aqua, 2026-08-26) — nunca mais o nome
@@ -94,30 +135,49 @@ export default function Topbar() {
             aparelho — pedido do Eduardo em 2026-09-13, depois de a primeira versão ter ido pra
             esquerda (a marca centralizada valia menos que o alcance de verdade).
           */}
+          <div className="ml-auto flex items-center">
+          <BotaoPerguntar />
           <button
             type="button"
             onClick={() => setMenuAberto(true)}
             aria-label="Menu"
-            className="ml-auto grid size-12 shrink-0 place-items-center rounded-[var(--radius-pill)] text-txt-2 transition hover:bg-surface-2 active:scale-[.94]"
+            className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-pill)] text-txt-2 transition hover:bg-surface-2 active:scale-[.94]"
           >
             <Menu aria-hidden className="size-5" />
           </button>
+          </div>
         </>
       )}
 
       <Sheet aberto={menuAberto} aoFechar={setMenuAberto} titulo="Menu">
         <nav className="flex flex-col gap-1 pb-2">
-          {ATALHOS.map((a) => (
+          {ATALHOS_DO_MENU.filter((a) => !atalhos || atalhos.includes(a.href)).map((a) => {
+            const Icone = ICONES[a.href] ?? Settings
+            return (
             <Link
               key={a.href}
               href={a.href}
               onClick={() => setMenuAberto(false)}
               className="flex h-12 items-center gap-3 rounded-[var(--radius-sm)] px-2 text-corpo font-semibold text-txt transition hover:bg-surface-2 active:scale-[.98]"
             >
-              <a.icone aria-hidden className="size-5 text-txt-3" />
+              <Icone aria-hidden className="size-5 text-txt-3" />
               {a.titulo}
             </Link>
-          ))}
+            )
+          })}
+          {/* APR-108: "Ver meu site" saiu do topo da Hoje (peso zero na pergunta "o que faço agora") e mora aqui. */}
+          {site ? (
+            <a
+              href={site.href}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setMenuAberto(false)}
+              className="flex h-12 items-center gap-3 rounded-[var(--radius-sm)] px-2 text-corpo font-semibold text-txt transition hover:bg-surface-2 active:scale-[.98]"
+            >
+              <ExternalLink aria-hidden className="size-5 text-txt-3" />
+              Meu site
+            </a>
+          ) : null}
         </nav>
       </Sheet>
     </header>

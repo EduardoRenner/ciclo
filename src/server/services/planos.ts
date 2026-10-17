@@ -13,6 +13,7 @@ import {
   type Recurso,
   type ValorDoEixo,
 } from '@/core/billing/planos'
+import { lerAssinatura, planoPagoEmVigor } from '@/core/billing/mercado-pago'
 import { regraDaEscritaNaPausa } from '@/core/billing/pausa'
 import { lerCortesia, situacaoEmVigor, type SituacaoDaConta } from '@/core/billing/prelancamento'
 import { normalizarPacote } from '@/core/pacotes'
@@ -59,6 +60,15 @@ export function normalizarPlano(valor: string): PlanoTier {
 }
 
 /**
+ * APR-027b: o degrau que a pessoa paga, com a graça e o período pago lidos NA HORA
+ * (`planoPagoEmVigor`). Toda leitura de `tenants.plan` que decide acesso passa por aqui; `settings`
+ * só precisa trazer a chave `assinatura`.
+ */
+export function planoPagoDoTenant(plan: string, settings: unknown, agora: Date = new Date()): PlanoTier {
+  return planoPagoEmVigor(normalizarPlano(plan), lerAssinatura(settings), agora)
+}
+
+/**
  * Os quatro eixos são `text` com `check` no banco, não enum do Postgres — então `types.gen.ts` os
  * entrega como `string` e o `tsc` não confere nada sozinho (foi assim que `inicio === 'orcamento'`
  * sobreviveu). Esta função é a borda: o valor entra `string` e sai como a união do eixo.
@@ -100,7 +110,7 @@ export async function contextoDePlano(db: Cliente, tenantId: string, agora: Date
     // `cortesia:settings->cortesia` traz só a chave; `settings` inteiro é jsonb que cresce por tenant.
     // `professions(pacote)`: a quarta camada de `podeUsarModulo` (docs/101 §3.3). Vem no mesmo
     // `select`, pelo join que `profession_id` já dá; tenant sem profissão resolve para `base`.
-    .select('plan, onde, cobranca, inicio, ritmo, cortesia:settings->cortesia, professions(pacote)')
+    .select('plan, onde, cobranca, inicio, ritmo, cortesia:settings->cortesia, assinatura:settings->assinatura, professions(pacote)')
     .eq('id', tenantId)
     .single()
   if (error) throw new AppError('INTERNAL', { cause: error })
@@ -120,7 +130,7 @@ export async function contextoDePlano(db: Cliente, tenantId: string, agora: Date
     ritmo: normalizarEixo('ritmo', tenant.ritmo),
   }
 
-  const planoPago = normalizarPlano(tenant.plan)
+  const planoPago = planoPagoDoTenant(tenant.plan, { assinatura: tenant.assinatura }, agora)
   const situacao = situacaoEmVigor(planoPago, lerCortesia({ cortesia: tenant.cortesia }), agora)
 
   return {
@@ -242,7 +252,7 @@ export function exigirContaQueEscreve(
  * que só o layout lê para trocar o 404 pela mensagem. O nome e o telefone do negócio já são públicos (a página mostra os dois).
  */
 export function negocioEstaPausado(plan: string, settings: unknown, agora: Date = new Date()): boolean {
-  return !situacaoEmVigor(normalizarPlano(plan), lerCortesia(settings), agora).podeEscrever
+  return !situacaoEmVigor(planoPagoDoTenant(plan, settings, agora), lerCortesia(settings), agora).podeEscrever
 }
 
 export function paginaIndisponivel(nome: string, telefone: string | null = null): AppError {

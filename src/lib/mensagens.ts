@@ -116,12 +116,24 @@ export function saidaDeContato(
  * Primeira pessoa e primeiro nome, como a dona escreveria — não é a mensagem do sistema, é a dela.
  * Sem "sentimos sua falta": no WhatsApp pessoal isso soa como disparo em massa.
  */
-export function textoDeVolta({ nome, servico, link }: { nome: string; servico: string; link?: string | null }): string {
+export function textoDeVolta({
+  nome,
+  servico,
+  sujeito,
+  link,
+}: {
+  nome: string
+  servico: string
+  /** C-025 (AUT-101): o animal ou o carro. Entra com a grafia original ("Mel"), sem artigo: "da Mel" supõe gênero. */
+  sujeito?: string | null
+  link?: string | null
+}): string {
   const primeiro = primeiroNome(nome)
   const saudacao = primeiro ? `Oi, ${primeiro}!` : 'Oi!'
   // "seu último HORÁRIO DE {serviço}", nunca "seu último {serviço}": metade do catálogo de beleza é
   // feminino (barba, escova, manutenção, depilação) e "seu último barba" sai na voz do dono.
-  const base = `${saudacao} Faz um tempinho desde seu último horário de ${servico.toLowerCase()}. Quer marcar essa semana?`
+  const para = sujeito ? ` para ${sujeito}` : ''
+  const base = `${saudacao} Faz um tempinho desde seu último horário de ${servico.toLowerCase()}${para}. Quer marcar essa semana?`
   // `docs/95` E1: o link pessoal leva direto ao agendamento, com o serviço escolhido, e é o que
   // mede se a mensagem foi aberta e se virou horário marcado.
   return link ? `${base} É só escolher o horário aqui: ${link}` : base

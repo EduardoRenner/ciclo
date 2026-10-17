@@ -16,8 +16,32 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    /*
+     * LOJA-31 (docs/98-aprimoramento/11): a chave de upload e as senhas vêm de `android/keystore.properties`, que o
+     * .gitignore não deixa subir. Sem o arquivo, o release sai sem assinatura (como antes) e o debug não muda.
+     * Formato: storeFile=caminho/para/upload.jks, storePassword=..., keyAlias=..., keyPassword=...
+     */
+    def propriedadesDaChave = new Properties()
+    def arquivoDaChave = rootProject.file('keystore.properties')
+    if (arquivoDaChave.exists()) {
+        arquivoDaChave.withInputStream { propriedadesDaChave.load(it) }
+    }
+    signingConfigs {
+        release {
+            if (arquivoDaChave.exists()) {
+                // Relativo a `android/` (junto do keystore.properties), não a `android/app/`.
+                storeFile rootProject.file(propriedadesDaChave['storeFile'])
+                storePassword propriedadesDaChave['storePassword']
+                keyAlias propriedadesDaChave['keyAlias']
+                keyPassword propriedadesDaChave['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
+            if (arquivoDaChave.exists()) {
+                signingConfig = signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

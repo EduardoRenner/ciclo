@@ -1,6 +1,6 @@
 'use client'
 
-import { Trash2 } from 'lucide-react'
+import { ChevronDown, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
@@ -9,10 +9,13 @@ import AlertBanner from '@/components/ui/alert-banner'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
+import { useFuso } from '@/components/shell/fuso'
 import type { SobraExplicada } from '@/core/comanda/sobra-explicada'
 import { FORMAS_DE_PAGAMENTO, NOME_DA_FORMA, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
+import { calcularTotaisComanda } from '@/core/comanda/totals'
 
 import type { Database } from '@/server/db/types.gen'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -23,9 +26,9 @@ type Servico = { id: string; name: string; price_cents: number }
 type Produto = { id: string; name: string; price_cents: number; stock_qty: number }
 
 async function chamar<T>(url: string, opcoes: RequestInit = {}): Promise<T> {
-  const r = await fetch(url, {
+  const r = await fetchComTentativa(url, {
     ...opcoes,
-    headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID(), ...opcoes.headers },
+    headers: { 'content-type': 'application/json', ...opcoes.headers },
   })
   const json = (await r.json()) as { data?: T; error?: { message: string } }
   if (!r.ok) throw new Error(json.error?.message ?? 'Não consegui completar a ação.')
@@ -69,16 +72,49 @@ export default function Comanda({
   // taxa zero sem ninguém escolher nada, e o "Sobrou" voltaria a ser o número inflado que a
   // `0066` existe para consertar.
   const [forma, setForma] = useState<FormaDePagamento | null>(null)
+  /*
+    APR-112b (docs/98 I-11, C-13): os dois blocos secundários nascem FECHADOS (o caso comum é receber
+    o que já está na comanda), e desconto e gorjeta não gravam mais no `onBlur`: vão no corpo do
+    "Receber" (APR-112a). O total que o botão mostra sai da MESMA função que o servidor usa.
+  */
+  const [mostrarAdicionar, setMostrarAdicionar] = useState(false)
+  const [mostrarAjustes, setMostrarAjustes] = useState(false)
+  const descontoCents = Math.max(0, Math.round(Number(desconto || 0) * 100))
+  const gorjetaCents = Math.max(0, Math.round(Number(gorjeta || 0) * 100))
   const [pendente, iniciarTransicao] = useTransition()
   const [erro, setErro] = useState<string | null>(null)
   const mostrarToast = useToast()
   const router = useRouter()
 
   const aberta = ticket.status === 'open'
+  // Com a comanda aberta, o total segue o que está digitado (desconto e gorjeta ainda não gravados); fechada, o gravado.
+  const totalNaTela = aberta ? calcularTotaisComanda({ items: itens.map((i) => ({ totalCents: i.total_cents })), discountCents: descontoCents, tipCents: gorjetaCents }).totalCents : ticket.total_cents
   // `payment_method` é o enum de oito valores do banco; `NOME_DA_FORMA` só nomeia as cinco que se
   // escolhem no fechamento. Comanda de antes da `0066` vem nula, e as três de fora (clube, pacote,
   // voucher) não têm nome aqui — nos dois casos a frase sai sem a forma, em vez de sair torta.
   const formaFechada = ticket.payment_method ? (NOME_DA_FORMA[ticket.payment_method as FormaDePagamento] ?? null) : null
+  const fuso = useFuso()
+  const [desfazendo, setDesfazendo] = useState(false)
+  const [pendenteDesfazer, setPendenteDesfazer] = useState(false)
+  async function desfazerFechamento() {
+    setPendenteDesfazer(true)
+    try {
+      // Sem chave aqui: `fetchComTentativa` gera e segura a Idempotency-Key enquanto a tentativa não termina (APR-007).
+      const r = await fetchComTentativa(`/api/v1/tickets/${ticket.id}/cancel`, { method: 'POST', headers: { 'content-type': 'application/json' } })
+      const json = (await r.json().catch(() => ({}))) as { error?: { message?: string } }
+      if (!r.ok) {
+        mostrarToast({ tom: 'erro', titulo: json.error?.message ?? 'Não consegui desfazer o fechamento.' })
+        return
+      }
+      mostrarToast({ tom: 'ok', titulo: 'Fechamento desfeito. A comanda saiu do caixa.' })
+      setDesfazendo(false)
+      router.refresh()
+    } catch {
+      mostrarToast({ tom: 'erro', titulo: 'Sem conexão agora. Nada foi desfeito.' })
+    } finally {
+      setPendenteDesfazer(false)
+    }
+  }
 
   function adicionarItem() {
     if (!ticket.professional_id) {
@@ -128,35 +164,20 @@ export default function Comanda({
     setItens(dados.items)
   }
 
-  function salvarDescontoGorjeta() {
-    setErro(null)
-    iniciarTransicao(async () => {
-      try {
-        const dados = await chamar<{ ticket: Ticket; items: TicketItem[] }>(`/api/v1/tickets/${ticket.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ discountCents: Math.round(Number(desconto) * 100), tipCents: Math.round(Number(gorjeta) * 100) }),
-        })
-        setTicket(dados.ticket)
-      } catch (e) {
-        setErro((e as Error).message)
-      }
-    })
-  }
-
   function fechar() {
     setErro(null)
     iniciarTransicao(async () => {
       try {
         const fechado = await chamar<Ticket>(`/api/v1/tickets/${ticket.id}/close`, {
           method: 'POST',
-          body: JSON.stringify({ paymentMethod: forma }),
+          body: JSON.stringify({ paymentMethod: forma, discountCents: descontoCents, tipCents: gorjetaCents }),
         })
         setTicket(fechado)
         // O "Sobrou" é calculado no servidor (é ele que sabe a taxa do tenant e quais serviços
         // têm ficha). Sem este refresh, a comanda vira `closed` no estado local e o cartão só
         // apareceria na próxima visita à tela.
         router.refresh()
-        mostrarToast({ tom: 'ok', titulo: 'Comanda fechada' })
+        mostrarToast({ tom: 'ok', titulo: `Recebido: ${dinheiro.format(fechado.total_cents / 100)}` })
       } catch (e) {
         setErro((e as Error).message)
       }
@@ -207,7 +228,12 @@ export default function Comanda({
 
       {aberta && (servicos.length > 0 || produtos.length > 0) ? (
         <Card className="flex flex-col gap-3">
-          <p className="text-corpo font-semibold">Adicionar item</p>
+          <button type="button" onClick={() => setMostrarAdicionar((v) => !v)} aria-expanded={mostrarAdicionar} className="flex min-h-12 w-full items-center justify-between text-left">
+            <span className="text-corpo font-semibold">Adicionar item</span>
+            <ChevronDown aria-hidden className={`size-5 text-txt-3 transition-transform ${mostrarAdicionar ? 'rotate-180' : ''}`} />
+          </button>
+          {mostrarAdicionar ? (
+          <>
 
           {/*
             docs/62 Fase 3: só mostra o alternador quando os dois catálogos existem — com um só,
@@ -300,38 +326,55 @@ export default function Comanda({
           >
             Adicionar
           </Button>
+          </>
+          ) : null}
         </Card>
       ) : null}
 
       {aberta ? (
         <Card className="flex flex-col gap-3">
-          <p className="text-corpo font-semibold">Desconto e gorjeta</p>
-          <label className="flex flex-col gap-1">
-            <span className="text-label font-semibold text-txt-2">Desconto (R$)</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              min="0"
-              step="0.01"
-              value={desconto}
-              onChange={(e) => setDesconto(e.target.value)}
-              onBlur={salvarDescontoGorjeta}
-              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-label font-semibold text-txt-2">Gorjeta (R$)</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              min="0"
-              step="0.01"
-              value={gorjeta}
-              onChange={(e) => setGorjeta(e.target.value)}
-              onBlur={salvarDescontoGorjeta}
-              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
-            />
-          </label>
+          <button type="button" onClick={() => setMostrarAjustes((v) => !v)} aria-expanded={mostrarAjustes} className="flex min-h-12 w-full items-center justify-between text-left">
+            <span className="text-corpo font-semibold">
+              Desconto ou gorjeta
+              {!mostrarAjustes && (descontoCents > 0 || gorjetaCents > 0) ? (
+                <span className="ml-2 text-secundario font-normal text-txt-2">
+                  {descontoCents > 0 ? `− ${dinheiro.format(descontoCents / 100)}` : ''}
+                  {descontoCents > 0 && gorjetaCents > 0 ? ' · ' : ''}
+                  {gorjetaCents > 0 ? `+ ${dinheiro.format(gorjetaCents / 100)}` : ''}
+                </span>
+              ) : null}
+            </span>
+            <ChevronDown aria-hidden className={`size-5 text-txt-3 transition-transform ${mostrarAjustes ? 'rotate-180' : ''}`} />
+          </button>
+          {mostrarAjustes ? (
+            <>
+              {/* Sem onBlur que grava: o valor digitado vai junto do "Receber" (APR-112a), num envio só. */}
+              <label className="flex flex-col gap-1">
+                <span className="text-label font-semibold text-txt-2">Desconto (R$)</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.01"
+                  value={desconto}
+                  onChange={(e) => setDesconto(e.target.value)}
+                  className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-label font-semibold text-txt-2">Gorjeta (R$)</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.01"
+                  value={gorjeta}
+                  onChange={(e) => setGorjeta(e.target.value)}
+                  className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
+                />
+              </label>
+            </>
+          ) : null}
         </Card>
       ) : null}
 
@@ -342,7 +385,7 @@ export default function Comanda({
         </div>
         <div className="flex justify-between text-titulo font-bold">
           <span>Total</span>
-          <span className="tabular">{dinheiro.format(ticket.total_cents / 100)}</span>
+          <span className="tabular">{dinheiro.format(totalNaTela / 100)}</span>
         </div>
       </Card>
 
@@ -452,13 +495,41 @@ export default function Comanda({
             }
             onClick={fechar}
           >
-            Fechar comanda
+            Receber {dinheiro.format(totalNaTela / 100)}
           </Button>
         </>
       ) : (
-        <p className="text-center text-secundario text-txt-2">
-          Comanda fechada{formaFechada ? ` (paga em ${formaFechada})` : ''}. Nada mais pode mudar aqui.
-        </p>
+        <div className="flex flex-col gap-3">
+          <p className="text-center text-secundario text-txt-2">
+            Recebido {dinheiro.format(ticket.total_cents / 100)}{formaFechada ? ` em ${formaFechada}` : ''}.
+          </p>
+          {/*
+            APR-204 (C-41): fechou errado (forma, item, desconto) e não tinha volta — a rota de cancelar
+            existia sem chamador. Desfazer é compensação (status + `return` no estoque), nunca DELETE,
+            e pede um segundo toque porque mexe no caixa do dia e na comissão de quem atendeu.
+          */}
+          {ticket.status === 'closed' ? (
+            desfazendo ? (
+              <div role="group" aria-label="Confirmar desfazer" className="flex flex-col gap-2 rounded-[var(--radius-sm)] bg-surface-2 p-3">
+                <p className="text-secundario text-txt">
+                  O caixa de {ticket.closed_at ? new Date(ticket.closed_at).toLocaleDateString('pt-BR', { timeZone: fuso }) : 'hoje'} e a comissão de quem
+                  atendeu mudam junto: a comanda fica cancelada e sai dos dois, e o produto baixado volta ao estoque. Não dá para abrir outra
+                  comanda para o mesmo atendimento.
+                </p>
+                <Button variante="secondary" largura="cheia" carregando={pendenteDesfazer} onClick={desfazerFechamento}>
+                  Sim, desfazer o fechamento
+                </Button>
+                <Button largura="cheia" disabled={pendenteDesfazer} motivoDesabilitado="Aguarde: estamos desfazendo o fechamento." onClick={() => setDesfazendo(false)}>
+                  Deixar como está
+                </Button>
+              </div>
+            ) : (
+              <Button variante="secondary" largura="cheia" onClick={() => setDesfazendo(true)}>
+                Desfazer fechamento
+              </Button>
+            )
+          ) : null}
+        </div>
       )}
     </div>
   )

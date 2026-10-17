@@ -47,9 +47,12 @@ export function telaDoOrcamento(estado: Estado, temDados: boolean): TelaDoOrcame
  * plano com o token vazar em header de clique externo — cross-origin só recebe origem, nunca o
  * path com o token (registrado em docs/DECISOES.md); esta página não precisa de override.
  */
-export default function Orcamento({ token }: { token: string }) {
-  const [estado, setEstado] = useState<Estado>('carregando')
-  const [dados, setDados] = useState<Dados | null>(null)
+/** APR-119 (F-08): `inicial` já vem lido no servidor; o fetch fica só para o "Tentar de novo". */
+export default function Orcamento({ token, inicial = null }: { token: string; inicial?: Dados | null }) {
+  const [estado, setEstado] = useState<Estado>(
+    inicial ? (inicial.status === 'approved' ? 'aprovado' : inicial.status === 'rejected' ? 'recusado' : 'pronto') : 'carregando',
+  )
+  const [dados, setDados] = useState<Dados | null>(inicial)
   const [mensagemErro, setMensagemErro] = useState('')
   const [motivoRecusa, setMotivoRecusa] = useState('')
   /**
@@ -78,6 +81,7 @@ export default function Orcamento({ token }: { token: string }) {
   }
 
   useEffect(() => {
+    if (inicial && tentativa === 0) return
     fetch(`/api/v1/public/quotes/${token}`)
       .then(async (r) => {
         const json = (await r.json()) as { data?: Dados; error?: { message: string } }
@@ -95,7 +99,7 @@ export default function Orcamento({ token }: { token: string }) {
         setPodeTentarDeNovo(true)
         setEstado('erro')
       })
-  }, [token, tentativa])
+  }, [token, tentativa, inicial])
 
   function aprovar() {
     setPendente(true)

@@ -72,6 +72,12 @@ export default async function PaginaVindoDeOutroSistema() {
           &ldquo;Olá! Quero receber a lista dos meus clientes numa planilha (Excel ou CSV), com nome, telefone e a
           data do último atendimento de cada um. Pode me enviar por e-mail?&rdquo;
         </p>
+        {/* docs/103 CNV-041: sistema que só exporta pelo chat (ou demora dias) não trava ninguém: a tela de
+            importar lê print, PDF e a lista de contatos. Sem prometer o layout de nenhum sistema. */}
+        <p className="mt-3 text-secundario text-txt-2">
+          Demorou ou não tem como exportar? Um print da lista de clientes do sistema atual também serve, e o
+          relatório em PDF também.
+        </p>
       </Card>
 
       <SectionHeader className="mt-6">Como você quer trazer sua base</SectionHeader>
@@ -85,11 +91,11 @@ export default async function PaginaVindoDeOutroSistema() {
           </p>
           <div className="mt-3 flex flex-col gap-2">
             <Link href="/admin/clientes/importar" className={`justify-between ${classeOpcao}`}>
-              Já tenho a planilha: importar agora
+              Tenho planilha, PDF, print ou contatos: importar agora
               <ArrowRight aria-hidden className="size-4 shrink-0 text-txt-3" />
             </Link>
             <Link href="/admin/clientes/ja-atendo" className={`justify-between ${classeOpcao}`}>
-              Ainda não tenho planilha: trazer de memória
+              Não tenho nada disso: trazer de memória
               <ArrowRight aria-hidden className="size-4 shrink-0 text-txt-3" />
             </Link>
           </div>

@@ -9,7 +9,8 @@ import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { concluirAgendamento, confirmarAgendamento, criarAgendamento, marcarChegada } from '@/server/services/agendamentos'
 import { recomputarCiclosDoTenant, recomputarCicloDeUmAtendimento } from '@/server/services/ciclo'
-import { prestacaoDeContasDoMotor, oscilacaoDaReguaDoTenant, resolverPrevisoes } from '@/server/services/previsao'
+import { chaveDaCombinacao, prestacaoDeContasDoMotor, oscilacaoDaReguaDoTenant, resolverPrevisoes } from '@/server/services/previsao'
+import { listarParaRecuperar, registrarChamadaManual } from '@/server/services/recuperar-receita'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -89,10 +90,11 @@ async function criarCliente(nome: string) {
   return c.data!.id
 }
 
-async function inserirAtendimentoConcluido(clientId: string, diasAtras: number) {
+async function inserirAtendimentoConcluido(clientId: string, diasAtras: number, subjectId: string | null = null) {
   const inicio = new Date(Date.now() - diasAtras * 86_400_000)
   const { error } = await svc.from('appointments').insert({
     tenant_id: tenantId,
+    subject_id: subjectId,
     client_id: clientId,
     professional_id: professionalId,
     service_id: servicoId,
@@ -105,6 +107,160 @@ async function inserirAtendimentoConcluido(clientId: string, diasAtras: number) 
 }
 
 describe('recomputarCiclosDoTenant', () => {
+  it(
+    'C-035 (v5): com a régua calibrada pelo salão, o ciclo de 3+ intervalos encolhe em direção a ela',
+    async () => {
+      const cliente = await criarCliente('Ritmo Longo Calibrado')
+      for (const dias of [126, 84, 44, 0.2]) await inserirAtendimentoConcluido(cliente, dias) // 42, 40, 44 dias
+      const antes = await svc.from('services').select('cycle_days, cycle_days_observado').eq('id', servicoId).single()
+      if (antes.error) throw antes.error
+      try {
+        await svc.from('services').update({ cycle_days_observado: antes.data.cycle_days }).eq('id', servicoId)
+        await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
+        const linha = await svc.from('client_cycles').select('personal_cycle_days').eq('tenant_id', tenantId).eq('client_id', cliente).single()
+        // Sem calibrar seria 42; com a régua de 21 calibrada: (3 × 42 + 3 × 21) / 6 = 31,5 → 32.
+        expect(antes.data.cycle_days).toBe(21)
+        expect(linha.data?.personal_cycle_days).toBe(32)
+      } finally {
+        await svc.from('services').update({ cycle_days_observado: antes.data.cycle_days_observado }).eq('id', servicoId)
+      }
+    },
+    30_000,
+  )
+
+  it(
+    'C-030: dois animais banhados nos mesmos dias têm cada um a sua previsão, e a volta de um só fecha a dele',
+    async () => {
+      const tutor = await criarCliente('Tutor Mesmo Dia')
+      const sujeito = async (nome: string) => {
+        const r = await svc.from('subjects').insert({ tenant_id: tenantId, client_id: tutor, kind: 'animal', name: nome }).select('id').single()
+        if (r.error) throw r.error
+        return r.data.id
+      }
+      const mel = await sujeito('Mel')
+      const thor = await sujeito('Thor')
+      // Mesmo dia, horários diferentes (a trava anti-sobreposição é por profissional).
+      for (const dias of [42, 28, 14]) {
+        await inserirAtendimentoConcluido(tutor, dias, mel)
+        await inserirAtendimentoConcluido(tutor, dias + 0.05, thor)
+      }
+      const hoje = new Date().toISOString().slice(0, 10)
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, hoje)
+
+      const abertas = await svc.from('cycle_predictions').select('subject_id').eq('tenant_id', tenantId).eq('client_id', tutor).is('resolved_at', null)
+      expect(abertas.error).toBeNull()
+      expect(new Set((abertas.data ?? []).map((p) => p.subject_id))).toEqual(new Set([mel, thor]))
+
+      // Só a Mel volta.
+      await inserirAtendimentoConcluido(tutor, 0.1, mel)
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, hoje)
+
+      const depois = await svc.from('cycle_predictions').select('subject_id, resolved_at').eq('tenant_id', tenantId).eq('client_id', tutor)
+      const fechadas = (depois.data ?? []).filter((p) => p.resolved_at !== null).map((p) => p.subject_id)
+      expect(fechadas).toEqual([mel])
+    },
+    30_000,
+  )
+
+  it(
+    'C-025 (AUT-101): o animal em dia não esconde o outro que sumiu — o tutor fica na fila, mostrando quem sumiu',
+    async () => {
+      const tutor = await criarCliente('Tutor Da Mel E Do Thor')
+      const sujeito = async (nome: string) => {
+        const r = await svc.from('subjects').insert({ tenant_id: tenantId, client_id: tutor, kind: 'animal', name: nome }).select('id').single()
+        if (r.error) throw r.error
+        return r.data.id
+      }
+      const mel = await sujeito('Mel')
+      const thor = await sujeito('Thor')
+      for (const dias of [50, 30, 10]) await inserirAtendimentoConcluido(tutor, dias, mel) // em dia
+      for (const dias of [120, 100, 80]) await inserirAtendimentoConcluido(tutor, dias, thor) // sumiu
+
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
+
+      const estados = await svc.from('client_cycles').select('subject_id, state').eq('tenant_id', tenantId).eq('client_id', tutor)
+      const porSujeito = new Map((estados.data ?? []).map((c) => [c.subject_id, c.state]))
+      expect(porSujeito.get(mel)).toBe('on_track')
+      expect(porSujeito.get(thor)).toBe('lost')
+
+      const lista = await listarParaRecuperar(svc, tenantId)
+      const doTutor = lista.items.filter((i) => i.clientId === tutor)
+      expect(doTutor).toHaveLength(1)
+      expect(doTutor[0]!.subjectName).toBe('Thor')
+    },
+    30_000,
+  )
+
+  it(
+    'C-023 (AUT-101): tutor com 2 animais no mesmo serviço vira 2 ciclos, cada um no ritmo do seu animal',
+    async () => {
+      const tutor = await criarCliente('Tutor de Dois')
+      const sujeito = async (nome: string) => {
+        const r = await svc.from('subjects').insert({ tenant_id: tenantId, client_id: tutor, kind: 'animal', name: nome }).select('id').single()
+        if (r.error) throw r.error
+        return r.data.id
+      }
+      const mel = await sujeito('Mel')
+      const thor = await sujeito('Thor')
+      // Semanas alternadas: juntos, uma série a cada 7 dias; cada animal, a cada 14.
+      for (const dias of [70, 56, 42, 28]) await inserirAtendimentoConcluido(tutor, dias, mel)
+      for (const dias of [63, 49, 35, 21]) await inserirAtendimentoConcluido(tutor, dias, thor)
+
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
+
+      const ciclos = await svc
+        .from('client_cycles')
+        .select('subject_id, personal_cycle_days, sample_size, last_visit_on')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', tutor)
+      expect(ciclos.error).toBeNull()
+      const porSujeito = new Map((ciclos.data ?? []).map((c) => [c.subject_id, c]))
+      expect(porSujeito.size).toBe(2)
+      expect(porSujeito.get(mel)?.personal_cycle_days).toBe(14)
+      expect(porSujeito.get(thor)?.personal_cycle_days).toBe(14)
+      expect(porSujeito.get(mel)?.sample_size).toBe(3)
+      expect(porSujeito.has(null)).toBe(false)
+
+      // Rodar de novo não duplica (a chave por sujeito é o alvo do upsert).
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
+      const deNovo = await svc.from('client_cycles').select('subject_id').eq('tenant_id', tenantId).eq('client_id', tutor)
+      expect(deNovo.data).toHaveLength(2)
+
+      // A fila mostra o tutor uma vez (uma mensagem por pessoa), mesmo com 2 ciclos atrasados.
+      const lista = await listarParaRecuperar(svc, tenantId)
+      expect(lista.items.filter((i) => i.clientId === tutor)).toHaveLength(1)
+
+      // Chamar o tutor com 2 ciclos no mesmo serviço não pode dar "várias linhas" (leitura do mais atrasado).
+      const chamada = await registrarChamadaManual(svc, tenantId, { clientId: tutor, serviceId: servicoId })
+      expect(chamada.registrada).toBe(true)
+    },
+    30_000,
+  )
+
+  it(
+    'C-015: grava sample_size (intervalos medidos) e a fila de recuperar devolve o ritmo com ela',
+    async () => {
+      const medido = await criarCliente('Ritmo Medido')
+      for (const dias of [64, 42, 22]) await inserirAtendimentoConcluido(medido, dias) // 2 intervalos
+      const novo = await criarCliente('Uma Visita So')
+      await inserirAtendimentoConcluido(novo, 30)
+
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
+
+      const amostra = async (cliente: string) =>
+        (await svc.from('client_cycles').select('sample_size').eq('tenant_id', tenantId).eq('client_id', cliente).single()).data?.sample_size
+      expect(await amostra(medido)).toBe(2)
+      // Uma visita só: o ciclo pessoal é o padrão do catálogo, e a amostra diz isso (0), não um default esquecido.
+      expect(await amostra(novo)).toBe(0)
+
+      const lista = await listarParaRecuperar(svc, tenantId)
+      const item = lista.items.find((i) => i.clientId === medido)
+      expect(item?.ritmo).toMatchObject({ amostra: 2 })
+      expect(item?.ritmo?.ultimaVisitaOn).toBeTruthy()
+    },
+    30_000,
+  )
+
   it(
     'cliente sem retorno esperado ainda vira due/late — grava em client_cycles',
     async () => {
@@ -609,7 +765,7 @@ describe('resolverPrevisoes / resolver_previsoes_em_lote — isolado num tenant 
         if (error) throw error
       }
 
-      const historicoPorCombinacao = new Map<string, string[]>(idsClientes.map((clientId) => [`${clientId}:${servicoIdIsolado}`, [lastVisitOn, retorno]]))
+      const historicoPorCombinacao = new Map<string, string[]>(idsClientes.map((clientId) => [chaveDaCombinacao(clientId, servicoIdIsolado, null), [lastVisitOn, retorno]]))
 
       const t0 = Date.now()
       const fechadas = await resolverPrevisoes(svc, tenantIdIsolado, historicoPorCombinacao)

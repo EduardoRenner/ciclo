@@ -1,7 +1,8 @@
 import { cookies } from 'next/headers'
 
 import { COOKIE_ORIGEM, lerOrigem, serializarOrigem } from '@/core/aquisicao/origem'
-import { exigirSenhaForte } from '@/server/auth/password'
+import { desfechoDoCadastro } from '@/server/auth/desfecho-do-cadastro'
+import { exigirSenhaForte, SENHA_MINIMA } from '@/server/auth/password'
 import { EsquemaCadastro } from '@/server/auth/schemas'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { lerCorpo } from '@/server/http/body'
@@ -43,23 +44,25 @@ export const POST = rota(async (req) => {
     },
   })
 
-  if (error) {
-    const status = error.status ?? 500
-
-    // Só o excesso de tentativas volta como erro: a pessoa precisa saber que é
-    // para esperar, e isso não diz se o e-mail existe.
-    if (status === 429) throw AppError.limiteDeTaxa(60)
-
-    // Falha de infraestrutura não pode virar "enviamos o e-mail" — a pessoa
-    // ficaria esperando uma mensagem que nunca sai.
-    if (status >= 500) throw new AppError('INTERNAL', { cause: error })
-
-    console.warn(JSON.stringify({ level: 'warn', event: 'signup_recusado', status }))
+  // APR-025: cada recusa com a sua resposta — ver `desfechoDoCadastro`.
+  const desfecho = desfechoDoCadastro(error)
+  if (desfecho === 'limite') throw AppError.limiteDeTaxa(60)
+  if (desfecho === 'senha_fraca') {
+    throw AppError.validacao({ password: `Essa senha é curta ou fraca demais. Use pelo menos ${SENHA_MINIMA} caracteres, sem palavra óbvia.` })
+  }
+  if (desfecho === 'email_invalido') throw AppError.validacao({ email: 'Confira o e-mail: ele não parece completo.' })
+  if (desfecho === 'envio_indisponivel') {
+    // LOJA-02: alarme próprio, sem o e-mail da pessoa no log; a tela diz que o envio falhou em vez de "mandamos o link".
+    console.error(JSON.stringify({ level: 'error', event: 'signup_email_nao_enviado', status: error?.status ?? null, code: error?.code ?? null }))
+    throw new AppError('EMAIL_UNAVAILABLE')
+  }
+  if (desfecho === 'falha') {
+    console.warn(JSON.stringify({ level: 'warn', event: 'signup_recusado', status: error?.status ?? null, code: error?.code ?? null }))
+    throw new AppError('INTERNAL', { cause: error })
   }
 
-  // Daqui para baixo a resposta é idêntica para e-mail novo e e-mail já
-  // cadastrado. A diferença transformaria o cadastro num verificador de quem tem
-  // conta no CICLO; quem já tem recebe um e-mail dizendo isso, quem não tem
-  // recebe o link de confirmação.
+  // Daqui para baixo a resposta é idêntica para e-mail novo e e-mail já cadastrado (o
+  // `desfechoDoCadastro` devolve `aceito` para os dois). A diferença transformaria o cadastro num
+  // verificador de quem tem conta no CICLO.
   return { status: 'confirmacao_enviada' }
 })

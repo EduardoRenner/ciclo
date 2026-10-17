@@ -148,10 +148,19 @@ describe('o caixa não anuncia uma taxa que ninguém calcula', () => {
   })
 
   it('o valor calculado é GRAVADO na comanda, senão o caixa soma zero de novo', () => {
+    // APR-033: o fechamento é a RPC `aplicar_fechamento_de_comanda` — o TypeScript monta `campos`, e o
+    // UPDATE de verdade mora na 0122. As duas pontas precisam carregar a taxa.
     const fechamento = semComentarios('src/server/services/comanda.ts')
-    const update = /\.update\(\{[\s\S]*?closed_at[\s\S]*?\}\)/.exec(fechamento)
-    expect(update?.[0], 'o UPDATE que fecha a comanda mudou de forma — esta guarda precisa ser revista').toBeDefined()
-    expect(/fee_cents:\s*feeCents\b/.test(update![0]), 'o fechamento não grava `fee_cents`').toBe(true)
-    expect(/fee_bps:\s*feeBps\b/.test(update![0]), 'o fechamento não congela `fee_bps` — a comanda de agosto muda quando o dono renegocia em novembro').toBe(true)
+    const campos = /const campos = \{[\s\S]*?\n {2}\}/.exec(fechamento)
+    expect(campos?.[0], 'o objeto que o fechamento manda para a RPC mudou de forma — esta guarda precisa ser revista').toBeDefined()
+    expect(/p_ticket_campos:\s*campos\b/.test(fechamento), 'o fechamento não manda `campos` para a RPC').toBe(true)
+    expect(/fee_cents:\s*feeCents\b/.test(campos![0]), 'o fechamento não grava `fee_cents`').toBe(true)
+    expect(/fee_bps:\s*feeBps\b/.test(campos![0]), 'o fechamento não congela `fee_bps` — a comanda de agosto muda quando o dono renegocia em novembro').toBe(true)
+
+    const rpc = readFileSync('supabase/migrations/0122_fechar_comanda_numa_transacao.sql', 'utf8')
+    const update = /update public\.tickets\s+set status = 'closed',[\s\S]*?returning \* into v_ticket;/.exec(rpc)
+    expect(update?.[0], 'o UPDATE que fecha a comanda na 0122 mudou de forma — esta guarda precisa ser revista').toBeDefined()
+    expect(/fee_cents = \(p_ticket_campos->>'fee_cents'\)::bigint/.test(update![0]), 'a RPC não grava `fee_cents`').toBe(true)
+    expect(/fee_bps = \(p_ticket_campos->>'fee_bps'\)::int/.test(update![0]), 'a RPC não congela `fee_bps`').toBe(true)
   })
 })

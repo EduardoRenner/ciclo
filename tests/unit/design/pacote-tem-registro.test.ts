@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
@@ -17,10 +17,19 @@ import { semComentarios } from '../../helpers/fonte'
  */
 const SQL = readFileSync('supabase/migrations/0102_pacote_advocacia.sql', 'utf8')
 
+/**
+ * C-031: o `check` vale pela ÚLTIMA migration que o define (a 0140 o redefiniu para incluir `oficina`).
+ * Ler só a 0102 comparava o registro com uma lista velha: guarda cega pela raiz.
+ */
 function slugsDoCheck(): string[] {
-  const m = /check \(pacote in \(([^)]+)\)\)/.exec(SQL)
-  if (!m) throw new Error('não achei o `check (pacote in (...))` na 0102: a guarda cegou')
-  return [...m[1]!.matchAll(/'([a-z_]+)'/g)].map((x) => x[1] as string).sort()
+  const arquivos = readdirSync('supabase/migrations').filter((f) => f.endsWith('.sql')).sort()
+  let ultimo: string | null = null
+  for (const f of arquivos) {
+    const m = /check \(pacote in \(([^)]+)\)\)/.exec(semComentarios(readFileSync(`supabase/migrations/${f}`, 'utf8')))
+    if (m) ultimo = m[1]!
+  }
+  if (!ultimo) throw new Error('não achei nenhum `check (pacote in (...))` nas migrations: a guarda cegou')
+  return [...ultimo.matchAll(/'([a-z_]+)'/g)].map((x) => x[1] as string).sort()
 }
 
 describe('professions.pacote e core/pacotes não podem divergir', () => {
@@ -38,6 +47,11 @@ describe('professions.pacote e core/pacotes não podem divergir', () => {
     // Casa com a LINHA do insert (a coluna `pacote` é a última), não com o nome da profissão solto.
     const linha = /\('advocacia', 'Advocacia'[\s\S]*?, 'advocacia'\)\s*on conflict/.exec(SQL)
     expect(linha, 'a linha advocacia não grava pacote = advocacia').not.toBeNull()
+  })
+
+  it('a linha oficina_mecanica grava o pacote oficina (0140)', () => {
+    const sql0140 = readFileSync('supabase/migrations/0140_pacote_oficina.sql', 'utf8')
+    expect(/\('oficina_mecanica', 'Oficina mecânica'[\s\S]*?, 'oficina'\)\s*on conflict/.test(sql0140)).toBe(true)
   })
 
   it('cada pacote do registro declara o próprio slug', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { compararSchema, MIGRATIONS_ESPERADAS, ULTIMA_MIGRATION } from '@/core/schema/versao'
+import { compararSchema, MIGRATIONS_DO_CODIGO, MIGRATIONS_ESPERADAS, ULTIMA_MIGRATION } from '@/core/schema/versao'
 
 /**
  * `supabase_migrations.schema_migrations.name` vem em dois formatos, e a diferença é quem aplicou:
@@ -23,9 +23,8 @@ import { compararSchema, MIGRATIONS_ESPERADAS, ULTIMA_MIGRATION } from '@/core/s
 const comoOCliGrava = (nome: string) => nome.replace(/^\d+_/, '')
 
 function listaCompleta(formato: (n: string) => string): string[] {
-  // Nomes plausíveis para as anteriores; o que importa é a ÚLTIMA e a contagem.
-  const anteriores = Array.from({ length: MIGRATIONS_ESPERADAS - 1 }, (_, i) => formato(`${String(i + 1).padStart(4, '0')}_migration_${i + 1}`))
-  return [...anteriores, formato(ULTIMA_MIGRATION)]
+  // Os nomes REAIS do código: desde a APR-030 a comparação é por nome, não pela última e a contagem.
+  return MIGRATIONS_DO_CODIGO.map(formato)
 }
 
 describe('o livro de migrations é lido nos dois formatos', () => {
@@ -49,7 +48,7 @@ describe('o livro de migrations é lido nos dois formatos', () => {
      * Produção tem as antigas COM prefixo (postas à mão) e recebe as novas SEM prefixo (postas
      * pelo `db push`). A última é justamente a nova, e é ela que a comparação procura.
      */
-    const antigas = Array.from({ length: MIGRATIONS_ESPERADAS - 1 }, (_, i) => `${String(i + 1).padStart(4, '0')}_migration_${i + 1}`)
+    const antigas = MIGRATIONS_DO_CODIGO.slice(0, -1)
     const r = compararSchema([...antigas, comoOCliGrava(ULTIMA_MIGRATION)])
     expect(r.ok, r.detail).toBe(true)
   })
@@ -63,10 +62,10 @@ describe('o livro de migrations é lido nos dois formatos', () => {
   })
 
   it('e continua reprovando quando falta migration do meio', () => {
-    const curta = listaCompleta(comoOCliGrava).slice(1) // tem a última, mas uma a menos no total
+    const curta = listaCompleta(comoOCliGrava).filter((_, i) => i !== 10) // tem a última, falta uma do meio
     const r = compararSchema(curta)
     expect(r.ok).toBe(false)
-    expect(r.detail).toMatch(/do meio/)
+    expect(r.detail).toContain(MIGRATIONS_DO_CODIGO[10])
   })
 
   it('banco à frente do código continua verde, com o motivo escrito', () => {

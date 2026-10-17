@@ -18,7 +18,7 @@
  *
  * Só que o dado já está no banco, por outro motivo: a ficha de consumo (`service_products`) diz
  * quanto de cada produto um serviço gasta, e `products.avg_cost_cents` é a média móvel ponderada
- * mantida pelas compras. `baixarEstoqueDaComanda` já usa a ficha para dar baixa — falta ela também
+ * mantida pelas compras. `consumoDaComanda` já usa a ficha para dar baixa — falta ela também
  * responder quanto aquilo custou. O dono não precisa saber o custo do serviço: ele precisa saber o
  * que gasta e quanto pagou no produto, que é o que ele já cadastra para o estoque não furar.
  *
@@ -79,4 +79,13 @@ export function custoDoServico(ficha: readonly LinhaDaFicha[], qtyDoItem: number
     produtosNaFicha: ficha.length,
     materialIncerto: ficha.length === 0 || produtosSemCusto > 0,
   }
+}
+
+/**
+ * APR-210: a resposta que JÁ FOI DADA no fechamento da comanda (`ticket_items.cost_cents` e
+ * `material_incerto`), no mesmo formato de `custoDoServico` — a pergunta "o material é confiável?"
+ * continua tendo um dono só; aqui ela só é lida de volta do que foi gravado.
+ */
+export function custoJaGravado(costCents: number, incerto: boolean): { custoCents: number; materialIncerto: boolean } {
+  return { custoCents: costCents, materialIncerto: incerto }
 }

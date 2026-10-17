@@ -72,12 +72,20 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
   const [fim, setFim] = useState(iniciais.length < PAGINA)
   const [carregandoMais, setCarregandoMais] = useState(false)
 
+  // APR-114 (C-19): a resposta de um termo VELHO não sobrescreve a do termo atual (duas buscas em voo
+  // chegam fora de ordem numa rede ruim), e `r.ok` é conferido: 500 com corpo JSON não é resultado.
+  const pedido = useRef(0)
   const buscar = useCallback((valor: string) => {
+    const meu = ++pedido.current
     setCarregando(true)
     setFalhou(false)
     fetch(urlDaLista(valor, null))
-      .then((r) => r.json() as Promise<{ data?: { clients: ClienteLinha[] } }>)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(String(r.status))
+        return r.json() as Promise<{ data?: { clients: ClienteLinha[] } }>
+      })
       .then((json) => {
+        if (meu !== pedido.current) return
         const lista = json.data?.clients ?? []
         setClientes(lista)
         setFim(lista.length < PAGINA)
@@ -87,8 +95,12 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
         a pessoa digitava um nome, via os resultados de antes e concluía que aquele era o
         resultado. Lista errada com cara de certa é pior que lista vazia.
       */
-      .catch(() => setFalhou(true))
-      .finally(() => setCarregando(false))
+      .catch(() => {
+        if (meu === pedido.current) setFalhou(true)
+      })
+      .finally(() => {
+        if (meu === pedido.current) setCarregando(false)
+      })
   }, [])
 
   const alternarSegmento = useCallback((valor: Segmento) => {
@@ -153,7 +165,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
           id="busca-clientes"
           type="search"
           inputMode="search"
-          placeholder="Nome ou telefone"
+          placeholder="Nome, ou os últimos 4 números do telefone"
           value={termo}
           onChange={(e) => {
             setSegmento(null)
@@ -189,13 +201,13 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
         {carregando
           ? 'Buscando.'
           : falhou
-            ? 'Não consegui buscar. A lista abaixo é a anterior.'
+            ? 'Não consegui buscar. Isso não quer dizer que a pessoa não existe. A lista abaixo é a anterior.'
             : `${clientes.length} ${clientes.length === 1 ? vocabulario.cliente : plural(vocabulario.cliente)} na lista.${fim ? '' : ' Há mais para carregar.'}`}
       </p>
 
       {falhou ? (
         <p role="alert" className="mb-3 text-secundario text-bad">
-          Não consegui buscar agora. Confira a conexão e tente de novo. A lista abaixo é a de antes.
+          Não consegui buscar agora. Isso não quer dizer que a pessoa não existe. Confira a conexão e tente de novo; a lista abaixo é a de antes.
         </p>
       ) : null}
 
@@ -258,7 +270,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
               <p>
                 Já tem uma lista pronta?{' '}
                 <Link href="/admin/clientes/importar" className="font-semibold text-acc-2 underline underline-offset-2">
-                  Importe uma planilha
+                  Importe planilha, print ou contatos
                 </Link>
               </p>
             </div>

@@ -1,5 +1,6 @@
 import { deBytea } from '@/server/crypto/bytea'
 import { decryptVault } from '@/server/crypto/vault'
+import { buscarTudoPaginado } from '@/server/db/paginar'
 import { withTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
 import { registrarAcessoAoCofre } from '@/server/services/cofre-trilha'
@@ -16,6 +17,13 @@ export type ExportacaoDados = {
   appointments: Record<string, unknown>[]
   packages: Record<string, unknown>[]
   media: { id: string; phase: string | null; createdAt: string }[]
+  /** CNV-011 (D18): o resto do que é DA titular — a portabilidade estava incompleta. */
+  notes: Record<string, unknown>[]
+  loyalty: Record<string, unknown>[]
+  subscriptions: Record<string, unknown>[]
+  wallet: Record<string, unknown>[]
+  tickets: Record<string, unknown>[]
+  payments: Record<string, unknown>[]
 }
 
 /**
@@ -35,18 +43,44 @@ export async function exportarDadosDoCliente(
   if (erroCliente) throw new AppError('INTERNAL', { cause: erroCliente })
   if (!cliente) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
 
-  const [saude, consentimentos, agendamentos, pacotes, media] = await Promise.all([
+  const [saude, consentimentos, agendamentosTodos, pacotes, media, notas, fidelidade, assinaturas, carteira, comandas, pagamentos] = await Promise.all([
     db.from('health_records').select('ciphertext, iv, auth_tag').eq('tenant_id', tenantId).eq('client_id', clientId).maybeSingle(),
     db.from('consents').select('kind, version, granted, granted_at, revoked_at').eq('tenant_id', tenantId).eq('client_id', clientId).order('granted_at', { ascending: false }),
-    db.from('appointments').select('starts_at, status, service_id, price_cents').eq('tenant_id', tenantId).eq('client_id', clientId).order('starts_at', { ascending: false }),
+    // CNV-011: paginado — a cliente de anos passa de mil agendamentos e o corte não avisa.
+    buscarTudoPaginado(() =>
+      db.from('appointments').select('id, starts_at, status, service_id, price_cents').eq('tenant_id', tenantId).eq('client_id', clientId).order('id'),
+    ),
     db.from('packages').select('service_id, total_sessions, used_sessions, paid_cents, expires_on').eq('tenant_id', tenantId).eq('client_id', clientId),
     db.from('media').select('id, phase, created_at').eq('tenant_id', tenantId).eq('client_id', clientId).is('deleted_at', null),
+    buscarTudoPaginado(() =>
+      db.from('client_notes').select('id, body, created_at').eq('tenant_id', tenantId).eq('client_id', clientId).order('id'),
+    ),
+    buscarTudoPaginado(() =>
+      db.from('loyalty_entries').select('id, points, reason, created_at').eq('tenant_id', tenantId).eq('client_id', clientId).order('id'),
+    ),
+    db.from('client_subscriptions').select('plan_id, status, started_on, canceled_on, billing_day').eq('tenant_id', tenantId).eq('client_id', clientId),
+    buscarTudoPaginado(() =>
+      db.from('wallet_entries').select('id, amount_cents, reason, expires_on, created_at').eq('tenant_id', tenantId).eq('client_id', clientId).order('id'),
+    ),
+    buscarTudoPaginado(() =>
+      db
+        .from('tickets')
+        .select('id, status, total_cents, discount_cents, tip_cents, payment_method, closed_at, ticket_items(description, qty, total_cents)')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', clientId)
+        .order('id'),
+    ),
+    buscarTudoPaginado(() =>
+      db.from('payments').select('id, kind, method, status, amount_cents, paid_at, refunded_at').eq('tenant_id', tenantId).eq('client_id', clientId).order('id'),
+    ),
   ])
+  const agendamentos = { data: [...agendamentosTodos].sort((a, b) => String(b.starts_at).localeCompare(String(a.starts_at))), error: null }
   if (saude.error) throw new AppError('INTERNAL', { cause: saude.error })
   if (consentimentos.error) throw new AppError('INTERNAL', { cause: consentimentos.error })
   if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
   if (pacotes.error) throw new AppError('INTERNAL', { cause: pacotes.error })
   if (media.error) throw new AppError('INTERNAL', { cause: media.error })
+  if (assinaturas.error) throw new AppError('INTERNAL', { cause: assinaturas.error })
 
   let healthRecord: ExportacaoDados['healthRecord'] = null
   if (saude.data) {
@@ -67,6 +101,12 @@ export async function exportarDadosDoCliente(
     appointments: agendamentos.data ?? [],
     packages: pacotes.data ?? [],
     media: (media.data ?? []).map((m) => ({ id: m.id, phase: m.phase, createdAt: m.created_at })),
+    notes: notas,
+    loyalty: fidelidade,
+    subscriptions: assinaturas.data ?? [],
+    wallet: carteira,
+    tickets: comandas,
+    payments: pagamentos,
   }
 }
 
@@ -189,6 +229,16 @@ export const TRATAMENTO_NA_ELIMINACAO: Record<string, Record<string, string>> = 
   // visitante da página do salão — o oposto do que "apagar meus dados" promete.
   portfolio_photos: {
     storage_key: 'apaga_linha',
+  },
+  // AUT-101 (0132): o animal ou o carro da cliente. A linha FICA (os agendamentos apontam para ela e o
+  // histórico de ciclos não pode ficar órfão), sem nada que identifique: nome e placa viram genéricos,
+  // atributos somem e o sujeito fica inativo. A eliminação anonimiza a ficha (não apaga), então o
+  // `on delete cascade` de `subjects.client_id` NÃO dispara aqui — por isso a escrita explícita.
+  subjects: {
+    kind: 'preserva', // 'animal' | 'veiculo': o tipo, não quem
+    name: 'anonimiza',
+    identifier: 'anonimiza',
+    attributes: 'anonimiza',
   },
   payments: {
     psp: 'preserva', // registro financeiro: nome do provedor, sem dado pessoal
@@ -499,6 +549,15 @@ async function eliminarComServico(db: Cliente, tenantId: string, clientId: strin
     .select('id')
   if (documentosJuridicos.error) throw new AppError('INTERNAL', { cause: documentosJuridicos.error })
   rowsRedacted.legal_documents = documentosJuridicos.data?.length ?? 0
+
+  const sujeitos = await db
+    .from('subjects')
+    .update({ name: 'Eliminado', identifier: null, attributes: {}, active: false })
+    .eq('tenant_id', tenantId)
+    .eq('client_id', clientId)
+    .select('id')
+  if (sujeitos.error) throw new AppError('INTERNAL', { cause: sujeitos.error })
+  rowsRedacted.subjects = sujeitos.data?.length ?? 0
 
   // ── o cadastro em si
   const agora = new Date().toISOString()

@@ -4,11 +4,16 @@ import { redirect } from 'next/navigation'
 import { faixaDaConta } from '@/core/billing/faixa-da-conta'
 import { lerCortesia, situacaoEmVigor } from '@/core/billing/prelancamento'
 import { PADRAO } from '@/core/text/vocabulario'
+import { atalhosVisiveis } from '@/core/navegacao/atalhos-do-menu'
+import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
+import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { listarModulos, moduloVisivel } from '@/server/services/modulos'
 import { AppError } from '@/server/http/errors'
 import { normalizarPlano } from '@/server/services/planos'
 import ToastProvider from '@/components/ui/toast'
 import AssistenteFlutuante from '@/components/shell/assistente-flutuante'
+import { FusoProvider } from '@/components/shell/fuso'
 import { VocabularioProvider } from '@/components/shell/vocabulario'
 import ResolucaoDeFila from '@/components/shell/resolucao-de-fila'
 import FaixaDaConta from '@/components/shell/faixa-da-conta'
@@ -108,6 +113,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   // docs/87 §3.1: a data de fim da cortesia aparece em toda tela. Sem ida ao banco: `plan` e a chave
   // `settings.cortesia` vêm na consulta que já valida o vínculo (`server/auth/tenant.ts`).
+  /*
+    APR-103: o menu do topo obedece aos módulos e ao papel, com a regra do hub de Configurações. Uma
+    consulta só, na carga da página (o layout persiste entre as navegações). Se ela falhar, o menu
+    mantém a lista inteira de antes: atalho a mais é menos grave que a casca do painel cair.
+  */
+  const modulos = ctx ? await listarModulos(await criarClienteDoUsuario(), ctx.tenantId).catch(() => null) : null
+  const atalhos =
+    ctx && modulos
+      ? atalhosVisiveis({ moduloVisivel: (m) => moduloVisivel(modulos, m), alcanca: (p) => avaliarPermissao(ctx.papel, p) !== null }).map((a) => a.href)
+      : undefined
   const faixa = ctx
     ? faixaDaConta(situacaoEmVigor(normalizarPlano(ctx.tenant.plan), lerCortesia({ cortesia: ctx.tenant.cortesia }), new Date()), new Date())
     : null
@@ -126,6 +141,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {corDeFundo ? (
         <style dangerouslySetInnerHTML={{ __html: `html,body{background:${corDeFundo}}` }} />
       ) : null}
+      {/* APR-019: o fuso do negócio, para a hora sair igual no HTML do servidor (UTC na Vercel) e no navegador. */}
+      <FusoProvider fuso={ctx?.tenant.timezone ?? 'America/Sao_Paulo'}>
       <VocabularioProvider valor={ctx?.tenant.vocabulario ?? PADRAO}>
       {/*
         No monitor, o app é uma coluna de 560px sobre um fundo preto infinito —
@@ -146,7 +163,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         `auto` do outro lado e o conteúdo grudava na coluna, com 649px vazios à direita.
       */}
       <div className="mx-auto min-h-dvh max-w-[560px] sm:border-x sm:border-line">
-        <Topbar />
+        <Topbar atalhos={atalhos} site={ctx?.tenant.slug ? { href: `/${ctx.tenant.slug}` } : undefined} />
         <IndicadorDeConexao pacote={ctx?.tenant.pacote ?? 'base'} />
         {faixa ? <FaixaDaConta faixa={faixa} /> : null}
         {/*
@@ -173,7 +190,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {/* `fixed`: fica fora da coluna de conteúdo para poder virar barra lateral no `lg`. */}
         {/* docs/101 T0.3: abas e botão central são do pacote da profissão; sem contexto, a barra de sempre. */}
         <TabBar pacote={ctx?.tenant.pacote ?? 'base'} />
-        <ResolucaoDeFila />
+        <ResolucaoDeFila sessao={ctx ? { userId: ctx.sessao.userId, tenantId: ctx.tenantId } : null} />
         {/*
           docs/85 MI-2 (2026-09-29): o assistente roda no Motor de Inteligência do próprio CICLO,
           sem chave de terceiro — então aparece sempre. Até aqui dependia de
@@ -183,6 +200,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         */}
         <AssistenteFlutuante disponivel />
     </VocabularioProvider>
+    </FusoProvider>
     </ToastProvider>
     </div>
   )

@@ -352,6 +352,29 @@ describe('máquina de estados via API', () => {
   )
 
   it(
+    'concluir abre a comanda COM o serviço e o preço combinados, mesmo se o preço mudou depois (APR-006)',
+    async () => {
+      const ag = await novoAgendamento('16:30')
+      const combinado = (await svc.from('appointments').select('price_cents').eq('id', ag.id).single()).data!.price_cents
+      const precoAntes = (await svc.from('services').select('price_cents').eq('id', servicoId).single()).data!.price_cents
+      // O dono sobe o preço entre marcar e atender: a cliente paga o que foi combinado.
+      await svc.from('services').update({ price_cents: precoAntes + 500 }).eq('id', servicoId)
+      try {
+        await confirmarAgendamento(svc, tenantId, ag.id)
+        await marcarChegada(svc, tenantId, ag.id)
+        const { ticket } = await concluirAgendamento(svc, tenantId, ag.id)
+        await concluirAgendamento(svc, tenantId, ag.id).catch(() => null)
+
+        const itens = await svc.from('ticket_items').select('service_id, qty, unit_price_cents').eq('ticket_id', ticket.id)
+        expect(itens.data).toEqual([{ service_id: servicoId, qty: 1, unit_price_cents: combinado }])
+      } finally {
+        await svc.from('services').update({ price_cents: precoAntes }).eq('id', servicoId)
+      }
+    },
+    30_000,
+  )
+
+  it(
     'transição ilegal (pending → arrived, pulando confirmed) devolve 422 INVALID_TRANSITION',
     async () => {
       const ag = await novoAgendamento('13:00')
@@ -500,6 +523,56 @@ describe('remarcar', () => {
 
       const remarcado = await remarcarAgendamento(svc, tenantId, TZ, ag.id, { startsAt: horario('09:30') }, {})
       expect(new Date(remarcado.starts_at).getTime()).toBe(new Date(horario('09:30')).getTime())
+    },
+    30_000,
+  )
+})
+
+describe('remarcar não passa por cima de "Chegou" (APR-205)', () => {
+  /** O mesmo `svc`, mas o UPDATE de `appointments` só roda DEPOIS de alguém marcar a chegada — a corrida de dois aparelhos, determinística. */
+  function dbComChegadaNoMeio(id: string) {
+    const db = Object.create(svc) as typeof svc
+    db.from = ((tabela: string) => {
+      const builder = svc.from(tabela as 'appointments')
+      if (tabela !== 'appointments') return builder
+      const updateOriginal = builder.update.bind(builder)
+      ;(builder as unknown as { update: unknown }).update = (...args: Parameters<typeof updateOriginal>) => {
+        const consulta = updateOriginal(...args)
+        const thenOriginal = consulta.then.bind(consulta)
+        ;(consulta as unknown as { then: unknown }).then = (ok: (v: unknown) => unknown, erro?: (e: unknown) => unknown) =>
+          marcarChegada(svc, tenantId, id).then(() => thenOriginal(ok as never, erro as never), erro)
+        return consulta
+      }
+      return builder
+    }) as typeof svc.from
+    return db
+  }
+
+  it(
+    'a chegada vence; o remarcar que leu "pendente" recebe 409 e não move o horário',
+    async () => {
+      const ag = await criarAgendamento(
+        svc,
+        tenantId,
+        TZ,
+        userId,
+        {
+          clientDraft: { name: 'Corrida de Aparelhos', phone: `119${String(Math.floor(Math.random() * 1e8)).padStart(8, '0')}` },
+          serviceId: servicoId,
+          professionalId,
+          startsAt: horario('16:00'),
+          origin: 'app',
+        },
+        {},
+      )
+      // Chegar exige confirmado; o remarcar lê "confirmed" e, no meio, a recepção marca a chegada.
+      await confirmarAgendamento(svc, tenantId, ag.id)
+      const erro = await remarcarAgendamento(dbComChegadaNoMeio(ag.id), tenantId, TZ, ag.id, { startsAt: horario('17:00') }, {}).catch((e: unknown) => e)
+      expect(erro).toMatchObject({ code: 'CONFLICT' })
+
+      const noBanco = await svc.from('appointments').select('status, starts_at').eq('id', ag.id).single()
+      expect(noBanco.data?.status).toBe('arrived')
+      expect(noBanco.data?.starts_at).toBe(ag.starts_at)
     },
     30_000,
   )

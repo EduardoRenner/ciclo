@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
@@ -92,6 +92,17 @@ describe('ehRotaDoProduto', () => {
   it('não confunde um salão de verdade com rota do produto', () => {
     for (const salao of ['dom-rocha', 'barbearia-do-ze', 'studio-ana', 'precos-imbativeis']) {
       expect(ehRotaDoProduto(salao), `${salao} foi tratado como rota do produto`).toBe(false)
+    }
+  })
+})
+
+describe('os prefixos que o redirect 308 sequestra estão reservados (APR-216)', () => {
+  it('cada prefixo do `redirects()` do next.config.ts está em SLUGS_RESERVADOS', () => {
+    // Lê o `next.config.ts` como texto: o que importa é o que o Next vai aplicar, não a constante por si.
+    const config = readFileSync('next.config.ts', 'utf8')
+    expect(config, 'o next.config.ts deixou de importar a lista compartilhada').toContain('PREFIXOS_REDIRECIONADOS_PARA_ADMIN')
+    for (const prefixo of ['hoje', 'agenda', 'clientes', 'recuperar', 'comanda', 'caixa', 'config']) {
+      expect(SLUGS_RESERVADOS.has(prefixo), `o slug "${prefixo}" é sequestrado pelo redirect e não está reservado`).toBe(true)
     }
   })
 })
