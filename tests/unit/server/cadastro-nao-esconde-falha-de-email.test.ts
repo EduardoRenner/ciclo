@@ -22,8 +22,8 @@ vi.mock('next/headers', () => ({ cookies: async () => ({ get: () => undefined })
  */
 const CORPO = { email: 'ana@salao.test', password: 'uma-senha-bem-comprida-9', fullName: 'Ana Souza', phone: '(11) 98765-4321' }
 
-function signUpDevolve(error: { status?: number; code?: string; message?: string } | null) {
-  const signUp = vi.fn(async () => ({ data: { user: null, session: null }, error }))
+function signUpDevolve(error: { status?: number; code?: string; message?: string } | null, session: { access_token: string } | null = null) {
+  const signUp = vi.fn(async () => ({ data: { user: null, session }, error }))
   vi.mocked(criarClienteDoUsuario).mockResolvedValue({ auth: { signUp } } as unknown as Awaited<ReturnType<typeof criarClienteDoUsuario>>)
   return signUp
 }
@@ -80,6 +80,18 @@ describe('POST /api/v1/auth/signup · falha de envio do e-mail', () => {
     expect(corpo.data?.status).toBeUndefined()
     expect(status).toBe(422)
     expect(corpo.error?.code).toBe('VALIDATION_ERROR')
+  })
+
+  it('sem confirmação de e-mail no Supabase, a conta abre na hora (docs/108 M8)', async () => {
+    signUpDevolve(null, { access_token: 'sessao-de-teste' })
+    const { status, corpo } = await post()
+    expect(status).toBe(200)
+    expect(corpo.data?.status).toBe('conta_criada')
+  })
+
+  it('com a confirmação ligada (sem sessão), segue dizendo que mandou o link', async () => {
+    signUpDevolve(null, null)
+    expect((await post()).corpo.data?.status).toBe('confirmacao_enviada')
   })
 
   it('os outros 400 continuam com a resposta igual (anti-enumeração)', async () => {

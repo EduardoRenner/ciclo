@@ -155,7 +155,7 @@ export default function Termos() {
         <section>
           <h2>5. Planos e pagamento</h2>
           <p>
-            Há dois planos: o {NOME_DO_PLANO.essencial}, para {PLANOS.essencial.maxProfissionais} profissional,
+            Há dois planos: o {NOME_DO_PLANO.essencial}, até {PLANOS.essencial.maxProfissionais} {PLANOS.essencial.maxProfissionais === 1 ? 'profissional' : 'profissionais'},
             a {precoDoPlano('essencial')} por mês, e o {NOME_DO_PLANO.equipe}, até {PLANOS.equipe.maxProfissionais}{' '}
             profissionais, a {precoDoPlano('equipe')} por mês. O produto é o mesmo nos dois; o que muda é o
             tamanho da equipe. Acima de {PLANOS.equipe.maxProfissionais} profissionais, o plano é combinado à

@@ -46,10 +46,16 @@ export default function FormularioCadastro() {
           password: formData.get('password'),
         }),
       })
-      const json = (await resposta.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
+      const json = (await resposta.json()) as { data?: { status?: string }; error?: { message: string; details?: { fields?: Record<string, string> } } }
       if (!resposta.ok) {
         const primeiroCampo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
         setErro(primeiroCampo ?? json.error?.message ?? 'Não consegui criar sua conta.')
+        return
+      }
+      // docs/108 M8: sem confirmação de e-mail, a conta já está aberta. Navegação inteira (não o router)
+      // para o servidor ler o cookie de sessão recém-gravado.
+      if (json.data?.status === 'conta_criada') {
+        window.location.assign('/onboarding')
         return
       }
       setEmailEnviado(email)

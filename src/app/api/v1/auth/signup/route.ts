@@ -29,7 +29,7 @@ export const POST = rota(async (req) => {
   const origem = lerOrigem((await cookies()).get(COOKIE_ORIGEM)?.value)
 
   const db = await criarClienteDoUsuario()
-  const { error } = await db.auth.signUp({
+  const { data, error } = await db.auth.signUp({
     email,
     password,
     options: {
@@ -60,6 +60,12 @@ export const POST = rota(async (req) => {
     console.warn(JSON.stringify({ level: 'warn', event: 'signup_recusado', status: error?.status ?? null, code: error?.code ?? null }))
     throw new AppError('INTERNAL', { cause: error })
   }
+
+  // docs/108 M8: com a confirmação de e-mail desligada no Supabase, o `signUp` já devolve a sessão (o
+  // cliente do servidor grava o cookie) e a pessoa entra direto, sem depender de e-mail. O público de
+  // 40+ não abre e-mail, e sem SMTP o e-mail nem sai. E-mail já cadastrado nunca volta com sessão, então
+  // isto não distingue quem tem conta.
+  if (data?.session) return { status: 'conta_criada' }
 
   // Daqui para baixo a resposta é idêntica para e-mail novo e e-mail já cadastrado (o
   // `desfechoDoCadastro` devolve `aceito` para os dois). A diferença transformaria o cadastro num

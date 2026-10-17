@@ -60,9 +60,9 @@ describe('Meu plano — cada estado diz a verdade sobre o que a pessoa paga', ()
     expect(v.opcoes.map((o) => o.tier)).toEqual(['essencial', 'equipe'])
   })
 
-  it('quem paga o Solo vê o preço do Solo e só o Equipe como "mais"', () => {
+  it('quem paga o Essencial vê o preço do Essencial e só o Equipe como "mais"', () => {
     const v = plano(visao('essencial', null, '2026-11-10T15:00:00Z'))
-    expect(v).toMatchObject({ nome: 'Solo', preco: 'R$ 49/mês', cabecalho: 'Se precisar de mais', noDegrauMaisAlto: false })
+    expect(v).toMatchObject({ nome: 'Essencial', preco: 'R$ 39/mês', cabecalho: 'Se precisar de mais', noDegrauMaisAlto: false })
     expect(v.opcoes.map((o) => o.tier)).toEqual(['equipe'])
   })
 
@@ -91,18 +91,18 @@ describe('Meu plano — cada estado diz a verdade sobre o que a pessoa paga', ()
 })
 
 describe('Meu plano — o teto de profissionais decide se assinar faz sentido', () => {
-  it('com 3 profissionais, o Solo avisa que não comporta e o Equipe cabe', () => {
+  it('com 3 profissionais, o Essencial (até 2) avisa que não comporta e o Equipe cabe', () => {
     const v = visao('gratis', LONGA, '2026-11-10T15:00:00Z', 3)
     expect(v.opcoes).toEqual([
-      { tier: 'essencial', excedeEm: 2 },
+      { tier: 'essencial', excedeEm: 1 },
       { tier: 'equipe', excedeEm: 0 },
     ])
   })
 
-  it('com exatamente 1, o Solo cabe; com 5, o Equipe cabe; com 6, nenhum cabe e a tela diz quanto passa', () => {
-    expect(visao('gratis', LONGA, '2026-11-10T15:00:00Z', 1).opcoes.map((o) => o.excedeEm)).toEqual([0, 0])
-    expect(visao('gratis', LONGA, '2026-11-10T15:00:00Z', 5).opcoes.map((o) => o.excedeEm)).toEqual([4, 0])
-    expect(visao('gratis', LONGA, '2026-11-10T15:00:00Z', 6).opcoes.map((o) => o.excedeEm)).toEqual([5, 1])
+  it('com exatamente 2, o Essencial cabe; com 6, o Equipe cabe; com 7, nenhum cabe e a tela diz quanto passa', () => {
+    expect(visao('gratis', LONGA, '2026-11-10T15:00:00Z', 2).opcoes.map((o) => o.excedeEm)).toEqual([0, 0])
+    expect(visao('gratis', LONGA, '2026-11-10T15:00:00Z', 6).opcoes.map((o) => o.excedeEm)).toEqual([4, 0])
+    expect(visao('gratis', LONGA, '2026-11-10T15:00:00Z', 7).opcoes.map((o) => o.excedeEm)).toEqual([5, 1])
   })
 })
 
