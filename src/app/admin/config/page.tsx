@@ -43,7 +43,8 @@ const GRUPOS = [
     titulo: 'Dinheiro',
     itens: [
       { href: '/admin/caixa', titulo: 'Caixa', descricao: 'Fechamento do dia e comissões', icone: Wallet, modulo: 'register' },
-      { href: '/admin/comissao', titulo: 'Minha comissão', descricao: 'O que você já ganhou este mês', icone: HandCoins },
+      // docs/108: comissão só existe com equipe; para quem trabalha sozinha era um item que nunca tinha conteúdo.
+      { href: '/admin/comissao', titulo: 'Minha comissão', descricao: 'O que você já ganhou este mês', icone: HandCoins, modulo: 'team' },
       { href: '/admin/mes', titulo: 'O mês', descricao: 'Os números do mês numa página', icone: CalendarRange, modulo: 'register' },
       { href: '/admin/estoque', titulo: 'Estoque', descricao: 'Quanto tem e registrar compra', icone: Package, modulo: 'stock' },
       { href: '/admin/config/taxas', titulo: 'Taxa da maquininha', descricao: 'O que a máquina fica por forma', icone: CreditCard, modulo: 'register' },
