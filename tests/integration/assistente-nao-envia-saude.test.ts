@@ -2,7 +2,7 @@ import { randomBytes, randomUUID } from 'node:crypto'
 
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { FERRAMENTAS } from '@/server/assistente/ferramentas'
 import { executarLaco } from '@/server/services/assistente'
@@ -37,6 +37,13 @@ let nomeDoServico: string
 const usuarios: string[] = []
 
 beforeAll(async () => {
+  // O resumo de hoje só leva o nome do serviço no horário que ainda VAI acontecer, e o horário do teste é
+  // "agora + 3 h": depois das 21h de Brasília ele caía amanhã e o controle positivo reprovava só à noite
+  // (PR #153). Relógio fixo às 13h de hoje no fuso do salão: o horário fica às 16h, hoje e no futuro.
+  // Só o `Date` é falso; timers, rede e o banco seguem reais.
+  const hojeNoSalao = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date(`${hojeNoSalao}T13:00:00-03:00`))
   const marca = randomUUID().slice(0, 8)
   const { data } = await svc.auth.admin.createUser({ email: `apr032-${marca}@ciclo.test`, password: randomUUID(), email_confirm: true })
   usuarios.push(data.user!.id)
@@ -78,6 +85,7 @@ beforeAll(async () => {
 }, 60_000)
 
 afterAll(async () => {
+  vi.useRealTimers()
   await svc.from('tenants').delete().eq('id', tenantId)
   for (const u of usuarios) await svc.auth.admin.deleteUser(u)
 }, 60_000)
