@@ -4,10 +4,17 @@ Escrito em 16/10/2026, a pedido do Eduardo: "fazer agenda para autônomo, o mesm
 
 Junta a beleza feminina, já decidida em `00-decisao.md`, com as autônomas de serviço. É **plano, não código**. Rótulos: **FATO** (com fonte), **INFERÊNCIA**, **HIPÓTESE** (com o teste que decide).
 
+> **Correção de 16/10, mesmo dia (análise do próprio plano):** a beleza feminina continua sendo o **núcleo**. A diarista é **grupo de teste, não aposta.** O motivo:
+> - o diferencial do CICLO é o Motor de Ciclo, que vale mais quanto mais clientes a pessoa tem;
+> - a designer de cílios tem 100 a 300 clientes, enquanto a diarista tem 5 a 12 e sabe de cor quem parou de chamar;
+> - a dor da diarista é cliente nova (o trabalho do Help) e calote, que o caderno resolve razoavelmente com 10 clientes.
+>
+> Nada só para diarista entra no código antes de o teste de nicho dar número. Do que a seção 5 lista, só entra antes o que serve à beleza também: "ficou devendo" e o atendimento em casa.
+
 ## 1. A tese em 5 linhas
 
 1. **O público é a mulher que trabalha por conta própria, com cliente que volta e agenda no caderno ou na cabeça:** a diarista, a manicure, a designer de cílios e sobrancelha, a cuidadora, a passadeira.
-2. **A diarista é a porta nova mais forte.** É o maior grupo, quase todo feminino, cresce, e o trabalho é recorrente por natureza (toda terça na mesma casa). É exatamente o que o Motor de Ciclo mede.
+2. **A diarista é a porta nova a testar (ver a correção acima).** É o maior grupo, quase todo feminino, cresce, e o trabalho é recorrente por natureza (toda terça na mesma casa). É exatamente o que o Motor de Ciclo mede.
 3. **O CICLO já tem o esqueleto para elas:**
    - endereço do atendimento;
    - recorrência;
