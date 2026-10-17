@@ -94,7 +94,7 @@ describe('processarWebhookMP', () => {
         svc,
         { assunto: 'subscription', id: preapprovalId },
         fakePagamento(),
-        fakePreapproval({ externalReference: tenantId, status: 'authorized', valorAutorizado: 49 }),
+        fakePreapproval({ externalReference: tenantId, status: 'authorized', valorAutorizado: 39 }),
       )
 
       expect(resultado).toEqual({ resultado: 'plano_atualizado', tenantId, plano: 'essencial' })
@@ -129,7 +129,7 @@ describe('processarWebhookMP', () => {
         svc,
         { assunto: 'subscription', id: preapprovalId },
         fakePagamento(),
-        fakePreapproval({ externalReference: tenantId, status: 'paused', valorAutorizado: 99 }),
+        fakePreapproval({ externalReference: tenantId, status: 'paused', valorAutorizado: 79 }),
       )
 
       expect(resultado).toEqual({ resultado: 'plano_atualizado', tenantId, plano: 'equipe' })
@@ -233,7 +233,7 @@ describe('processarWebhookMP', () => {
         svc,
         { assunto: 'subscription', id: preapprovalId },
         fakePagamento(),
-        fakePreapproval({ externalReference: tenantId, status: 'authorized', valorAutorizado: 99 }),
+        fakePreapproval({ externalReference: tenantId, status: 'authorized', valorAutorizado: 79 }),
       )
 
       const { data } = await svc.from('tenants').select('settings').eq('id', tenantId).single()
@@ -253,7 +253,7 @@ describe('processarWebhookMP', () => {
         svc,
         { assunto: 'payment', id: paymentId },
         fakePagamento({ preapprovalId, status: 'approved' }),
-        fakePreapproval({ externalReference: tenantId, status: 'authorized', valorAutorizado: 49 }),
+        fakePreapproval({ externalReference: tenantId, status: 'authorized', valorAutorizado: 39 }),
       )
 
       expect(resultado).toEqual({ resultado: 'plano_atualizado', tenantId, plano: 'essencial' })
@@ -292,7 +292,7 @@ describe('processarWebhookMP', () => {
         svc,
         { assunto: 'subscription', id: `pre_${randomUUID()}` }, // outro id, não o registrado
         fakePagamento(),
-        fakePreapproval({ externalReference: tenantId, status: 'authorized', valorAutorizado: 49 }),
+        fakePreapproval({ externalReference: tenantId, status: 'authorized', valorAutorizado: 39 }),
       )
 
       expect(resultado).toEqual({ resultado: 'sem_assinatura_registrada', tenantId })
@@ -309,7 +309,7 @@ describe('processarWebhookMP', () => {
         svc,
         { assunto: 'subscription', id: `pre_${randomUUID()}` },
         fakePagamento(),
-        fakePreapproval({ externalReference: randomUUID(), status: 'authorized', valorAutorizado: 49 }),
+        fakePreapproval({ externalReference: randomUUID(), status: 'authorized', valorAutorizado: 39 }),
       )
       expect(resultado).toEqual({ resultado: 'tenant_nao_encontrado' })
     },
@@ -321,7 +321,7 @@ describe('processarWebhookMP', () => {
     async () => {
       const preapprovalId = `pre_${randomUUID()}`
       const tenantId = await tenantComAssinatura('essencial', preapprovalId, 'gratis')
-      const fn = fakePreapproval({ externalReference: tenantId, status: 'authorized', valorAutorizado: 49 })
+      const fn = fakePreapproval({ externalReference: tenantId, status: 'authorized', valorAutorizado: 39 })
 
       const r1 = await processarWebhookMP(svc, { assunto: 'subscription', id: preapprovalId }, fakePagamento(), fn)
       const r2 = await processarWebhookMP(svc, { assunto: 'subscription', id: preapprovalId }, fakePagamento(), fn)

@@ -181,7 +181,7 @@ describe('cancelarAssinatura — quem JÁ pagou fica até o fim do período (Ter
     async () => {
       await assinaturaAutorizada('equipe', 'pre-pago-1')
       const proximo = daquiA(12)
-      mpMock.consultarPreapproval.mockResolvedValueOnce({ status: 'authorized', externalReference: tenantId, valorAutorizado: 99, proximoPagamento: proximo })
+      mpMock.consultarPreapproval.mockResolvedValueOnce({ status: 'authorized', externalReference: tenantId, valorAutorizado: 79, proximoPagamento: proximo })
       mpMock.cancelarPreapproval.mockResolvedValueOnce(undefined)
 
       const r = await cancelarAssinatura(svc, tenantId)
@@ -201,7 +201,7 @@ describe('cancelarAssinatura — quem JÁ pagou fica até o fim do período (Ter
     async () => {
       for (const proximoPagamento of [null, new Date(Date.now() - 86_400_000).toISOString()]) {
         await assinaturaAutorizada('essencial', 'pre-pago-2')
-        mpMock.consultarPreapproval.mockResolvedValueOnce({ status: 'authorized', externalReference: tenantId, valorAutorizado: 49, proximoPagamento })
+        mpMock.consultarPreapproval.mockResolvedValueOnce({ status: 'authorized', externalReference: tenantId, valorAutorizado: 39, proximoPagamento })
         mpMock.cancelarPreapproval.mockResolvedValueOnce(undefined)
 
         const r = await cancelarAssinatura(svc, tenantId)
