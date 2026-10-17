@@ -9,7 +9,7 @@ import { modulosDesligadosNaEntrada } from '@/core/onboarding/modulos-de-entrada
  */
 describe('módulos que a conta nova já começa desligados', () => {
   it.each(['lashes', 'brows', 'nails', 'waxing'])('%s começa enxuta', (slug) => {
-    expect([...modulosDesligadosNaEntrada(slug)].sort()).toEqual(['campaigns', 'club', 'documents', 'quotes', 'stock'])
+    expect([...modulosDesligadosNaEntrada(slug)].sort()).toEqual(['campaigns', 'club', 'documents', 'quotes', 'stock', 'team'])
   })
 
   it.each(['barber', 'hair', 'aesthetics', 'tattoo', 'outra-profissao'])('%s não muda o começo', (slug) => {

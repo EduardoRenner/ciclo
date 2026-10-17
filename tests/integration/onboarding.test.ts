@@ -261,7 +261,7 @@ describe('executarOnboarding com professionId (P4)', () => {
   )
 
   it(
-    'cílios (docs/108) nasce sem orçamento, estoque, campanhas, clube e documentos, como escolha da dona',
+    'cílios (docs/108) nasce sem orçamento, estoque, campanhas, clube, documentos e equipe, como escolha da dona',
     async () => {
       const userId = await criarUsuario('cilios')
       const slug = `cilios-enxuta-${randomUUID().slice(0, 8)}`
@@ -279,7 +279,7 @@ describe('executarOnboarding com professionId (P4)', () => {
       tenantsParaLimpar.push(tenant.id)
 
       const { data: modulos } = await svc.from('tenant_modules').select('modulo, ligado, origem').eq('tenant_id', tenant.id)
-      expect((modulos ?? []).map((m) => m.modulo).sort()).toEqual(['campaigns', 'club', 'documents', 'quotes', 'stock'])
+      expect((modulos ?? []).map((m) => m.modulo).sort()).toEqual(['campaigns', 'club', 'documents', 'quotes', 'stock', 'team'])
       expect((modulos ?? []).every((m) => m.ligado === false && m.origem === 'dono')).toBe(true)
     },
     60_000,

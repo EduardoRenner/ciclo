@@ -93,6 +93,18 @@ export async function gravarRespostaDePerfil(
     }
   }
 
+  // docs/108: a conta de cílios, sobrancelha, unhas e depilação nasce com a equipe desligada; quem diz que
+  // atende com mais gente ganha a equipe de volta. `definirModulo` só religa dentro do plano (o teto),
+  // então isto nunca LIBERA o que o plano não libera: fora do eixo ou acima do plano, segue sem mudar.
+  if (podeAjustar && entrada.tamanho === 'com_equipe' && (await equipeDesligadaPelaDona(db, tenantId))) {
+    try {
+      await definirModulo(db, tenantId, { modulo: 'team', ligado: true })
+      efeitos.push('team:ligado')
+    } catch (erro) {
+      if (!(erro instanceof AppError && (erro.code === 'FORBIDDEN' || erro.code === 'PLAN_LIMIT'))) throw erro
+    }
+  }
+
   await registrarEvento(db, tenantId, 'perfil_respondido', {
     ...(entrada.baseEm ? { base_em: entrada.baseEm } : {}),
     ...(entrada.sistema ? { sistema: entrada.sistema } : {}),
@@ -100,4 +112,21 @@ export async function gravarRespostaDePerfil(
     ...(entrada.dor ? { dor: entrada.dor } : {}),
   })
   return { efeitos }
+}
+
+/**
+ * Só religa o que foi desligado como escolha (a conta enxuta do docs/108 ou um "Só eu" anterior). Sem
+ * essa linha, a equipe já está como o plano manda e a resposta não muda nada nem registra efeito.
+ */
+async function equipeDesligadaPelaDona(db: SupabaseClient<Database>, tenantId: string): Promise<boolean> {
+  const { data, error } = await db
+    .from('tenant_modules')
+    .select('modulo')
+    .eq('tenant_id', tenantId)
+    .eq('modulo', 'team')
+    .eq('origem', 'dono')
+    .eq('ligado', false)
+    .maybeSingle()
+  if (error) throw new AppError('INTERNAL', { cause: error })
+  return data !== null
 }

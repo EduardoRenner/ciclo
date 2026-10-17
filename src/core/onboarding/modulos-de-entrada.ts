@@ -15,7 +15,9 @@ import type { ModuloKey } from '@/core/billing/planos'
  */
 const PROFISSOES_ENXUTAS: ReadonlySet<string> = new Set(['lashes', 'brows', 'nails', 'waxing'])
 
-const DESLIGADOS_NA_ENTRADA: readonly ModuloKey[] = ['quotes', 'stock', 'campaigns', 'club', 'documents']
+// `team` também: a maioria trabalha sozinha, e "Eu e mais gente" na Pergunta 2 religa a equipe
+// (`perfil-onboarding.ts`). Sem isto, quem pulava a pergunta via comissão e "de quem depende o que sobra".
+const DESLIGADOS_NA_ENTRADA: readonly ModuloKey[] = ['quotes', 'stock', 'campaigns', 'club', 'documents', 'team']
 
 export function modulosDesligadosNaEntrada(slugDaProfissao: string | null | undefined): readonly ModuloKey[] {
   return slugDaProfissao && PROFISSOES_ENXUTAS.has(slugDaProfissao) ? DESLIGADOS_NA_ENTRADA : []

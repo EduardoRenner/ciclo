@@ -131,6 +131,32 @@ describe('P5 — as respostas mudam o painel de verdade', () => {
   )
 
   it(
+    'docs/108: conta de cílios nasce sem equipe, e "Eu e mais gente" religa a equipe',
+    async () => {
+      const marca = randomUUID().slice(0, 8)
+      const { data, error } = await svc.auth.admin.createUser({ email: `pf-cilios-${marca}@ciclo.test`, password: randomUUID(), email_confirm: true })
+      if (error || !data.user) throw new Error(`seed falhou: ${error?.message}`)
+      usuarios.push(data.user.id)
+      const { data: profissao } = await svc.from('professions').select('id').eq('slug', 'lashes').single()
+      const { tenant } = await executarOnboarding(svc, {
+        userId: data.user.id,
+        businessName: 'Studio do Perfil',
+        vertical: 'lashes',
+        professionId: profissao!.id,
+        slug: `pf-cilios-${marca}`,
+        timezone: 'America/Sao_Paulo',
+      })
+      tenants.push(tenant.id)
+      expect(await desligados(tenant.id), 'o cenário precisa começar com a equipe desligada').toContain('team')
+
+      const r = await gravarRespostaDePerfil(svc, tenant.id, { acao: 'responder', tamanho: 'com_equipe' }, 'owner')
+      expect(r.efeitos).toContain('team:ligado')
+      expect(await desligados(tenant.id)).not.toContain('team')
+    },
+    60_000,
+  )
+
+  it(
     '"Eu e mais gente" não liga nem libera nada — a resposta nunca vira atalho de plano',
     async () => {
       const id = await novoTenant()
