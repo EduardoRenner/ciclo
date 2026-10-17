@@ -52,15 +52,15 @@ A ficha de anotação está em `ficha-de-campo.csv` (abre no Excel ou no Google 
 
 ## Como decidir o nicho no fim das 2 semanas
 
-Para cada grupo (designer de olhar × unhas):
+Para cada grupo (designer de olhar × unhas × diarista):
 
-| Medida | Designer de olhar (cílios e sobrancelha) | Unhas |
-| --- | --- | --- |
-| Testaram | | |
-| Criaram a conta | | |
-| Trouxeram 20 ou mais | | |
-| Chamaram pelo menos 1 na semana 1 | | |
-| Abriram de novo na semana 2 | | |
+| Medida | Designer de olhar (cílios e sobrancelha) | Unhas | Diarista |
+| --- | --- | --- | --- |
+| Testaram | | | |
+| Criaram a conta | | | |
+| Trouxeram 20 ou mais (diarista: cadastrou as fixas da semana) | | | |
+| Chamaram pelo menos 1 na semana 1 | | | |
+| Abriram de novo na semana 2 | | | |
 
 **Vence** o grupo com maior proporção em "trouxeram 20 ou mais **e** chamaram pelo menos 1". Empate: unhas. Escrever a decisão em `docs/DECISOES.md`, com os números.
 

@@ -2,6 +2,8 @@
 
 **Decidido pelo Eduardo em 16/10/2026**, depois da revisão do plano contra o AppBarber (`docs/concorrentes/appbarber/`). Vale pelos próximos **60 dias, até 15/12/2026**. Revisar no fim, com os números da seção 5.
 
+> **Mesmo dia, ainda mais tarde: agenda para a autônoma.** O alvo passa a incluir as autônomas de serviço, começando pela **diarista** (o público do Help, quase todo feminino e recorrente). Plano completo em `06-autonomas-plano.md`. Os ofícios masculinos (eletricista, pedreiro) ficam para a fase 2.
+>
 > **Mesmo dia, mais tarde: o foco é o público feminino.** Pedido do Eduardo: "bora focar em público feminino, masculino fica de lado, faz tudo com base nisso". Barbearia e barbeiro saíram do alvo e do teste; as seções abaixo já estão com isso.
 
 ## 1. A frase
@@ -39,7 +41,7 @@ Por que este grupo (INFERÊNCIA, a confirmar no teste da seção 4):
 ## 4. Como decidir o nicho com número
 
 **Teste de 2 semanas.**
-- O mesmo teste de 10 minutos, no celular da pessoa, com **10 designers de olhar (cílios e sobrancelha)** e **10 profissionais de unhas**.
+- O mesmo teste de 10 minutos, no celular da pessoa, com **10 designers de olhar (cílios e sobrancelha)**, **10 profissionais de unhas** e **10 diaristas** (`06-autonomas-plano.md`).
 - O roteiro e a ficha de anotação estão em `02-kit-de-campo.md`.
 
 **Vence o grupo** em que mais pessoas, na primeira semana:
