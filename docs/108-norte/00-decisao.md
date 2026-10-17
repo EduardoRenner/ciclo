@@ -25,7 +25,7 @@ Em casa, em sala alugada ou em cadeira de salão. Numa cidade onde o Eduardo con
 
 Por que este grupo (INFERÊNCIA, a confirmar no teste da seção 4):
 - **Ciclo curto e óbvio.** Os pacotes do CICLO já trazem esses ritmos (FATO, `0002_vertical_packs.sql`): manutenção de volume russo 21 dias, esmaltação em gel 18, manicure 15, design de sobrancelha 21. Perder uma manutenção de cílios é dinheiro concreto: a cliente refaz tudo ou vai para outra.
-- **Nenhum concorrente é dono desse público.** AppBarber, BarbUp e companhia nasceram para barbearia; aqui o concorrente é o caderno.
+- **O concorrente principal é o WhatsApp** (0 de 16 profissionais da região usam link de agendamento). Há sistemas mirando esse público (Gendo, Simples Agenda, Agendiva, LashLab Pro, Fresha), mas nenhum junta o ritmo de cada cliente com o R$, o WhatsApp da própria profissional, a importação de qualquer coisa e sair sem multa (`docs/concorrentes/beleza-feminina/05-relatorio.md`). *Corrigido em 16/10: a versão anterior dizia que nenhum concorrente era dono desse público, o que a pesquisa desmentiu.*
 - **A cliente final não tem app que a prenda** a outro sistema.
 - **O CICLO já está pronto para eles na `main`:** pacote por profissão, "Quem você já atende" de memória, fila do Recuperar e "Chamar" pelo próprio WhatsApp. Também existem as contas de demonstração de esmalteria e de cílios (`demo-esmalteria-rosa`, `demo-studio-olhar`).
 

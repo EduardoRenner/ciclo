@@ -1,5 +1,8 @@
 # 83 · Onboarding geral + migração de quem vem de outro sistema — pesquisa e plano
 
+> **Correção de 16/10/2026:** o número "menos de 30% dos salões usam sistema de gestão" citado abaixo **não tem estudo do Sebrae por trás**: vem de conteúdo pago da Belasis no Estado de Minas/UAI. O dado confiável mais próximo é "20% dos pequenos negócios controlam as finanças por app ou sistema; 25% por caderno" (Sebrae, Hábitos Financeiros 2025). Ver `docs/concorrentes/beleza-feminina/03-mercado.md`.
+
+
 > Gerado pela missão `.claude/ciclo/loop-migracao-de-concorrentes.md` (2026-09-28, Opus 5.5).
 > **Plano, não execução** — nenhuma linha de produto foi alterada. Um bug real achado no caminho
 > virou o **BL-51** em `.claude/ciclo/autonomous-backlog.md`.
