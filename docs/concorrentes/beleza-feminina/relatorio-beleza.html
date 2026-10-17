@@ -1,0 +1,295 @@
+<title>Beleza Feminina · Mercado</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: relatório de leitura numa coluna de ~68ch, tabelas em faixas largas que rolam por conta própria; tom de estúdio de beleza (pele, ameixa, verde-água do CICLO) sem cair no creme com terracota */
+:root {
+  --bg: #fbf8f8;
+  --surface: #ffffff;
+  --ink: #2a2230;
+  --muted: #6b6070;
+  --line: #e7dfe3;
+  --plum: #6d2e5b;
+  --plum-soft: #f3e6ef;
+  --teal: #0d7a6f;
+  --teal-soft: #e2f3f0;
+  --good: #1f7a3d;
+  --warn: #9a5b00;
+  --bad: #a3263a;
+  --good-soft: #e6f4ea;
+  --warn-soft: #fbf0dc;
+  --bad-soft: #f8e4e7;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17131a; --surface: #201a24; --ink: #efe8f0; --muted: #b3a7b6; --line: #3a3140;
+    --plum: #e3a6d1; --plum-soft: #3a2436; --teal: #5fd1c3; --teal-soft: #173430;
+    --good: #7fd49a; --warn: #f0c070; --bad: #f29aa8; --good-soft: #1c3324; --warn-soft: #3a2d14; --bad-soft: #3c1e24;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17131a; --surface: #201a24; --ink: #efe8f0; --muted: #b3a7b6; --line: #3a3140;
+  --plum: #e3a6d1; --plum-soft: #3a2436; --teal: #5fd1c3; --teal-soft: #173430;
+  --good: #7fd49a; --warn: #f0c070; --bad: #f29aa8; --good-soft: #1c3324; --warn-soft: #3a2d14; --bad-soft: #3c1e24;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.6; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 40px 72px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 48px; }
+.prose { max-width: 68ch; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: clamp(1.45rem, 3vw, 1.9rem); font-weight: 700; }
+h3 { font-size: 1.15rem; font-weight: 700; }
+p { margin: 0; }
+section { display: grid; gap: 16px; }
+.eyebrow { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--plum); }
+.lead { font-size: 1.12rem; color: var(--muted); max-width: 62ch; }
+header { display: grid; gap: 14px; }
+.meta { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
+ul, ol { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+strong { font-weight: 600; }
+.tldr { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: grid; gap: 12px; }
+.tldr ol { gap: 10px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 4px; align-content: start; }
+.stat b { font-family: var(--display); font-size: 1.7rem; font-weight: 700; color: var(--plum); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stat span { color: var(--ink); font-size: 0.95rem; }
+.stat small { color: var(--muted); font-family: var(--mono); font-size: 0.72rem; }
+.table { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 0.93rem; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.us td { background: var(--teal-soft); }
+tr.us td:first-child { font-weight: 600; color: var(--teal); }
+.pill { display: inline-block; font-family: var(--mono); font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.box.call { border-color: var(--plum); background: var(--plum-soft); }
+.quote { font-family: var(--display); font-size: clamp(1.25rem, 2.6vw, 1.6rem); font-weight: 500; color: var(--plum); line-height: 1.3; max-width: 34ch; }
+.steps { counter-reset: s; display: grid; gap: 10px; list-style: none; padding: 0; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; }
+.steps li::before { content: counter(s); font-family: var(--mono); font-size: 0.85rem; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--teal-soft); color: var(--teal); font-weight: 500; }
+.note { font-size: 0.9rem; color: var(--muted); }
+.src { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
+a { color: var(--teal); }
+a:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+footer { border-top: 1px solid var(--line); padding-top: 20px; display: grid; gap: 8px; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">CICLO · pesquisa de mercado · 16/10/2026</div>
+    <h1>Cílios, sobrancelha e unhas: o mercado, os concorrentes e o plano</h1>
+    <p class="lead">Catorze concorrentes visitados pelo site, reputação no Reclame Aqui e nas lojas, números oficiais do setor, a voz da profissional e um levantamento de campo com 16 profissionais da região de Maravilha (SC).</p>
+    <p class="meta">Cada número tem fonte nos arquivos de docs/concorrentes/beleza-feminina/. FATO = fonte pública conferida · INFERÊNCIA = conta a partir de fatos · NÃO VERIFICADO = sem fonte que se sustente.</p>
+  </header>
+
+  <section class="tldr">
+    <div class="eyebrow">O resumo</div>
+    <ol>
+      <li><strong>O concorrente de verdade é o WhatsApp.</strong> 93,8% dos salões marcam por lá; na região, 0 de 16 profissionais usam link de agendamento.</li>
+      <li><strong>"Quem sumiu" já existe nos concorrentes, por prazo fixo.</strong> Só o CICLO tem o ritmo de cada cliente com o valor em R$, a fila para chamar pelo WhatsApp dela e importar de print, PDF ou conversa.</li>
+      <li><strong>O preço de R$ 39 até 2 profissionais está no lugar certo.</strong> Empata com Fresha e Simples Agenda (que valem para 1) e fica abaixo de Gendo, Avec, Booksy e Belasis.</li>
+      <li><strong>Falta o básico do nicho:</strong> lembrete automático por WhatsApp incluso e anamnese com assinatura da cliente.</li>
+      <li><strong>Sair sem multa é argumento:</strong> cancelar é a queixa nº 1 de Trinks, Avec e Gendo.</li>
+      <li><strong>Os dois apps:</strong> vitrine sim, segundo app não por enquanto. Começa por uma página da cidade na web, só com quem aceitar, sem comissão.</li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="eyebrow">O mercado</div>
+    <h2>Grande, feminino, informal e no celular</h2>
+    <div class="stats">
+      <div class="stat"><b>1,32 mi</b><span>empresas de beleza ativas</span><small>Sebrae, 2026 · FATO</small></div>
+      <div class="stat"><b>+17,9%</b><span>negócios de beleza abertos em 2025 (235 mil, 94% MEI)</span><small>Sebrae · FATO</small></div>
+      <div class="stat"><b>77%</b><span>das ocupadas são mulheres; 84% por conta própria</span><small>PNAD 2022, estudo Senac · FATO</small></div>
+      <div class="stat"><b>68%</b><span>atendem em casa; 53% ganham até 1 salário mínimo</span><small>PNAD 2022 · FATO</small></div>
+      <div class="stat"><b>85%</b><span>dos agendamentos são de quem já é cliente</span><small>Gendo, 17,8 mi agendamentos · FATO</small></div>
+      <div class="stat"><b>87%</b><span>da classe DE usa internet só pelo celular</span><small>TIC Domicílios 2025 · FATO</small></div>
+    </div>
+    <p class="note prose">O número "menos de 30% dos salões usam sistema", que o projeto citava, não tem estudo por trás: vem de conteúdo pago da Belasis. O dado confiável mais perto: 20% dos pequenos negócios controlam as finanças por sistema e 25% por caderno (Sebrae 2025).</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">Quem é ela</div>
+    <h2>A agenda não enche sozinha</h2>
+    <div class="grid2">
+      <div class="box">
+        <h3>Cílios e sobrancelha</h3>
+        <ul>
+          <li>Manutenção de cílios a cada <strong>15 a 21 dias</strong>; passou de 4 semanas, vira aplicação nova.</li>
+          <li>Extensão R$ 140 a 400; manutenção cerca da metade.</li>
+          <li>Quase sempre faz cílios, sobrancelha, lash lifting e brow lamination juntos (9 de 13 no campo).</li>
+          <li>Clientes ativas com a agenda cheia: 50 a 70 (INFERÊNCIA).</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h3>Unhas</h3>
+        <ul>
+          <li>Manutenção do gel a cada <strong>15 a 25 dias</strong>.</li>
+          <li>Gel R$ 80 a 250; manicure subiu 10% ao ano no IPCA, o dobro da inflação.</li>
+          <li>Atende em casa com frequência; unhas e cabelo aparecem juntos.</li>
+          <li>Clientes ativas: 30 a 60 (INFERÊNCIA).</li>
+        </ul>
+      </div>
+    </div>
+    <p class="prose">As dores se juntam numa: falta e desmarque, a cliente que some da manutenção e pouco tempo para o Instagram. A objeção real a um app é "mais um lugar para olhar", não o preço. O CICLO precisa começar e terminar no WhatsApp dela.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">Os concorrentes</div>
+    <h2>Preço para a profissional solo</h2>
+    <div class="table" role="region" aria-label="Tabela de preços dos concorrentes" tabindex="0">
+      <table>
+        <thead><tr><th>Concorrente</th><th>Preço para 1</th><th>Teste</th><th>Traz cliente de volta</th><th>Anamnese</th><th>Cliente precisa de conta</th><th>Mostra concorrente</th></tr></thead>
+        <tbody>
+          <tr><td>InfinitePay</td><td class="num">R$ 0</td><td>—</td><td>não visto</td><td>não</td><td>n/v</td><td>não</td></tr>
+          <tr><td>Reservio</td><td class="num">R$ 0 (40 reservas)</td><td>14 dias</td><td>não</td><td>não</td><td>n/v</td><td>n/v</td></tr>
+          <tr><td>Tua Agenda</td><td class="num">R$ 19,90</td><td>sim</td><td>recorrência</td><td>sim</td><td>app separado</td><td>n/v</td></tr>
+          <tr class="us"><td>CICLO</td><td class="num">R$ 39 (até 2)</td><td>30 dias</td><td>ritmo de cada cliente, com R$</td><td>sim, sem assinatura</td><td>não</td><td>não</td></tr>
+          <tr><td>Simples Agenda</td><td class="num">R$ 39,90 a 59,90</td><td>35 dias</td><td>lembrete de retorno por prazo</td><td>sim, com assinatura</td><td>não</td><td>não</td></tr>
+          <tr><td>Agendiva</td><td class="num">R$ 39,90</td><td>14 dias</td><td>lista de sumidas</td><td>sim, com assinatura</td><td>não</td><td>n/v</td></tr>
+          <tr><td>Fresha</td><td class="num">R$ 39,95</td><td>7 dias</td><td>reativação, mensagem paga</td><td>n/v</td><td>sim</td><td>sim, e cobra pela cliente nova</td></tr>
+          <tr><td>LashLab Pro</td><td class="num">R$ 49,90 a 139,90</td><td>7 dias</td><td>não visto</td><td>clínica, com IA e assinatura</td><td>n/v</td><td>não</td></tr>
+          <tr><td>AppBeleza</td><td class="num">R$ 55,90 a 79,90</td><td>30 dias</td><td>n/v</td><td>não</td><td>sim, com aprovação</td><td>n/v</td></tr>
+          <tr><td>Gendo</td><td class="num">R$ 69,90 a 99,86</td><td>7 dias</td><td>forte, por prazo (30/60/90)</td><td>sim</td><td>n/v</td><td>n/v</td></tr>
+          <tr><td>Avec</td><td class="num">R$ 88,90 (1 a 2)</td><td>n/v</td><td>IA no WhatsApp, à parte</td><td>n/v</td><td>provável</td><td>sim</td></tr>
+          <tr><td>Booksy</td><td class="num">R$ 99,99 + impostos</td><td>7 dias</td><td>incluído</td><td>n/v</td><td>sim</td><td>sim</td></tr>
+          <tr><td>Belasis</td><td class="num">a partir de R$ 99</td><td>sim</td><td>IA no plano mais caro</td><td>só a partir de R$ 189</td><td>n/v</td><td>n/v</td></tr>
+          <tr><td>Trinks</td><td class="num">sob consulta</td><td>5 dias</td><td>à parte, com saldo</td><td>n/v</td><td>provável</td><td>sim</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">n/v = não verificado. Fontes: sites oficiais, acesso em 16/10/2026 (01-grandes.md, 02-menores.md, 08-campo-regiao.md). Preço do CICLO conforme o PR #153.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">Reputação</div>
+    <h2>O que as clientes deles reclamam</h2>
+    <div class="table" role="region" aria-label="Tabela de reputação" tabindex="0">
+      <table>
+        <thead><tr><th>Concorrente</th><th>Reclame Aqui</th><th>App da profissional (Play / App Store)</th><th>App da cliente</th><th>Queixa nº 1</th></tr></thead>
+        <tbody>
+          <tr><td>Trinks</td><td><span class="pill good">Boa 7,9</span> 182 em 12 meses</td><td class="num">4,8 / 4,77</td><td class="num">4,8 / 4,92</td><td>cancelar, multa, sistema fora do ar</td></tr>
+          <tr><td>Avec</td><td><span class="pill warn">Regular 6,6</span> 231 em 12 meses</td><td class="num">3,6 / 2,04</td><td class="num">1,6 / 2,21</td><td>cancelar; atualização travou login e WhatsApp</td></tr>
+          <tr><td>Gendo</td><td><span class="pill warn">Regular 6,6</span></td><td class="num">4,8 / 4,81</td><td>—</td><td>cancelar; pacote de mensagens encolheu</td></tr>
+          <tr><td>Belasis</td><td><span class="pill bad">Não recomendada 4,9</span> resposta em 20 dias</td><td class="num">4,7 / 4,86</td><td>—</td><td>suporte</td></tr>
+          <tr><td>Booksy</td><td>sem reputação</td><td class="num">4,8 / 4,52</td><td class="num">5,0 / 4,94</td><td>conta bloqueada sem aviso</td></tr>
+          <tr><td>Fresha</td><td>sem reputação</td><td class="num">4,7 / 4,72</td><td class="num">5,0 / 4,94</td><td>perfil criado sem autorização</td></tr>
+          <tr><td>Simples Agenda</td><td>sem reputação</td><td class="num">4,3 / 3,08</td><td>—</td><td>lembrete que não chega</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">Reclame Aqui aberto no navegador; lojas pela API pública e pelas avaliações recentes (04-reputacao.md).</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">Onde o CICLO está</div>
+    <h2>Ganha, empata, perde</h2>
+    <div class="table" role="region" aria-label="Comparação do CICLO" tabindex="0">
+      <table>
+        <thead><tr><th>Ponto</th><th>Situação</th><th>Por quê</th></tr></thead>
+        <tbody>
+          <tr><td>Trazer a cliente de volta</td><td><span class="pill good">ganha</span></td><td>Ritmo e R$ de cada cliente, fila pronta, "Chamar" no WhatsApp dela. Tem que ser mostrado com os dados dela.</td></tr>
+          <tr><td>Importar a clientela</td><td><span class="pill good">ganha</span></td><td>Print, PDF, conversa, contatos, na hora. Os outros: CSV ou "manda que a equipe faz".</td></tr>
+          <tr><td>Página da profissional</td><td><span class="pill good">ganha</span></td><td>Sem conta e sem concorrente do lado.</td></tr>
+          <tr><td>Cancelar e sair</td><td><span class="pill good">ganha</span></td><td>Sem multa e com exportação livre.</td></tr>
+          <tr><td>Preço</td><td><span class="pill warn">empata</span></td><td>R$ 39 até 2, no melhor lugar da faixa.</td></tr>
+          <tr><td>Lembrete automático por WhatsApp</td><td><span class="pill bad">perde</span></td><td>Simples Agenda e Agendiva incluem; o CICLO depende da credencial da Meta.</td></tr>
+          <tr><td>Anamnese com assinatura</td><td><span class="pill bad">perde</span></td><td>É o básico do nicho.</td></tr>
+          <tr><td>Cobrar o sinal</td><td><span class="pill bad">perde</span></td><td>A InfinitePay cobra por Pix de graça; o CICLO só mostra.</td></tr>
+          <tr><td>Técnica de cílios</td><td><span class="pill bad">não brigar</span></td><td>O LashLab Pro é especialista em adesivo e segurança ocular.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">A ideia dos dois apps</div>
+    <h2>Vitrine sim, segundo app não, por enquanto</h2>
+    <div class="grid2">
+      <div class="box">
+        <h3>O que está certo</h3>
+        <ul>
+          <li>Ela faz vários serviços: o cadastro deve aceitar mais de uma especialidade.</li>
+          <li>A vitrine traz cliente nova, e é isso que prende no AppBarber.</li>
+          <li>Na cidade pequena ninguém acha essas profissionais no Google.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h3>O que é arriscado</h3>
+        <ul>
+          <li>A cliente não baixa app para marcar uma vez por mês (lição do Help).</li>
+          <li>App da cliente ruim mancha a profissional (Avec 1,6).</li>
+          <li>Vitrine com concorrente lado a lado é o que as donas odeiam.</li>
+          <li>Marketplace precisa de densidade: com 3 profissionais não serve à cliente.</li>
+        </ul>
+      </div>
+    </div>
+    <ol class="steps prose">
+      <li><span><strong>Agora:</strong> a página de cada profissional é o app da cliente. Link na bio, sem conta, no Google.</span></li>
+      <li><span><strong>Com 15 a 20 ativas numa cidade:</strong> uma página da cidade na web, só com quem aceitar, sem leilão e sem comissão; a cliente marca direto com a profissional.</span></li>
+      <li><span><strong>Só se a página da cidade trouxer cliente nova com número:</strong> pensar num app da cliente.</span></li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="eyebrow">O plano</div>
+    <h2>Posicionamento e o que entra no produto</h2>
+    <p class="quote">"Sua agenda, sua página no Google e quem passou da manutenção, tudo no seu WhatsApp. R$ 39, sem multa para sair."</p>
+    <div class="table" role="region" aria-label="Prioridades do produto" tabindex="0">
+      <table>
+        <thead><tr><th>Ordem</th><th>O quê</th><th>Quem</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td>Cadastro sem depender de e-mail</td><td>código pronto (PR #153); Eduardo desliga a confirmação</td></tr>
+          <tr><td class="num">2</td><td>Lembrete de horário automático pelo WhatsApp (mensagem de utilidade, uns R$ 0,03)</td><td>Eduardo: credencial da Meta; o código de lembrete já existe</td></tr>
+          <tr><td class="num">3</td><td>Escolher mais de uma especialidade no cadastro</td><td>código, pequeno</td></tr>
+          <tr><td class="num">4</td><td>Anamnese com assinatura da cliente pelo celular</td><td>código, médio</td></tr>
+          <tr><td class="num">5</td><td>Página pública pronta para o Google, com fotos dos trabalhos</td><td>conferir o que existe</td></tr>
+          <tr><td class="num">6</td><td>"Ficou devendo"</td><td>se o piloto pedir</td></tr>
+          <tr><td class="num">7</td><td>Cobrar o sinal por Pix</td><td>depois do CNPJ e do provedor de pagamento</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid2">
+      <div class="box call">
+        <h3>Canais, em ordem de teste</h3>
+        <ol>
+          <li>Os 16 leads da região, um a um, com o kit de campo.</li>
+          <li>A mentora de unhas da própria cidade.</li>
+          <li>Instagram com o vídeo da fila de quem passou da manutenção.</li>
+          <li>Marca de gel ou de cílios com programa de embaixadoras.</li>
+          <li>Escolas e cursos, com comissão recorrente para a educadora.</li>
+          <li>Congressos (Brazil Lash Congress, Jornada Lashes), depois do piloto.</li>
+          <li>Indicação: 1 mês para cada lado.</li>
+        </ol>
+      </div>
+      <div class="box">
+        <h3>O que a pesquisa corrigiu</h3>
+        <ul>
+          <li>"Nenhum concorrente é dono desse público" estava errado: Gendo, Simples Agenda, Agendiva e LashLab Pro miram nele.</li>
+          <li>O "menos de 30% usam sistema" não tem fonte.</li>
+          <li>"Quem sumiu" sozinho não diferencia; o ritmo e o R$ de cada cliente, mostrados com os dados dela, diferenciam.</li>
+          <li>O Motor precisa funcionar com 30 a 70 clientes, não com 300.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p class="src">Arquivos de origem: docs/concorrentes/beleza-feminina/ (01-grandes, 02-menores, 03-mercado, 04-reputacao, 05-relatorio, 06-voz-e-canais, 07-ciclo-hoje, 08-campo-regiao). A lista de leads com nome e telefone fica fora do repositório.</p>
+  </footer>
+</div>
