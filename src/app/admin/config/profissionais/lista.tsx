@@ -11,6 +11,8 @@ import { useState, useTransition } from 'react'
 
 
 import { ROTULO_DO_PAPEL, rotuloDoPapel } from '@/core/auth/rotulo-do-papel'
+import { linkDoConvitePeloWhatsApp } from '@/core/convites/link-pelo-whatsapp'
+import { formatarTelefone, telefoneParaE164 } from '@/core/text/telefone'
 import Badge from '@/components/ui/badge'
 
 import Button from '@/components/ui/button'
@@ -49,7 +51,10 @@ type Convite = {
 
   id: string
 
-  email: string
+  email: string | null
+
+  /** Convite pelo WhatsApp (docs/112 EXP-K01), em E.164. */
+  phone: string | null
 
   role: string
 
@@ -133,6 +138,8 @@ export default function ListaProfissionais({
   */
 
   const [linkNaoCopiado, setLinkNaoCopiado] = useState<string | null>(null)
+  /** EXP-K01: o `wa.me` do convite feito pelo número, mostrado no Sheet até ele fechar. */
+  const [conviteWhatsApp, setConviteWhatsApp] = useState<string | null>(null)
 
   const [editando, setEditando] = useState<Profissional | 'novo' | null>(null)
 
@@ -202,7 +209,9 @@ export default function ListaProfissionais({
 
   function enviarConvite(formData: FormData) {
 
-    const email = String(formData.get('email') ?? '').trim()
+    const email = String(formData.get('email') ?? '').trim() || undefined
+
+    const telefone = telefoneParaE164(String(formData.get('telefone') ?? '')) ?? undefined
 
     const role = String(formData.get('role') ?? 'professional')
 
@@ -214,7 +223,7 @@ export default function ListaProfissionais({
 
       try {
 
-        const resultado = (await postar('/api/v1/memberships/invite', { email, role, displayName })) as {
+        const resultado = (await postar('/api/v1/memberships/invite', { email, telefone, role, displayName })) as {
 
           invite: Convite
 
@@ -223,6 +232,13 @@ export default function ListaProfissionais({
         }
 
         setConvites((atual) => [resultado.invite, ...atual])
+
+        // EXP-K01: convite pelo número sai pelo WhatsApp da própria dona, com o link no texto. O Sheet
+        // fica aberto com o botão, que é o único lugar onde esse link aparece.
+        if (telefone) {
+          setConviteWhatsApp(linkDoConvitePeloWhatsApp(telefone, resultado.link))
+          return
+        }
 
 
 
@@ -458,7 +474,7 @@ export default function ListaProfissionais({
 
                   <Card>
 
-                    <p className="text-corpo font-semibold">{c.email}</p>
+                    <p className="text-corpo font-semibold">{c.email ?? (c.phone ? formatarTelefone(c.phone) : '')}</p>
 
                     <p className="mt-0.5 text-secundario text-txt-2">
 
@@ -492,11 +508,27 @@ export default function ListaProfissionais({
 
           if (!v) setLinkNaoCopiado(null)
 
+          if (!v) setConviteWhatsApp(null)
+
         }}
 
         titulo="Convidar para o time"
 
       >
+
+        {conviteWhatsApp ? (
+          <div className="mb-4 flex flex-col gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 p-3">
+            <p className="text-secundario text-txt-2">Convite criado. Mande pelo seu WhatsApp: o link já vai no texto.</p>
+            <a
+              href={conviteWhatsApp}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-12 items-center justify-center rounded-[var(--radius-sm)] bg-acc px-5 text-corpo font-semibold text-on-acc"
+            >
+              Mandar o convite pelo WhatsApp
+            </a>
+          </div>
+        ) : null}
 
         {/*
 
@@ -584,22 +616,28 @@ export default function ListaProfissionais({
 
         >
 
+          {/* docs/112 EXP-K01: o WhatsApp vem primeiro, e o e-mail fica opcional. Quem entra pelo
+              número não tem e-mail, e o convite só por e-mail deixava essa pessoa de fora. */}
           <label className="flex flex-col gap-1">
-
-            <span className="text-label font-semibold text-txt-2">E-mail</span>
-
+            <span className="text-label font-semibold text-txt-2">WhatsApp de quem você está chamando</span>
             <input
-
-              name="email"
-
-              type="email"
-
-              required
-
+              name="telefone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="off"
+              placeholder="(11) 99999-9999"
               className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-
             />
+          </label>
 
+          <label className="flex flex-col gap-1">
+            <span className="text-label font-semibold text-txt-2">Ou o e-mail (se a pessoa entra por e-mail)</span>
+            <input
+              name="email"
+              type="email"
+              autoComplete="off"
+              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
+            />
           </label>
 
 

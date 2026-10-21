@@ -8,6 +8,12 @@ import { AppError } from '@/server/http/errors'
 export type Sessao = {
   userId: string
   email: string
+  /**
+   * O número que a pessoa PROVOU com o código do login por número (docs/110 L1), em E.164. Só o
+   * confirmado: o telefone digitado no cadastro por e-mail nunca foi conferido e não vale como
+   * prova (o aceite do convite pelo WhatsApp, EXP-K01, trava por ele).
+   */
+  telefone?: string | null
   /** `aal1` = só senha; `aal2` = com o segundo fator. Ações sensíveis exigem aal2. */
   aal: string
   /**
@@ -50,6 +56,7 @@ export const sessaoAtual = cache(async function sessaoAtual(): Promise<Sessao | 
   return {
     userId: data.user.id,
     email: data.user.email ?? '',
+    telefone: data.user.phone && data.user.phone_confirmed_at ? `+${data.user.phone.replace(/^\+/, '')}` : null,
     aal: nivel?.currentLevel ?? 'aal1',
     metodos: (nivel?.currentAuthenticationMethods ?? []).map((m) => (typeof m === 'string' ? m : m.method)),
     origemNoCadastro: typeof data.user.user_metadata?.origem === 'string' ? data.user.user_metadata.origem : null,

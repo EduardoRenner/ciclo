@@ -41,12 +41,31 @@ export default async function PaginaConvite({ params }: { params: Promise<{ toke
   if (!sessao) redirect(`/entrar?${new URLSearchParams({ proximo: aqui }).toString()}`)
 
   const papel = NOME_DO_PAPEL[previa.papel]
-  if (sessao.email.toLowerCase() !== previa.email.toLowerCase()) {
+  /*
+    docs/112 EXP-K01: convite pelo WhatsApp confere o número que a pessoa provou no login, e diz o
+    final dele. Antes, quem entrava pelo número via "Você entrou como ." (e-mail vazio) e voltava
+    para entrar, que abre no número: um círculo sem saída.
+  */
+  if (previa.telefone) {
+    if (sessao.telefone !== previa.telefone) {
+      return (
+        <Moldura>
+          <h1 className="text-titulo font-bold">Este convite é para outro número</h1>
+          <p className="mt-2 text-corpo text-txt-2">
+            {previa.negocio} chamou o WhatsApp terminado em <strong>{previa.telefone.slice(-4)}</strong> para a equipe.
+            Entre com esse número para aceitar.
+          </p>
+          <AceitarConvite token={token} modo="trocar-de-conta" voltarPara={aqui} />
+        </Moldura>
+      )
+    }
+  } else if (!previa.email || sessao.email.toLowerCase() !== previa.email.toLowerCase()) {
     return (
       <Moldura>
         <h1 className="text-titulo font-bold">Este convite é para outro e-mail</h1>
         <p className="mt-2 text-corpo text-txt-2">
-          {previa.negocio} chamou <strong>{previa.email}</strong> para a equipe. Você entrou como {sessao.email}.
+          {previa.negocio} chamou <strong>{previa.email}</strong> para a equipe.
+          {sessao.email ? ` Você entrou como ${sessao.email}.` : ' Você entrou sem e-mail, pelo número.'}
         </p>
         <AceitarConvite token={token} modo="trocar-de-conta" voltarPara={aqui} />
       </Moldura>

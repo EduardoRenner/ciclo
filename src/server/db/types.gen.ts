@@ -1372,9 +1372,10 @@ export type Database = {
           accepted_at: string | null
           created_at: string
           display_name: string | null
-          email: string
+          email: string | null
           expires_at: string
           id: string
+          phone: string | null
           invited_by: string
           role: Database["public"]["Enums"]["user_role"]
           tenant_id: string
@@ -1384,9 +1385,10 @@ export type Database = {
           accepted_at?: string | null
           created_at?: string
           display_name?: string | null
-          email: string
+          email?: string | null
           expires_at: string
           id?: string
+          phone?: string | null
           invited_by: string
           role: Database["public"]["Enums"]["user_role"]
           tenant_id: string
@@ -1396,9 +1398,10 @@ export type Database = {
           accepted_at?: string | null
           created_at?: string
           display_name?: string | null
-          email?: string
+          email?: string | null
           expires_at?: string
           id?: string
+          phone?: string | null
           invited_by?: string
           role?: Database["public"]["Enums"]["user_role"]
           tenant_id?: string

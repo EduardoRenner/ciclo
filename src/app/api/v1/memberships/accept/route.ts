@@ -13,7 +13,7 @@ export const POST = rota(async (req, _ctx, requestId) => {
   const { token } = await lerCorpo(req, EsquemaAceitarConvite)
 
   const resultado = await withNovoTenant((svc) =>
-    aceitarConvite(svc, { userId: sessao.userId, userEmail: sessao.email, token }),
+    aceitarConvite(svc, { userId: sessao.userId, userEmail: sessao.email, userPhone: sessao.telefone ?? null, token }),
   )
 
   await writeAudit(

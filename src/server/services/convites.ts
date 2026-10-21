@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto'
 
 import { z } from 'zod'
 
+import { TelefoneBR } from '@/server/auth/schemas'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -9,11 +10,18 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 const DIAS_DE_VALIDADE = 7
 
-export const EsquemaConvite = z.object({
-  email: z.email('Digite um e-mail válido.'),
-  role: z.enum(['owner', 'manager', 'professional', 'reception', 'finance'], 'Escolha um papel válido.'),
-  displayName: z.string().trim().min(2).max(120).nullish(),
-})
+/**
+ * docs/112 EXP-K01: o convite pode ir por e-mail OU pelo WhatsApp (número). Quem entra pelo número
+ * (docs/110 L1) não tem e-mail, e o convite só por e-mail deixava essa pessoa fora da equipe.
+ */
+export const EsquemaConvite = z
+  .object({
+    email: z.email('Digite um e-mail válido.').nullish(),
+    telefone: TelefoneBR.nullish(),
+    role: z.enum(['owner', 'manager', 'professional', 'reception', 'finance'], 'Escolha um papel válido.'),
+    displayName: z.string().trim().min(2).max(120).nullish(),
+  })
+  .refine((c) => Boolean(c.email || c.telefone), { message: 'Diga o WhatsApp ou o e-mail de quem você está chamando.', path: ['telefone'] })
 
 export const EsquemaAceitarConvite = z.object({
   token: z.string().min(16, 'Link de convite inválido.'),
@@ -56,14 +64,15 @@ export async function criarConvite(db: Cliente, tenantId: string, invitedBy: str
     .from('invites')
     .insert({
       tenant_id: tenantId,
-      email: entrada.email,
+      email: entrada.email ?? null,
+      phone: entrada.telefone ?? null,
       role: entrada.role,
       display_name: entrada.displayName ?? null,
       token_hash: hashToken(token),
       invited_by: invitedBy,
       expires_at: expiresAt,
     })
-    .select('id, email, role, expires_at')
+    .select('id, email, phone, role, expires_at')
     .single()
 
   if (error) throw new AppError('INTERNAL', { cause: error })
@@ -73,7 +82,7 @@ export async function criarConvite(db: Cliente, tenantId: string, invitedBy: str
 export async function listarConvites(db: Cliente, tenantId: string) {
   const { data, error } = await db
     .from('invites')
-    .select('id, email, role, display_name, expires_at, accepted_at, created_at')
+    .select('id, email, phone, role, display_name, expires_at, accepted_at, created_at')
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
 
@@ -83,7 +92,13 @@ export async function listarConvites(db: Cliente, tenantId: string) {
 
 const MENSAGEM_CONVITE_INVALIDO = 'Esse convite não existe mais, já foi usado ou venceu.'
 
-export type PreviaDoConvite = { negocio: string; papel: Database['public']['Enums']['user_role']; email: string }
+export type PreviaDoConvite = {
+  negocio: string
+  papel: Database['public']['Enums']['user_role']
+  email: string | null
+  /** Telefone do convite pelo WhatsApp (EXP-K01), em E.164. */
+  telefone: string | null
+}
 
 /**
  * APR-023: o que a página `/convite/[token]` mostra antes de a pessoa aceitar. Mesma regra de
@@ -95,13 +110,13 @@ export async function previaDoConvite(svc: Cliente, token: string): Promise<Prev
   if (token.length < 16) return null
   const { data, error } = await svc
     .from('invites')
-    .select('email, role, expires_at, accepted_at, tenants(name)')
+    .select('email, phone, role, expires_at, accepted_at, tenants(name)')
     .eq('token_hash', hashToken(token))
     .maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (!data || data.accepted_at !== null || new Date(data.expires_at) < new Date()) return null
   const tenant = data.tenants as { name: string } | null
-  return { negocio: tenant?.name ?? 'O negócio', papel: data.role, email: data.email }
+  return { negocio: tenant?.name ?? 'O negócio', papel: data.role, email: data.email, telefone: data.phone }
 }
 
 /**
@@ -112,11 +127,11 @@ export async function previaDoConvite(svc: Cliente, token: string): Promise<Prev
  */
 export async function aceitarConvite(
   svc: Cliente,
-  params: { userId: string; userEmail: string; token: string },
+  params: { userId: string; userEmail: string; userPhone?: string | null; token: string },
 ) {
   const { data: convite, error: erroConvite } = await svc
     .from('invites')
-    .select('id, tenant_id, email, role, display_name, expires_at, accepted_at')
+    .select('id, tenant_id, email, phone, role, display_name, expires_at, accepted_at')
     .eq('token_hash', hashToken(params.token))
     .maybeSingle()
   if (erroConvite) throw new AppError('INTERNAL', { cause: erroConvite })
@@ -127,9 +142,16 @@ export async function aceitarConvite(
     throw new AppError('NOT_FOUND', { message: MENSAGEM_CONVITE_INVALIDO })
   }
 
-  // O e-mail do convite trava com quem está logado — sem isso, quem chegasse
-  // no link (encaminhado, por exemplo) entraria na conta de outra pessoa.
-  if (convite.email.toLowerCase() !== params.userEmail.toLowerCase()) {
+  // O convite trava com quem está logado — sem isso, quem chegasse no link (encaminhado, por
+  // exemplo) entraria na conta de outra pessoa. Pelo WhatsApp (EXP-K01), a trava é o número que a
+  // pessoa provou com o código no login; por e-mail, o e-mail.
+  if (convite.phone) {
+    if (!params.userPhone || params.userPhone !== convite.phone) {
+      throw new AppError('FORBIDDEN', {
+        message: 'Esse convite foi mandado para outro número. Entre com o WhatsApp que recebeu o convite.',
+      })
+    }
+  } else if (!convite.email || convite.email.toLowerCase() !== params.userEmail.toLowerCase()) {
     throw new AppError('FORBIDDEN', {
       message: 'Esse convite foi enviado para outro e-mail. Entre com a conta correta.',
     })
@@ -151,7 +173,8 @@ export async function aceitarConvite(
     const { error: erroProfissional } = await svc.from('professionals').insert({
       tenant_id: convite.tenant_id,
       user_id: params.userId,
-      display_name: convite.display_name ?? params.userEmail,
+      // Quem entrou pelo número não tem e-mail (EXP-K01): sem nome no convite, a reserva é neutra.
+      display_name: convite.display_name || params.userEmail || 'Sem nome',
     })
     if (erroProfissional && erroProfissional.code !== '23505') {
       throw new AppError('INTERNAL', { cause: erroProfissional })

@@ -6,7 +6,13 @@ import { rota } from '@/server/http/handler'
 
 vi.mock('@/server/db/server-client', () => ({ criarClienteDoUsuario: vi.fn() }))
 
-type Usuario = { id: string; email: string; user_metadata?: Record<string, unknown> } | null
+type Usuario = {
+  id: string
+  email: string
+  phone?: string
+  phone_confirmed_at?: string | null
+  user_metadata?: Record<string, unknown>
+} | null
 
 /** Cliente de mentira com só o que a sessão consulta. */
 function clienteCom(usuario: Usuario, aal: string | null = 'aal1', metodos: string[] = []) {
@@ -49,10 +55,20 @@ describe('sessaoAtual', () => {
     expect(await sessaoAtual()).toEqual({
       userId: 'u-1',
       email: 'bruna@salao.test',
+      telefone: null,
       aal: 'aal2',
       metodos: ['oauth', 'totp'],
       origemNoCadastro: null,
     })
+  })
+
+  // docs/112 EXP-K01: o convite pelo WhatsApp trava pelo número PROVADO no login por código.
+  it('o telefone só vale quando foi confirmado pelo código', async () => {
+    comSessao({ id: 'u-1', email: '', phone: '5511912345678', phone_confirmed_at: '2026-10-21T03:00:00Z' }, 'aal1')
+    expect((await sessaoAtual())?.telefone).toBe('+5511912345678')
+
+    comSessao({ id: 'u-1', email: 'bruna@salao.test', phone: '5511912345678', phone_confirmed_at: null }, 'aal1')
+    expect((await sessaoAtual())?.telefone, 'telefone sem confirmação não é prova').toBeNull()
   })
 
   it('docs/82 §6: devolve a origem gravada na conta no cadastro, crua (quem lê saneia)', async () => {

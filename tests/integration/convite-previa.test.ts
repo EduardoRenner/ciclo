@@ -48,7 +48,7 @@ describe('prévia do convite (APR-023)', () => {
     'convite válido: diz o negócio, o papel e o e-mail',
     async () => {
       const { token } = await criarConvite(svc, tenantId, donoId, { email: 'nova@ciclo.test', role: 'reception' })
-      expect(await previaDoConvite(svc, token)).toEqual({ negocio: 'Barbearia do Convite', papel: 'reception', email: 'nova@ciclo.test' })
+      expect(await previaDoConvite(svc, token)).toEqual({ negocio: 'Barbearia do Convite', papel: 'reception', email: 'nova@ciclo.test', telefone: null })
     },
     30_000,
   )

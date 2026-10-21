@@ -324,4 +324,50 @@ describe('convite por link', () => {
     },
     30_000,
   )
+
+  /*
+    docs/112 EXP-K01: o convite só existia por e-mail, e quem entra pelo número (L1) tem e-mail
+    vazio na sessão. A tela dizia "Você entrou como ." e mandava de volta para entrar, que abre no
+    número: um círculo. O convite passa a poder ser pelo WhatsApp, e o aceite confere o número.
+  */
+  it(
+    'convite pelo número: aceita quem entrou com esse número, e vira profissional',
+    async () => {
+      const telefone = `+55119${Math.floor(1e7 + Math.random() * 9e7)}`
+      const { invite, token } = await criarConvite(svc, tenantId, donoId, {
+        telefone,
+        role: 'professional',
+        displayName: 'Convidada pelo Número',
+      })
+      expect(invite.email).toBeNull()
+      expect(invite.phone).toBe(telefone)
+
+      const convidada = await criarUsuario('pelo-numero')
+      const resultado = await aceitarConvite(svc, { userId: convidada.id, userEmail: '', userPhone: telefone, token })
+      expect(resultado).toEqual({ tenantId, role: 'professional' })
+
+      const profissional = await svc.from('professionals').select('display_name').eq('tenant_id', tenantId).eq('user_id', convidada.id).single()
+      expect(profissional.data?.display_name).toBe('Convidada pelo Número')
+    },
+    30_000,
+  )
+
+  it(
+    'convite pelo número: outro número é recusado, e sem número também',
+    async () => {
+      const { token } = await criarConvite(svc, tenantId, donoId, { telefone: '+5511987650001', role: 'reception' })
+      const outra = await criarUsuario('outro-numero')
+
+      const comOutro = await aceitarConvite(svc, { userId: outra.id, userEmail: outra.email!, userPhone: '+5511987650002', token }).catch(
+        (e: unknown) => e,
+      )
+      expect(comOutro).toMatchObject({ code: 'FORBIDDEN' })
+
+      const semNumero = await aceitarConvite(svc, { userId: outra.id, userEmail: outra.email!, userPhone: null, token }).catch(
+        (e: unknown) => e,
+      )
+      expect(semNumero).toMatchObject({ code: 'FORBIDDEN' })
+    },
+    30_000,
+  )
 })
