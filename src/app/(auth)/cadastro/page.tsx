@@ -35,7 +35,7 @@ export default async function PaginaCadastro({ searchParams }: { searchParams: P
           Era "Criar conta no CICLO", com o logotipo do `Selo` logo acima dizendo CICLO — a marca
           duas vezes em 60 px, o mesmo defeito que a landing tinha na dobra.
         */}
-        <h1 className="text-titulo font-bold">{daCalculadora ? 'Vamos achar quem sumiu, pelo nome' : 'Criar sua conta'}</h1>
+        <h1 className="font-display text-titulo font-semibold">{daCalculadora ? 'Vamos achar quem sumiu, pelo nome' : 'Criar sua conta'}</h1>
         {/*
           "Leva menos de um minuto" fala do custo. Esta linha fala do risco, que é a objeção real
           de quem está com o dedo em cima de um formulário de quatro campos: a landing prometeu

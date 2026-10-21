@@ -181,7 +181,7 @@ export default function Precos() {
           o Grátis existir; agora a razão é a mesma, com dias contados: o Motor de Ciclo inteiro, com a
           base da própria pessoa, antes de qualquer cobrança.
         */}
-        <h1 className="text-numero font-bold sm:text-[2.25rem] sm:leading-[1.1]">
+        <h1 className="font-display text-numero font-semibold sm:text-[2.25rem] sm:leading-[1.1]">
           {oferta.chamada[0]?.toUpperCase()}
           {oferta.chamada.slice(1)}.{oferta.aberto ? ' Sem prazo por enquanto.' : ' Depois, dois planos.'}
         </h1>

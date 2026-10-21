@@ -53,7 +53,7 @@ export default function PaginaCalculadora() {
         </header>
 
         <section className="py-8 sm:py-10">
-          <h1 className="text-numero font-bold sm:text-[2.25rem] sm:leading-[1.1]">
+          <h1 className="font-display text-numero font-semibold sm:text-[2.25rem] sm:leading-[1.1]">
             Quanto deixou de entrar com quem parou de voltar?
           </h1>
           <p className="mt-4 max-w-[52ch] text-corpo text-txt-2">

@@ -321,6 +321,7 @@
   --color-ring: var(--acc);
 
   --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
 
   /*
    * Escala de §2, com as correções de `08-REDESIGN-E-IDENTIDADE.md`. `rem` para

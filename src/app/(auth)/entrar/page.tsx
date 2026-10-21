@@ -25,7 +25,7 @@ export default async function PaginaEntrar() {
             palavra duas vezes seguidas. As outras telas de `TelaPublica` têm
             título próprio (a pergunta é o que muda de tela pra tela); esta
             ganha o dela. */}
-        <h1 className="text-titulo font-bold">Que bom te ver de novo</h1>
+        <h1 className="font-display text-titulo font-semibold">Que bom te ver de novo</h1>
         <p className="mt-1 text-secundario text-txt-2">Entre para ver o resumo do seu dia.</p>
       </div>
       <LoginSocial provedores={provedores} />

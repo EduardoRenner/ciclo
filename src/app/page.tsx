@@ -341,7 +341,7 @@ export default async function Home() {
           Motor de Ciclo, o eixo 1 do posicionamento (`docs/43` §4), só que perguntado em vez de
           afirmado.
         */}
-        <h1 className="text-numero font-bold sm:text-[2.75rem] sm:leading-[1.05] sm:tracking-[-0.02em]">
+        <h1 className="font-display text-numero font-semibold sm:text-[2.75rem] sm:leading-[1.05] sm:tracking-[-0.02em]">
           Quantos clientes pararam de voltar sem você notar?
         </h1>
         {/*
@@ -568,7 +568,7 @@ export default async function Home() {
           `preco-em-um-lugar-so` aplicada a limite em vez de a preço.
         */}
         <CalendarCheck aria-hidden className="mx-auto mb-3 size-8 text-acc-2" />
-        <h2 className="text-titulo font-bold">Comece sem cartão</h2>
+        <h2 className="font-display text-titulo font-semibold">Comece sem cartão</h2>
         <p className="mx-auto mt-2 max-w-[44ch] text-secundario text-txt-2">
           {oferta.chamada[0]?.toUpperCase()}
           {oferta.chamada.slice(1)}.{oferta.aberto ? ' Sem prazo por enquanto.' : ''} A base é sua: se um dia você parar de pagar, nada some.

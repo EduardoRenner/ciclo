@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo } from "next/font/google";
+import { Archivo, Fraunces } from "next/font/google";
 import "./globals.css";
 
 import RegistrarServiceWorker from "@/components/shell/registrar-service-worker";
@@ -39,6 +39,17 @@ import { APP_URL } from "@/lib/app-url";
 const archivo = Archivo({
   variable: "--font-sans",
   subsets: ["latin"],
+});
+
+/**
+ * Serifa macia só nos títulos das páginas públicas (`font-display`), nunca no painel nem em
+ * número (`docs/109-marca-feminina`). É o "um pouco mais feminino" sem rosa de menina. Fraunces e
+ * não Lora porque a Lora é a da Agendiva, e o eixo SOFT arredonda a serifa sem virar cursiva.
+ */
+const fraunces = Fraunces({
+  variable: "--font-display",
+  subsets: ["latin"],
+  axes: ["SOFT", "opsz"],
 });
 
 export const metadata: Metadata = {
@@ -91,7 +102,7 @@ export default function RootLayout({
   // `<div data-theme>`, e o CSS cascateia dali. Sem `<script>`, sem piscada, sem esbarrar na CSP.
   return (
     <html lang="pt-BR" className="dark">
-      <body className={`${archivo.variable} antialiased`}>
+      <body className={`${archivo.variable} ${fraunces.variable} antialiased`}>
         <RegistrarServiceWorker />
         <ConfigurarStatusBarNativo />
         {children}
