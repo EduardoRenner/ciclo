@@ -48,3 +48,63 @@ Pedido do Vitor (21/10, madrugada, repassado pela sessão "Ciclo: mudanças e la
 | 05:49 | EXP-S02 (ajuste) | Recuperar da Carol medido na tela a 375 px: 18 com a primeira versão, 16 com "em dia até 70% do ritmo" (antes 85%, que o Motor já punha em "na hora"), **15 clientes e R$ 1.460,00** com 16% de atrasadas (dentro da faixa de 15% a 20%). Ocupação continua de 48% a 57%. **Achado na mesma tela:** "O Motor acertou 0% das 8 previsões já conferidas". Não é do seed: na primeira rodada o Motor registra previsão com data JÁ PASSADA para quem sumiu há meses, e cada uma vira "não voltou" na hora; um salão que importa a base do sistema antigo veria 0% no primeiro dia. É a próxima rodada | ver git log |
 | 06:08 | achado da noite (fora da lista) | a prestação de contas do Motor deixa de contar previsão registrada DEPOIS da data que ela prevê (`predicted_at` > `predicted_on`). Na primeira rodada o Motor registra previsão para todo mundo, inclusive quem sumiu há meses, com data já passada, e cada uma virava "não voltou" na hora: a Carol abria com "O Motor acertou 0% das 8 previsões já conferidas", e um salão que importa a base do sistema antigo veria o mesmo no primeiro dia. `predictedAt` é obrigatório no tipo `PrevisaoAuditada`: tirar o campo do leitor quebra o `tsc` (visto), então nenhum leitor esquece em silêncio. A calibração por estado não muda (quem já estava sumido e voltou é informação útil para ela). 3 testes novos, 2 reprovando no código antigo; mutação do filtro reprova 2. **Visto a 375 px:** o Recuperar da Carol diz "O Motor ainda tem pouco histórico deste negócio: 0 previsões conferidas", no lugar do 0%. Suíte: 4.530 unitários; isolamento e integração com 3 falhas sob carga (comissão congelada, memberships e `lote-de-importacao`), que passam sozinhas (25/25) | ver git log |
 | 06:32 | EXP-S04 | migration `0145` (só dados): Unhas, Cílios, Sobrancelhas, Cabelo, Depilação e Estética nas posições 1 a 6, Barbearia 7, Tatuagem 8; "Estética facial e corporal" vira "Estética". A tela do cadastro mostra as seis abertas e "Outras áreas (12)" a um toque; aberta, ela mostra SÓ as outras, porque repetir as seis no topo escondia a Barbearia no fim da caixa (medido: pedia rolar). A caixa de 220 px com rolagem própria não cabia as seis: a altura máxima agora só vale na busca. **Medido a 375 px:** as seis terminam em 694 px numa tela de 812, sem rolar; Barbearia a 2 toques; "tatu" e "lash" continuam achando na busca; sem rolagem lateral. Guardas: o teste do catálogo lê a ordem no banco (Barbearia em 3 reprova) e o do core reprova com 7 em destaque. A guarda `onboarding-tem-saida-para-profissao-de-fora` ancorava em `filtradas.length === 0` (a variável virou `visiveis`) e um dos casos não conferia o índice, então passava com -1; agora confere, e tirar a ação da genérica reprova. Tropeço: a restauração de uma mutação casou com outra linha igual do arquivo (o botão "Trocar") e trocou os dois botões; achado pela suíte vermelha e consertado olhando as duas linhas contra o HEAD. Suíte: 4.532 unitários, 361 isolamento, 680 integração, tudo verde. **Migration `0145` pode subir antes do código** | ver git log |
+
+## Resumo da noite de 21/10 (00h47 às 06h32)
+
+**Nada foi empurrado.** O PR #155 (rascunho) vai até `1caeaacb`; os 19 commits desta noite estão só no worktree `ciclo-marca`, branch `marca/feminina-2026-10-20`. Empurrar gera prévia na Vercel, que conta como deploy: é do Vitor.
+
+### O que entrou (17 commits de código, 2 de documento)
+
+| Ticket | O que mudou para quem usa |
+| --- | --- |
+| EXP-J08 | o login pelo número só aparece como entrada principal quando o código sai de fato |
+| EXP-A06 | o aviso no aparelho da equipe vai só para quem administra e para a profissional do horário |
+| EXP-A03 | cancelar pelo link avisa a profissional e quem administra, e oferece a vaga à lista de espera |
+| EXP-A04 | a lista de espera só marca "avisada" depois de um envio que saiu |
+| EXP-A02 (3 de 4) | cada automação parada diz o motivo; Notificações não promete lembrete |
+| EXP-A01 | o dial de Automações passa a valer (lembrete só sai sozinho no nível 3) |
+| EXP-J01 | Hoje e Recuperar mostram o mesmo "dá para recuperar" |
+| EXP-K01 | convite da equipe pelo WhatsApp, aceito por quem entra pelo número |
+| EXP-A08 (parte 1) | chamar de volta em lote pula quem não deu consentimento de marketing |
+| EXP-S01 (parte 1) | "Ver funcionando" abre num salão, não na barbearia |
+| EXP-S03 | a busca do cadastro acha lash, nail, esmalteria, depiladora e mais 19 termos |
+| EXP-S02 | quatro contas de demonstração de salão em que cada profissional só faz o próprio ofício |
+| EXP-S04 | as seis profissões de beleza abrem o cadastro; o resto em "Outras áreas" |
+| achado | cookie de estabelecimento velho derrubava o painel inteiro de quem entrava depois no aparelho |
+| achado | o Motor mostrava "acertou 0%" por previsões registradas com data já passada |
+
+### Números medidos
+
+- Suíte no último commit: **4.532 unitários, 361 de isolamento, 680 de integração, tudo verde**. Ao longo da noite, cada rodada teve de 1 a 14 testes de banco estourando o tempo com a CPU dividida entre duas sessões; todos foram rodados de novo sozinhos e passaram (os mais frequentes: `lote-de-importacao` e `comanda-fechada-congelada`).
+- Toda guarda nova foi vista reprovando com o defeito de volta; a mutação de cada uma está na linha do ticket, acima.
+- Demonstração (banco local): ocupação de 48% a 57% por profissional, 0 atendimento fora do ofício, faltas de 8,8% a 10%, Recuperar da Carol com 15 clientes e R$ 1.460,00, visto a 375 px.
+
+### Migrations novas (aplicadas só no banco local)
+
+`0142` login por número e `0143` convite por número sobem ANTES do código em produção. `0144` (sinônimos) e `0145` (ordem das profissões) são só dados e podem subir a qualquer hora.
+
+### O que deu errado e como foi pego
+
+- A conferência do seed lia só 1.000 linhas (limite do PostgREST): a ocupação saía 0% e a checagem de cruzamento estava cega. Pego porque o próprio seed parou com erro; agora pagina e confere que leu tudo o que gravou.
+- A primeira ordem da vitrine trocaria o "Ver funcionando" de PRODUÇÃO para o Encanto antigo, sem nenhum teste reprovar. Pego relendo a lista antes do commit; virou guarda.
+- Duas mutações enganaram: uma trocou o par na lista de exclusão (onde ele aparece primeiro) e não testou nada; a restauração de outra casou com uma linha igual e trocou dois botões. Pegos conferindo o trecho mutado e pela suíte vermelha.
+- `git -c core.autocrlf=false add` gravou CRLF num arquivo guardado com LF (diff de arquivo inteiro). Pego comparando `--numstat` com `--ignore-cr-at-eol`; corrigido com `--renormalize` antes de seguir. Memória atualizada.
+- O recálculo do Motor passou de 15 minutos: a suíte de integração deixa ~145 mil clientes de teste no banco local a cada rodada. Apagados os negócios de teste (só banco local), rodou em 9 s. Ver "Pendente técnico".
+
+### Do Vitor (nada disso foi decidido por mim; onde precisei andar, ficou um padrão provisório)
+
+1. Texto da política de privacidade que diz que a Meta "entrega lembrete" (EXP-A02).
+2. O lembrete nasce no nível 1 do dial: ligar a Meta não manda lembrete até a dona subir para o 3. Confirmar, ou o lembrete nasce no 3 (EXP-A01).
+3. Fidelidade: o nível do dial deve mudar o comportamento? E o selo "Ativa" aparece com o programa desligado.
+4. Nomes das contas de demonstração (os de agora são provisórios) e se apaga as barbearias e os salões antigos.
+5. O Salão Encanto ficou com 577 clientes, e não 220: com cabelo voltando a cada 60 ou 90 dias, 220 deixam cinco profissionais abaixo de 40% de ocupação.
+6. Já pendentes antes da noite: guarda de gênero (recomendação: manter), J04, ordem de publicação, configuração da Meta.
+
+### Pendente técnico (próximas rodadas)
+
+- Onda 1 que falta: EXP-S05 (calculadora de salão), S06 (catálogo revisado), S14, S16, S11/S12, S10/K05, A07.
+- EXP-S01 parte 2: regerar os prints de `public/exemplo/` com as contas novas (os de hoje têm logo turquesa e a linha "de lucro").
+- EXP-A08 parte 2: a cliente sair sozinha (página e "SAIR") e separar as chaves de lembrete e marketing (coluna nova).
+- EXP-S09: Remoção grava ritmo 365 porque `cycle_days` só aceita 1 a 365.
+- O cartão "5 clientes estão sumindo" (Hoje) usa outra contagem que o "6 clientes para chamar".
+- A suíte de integração deixa negócios de teste (`ciclo-*`, `resolver-lote-*`) no banco local, e eles tornam o Motor lento a ponto de estourar. Vale apagar no fim de cada arquivo.
