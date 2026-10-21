@@ -9,7 +9,7 @@ Logo: `Documentos\CICLO-marca-final` (foto de perfil: `perfil-quadrado/perfil-si
 **Nome (campo "Nome", até 30):** `CICLO | Agenda de beleza`
 **Usuário:** `@seuciclo` (ou o que estiver livre: `@ciclo.app`, `@cicloagenda`)
 **Categoria:** Aplicativo / Software
-**Foto:** o relógio no fundo preto (ou turquesa), quadrada; o Instagram recorta.
+**Foto:** `perfil-quadrado/perfil-simbolo-preto.png` (ou `-branco`), quadrada; o Instagram recorta em círculo e o desenho já cabe nele.
 
 **Bio (até 150, escolha uma):**
 1. `Agenda grátis pra quem faz unha, cílios, sobrancelha e cabelo. Sua cliente marca pelo link e você vê quem passou da hora de voltar 👇`
@@ -41,7 +41,7 @@ Logo: `Documentos\CICLO-marca-final` (foto de perfil: `perfil-quadrado/perfil-si
 **Respostas rápidas (atalho → texto):**
 - `/link` → `Cria sua conta aqui: seuciclo.com.br/cadastro. Você entra com o número do WhatsApp e recebe um código.`
 - `/gratis` → `É grátis no lançamento, sem cartão. Se um dia tiver plano pago, você fica sabendo antes e decide.`
-- `/cliente` → `Sua cliente não precisa baixar nada: ela abre o seu link, escolhe o serviço, o dia e o horário, e confirma com o número dela.`
+- `/cliente` → `Não precisa baixar nada: abre o seu link, escolhe o serviço, o dia e o horário e toca em marcar. Uns 10 segundos.`
 - `/voltar` → `Na aba Recuperar aparece, pelo nome, quem passou do tempo de voltar. Um toque abre a mensagem pronta no seu WhatsApp.`
 - `/app` → `Funciona no navegador do celular e dá pra pôr na tela de início como app. Nas lojas da Apple e do Google, em seguida.`
 
