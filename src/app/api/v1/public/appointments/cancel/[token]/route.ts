@@ -1,7 +1,7 @@
 import { avisoDeCancelamentoPelaCliente } from '@/core/mensageria/aviso-de-cancelamento'
+import { APP_URL } from '@/lib/app-url'
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { agendarDepois } from '@/server/http/depois'
-import { exigirEnv } from '@/server/db/server-client'
 import { notificarProximoDaLista } from '@/server/services/lista-espera'
 import { notificarEquipe } from '@/server/services/mensageria'
 import { cancelarAgendamento } from '@/server/services/agendamentos'
@@ -82,7 +82,9 @@ export const POST = rota(async (req, ctx) => {
             startsAt: data.starts_at,
             timezone: tenant.timezone,
           },
-          exigirEnv('NEXT_PUBLIC_APP_URL'),
+          // `APP_URL` (fonte única, com o domínio de reserva) e não `exigirEnv`: este argumento é avaliado
+          // FORA do `.catch` abaixo, e sem a variável a rota inteira respondia 500 (CI de 21/10, job de banco).
+          APP_URL,
         ).catch((erro: unknown) => {
           console.error(JSON.stringify({ level: 'error', event: 'lista_espera_cancelamento_falhou', tenantId: data.tenant_id }), erro)
         }),
