@@ -5,7 +5,7 @@ Cada ticket está escrito por inteiro (formato B2 do `docs/111`) no arquivo da f
 - **S** (cara de salão): `04-salao.md`
 - **A** (avisos): `05-avisos.md`
 - **K** (copy e acessibilidade): `medidas/copy-e-acessibilidade.md`
-- **D** (desempenho): `06-desempenho.md`, **pendente**: o agente de desempenho não entregou nesta rodada. A frente é medida de novo no loop da noite (§Onda 3).
+- **D** (desempenho): `06-desempenho.md` (entregue em 21/10, depois deste índice: EXP-D01 a D10).
 
 "Sem o Vitor" = dá para fazer agora, no código, sem decisão dele e sem credencial de fora.
 
@@ -33,7 +33,7 @@ EXP-J03 (quem volta já vê a manutenção), EXP-J06 (o botão leva até o campo
 
 ## Onda 3 · leve e rápido
 
-Frente D a medir de novo: build de produção, LCP e INP da página do salão e do agendamento, peso de JavaScript por rota, a fonte Fraunces e o recálculo do Motor. **FATO desta rodada:** no banco local, `GET /api/cron/recompute-cycles` levou **177 a 312 s** com cerca de 35 mil clientes (inclusive negócios de teste). Isso passa do tempo máximo de uma função na Vercel; medir em produção antes de concluir (HIPÓTESE). Mais EXP-K09 (nenhum toque espera sem avisar).
+**Medido em build de produção (`06-desempenho.md`):** LCP no Lighthouse mobile de 2,75 s no salão e 2,87 s no agendar (meta 2,5 s); `/admin/hoje` faz 29 idas ao banco; Recuperar baixa 203 kB br, 44 kB só de polyfill de Temporal; a Fraunces pesa 120 KB e **o eixo SOFT é baixado e não usado** (o título sai com a serifa seca, contra o que o `docs/109` prometeu). Tickets, em ordem: EXP-D01 (tela de erro e 404 fora do JS de toda página pública, −22 kB br), EXP-D02 (Fraunces só com o que é usado, ≤ 55 kB, e o SOFT de verdade ou fora), EXP-D03 (Hoje de 29 para ≤ 18 idas), EXP-D04 (Recuperar sem o polyfill), EXP-D05 (CSS sem bloquear o render), EXP-D06 a D10. **Também FATO desta rodada:** no banco local, `GET /api/cron/recompute-cycles` levou **177 a 312 s** com cerca de 35 mil clientes (inclusive negócios de teste). Isso passa do tempo máximo de uma função na Vercel; medir em produção antes de concluir (HIPÓTESE). Mais EXP-K09 (nenhum toque espera sem avisar).
 
 ## Onda 4 · primeiro dia e volta (P1, C4)
 

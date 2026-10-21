@@ -19,7 +19,7 @@ Releia este arquivo e o `docs/111-PROMPT-EXPERIENCIA-DOIS-PUBLICOS.md` se o cont
 | `01-diagnostico.md` | jornadas P1-P7 e C1-C6 medidas | sessão principal (navegador) | feito (P7 não medida) |
 | `04-salao.md` | C1, produto com cara de salão | agente | feito, 60 itens, EXP-S01 a S18 |
 | `05-avisos.md` | C2, avisos e notificações | agente | feito, 13 defeitos Onda 0, EXP-A01 a A15 |
-| `06-desempenho.md` | C3, leve e rápido | agente (worktree próprio para build) | **pendente**: não entregou; refazer no loop |
+| `06-desempenho.md` | C3, leve e rápido | agente (worktree próprio para build) | feito (entregue depois do commit do plano), EXP-D01 a D10 |
 | `medidas/concorrentes.md` | jornadas e avisos dos concorrentes | agente | feito |
 | `medidas/copy-e-acessibilidade.md` | copy e acessibilidade das telas das jornadas | agente | feito, 38 achados, EXP-K01 a K16 |
 | `medidas/tickets-das-jornadas.md` | tickets EXP-J01 a J08 | sessão principal | feito |

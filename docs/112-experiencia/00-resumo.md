@@ -27,5 +27,8 @@
 ## Cara de salão (Onda 1)
 A demonstração abre numa **barbearia**, as contas de exemplo têm ofício e gênero trocados, e a calculadora pensa em barbearia (S01, S02, S05).
 
+## Leve e rápido (Onda 3)
+A página do salão e o agendamento abrem em 2,75 s e 2,87 s num celular simulado (meta 2,5 s). A fonte nova dos títulos pesa 120 KB, e a parte que a deixava "macia" nem é usada (D02). O Hoje faz 29 idas ao banco por abertura (D03).
+
 ## Decisões suas
 Qual número de recuperar é a verdade (J01) · nomes das contas de demonstração · textos dos termos e da privacidade · mudar ou não a guarda de gênero (recomendo manter) · o dia da autônoma sem comanda (J04) · ordem de publicação da pilha.
