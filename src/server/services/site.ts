@@ -145,6 +145,8 @@ export const EsquemaTenant = z.object({
   messaging: EsquemaMensageria.nullish(),
   /** docs/114 L-04: `true` aceita horário para hoje pelo link (`min_advance_days` 0); `false` é a partir de amanhã (1). */
   marcarParaHoje: z.boolean().nullish(),
+  /** docs/114 L-06: `false` tira o negócio da busca da cliente (`settings.search_visible`); ligado por padrão. */
+  aparecerNaBusca: z.boolean().nullish(),
 })
 
 export type EntradaTenant = z.infer<typeof EsquemaTenant>
@@ -164,7 +166,7 @@ function paraEnderecoTexto(bruto: unknown): string | null {
 export async function lerTenant(db: Cliente, tenantId: string) {
   const { data, error } = await db.from('tenants').select(COLUNAS).eq('id', tenantId).single()
   if (error) throw new AppError('INTERNAL', { cause: error })
-  return { ...data, address: paraEnderecoTexto(data.address), site: lerSite(data.settings), messaging: lerMensageria(data.settings), marcarParaHoje: aceitaHoje(data.settings) }
+  return { ...data, address: paraEnderecoTexto(data.address), site: lerSite(data.settings), messaging: lerMensageria(data.settings), marcarParaHoje: aceitaHoje(data.settings), aparecerNaBusca: (data.settings as Record<string, unknown> | null)?.search_visible !== false }
 }
 
 /**
@@ -189,18 +191,19 @@ export async function atualizarTenant(db: Cliente, tenantId: string, entrada: En
   if (entrada.phone !== undefined) colunas.phone = entrada.phone ?? null
   if (entrada.address !== undefined) colunas.address = entrada.address ?? null
   const novaAntecedencia = typeof entrada.marcarParaHoje === 'boolean' ? (entrada.marcarParaHoje ? 0 : 1) : undefined
-  if (novoSite !== undefined || novaMensageria !== undefined || novaAntecedencia !== undefined) {
+  if (novoSite !== undefined || novaMensageria !== undefined || novaAntecedencia !== undefined || typeof entrada.aparecerNaBusca === 'boolean') {
     colunas.settings = {
       ...settingsAtual,
       ...(novoSite !== undefined ? { site: novoSite } : {}),
       ...(novaMensageria !== undefined ? { messaging: novaMensageria } : {}),
       ...(novaAntecedencia !== undefined ? { min_advance_days: novaAntecedencia } : {}),
+      ...(typeof entrada.aparecerNaBusca === 'boolean' ? { search_visible: entrada.aparecerNaBusca } : {}),
     }
   }
 
   const { data, error } = await db.from('tenants').update(colunas).eq('id', tenantId).select(COLUNAS).single()
   if (error) throw new AppError('INTERNAL', { cause: error })
-  return { ...data, address: paraEnderecoTexto(data.address), site: lerSite(data.settings), messaging: lerMensageria(data.settings), marcarParaHoje: aceitaHoje(data.settings) }
+  return { ...data, address: paraEnderecoTexto(data.address), site: lerSite(data.settings), messaging: lerMensageria(data.settings), marcarParaHoje: aceitaHoje(data.settings), aparecerNaBusca: (data.settings as Record<string, unknown> | null)?.search_visible !== false }
 }
 
 /** docs/114 L-04: a tela de Negócio mostra a escolha do jeito que ela é lida na hora de oferecer horário. */

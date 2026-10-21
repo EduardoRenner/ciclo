@@ -36,6 +36,7 @@ export const SLUGS_RESERVADOS: ReadonlySet<string> = new Set([
   'api',
   'auth',
   'avaliar',
+  'buscar',
   'cadastro',
   'calculadora',
   'confirmar',

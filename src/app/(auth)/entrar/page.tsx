@@ -7,6 +7,7 @@ import Selo from '@/components/shell/selo'
 import TelaPublica from '@/components/shell/tela-publica'
 import Card from '@/components/ui/card'
 import { portaDeEntrada } from '@/core/auth/porta-de-entrada'
+import { BUSCA_ABERTA } from '@/core/busca/negocios'
 import { ENTRAR_COM_CODIGO, loginPorNumeroDisponivel } from '@/server/auth/login-por-numero'
 import { provedoresSociaisParaRequisicao } from '@/server/auth/provedores-sociais'
 import { sessaoAtual } from '@/server/auth/session'
@@ -78,6 +79,15 @@ export default async function PaginaEntrar({ searchParams }: { searchParams: Pro
           <p className="text-corpo text-txt-2">Não tem o link? Peça pelo WhatsApp de quem te atende.</p>
           <p className="text-secundario text-txt-3">Para remarcar ou cancelar, fale com quem te atende.</p>
         </div>
+        {/* docs/114 L-06: quem não tem o link procura por serviço e cidade. */}
+        {BUSCA_ABERTA ? (
+          <Link
+            href="/buscar"
+            className="flex h-12 w-full max-w-sm items-center justify-center rounded-[var(--radius-sm)] bg-acc px-5 text-corpo font-semibold text-on-acc shadow-elevado"
+          >
+            Procurar quem atende perto de você
+          </Link>
+        ) : null}
         <Link href="/entrar" className={linkVoltar}>
           Voltar
         </Link>

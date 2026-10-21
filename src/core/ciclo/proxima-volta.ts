@@ -1,7 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill'
 
 /** Ritmo a partir do qual o serviço não tem volta para sugerir (remoção, por exemplo, grava 365). */
-const RITMO_SEM_VOLTA = 180
+export const RITMO_SEM_VOLTA = 180
 
 /**
  * docs/114 L-05: o dia sugerido para a próxima vez, na página que quem foi atendido abre depois do
