@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { comMaiuscula, type Vocabulario } from "@/core/text/vocabulario";
 import { cn } from "@/lib/utils";
 import { formatarPreco, type ModeloDePreco } from "@/core/pricing/formatar";
-import { linkWhatsApp, saidaDeContato } from "@/lib/mensagens";
+import { saidaDeContato } from "@/lib/mensagens";
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
 import Chip from "@/components/ui/chip";
@@ -339,9 +339,14 @@ export default function Agendar({
   }
 
   const servicoEscolhido = services.find((s) => s.id === serviceId);
-  const linkParaHoje =
+  const saidaParaHoje =
     diasDeAntecedencia >= 1
-      ? linkWhatsApp(whatsappDoSalao, `Oi! Vi seu link no CICLO. Tem horário hoje para ${servicoEscolhido?.name ?? "um atendimento"}?`)
+      ? saidaDeContato(
+          whatsappDoSalao,
+          telefoneDoSalao,
+          nomeDoSalao,
+          `Oi! Vi seu link no CICLO. Tem horário hoje para ${servicoEscolhido?.name ?? "um atendimento"}?`,
+        )
       : null;
   const nomeDoProfissionalEscolhido =
     professionalId === null
@@ -948,18 +953,18 @@ export default function Agendar({
         <TrilhoDeDias dias={dias} dia={dia} fechados={diasFechados} aoEscolher={buscarDisponibilidade} />
         {/*
           docs/114 L-04 (decisão do Vitor): pelo link, a partir de amanhã. Quem quer para hoje fala com
-          quem atende, que decide. Só com WhatsApp cadastrado: sem ele não há para onde mandar, e a
-          tela não inventa um canal.
+          quem atende, que decide. WhatsApp quando o negócio tem; sem ele, o telefone do negócio
+          (a mesma decisão da tela de sucesso, `saidaDeContato`). Sem nenhum dos dois, nada: a tela
+          não inventa um canal.
         */}
-        {linkParaHoje ? (
+        {saidaParaHoje ? (
           <a
-            href={linkParaHoje}
-            target="_blank"
-            rel="noreferrer"
+            href={saidaParaHoje.href}
+            {...(saidaParaHoje.canal === "whatsapp" ? { target: "_blank", rel: "noreferrer" } : {})}
             className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-4 text-corpo font-semibold text-txt transition active:scale-[.98]"
           >
-            <MessageCircle aria-hidden className="size-4" />
-            Para hoje, chame no WhatsApp
+            {saidaParaHoje.canal === "whatsapp" ? <MessageCircle aria-hidden className="size-4" /> : <Phone aria-hidden className="size-4" />}
+            {saidaParaHoje.canal === "whatsapp" ? "Para hoje, chame no WhatsApp" : "Para hoje, ligue para marcar"}
           </a>
         ) : null}
       </section>
@@ -1200,7 +1205,7 @@ export default function Agendar({
       visivel={mostrarBarraFixa}
       carregando={pendente}
       bloqueada={!nome || !telefone}
-      motivoBloqueio="Preencha seu nome e seu telefone para pedir o horário."
+      motivoBloqueio="Preencha seu nome e seu telefone para marcar o horário."
       onConfirmar={confirmar}
     />
     </>

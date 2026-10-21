@@ -142,7 +142,18 @@ describe('o pedido público não se apresenta como confirmado nem manda ligar pa
     const copy = copyDaPagina()
     expect(/Marcar este horário/.test(copy)).toBe(true)
     expect(/Horário marcado/.test(copy)).toBe(true)
-    expect(/Pedir este horário|Pedido enviado|seu pedido|A confirmação vem de/i.test(copy)).toBe(false)
+    // "pedir o horário" estava no motivo do botão desabilitado e escapou da 1ª troca (achado da sessão da marca).
+    expect(/Pedir este horário|pedir o horário|Pedido enviado|seu pedido|A confirmação vem de/i.test(copy)).toBe(false)
+  })
+
+  /*
+    docs/114 L-04: o atalho "para hoje" sai da mesma decisão da tela de sucesso. A 1ª versão só olhava o
+    WhatsApp, e a conta que tem só o telefone (a Carol da demonstração) ficava sem atalho nenhum.
+  */
+  it('o atalho para hoje usa a mesma saída da tela de sucesso: WhatsApp ou, sem ele, o telefone', () => {
+    const copy = copyDaPagina()
+    expect(copy).toMatch(/const saidaParaHoje =[\s\S]{0,80}saidaDeContato\(\s*whatsappDoSalao,\s*telefoneDoSalao,/)
+    expect(copy).toMatch(/href=\{saidaParaHoje\.href\}/)
   })
 
   it('e o servidor grava o que a tela promete: o que vem da página pública nasce confirmado', () => {
