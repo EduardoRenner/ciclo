@@ -38,6 +38,16 @@ describe('o aviso de horário novo para a equipe sobrevive à resposta (APR-218)
     expect(/agendarDepois\(\(\) =>\s*$/.test(antes), 'notificarEquipe( fora de agendarDepois(() =>').toBe(true)
   })
 
+  it('cancelar pelo link oferece a vaga à lista de espera, depois de cancelar e dentro de `agendarDepois(() =>`', () => {
+    const src = semComentarios(readFileSync('src/app/api/v1/public/appointments/cancel/[token]/route.ts', 'utf8'))
+    const iCancela = src.indexOf('await cancelarAgendamento(')
+    const iLista = src.indexOf('notificarProximoDaLista(')
+    expect(iLista, 'cancelar pelo link deixou de oferecer a vaga à lista de espera').toBeGreaterThan(-1)
+    expect(iLista, 'a oferta sai antes de o cancelamento acontecer').toBeGreaterThan(iCancela)
+    const antes = src.slice(Math.max(0, iLista - 80), iLista)
+    expect(/agendarDepois\(\(\) =>\s*$/.test(antes), 'notificarProximoDaLista( fora de agendarDepois(() =>').toBe(true)
+  })
+
   it('`agendarDepois` usa o `after()` do Next, não um `void` disfarçado', () => {
     const src = semComentarios(readFileSync('src/server/http/depois.ts', 'utf8'))
     expect(/\bafter\(\(\) => tarefa\(\)\)/.test(src)).toBe(true)

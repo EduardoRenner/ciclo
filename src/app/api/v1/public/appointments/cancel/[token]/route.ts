@@ -1,6 +1,8 @@
 import { avisoDeCancelamentoPelaCliente } from '@/core/mensageria/aviso-de-cancelamento'
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { agendarDepois } from '@/server/http/depois'
+import { exigirEnv } from '@/server/db/server-client'
+import { notificarProximoDaLista } from '@/server/services/lista-espera'
 import { notificarEquipe } from '@/server/services/mensageria'
 import { cancelarAgendamento } from '@/server/services/agendamentos'
 import { verificarTokenConfirmacao } from '@/server/services/confirmacao-token'
@@ -30,7 +32,7 @@ export const POST = rota(async (req, ctx) => {
   return withNovoTenant(async (svc) => {
     const { data, error } = await svc
       .from('appointments')
-      .select('tenant_id, status, starts_at, professional_id, tenants ( slug, timezone ), clients ( name )')
+      .select('tenant_id, status, starts_at, service_id, professional_id, tenants ( slug, timezone ), clients ( name )')
       .eq('id', appointmentId)
       .maybeSingle()
     if (error) throw new AppError('INTERNAL', { cause: error })
@@ -64,6 +66,25 @@ export const POST = rota(async (req, ctx) => {
       agendarDepois(() =>
         notificarEquipe(svc, data.tenant_id, aviso, { professionalId: data.professional_id }).catch((erro: unknown) => {
           console.error(JSON.stringify({ level: 'error', event: 'push_cancelamento_falhou', tenantId: data.tenant_id }), erro)
+        }),
+      )
+
+      // EXP-A03 parte 2: a vaga liberada pela cliente oferece o encaixe à próxima da lista de espera,
+      // como o cancelamento pelo painel (TICKET-034) já fazia. Só depois do EXP-A04: sem canal que
+      // chegue, a fila não marca ninguém como avisado.
+      agendarDepois(() =>
+        notificarProximoDaLista(
+          svc,
+          data.tenant_id,
+          {
+            serviceId: data.service_id,
+            professionalId: data.professional_id,
+            startsAt: data.starts_at,
+            timezone: tenant.timezone,
+          },
+          exigirEnv('NEXT_PUBLIC_APP_URL'),
+        ).catch((erro: unknown) => {
+          console.error(JSON.stringify({ level: 'error', event: 'lista_espera_cancelamento_falhou', tenantId: data.tenant_id }), erro)
         }),
       )
     }
