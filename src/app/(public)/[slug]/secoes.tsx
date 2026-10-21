@@ -50,7 +50,7 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
   // Pelo apelido normalizado, não pelo campo cru: um valor que não vira apelido não desenha
   // linha nenhuma, e contá-lo aqui abriria o cartão de contato vazio.
   const instagram = apelidoDoInstagram(perfil.instagram)
-  const linkDoWhatsapp = linkWhatsApp(perfil.whatsapp, `Oi! Vim pelo site da ${perfil.name}.`)
+  const linkDoWhatsapp = linkWhatsApp(perfil.whatsapp, `Oi! Vim pelo site de ${perfil.name}.`)
   const temContato = perfil.phone || perfil.whatsapp || perfil.address || instagram
   const temHorario = perfil.hours.length > 0
 

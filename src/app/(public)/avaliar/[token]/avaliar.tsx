@@ -125,7 +125,7 @@ export default function Avaliar({ token, inicial = null }: { token: string; inic
      * o link chega marcado, e o salão sabe que foi esta cliente quem trouxe a amiga.
      */
     const mensagemCompartilhar = dados?.negocioNome
-      ? `Oi! Super recomendo a ${dados.negocioNome}. Marca seu primeiro horário por aqui: ${linkIndicacao}`
+      ? `Oi! Super recomendo ${dados.negocioNome}. Marca seu primeiro horário por aqui: ${linkIndicacao}`
       : `Oi! Super recomendo esse lugar. Marca seu primeiro horário por aqui: ${linkIndicacao}`
 
     return (
@@ -133,7 +133,7 @@ export default function Avaliar({ token, inicial = null }: { token: string; inic
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
         <TituloDeEstado>Pronto, avaliação enviada!</TituloDeEstado>
         <p className="mt-2 text-corpo text-txt-2">
-          {dados?.negocioNome ? `A equipe da ${dados.negocioNome} agradece.` : 'Sua opinião ajuda o negócio a melhorar.'}
+          {dados?.negocioNome ? `${dados.negocioNome} agradece a sua opinião.` : 'Sua opinião ajuda o negócio a melhorar.'}
         </p>
 
         {linkIndicacao ? (
@@ -165,7 +165,7 @@ export default function Avaliar({ token, inicial = null }: { token: string; inic
 
   return (
     <>
-      <h1 className="text-titulo font-bold">Como foi seu {dados?.servicoNome ?? 'atendimento'}?</h1>
+      <h1 className="text-titulo font-bold">{dados?.servicoNome ? `Como foi seu horário de ${dados.servicoNome}?` : 'Como foi seu atendimento?'}</h1>
       <p className="mt-1 text-secundario text-txt-2">{dados?.negocioNome}</p>
 
       <div className="mt-6 flex gap-1" role="radiogroup" aria-label="Nota de 1 a 5 estrelas">

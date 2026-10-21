@@ -618,7 +618,7 @@ export default function Agendar({
       whatsappDoSalao,
       telefoneDoSalao,
       nomeDoSalao,
-      `Oi! Acabei de marcar um horário pelo site da ${nomeDoSalao} e queria confirmar.`,
+      `Oi! Acabei de marcar um horário pelo site de ${nomeDoSalao} e queria confirmar.`,
     );
 
     return (
@@ -682,7 +682,7 @@ export default function Agendar({
           {saidaDoSucesso ? (
             <> Se não tiver retorno em algumas horas, fale direto:</>
           ) : (
-            <> Se não tiver retorno em algumas horas, procure a {nomeDoSalao} do jeito que você costuma.</>
+            <> Se não tiver retorno em algumas horas, fale com {nomeDoSalao} do jeito que você costuma.</>
           )}
         </p>
 

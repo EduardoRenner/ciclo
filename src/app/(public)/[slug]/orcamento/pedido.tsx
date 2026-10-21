@@ -29,7 +29,7 @@ export default function PedidoDeOrcamento({
   servicos: Servico[]
   vocabulario: Vocabulario
 }) {
-  const linkDoWhatsapp = linkWhatsApp(whatsapp, `Oi! Acabei de pedir um orçamento pelo site da ${nomeDoSalao}.`)
+  const linkDoWhatsapp = linkWhatsApp(whatsapp, `Oi! Acabei de pedir um orçamento pelo site de ${nomeDoSalao}.`)
   const [mensagem, setMensagem] = useState('')
   const [nome, setNome] = useState('')
   const [telefone, setTelefone] = useState('')
