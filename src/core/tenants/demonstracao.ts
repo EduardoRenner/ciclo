@@ -75,6 +75,10 @@ export const SLUGS_DE_DEMONSTRACAO: readonly string[] = [
   'demo-esmalteria-rosa',
   'demo-studio-olhar',
   'demo-pet-amigo',
+  // 21/10, docs/112 EXP-S02: as contas de salão de `scripts/seed-demo-salao.mjs` (o Encanto reaproveita o slug).
+  'demo-carol-cilios',
+  'demo-esmalteria-rosa-cha',
+  'demo-ana-paula-unhas',
 ]
 
 /** O tenant deste slug é uma demonstração, e não um negócio de verdade. */
@@ -107,6 +111,12 @@ export const SLUGS_DE_DEMONSTRACAO_PARA_TESTE = SLUGS_DE_DEMONSTRACAO
  * então a ordem é o que decide na prática.
  */
 export const SLUGS_DE_VITRINE: readonly string[] = [
+  // `docs/112` EXP-S02 (`04-salao.md` §5.4): a autônoma primeiro (o público maior). Os três primeiros só
+  // existem onde o `seed-demo-salao.mjs` rodou; em produção, hoje, vale o Studio Bella, que é o dos prints.
+  // O Encanto vem DEPOIS dele de propósito: em produção o Encanto ainda é o antigo, com a lash fazendo escova.
+  'demo-carol-cilios',
+  'demo-esmalteria-rosa-cha',
+  'demo-ana-paula-unhas',
   'demo-studio-bella',
   'demo-salao-encanto',
   'demo-espaco-vitoria',

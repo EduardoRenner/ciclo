@@ -117,4 +117,17 @@ describe('a primeira vitrine é de salão, não de barbearia', () => {
     expect(padrao, 'não achei SLUG_PADRAO: a guarda ficou cega').toBeTruthy()
     expect(BARBEARIAS).not.toContain(padrao)
   })
+
+  /*
+    docs/112 EXP-S02: as contas novas de salão só existem onde o `seed-demo-salao.mjs` rodou. Em
+    produção vence a primeira das ANTIGAS, e o Encanto de lá ainda é o antigo (a lash fazendo escova).
+    Pô-lo antes do Studio Bella trocaria o "Ver funcionando" de produção sem ninguém ver.
+  */
+  it('entre as contas que já estavam no ar, a primeira da vitrine é a dos prints', () => {
+    const DE_ANTES = ['demo-studio-bella', 'demo-salao-encanto', 'demo-espaco-vitoria', ...BARBEARIAS]
+    const painel = semComentarios(readFileSync('src/app/(public)/[slug]/agendar/painel-do-dono-exemplo.tsx', 'utf8'))
+    const padrao = painel.match(/const SLUG_PADRAO = "([^"]+)"/)?.[1]
+    expect(padrao, 'não achei SLUG_PADRAO: a guarda ficou cega').toBeTruthy()
+    expect(SLUGS_DE_VITRINE.find((s) => DE_ANTES.includes(s))).toBe(padrao)
+  })
 })

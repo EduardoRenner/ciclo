@@ -63,7 +63,7 @@ const pick = (sem, arr) => arr[Math.floor(rnd(sem) * arr.length)]
 
 // docs/102 M2.1: a MESMA lista de `src/core/tenants/demonstracao.ts` (o teste `agenda-futura-so-demonstracao`
 // reprova se divergirem). A antiga tinha 7 dos 13: os seis salões `demo-*` nunca eram renovados.
-const SLUGS = ['dom-rocha', 'ruivo-barber', 'teste-essencial', 'teste-equipe', 'teste-avancado', 'lang-barber', 'lang-unhas', 'demo-navalha-de-ouro', 'demo-corte-fino', 'demo-dom-estilo', 'demo-studio-bella', 'demo-salao-encanto', 'demo-espaco-vitoria', 'apple-review', 'demo-esmalteria-rosa', 'demo-studio-olhar', 'demo-pet-amigo']
+const SLUGS = ['dom-rocha', 'ruivo-barber', 'teste-essencial', 'teste-equipe', 'teste-avancado', 'lang-barber', 'lang-unhas', 'demo-navalha-de-ouro', 'demo-corte-fino', 'demo-dom-estilo', 'demo-studio-bella', 'demo-salao-encanto', 'demo-espaco-vitoria', 'apple-review', 'demo-esmalteria-rosa', 'demo-studio-olhar', 'demo-pet-amigo', 'demo-carol-cilios', 'demo-esmalteria-rosa-cha', 'demo-ana-paula-unhas']
 const OFFSET_H = 3 // America/Sao_Paulo = UTC-3 (sem horário de verão desde 2019)
 
 const DIAS_A_FRENTE = 21
@@ -85,6 +85,7 @@ for (const tnt of tenants) {
   const { data: dono } = await svc.from('memberships').select('user_id').eq('tenant_id', T).eq('role', 'owner').maybeSingle()
   const { data: servicos } = await svc.from('services').select('id, name, price_cents, duration_min').eq('tenant_id', T).eq('active', true)
   const { data: profs } = await svc.from('professionals').select('id').eq('tenant_id', T).eq('active', true)
+  const { data: ofertas } = await svc.from('professional_services').select('professional_id, service_id').eq('tenant_id', T)
   const { data: horarios } = await svc.from('business_hours').select('weekday, opens_at, closes_at').eq('tenant_id', T)
   const { data: clientes } = await svc.from('clients').select('id').eq('tenant_id', T).is('deleted_at', null)
   const { data: ciclos } = await svc.from('client_cycles').select('client_id, state').eq('tenant_id', T)
@@ -110,10 +111,22 @@ for (const tnt of tenants) {
   const naHora = ciclos.filter((c) => ['due', 'late', 'at_risk'].includes(c.state)).map((c) => c.client_id)
   const todos = clientes.map((c) => c.id)
 
-  // Peso dos serviços: corte é o pão com manteiga; platinado é raro.
-  const PESOS = { Corte: 34, 'Corte + barba': 26, Barba: 20, 'Corte infantil': 12, Pigmentação: 6, Platinado: 2 }
+  // Peso dos serviços: corte é o pão com manteiga; platinado é raro. No salão (docs/112 EXP-S02),
+  // manutenção e pé e mão pesam mais e remoção quase nada.
+  const PESOS = {
+    Corte: 34, 'Corte + barba': 26, Barba: 20, 'Corte infantil': 12, Pigmentação: 6, Platinado: 2,
+    'Manutenção de cílios': 30, 'Pé e mão': 30, 'Manutenção do alongamento': 20, Escova: 20, Mão: 14,
+    'Design com henna': 16, 'Design simples': 12, 'Coloração / raiz': 14, 'Esmaltação em gel': 12, Remoção: 1,
+  }
   const sorteioServico = []
   for (const s of servicos) for (let i = 0; i < (PESOS[s.name] ?? 8); i++) sorteioServico.push(s)
+  // Quem tem serviços ligados (`professional_services`) só recebe os dela: a lash não faz escova.
+  const sorteioDe = new Map(
+    profs.map((p) => {
+      const dela = new Set((ofertas ?? []).filter((o) => o.professional_id === p.id).map((o) => o.service_id))
+      return [p.id, dela.size ? sorteioServico.filter((s) => dela.has(s.id)) : sorteioServico]
+    }),
+  )
 
   // Ritmo real: atendimentos por dia ÚTIL nos últimos 90 dias (≈ 64 dias úteis num calendário
   // de 5 dias abertos por semana). Sem histórico, cai num piso magro em vez de inventar movimento.
@@ -169,7 +182,7 @@ for (const tnt of tenants) {
           minuto += pick(`gap${d}${prof.id}${minuto}`, [20, 30, 30, 40])
           continue
         }
-        const servico = pick(`sv${d}${prof.id}${minuto}`, sorteioServico)
+        const servico = pick(`sv${d}${prof.id}${minuto}`, sorteioDe.get(prof.id))
         if (minuto + servico.duration_min > fim) break
 
         if (criados >= cotaTotal || noDia >= limiteDoDia) break

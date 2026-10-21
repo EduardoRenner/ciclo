@@ -88,6 +88,7 @@ const SLUGS_DE_DEMONSTRACAO = [
   'dom-rocha', 'ruivo-barber', 'teste-essencial', 'teste-equipe', 'teste-avancado', 'lang-barber', 'lang-unhas',
   'demo-navalha-de-ouro', 'demo-corte-fino', 'demo-dom-estilo', 'demo-studio-bella', 'demo-salao-encanto', 'demo-espaco-vitoria',
   'demo-alvorada-advocacia', 'apple-review', 'demo-esmalteria-rosa', 'demo-studio-olhar', 'demo-pet-amigo',
+  'demo-carol-cilios', 'demo-esmalteria-rosa-cha', 'demo-ana-paula-unhas',
 ]
 const alvo = process.argv.slice(2).length ? process.argv.slice(2) : ALVO_PADRAO
 const foraDaDemonstracao = alvo.filter((s) => !SLUGS_DE_DEMONSTRACAO.includes(s))

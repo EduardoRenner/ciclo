@@ -128,25 +128,10 @@ const NEGOCIOS = [
     ],
     clientes: 24,
   },
-  {
-    slug: 'demo-salao-encanto',
-    agendaSoDoProfissional: true,
-    nome: 'Salão Encanto',
-    vertical: 'aesthetics',
-    plano: 'avancado',
-    dona: 'Vanessa Prado',
-    equipe: [
-      { nome: 'Juliana Castro', papel: 'Unhas', cor: '#ec4899' },
-      { nome: 'Tatiane Moreira', papel: 'Cílios', cor: '#8b5cf6' },
-    ],
-    extras: [
-      { name: 'Corte feminino', price_cents: 9000, duration_min: 60 },
-      { name: 'Coloração', price_cents: 22000, duration_min: 180 },
-      { name: 'Manicure', price_cents: 5000, duration_min: 45 },
-      { name: 'Extensão de cílios', price_cents: 16000, duration_min: 120 },
-    ],
-    clientes: 28,
-  },
+  /*
+   * O Salão Encanto saiu daqui em 21/10 (docs/112 EXP-S02): o slug é do `seed-demo-salao.mjs`, com
+   * equipe de cada ofício. Os dois seeds o recriariam um por cima do outro.
+   */
   {
     slug: 'demo-espaco-vitoria',
     nome: 'Espaço Vitória',
