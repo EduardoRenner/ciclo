@@ -185,10 +185,12 @@ function sortearPorPeso(servicos, semente) {
 }
 
 /** Fração EXATA de clientes que passaram do dia: sorteio cliente a cliente deu de 9% a 29% (medido). */
-const FRACAO_ATRASADA = 0.18
+// 16%, dentro da faixa: com 18% o Recuperar da Carol abria com 16 nomes (os de cílios com design no
+// mesmo dia têm dois ciclos), acima dos 10 a 15 do aceite.
+const FRACAO_ATRASADA = 0.16
 
 /**
- * Quantos dias depois do ritmo cada cliente está, por índice: 18% passaram do dia (perdida, em
+ * Quantos dias depois do ritmo cada cliente está, por índice: 16% passaram do dia (perdida, em
  * risco, atrasada, na proporção 5:6:7), o resto está em dia. Quem passou é escolhido por semente.
  */
 function atrasosDaConta(slug, total) {
@@ -221,7 +223,9 @@ export function planoDeClientes(conta) {
             ? conta.servicos.find((s) => s.nome === combo.servico)
             : null
         const atraso = atrasos.get(i) ?? null
-        const ultimaHa = atraso === null ? 1 + Math.floor(rnd(semente, 'ultima') * servico.ritmo * 0.85) : servico.ritmo + atraso
+        // Em dia vai até 70% do ritmo: com 85%, o Motor já punha parte delas em "na hora" e o Recuperar da
+        // Carol abria com 18 nomes, acima dos 10 a 15 do aceite (medido em 21/10).
+        const ultimaHa = atraso === null ? 1 + Math.floor(rnd(semente, 'ultima') * servico.ritmo * 0.7) : servico.ritmo + atraso
         clientes.push({ nome: nomes[i], profIdx, servico, extra, atraso, ultimaHa })
       }
     }
