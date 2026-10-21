@@ -23,6 +23,21 @@ export const EsquemaCadastro = z.object({
   phone: TelefoneBR,
 })
 
+/** Login por número, passo 1 (docs/110 L1). O nome só vale na primeira vez, quando a conta nasce. */
+export const EsquemaPedirCodigo = z.object({
+  telefone: TelefoneBR,
+  nome: z.string().trim().min(2, 'Diga seu nome.').max(80),
+})
+
+/** Login por número, passo 2. */
+export const EsquemaEntrarComCodigo = z.object({
+  telefone: TelefoneBR,
+  codigo: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, 'O código tem 6 números.'),
+})
+
 export const EsquemaLogin = z.object({
   email: z.email('Digite um e-mail válido.'),
   password: z.string().min(1, 'Digite sua senha.'),

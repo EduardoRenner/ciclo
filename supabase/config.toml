@@ -270,18 +270,35 @@ content_path = "./supabase/templates/confirmar-cadastro.html"
 # content_path = "./templates/password_changed_notification.html"
 
 [auth.sms]
-# Allow/disallow new user signups via SMS to your project.
-enable_signup = false
-# If enabled, users need to confirm their phone number before signing in.
-enable_confirmations = false
-# Template for sending OTP to users
-template = "Your code is {{ .Code }}"
-# Controls the minimum amount of time that must pass before sending another sms otp.
-max_frequency = "5s"
+# Login por número (docs/110 L1): a pessoa digita o WhatsApp e recebe um código. Quem manda o
+# código NÃO é um provedor de SMS do Supabase, é o hook `send_sms` abaixo, que chama a nossa rota
+# e manda pelo WhatsApp oficial. Em produção isto se liga no painel (Authentication > Providers >
+# Phone), não aqui: este arquivo só governa o stack local. Runbook: docs/runbooks/login-por-numero.md
+enable_signup = true
+enable_confirmations = true
+template = "Seu código do CICLO é {{ .Code }}"
+# Um código a cada 30 s por número. Cada envio custa uma mensagem de autenticação da Meta.
+max_frequency = "30s"
 
-# Use pre-defined map of phone number to OTP for testing.
-# [auth.sms.test_otp]
-# 4152127777 = "123456"
+# Números de teste: o Auth aceita o código fixo e NÃO manda nada (nem chama o hook). É o que os
+# testes de integração usam. Faixa 5511900000xxx: celular de São Paulo com prefixo 9000, que não
+# está em uso por operadora.
+[auth.sms.test_otp]
+5511900000001 = "123456"
+5511900000002 = "123456"
+5511900000003 = "123456"
+5511900000004 = "123456"
+5511900000005 = "123456"
+5511900000006 = "123456"
+
+# Hook de envio do código (docs/110 §2.3). Desligado aqui porque o CI não tem o Next rodando para
+# receber a chamada; os testes usam os números acima. Para ver o envio de verdade no local, ligue
+# numa cópia desta pasta com `uri` apontando para o dev server (`http://host.docker.internal:<porta>`)
+# e o mesmo `secrets` do `SEND_SMS_HOOK_SECRET` do .env.local.
+# [auth.hook.send_sms]
+# enabled = true
+# uri = "http://host.docker.internal:3015/api/v1/auth/codigo/hook"
+# secrets = "env(SEND_SMS_HOOK_SECRET)"
 
 # Configure logged in session timeouts.
 # [auth.sessions]
@@ -300,13 +317,15 @@ max_frequency = "5s"
 # enabled = true
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
 
-# Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
+# Provedor de MENTIRA, ligado só porque a CLI do Supabase não liga o login por telefone
+# (GOTRUE_EXTERNAL_PHONE_ENABLED) sem algum provedor de SMS ligado, mesmo com o hook. Ele nunca
+# manda nada: os números de `test_otp` não enviam, e com o hook `send_sms` ligado é o hook que envia.
+# Medido em 20/10/2026: sem isto, `signInWithOtp` volta `phone_provider_disabled`. Não é credencial.
 [auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
-# DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+enabled = true
+account_sid = "local-sem-envio"
+message_service_sid = "local-sem-envio"
+auth_token = "local-sem-envio"
 
 # Multi-factor-authentication is available to Supabase Pro plan.
 [auth.mfa]

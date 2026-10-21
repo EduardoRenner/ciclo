@@ -14,6 +14,8 @@ import { describe, expect, it } from 'vitest'
  * chamador em 2026-10-14 estão listadas com o motivo; uma rota nova sem chamador reprova.
  */
 const JUSTIFICADAS: Record<string, string> = {
+  '/api/v1/auth/codigo/hook':
+    'quem chama é o Supabase Auth (hook "Send SMS", docs/110 L1), configurado no painel e no config.toml, não um botão do app',
   '/api/v1/cycle/recover/send':
     'envio em lote da Recuperar por canal automático: sem credencial de WhatsApp em produção, a tela usa o link wa.me um a um; a rota fica para quando o canal existir (docs/42)',
   '/api/v1/subjects/[id]/odometer-readings':

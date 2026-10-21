@@ -53,6 +53,8 @@ Base: `/api/v1`. Tudo JSON, `Content-Type: application/json`. Textos de erro em 
 | `VAULT_LOCKED` | 423 | Cofre exige reautenticação |
 | `ASSISTANT_UNAVAILABLE` | 503 | Assistente sem credencial ou provedor fora do ar (docs/26 §4.4) |
 | `EMAIL_UNAVAILABLE` | 503 | Provedor de e-mail recusou o envio da confirmação (docs/98-aprimoramento/11 LOJA-02) |
+| `CODE_UNAVAILABLE` | 503 | O código do login por número não saiu (WhatsApp fora ou sem credencial), docs/110 L1 |
+| `PHONE_IN_EMAIL_ACCOUNT` | 409 | O número provado pelo código já está numa conta com e-mail; entrar com o e-mail, docs/110 L1 |
 | `INTERNAL` | 500 | Nunca vazar stack trace |
 
 #### Paginação

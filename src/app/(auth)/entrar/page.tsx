@@ -7,7 +7,7 @@ import { provedoresSociaisParaRequisicao } from '@/server/auth/provedores-sociai
 import { sessaoAtual } from '@/server/auth/session'
 
 import LoginSocial from '../login-social'
-import FormularioEntrar from './formulario'
+import JeitosDeEntrar from './jeitos-de-entrar'
 
 export const metadata = { title: "Entrar" }
 
@@ -29,7 +29,7 @@ export default async function PaginaEntrar() {
         <p className="mt-1 text-secundario text-txt-2">Entre para ver o resumo do seu dia.</p>
       </div>
       <LoginSocial provedores={provedores} />
-      <FormularioEntrar />
+      <JeitosDeEntrar />
     </TelaPublica>
   )
 }

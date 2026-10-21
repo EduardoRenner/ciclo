@@ -84,23 +84,45 @@ describe('só quem veio do link de e-mail troca a senha', () => {
     ).toBeLessThan(iTroca)
   })
 
-  it('não existe login por link de e-mail, senão `otp` deixaria de significar recuperação', () => {
-    const arquivos = arquivosDe('src')
-
-    // Piso: se a varredura vier vazia (raiz errada, filtro de extensão quebrado), ela aprovaria
-    // tudo em silêncio. O positivo conhecido é o login por senha, que existe e vai continuar.
-    const temLoginPorSenha = arquivos.some((a) => readFileSync(a, 'utf8').includes('signInWithPassword('))
-    expect(temLoginPorSenha, 'a varredura não achou nem o login por senha — raiz ou filtro errado').toBe(true)
-
-    const comLinkDeLogin = arquivos.filter((a) => /signInWithOtp\(/.test(semComentarios(readFileSync(a, 'utf8'))))
-
+  /*
+    Até 20/10/2026 esta guarda proibia `signInWithOtp` no projeto inteiro, porque só o link de
+    recuperação gravava `otp` no `amr`. O login por número (docs/110 L1) precisa dele, e medido no
+    Auth local o código do WhatsApp grava o MESMO `{"method":"otp"}`. A regra foi trocada como a
+    mensagem antiga pedia, e não apagada: a prova de "veio do e-mail" passou a ser uma marca que só
+    `auth/confirmar` emite com `type=recovery` (`server/auth/marca-de-recuperacao.ts`).
+  */
+  it('a troca de senha exige a marca do link de recuperação, antes de trocar', () => {
+    const corpo = corpoDaRota()
+    const iMarca = corpo.indexOf('marcaDeRecuperacaoConfere(')
+    const iTroca = corpo.indexOf('updateUser(')
     expect(
-      comLinkDeLogin,
-      'Alguém adicionou login por link de e-mail. A partir daí um login COMUM carrega `otp` no ' +
-        '`amr`, e `veioDoLinkDeRecuperacao` passa a deixar esse login trocar a senha — a trava do ' +
-        'password/reset abre sozinha. Antes de seguir, mude a regra em `server/auth/session.ts` ' +
-        'para distinguir os dois (o `timestamp` do `amr` ou um método próprio), não só apague isto.',
-    ).toEqual([])
+      iMarca,
+      `${ROTA} não confere a marca do link. Sem ela, quem entra pelo código do WhatsApp (também \`otp\`) ` +
+        'troca a senha de uma conta de e-mail sem nunca abrir o e-mail.',
+    ).toBeGreaterThan(-1)
+    expect(iMarca, 'a marca é conferida DEPOIS de trocar a senha').toBeLessThan(iTroca)
+  })
+
+  it('a marca só nasce no link de recuperação', () => {
+    const arquivos = arquivosDe('src')
+    // Piso: o positivo conhecido é a própria rota de confirmação. Varredura vazia aprovaria tudo.
+    const confirmar = join('src', 'app', 'auth', 'confirmar', 'route.ts')
+    expect(arquivos, 'a varredura não achou auth/confirmar — raiz ou filtro errado').toContain(confirmar)
+
+    const emissores = arquivos.filter((a) => /\bmarcaDeRecuperacao\(/.test(semComentarios(readFileSync(a, 'utf8'))))
+    const fora = emissores.filter((a) => a !== confirmar && !a.endsWith(join('server', 'auth', 'marca-de-recuperacao.ts')))
+    expect(fora, 'a marca de "veio do e-mail de recuperação" está sendo emitida fora do link').toEqual([])
+
+    const fonte = semComentarios(readFileSync(confirmar, 'utf8'))
+    expect(fonte, 'auth/confirmar parou de emitir a marca: ninguém mais troca a senha').toMatch(/\bmarcaDeRecuperacao\(/)
+    /*
+      A emissão tem que estar DENTRO do `if` que confere o tipo. A primeira versão desta guarda
+      comparava posições e passava com o `if` trocado por `if (data.user)`: o arquivo tem outro
+      `tipo === 'recovery'` antes, no destino padrão, e a guarda casava com ele. Visto na mutação.
+    */
+    expect(fonte, 'a marca nasce sem conferir que o link é de recuperação').toMatch(
+      /if \(tipo === 'recovery'[^)]*\)\s*\{[^}]*\bmarcaDeRecuperacao\(/,
+    )
   })
 
   it('o detector distingue presente de ausente, e enxerga a ordem', () => {

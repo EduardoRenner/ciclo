@@ -87,6 +87,9 @@ const MUTANTES = TODAS.filter((r) => verbosQueEscrevem(r).length > 0)
 const ISENTAS: { rota: string; porque: string }[] = [
   // ── Sem tenant no momento da chamada. `comIdempotencia` recebe `tenantId` e grava em
   //    `idempotency_keys.tenant_id`, que é NOT NULL: não há onde guardar a chave.
+  { rota: 'auth/codigo', porque: 'sem tenant; pedir o código de novo só manda outro código, e os baldes por IP e por número são a trava' },
+  { rota: 'auth/codigo/entrar', porque: 'sem tenant; o código do Auth só serve uma vez, igual ao login' },
+  { rota: 'auth/codigo/hook', porque: 'chamada do Supabase Auth, não da fila offline; cada chamada é um código novo' },
   { rota: 'auth/login', porque: 'não há tenant ainda; a sessão é o que decide qual será' },
   { rota: 'auth/logout', porque: 'derrubar sessão duas vezes deixa o mesmo estado: sem sessão' },
   { rota: 'auth/signup', porque: 'não há tenant ainda; o e-mail único no Supabase Auth é a trava' },

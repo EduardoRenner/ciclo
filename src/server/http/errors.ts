@@ -35,6 +35,15 @@ export const ERROR_CODES = {
     status: 503,
     message: 'Não conseguimos enviar o e-mail de confirmação agora. Tente de novo em alguns minutos.',
   },
+  // docs/110 L1: o hook de envio do código falhou (WhatsApp fora ou sem credencial). Distinto de
+  // INTERNAL pelo mesmo motivo do EMAIL_UNAVAILABLE: a conta não é o problema, a mensagem é que não saiu.
+  CODE_UNAVAILABLE: { status: 503, message: 'Não consegui mandar o código agora. Tente de novo em instantes ou entre com e-mail.' },
+  // docs/110 L1: o número provado pelo código já está numa conta com e-mail. Entrar seria abrir uma
+  // conta nova e vazia; a pessoa entra com o e-mail e liga o número a ela.
+  PHONE_IN_EMAIL_ACCOUNT: {
+    status: 409,
+    message: 'Esse número já está na sua conta com e-mail. Entre com o e-mail desta vez.',
+  },
   INTERNAL: { status: 500, message: 'Algo deu errado do nosso lado. Tente de novo em instantes.' },
 } as const satisfies Record<string, { status: number; message: string }>
 

@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server'
 
 import { destinoSeguro } from '@/server/auth/destino'
+import {
+  CAMINHO_DO_COOKIE_DE_RECUPERACAO,
+  COOKIE_DE_RECUPERACAO,
+  VALIDADE_DA_RECUPERACAO_S,
+  marcaDeRecuperacao,
+} from '@/server/auth/marca-de-recuperacao'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 
 import type { EmailOtpType } from '@supabase/supabase-js'
@@ -30,7 +36,7 @@ export async function GET(req: Request) {
   }
 
   const db = await criarClienteDoUsuario()
-  const { error } = await db.auth.verifyOtp({ token_hash: tokenHash, type: tipo })
+  const { data, error } = await db.auth.verifyOtp({ token_hash: tokenHash, type: tipo })
   if (error) {
     // Link de CONFIRMAÇÃO já usado quase sempre quer dizer "já confirmou" (o próprio app de e-mail
     // às vezes abre o link antes da pessoa). O caminho dela é entrar com a senha, não pedir outro.
@@ -38,5 +44,17 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL(`/entrar?erro=${motivo}`, url.origin))
   }
 
-  return NextResponse.redirect(new URL(destino, url.origin))
+  const resposta = NextResponse.redirect(new URL(destino, url.origin))
+  // A única porta que prova "veio do e-mail de recuperação": o `amr` não prova mais, porque o código
+  // do login por número grava o mesmo `otp` (ver `marca-de-recuperacao.ts`).
+  if (tipo === 'recovery' && data.user) {
+    resposta.cookies.set(COOKIE_DE_RECUPERACAO, marcaDeRecuperacao(data.user.id), {
+      httpOnly: true,
+      secure: url.protocol === 'https:',
+      sameSite: 'lax',
+      path: CAMINHO_DO_COOKIE_DE_RECUPERACAO,
+      maxAge: VALIDADE_DA_RECUPERACAO_S,
+    })
+  }
+  return resposta
 }

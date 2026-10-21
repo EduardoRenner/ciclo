@@ -5800,6 +5800,7 @@ export type Database = {
           schedule: string
         }[]
       }
+      telefone_em_outra_conta: { Args: never; Returns: boolean }
       tenant_rls_report: {
         Args: never
         Returns: {

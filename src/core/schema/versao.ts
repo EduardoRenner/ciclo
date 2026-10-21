@@ -162,6 +162,7 @@ export const MIGRATIONS_DO_CODIGO: readonly string[] = [
   '0139_previsao_por_sujeito_chave',
   '0140_pacote_oficina',
   '0141_leituras_de_km',
+  '0142_login_por_numero',
 ]
 
 /** Quantos arquivos existem em `supabase/migrations/`. */

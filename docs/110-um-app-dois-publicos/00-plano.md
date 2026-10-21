@@ -178,7 +178,7 @@ Cada fase fecha com a suíte inteira verde (`typecheck`, `eslint`, `test:unit`, 
 | Fase | Entrega | Depende de |
 | --- | --- | --- |
 | **L0** | Este plano, a revogação dos vetos registrada em `docs/DECISOES.md` | — |
-| **L1** | Login por número + código (Supabase phone auth, hook de envio com WhatsApp e SMS, aparelho lembrado), porta "Sou profissional / Sou cliente" | código: nada. **Produção: §2.5** |
+| **L1** ✅ 20/10 | Login por número + código (Supabase phone auth, hook de envio pelo WhatsApp oficial, aparelho lembrado). Vitor escolheu a **Meta** (sem SMS de reserva). A porta "Sou profissional / Sou cliente" **foi para a L4**: sem a área da cliente pronta, ela levaria a uma tela que não existe | código: nada. **Produção: `docs/runbooks/login-por-numero.md`** |
 | **L2** | Profissional: ligar conta de e-mail ao número; convite da equipe por WhatsApp; escolha "Trabalho sozinha / Tenho salão" no cadastro; menu sem "Time" para a autônoma | L1 |
 | **L3** | Ligação `clients.user_id`, RLS da cliente, teste de isolamento | L1 |
 | **L4** | `/minha-conta`: início, meus lugares, histórico, remarcar | L3 |

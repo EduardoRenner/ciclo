@@ -58,3 +58,25 @@ export async function withTenant<T>(
 export async function withNovoTenant<T>(fn: (db: SupabaseClient<Database>) => Promise<T>): Promise<T> {
   return fn(createServiceClient())
 }
+
+/**
+ * Desfaz a conta que o login por número acabou de criar quando o número já era de uma conta com
+ * e-mail (docs/110 L1). Sem isso a conta vazia fica com o número, e quando a pessoa entrar com o
+ * e-mail para ligar o número à conta certa o Auth recusa: "telefone já registrado".
+ *
+ * Só apaga o que é seguramente lixo: usuário sem e-mail e sem nenhum vínculo com negócio. Qualquer
+ * outra coisa volta `false` e fica como está.
+ */
+export async function apagarContaVaziaDoLoginPorNumero(userId: string): Promise<boolean> {
+  if (!UUID.test(userId)) throw new Error('apagarContaVaziaDoLoginPorNumero: userId inválido')
+  const svc = createServiceClient()
+
+  const { data: usuario } = await svc.auth.admin.getUserById(userId)
+  if (!usuario.user || usuario.user.email) return false
+
+  const { count } = await svc.from('memberships').select('user_id', { count: 'exact', head: true }).eq('user_id', userId)
+  if ((count ?? 0) > 0) return false
+
+  const { error } = await svc.auth.admin.deleteUser(userId)
+  return !error
+}

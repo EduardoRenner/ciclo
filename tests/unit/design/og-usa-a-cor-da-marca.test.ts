@@ -43,6 +43,19 @@ describe('a marca cravada fora do CSS acompanha o --acc', () => {
     expect(hexes(caminho), `${caminho} não usa ${acc}`).toContain(acc)
   })
 
+  /*
+    A página de "não conseguimos abrir" (`public/sem-internet.html`) é clara e não pode ler o CSS do
+    app (abre sem rede, do próprio aparelho). Escapou da troca para o rosé e foi achada só ao vê-la
+    no navegador: botão ainda turquesa. Ela usa o --acc do tema claro.
+  */
+  it('a página sem internet usa o --acc do tema claro', () => {
+    const blocoClaro = semComentarios(CSS.slice(CSS.indexOf('[data-theme="light"] {')))
+    const accClaro = blocoClaro.match(/--acc:\s*(#[0-9a-f]{6})\s*;/i)?.[1]?.toLowerCase()
+    if (!accClaro) throw new Error('não achei --acc do tema claro; a guarda ficou cega')
+    const pagina = readFileSync('public/sem-internet.html', 'utf8')
+    expect(pagina.match(/--acc:\s*(#[0-9a-f]{6})/i)?.[1]?.toLowerCase(), 'sem-internet.html').toBe(accClaro)
+  })
+
   it('nenhum dos três ficou com a cor anterior da marca', () => {
     for (const caminho of ['src/app/opengraph-image.tsx', 'src/app/icon.svg', 'src/app/global-error.tsx']) {
       expect(hexes(caminho), caminho).not.toContain('#14b8a6')
