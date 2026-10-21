@@ -29,8 +29,9 @@ Releia este arquivo e o `docs/111-PROMPT-EXPERIENCIA-DOIS-PUBLICOS.md` se o cont
 
 Pedido do Vitor (21/10, madrugada, repassado pela sessão "Ciclo: mudanças e lacunas para venda" e registrado na memória `loop-noturno-regras`): seguir sem parar, um ticket por rodada, nunca deploy, conta, mensagem a pessoas ou produção. Decisão dele = padrão atrás de chave, anotado aqui, e pular.
 
-| Hora | Ticket | Resultado | Commit |
+| Hora (do commit) | Ticket | Resultado | Commit |
 | --- | --- | --- | --- |
-| 00:50 | EXP-J08 | número só quando o código sai; teste visto reprovando nas duas metades | `0a5e2b8b` |
-| 01:40 | EXP-A06 | push da equipe só para quem administra e para a profissional do horário; integração no banco local (2 profissionais, visão restrita) e 2 mutações reprovando. Suíte: 12 testes estouraram 5 s sob carga, todos passaram sozinhos (34/34); integração 95 arquivos, isolamento 16 | `26978f27` |
-| 02:30 | EXP-A03 (parte 1) | cancelar pelo link avisa a profissional do horário e quem administra, depois da resposta; `quandoLocal` saiu do `public-booking` para o `core` (uma cópia só); 3 mutações reprovando. A guarda de gênero pegou "A cliente cancelou" no texto reserva: virou "Quem tinha marcado". **Parte 2 pendente:** acionar a lista de espera no cancelamento pelo link só depois do EXP-A04 (hoje ela marcaria "avisada" sem avisar) | ver git log |
+| 00:47 | EXP-J08 | número só quando o código sai; teste visto reprovando nas duas metades | `0a5e2b8b` |
+| 01:23 | EXP-A06 | push da equipe só para quem administra e para a profissional do horário; integração no banco local (2 profissionais, visão restrita) e 2 mutações reprovando. Suíte: 12 testes estouraram 5 s sob carga, todos passaram sozinhos (34/34); integração 95 arquivos, isolamento 16 | `26978f27` |
+| 01:26 | EXP-A03 (parte 1) | cancelar pelo link avisa a profissional do horário e quem administra, depois da resposta; `quandoLocal` saiu do `public-booking` para o `core` (uma cópia só); 3 mutações reprovando. A guarda de gênero pegou "A cliente cancelou" no texto reserva: virou "Quem tinha marcado". **Parte 2 pendente:** acionar a lista de espera no cancelamento pelo link só depois do EXP-A04 (hoje ela marcaria "avisada" sem avisar) | ver git log |
+| 01:37 | EXP-A04 | a lista de espera só grava `notified_at` depois de um envio que saiu; teste novo reprovou no código antigo e passa; mutação reprova. Suíte: 4.475 unitários, 652 integração, 361 isolamento. O "Timeout calling onTaskUpdate" do Vitest aparece em toda rodada de integração sob carga, sem teste falhando. **Pendente (cartão P-A2):** sem canal, a vaga vira cartão no Hoje para a profissional chamar a 1ª da fila pelo WhatsApp dela | ver git log |

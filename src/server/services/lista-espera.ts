@@ -242,19 +242,9 @@ export async function notificarProximoDaLista(
   const token = gerarTokenAssinado(ESCOPO_TOKEN, codificarOferta(oferta), EXCLUSIVIDADE_MINUTOS / 60)
   const link = `${appUrl}/lista-espera/${token}`
 
-  // §S7/P5 da auditoria de segurança (`docs/36`): `tenantId` é o parâmetro da função, o mesmo já
-  // usado para filtrar `candidatos` acima — repetir aqui fecha a janela entre a checagem e esta
-  // escrita, mesmo `escolhido.id` já sendo seguro hoje.
-  const { error: erroNotificar } = await db
-    .from('waitlist')
-    .update({ notified_at: new Date().toISOString() })
-    .eq('id', escolhido.id)
-    .eq('tenant_id', tenantId)
-  if (erroNotificar) throw new AppError('INTERNAL', { cause: erroNotificar })
-
   const horario = new Date(slot.startsAt).toLocaleString('pt-BR', { timeZone: slot.timezone, dateStyle: 'short', timeStyle: 'short' })
 
-  await enviarComFallback(
+  const envio = await enviarComFallback(
     db,
     {
       tenantId,
@@ -269,6 +259,21 @@ export async function notificarProximoDaLista(
     },
     provider,
   )
+
+  // docs/112 EXP-A04: `notified_at` era gravado ANTES de mandar. Sem canal que chegue, a pessoa
+  // ficava "avisada" sem saber da vaga, presa na exclusividade, e ninguém mais era chamado.
+  // Só marca depois de um envio que saiu.
+  if (envio.status !== 'sent') return { notificado: false }
+
+  // §S7/P5 da auditoria de segurança (`docs/36`): `tenantId` é o parâmetro da função, o mesmo já
+  // usado para filtrar `candidatos` acima — repetir aqui fecha a janela entre a checagem e esta
+  // escrita, mesmo `escolhido.id` já sendo seguro hoje.
+  const { error: erroNotificar } = await db
+    .from('waitlist')
+    .update({ notified_at: new Date().toISOString() })
+    .eq('id', escolhido.id)
+    .eq('tenant_id', tenantId)
+  if (erroNotificar) throw new AppError('INTERNAL', { cause: erroNotificar })
 
   return { notificado: true, waitlistId: escolhido.id }
 }
