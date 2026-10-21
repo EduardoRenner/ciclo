@@ -73,6 +73,8 @@ Pedido do Vitor (21/10, madrugada, repassado pela sessão "Ciclo: mudanças e la
 | achado | cookie de estabelecimento velho derrubava o painel inteiro de quem entrava depois no aparelho |
 | achado | o Motor mostrava "acertou 0%" por previsões registradas com data já passada |
 
+**Depois deste resumo (manhã de 21/10):** EXP-S05, calculadora com exemplo de salão, R$ 1.391 por mês na tela (`8a07d241`); EXP-S06, catálogo pronto de salão revisado e na ordem, migration `0146` (`3e31ab1c`). Detalhes nas linhas do registro acima.
+
 ### Números medidos
 
 - Suíte no último commit: **4.532 unitários, 361 de isolamento, 680 de integração, tudo verde**. Ao longo da noite, cada rodada teve de 1 a 14 testes de banco estourando o tempo com a CPU dividida entre duas sessões; todos foram rodados de novo sozinhos e passaram (os mais frequentes: `lote-de-importacao` e `comanda-fechada-congelada`).
