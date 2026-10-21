@@ -65,8 +65,13 @@ describe('toda rota de escrita está classificada para a pausa', () => {
     const regras = new Set(ROTAS.map((r) => ROTAS_DE_ESCRITA[r.chave]))
     expect(regras.has('bloqueia') && regras.has('permite') && regras.has('fora')).toBe(true)
     const tenant = semComentarios(readFileSync('src/server/auth/tenant.ts', 'utf8').replace(/\r\n/g, '\n'))
-    // As DUAS saídas de contextoAtual passam pela trava: a que usa o cookie/header e a do vínculo único.
-    expect([...tenant.matchAll(/return travaDaPausa\(req, /g)]).toHaveLength(2)
+    // TODA saída de contextoAtual passa pela trava: o header, o cookie lembrado no aparelho (docs/112,
+    // 21/10) e o vínculo único. Contagem fixa reprovava a saída nova sem dizer se ela estava sem trava;
+    // a régua é "todo contexto montado sai por travaDaPausa".
+    const contextos = [...tenant.matchAll(/\{ sessao, tenantId: /g)].length
+    const comTrava = [...tenant.matchAll(/return travaDaPausa\(req, \{ sessao, tenantId: /g)].length
+    expect(contextos, 'não achei nenhum contexto montado: a guarda ficou cega').toBeGreaterThanOrEqual(3)
+    expect(comTrava).toBe(contextos)
     expect(tenant).toMatch(/exigirContaQueEscreve\(req\.method, new URL\(req\.url\)\.pathname, ctx\.tenant\.plan, ctx\.tenant\.cortesia\)/)
   })
 })

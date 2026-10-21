@@ -154,7 +154,7 @@ export async function contextoAtual(req: Request): Promise<Contexto> {
   const sessao = await exigirSessao()
 
   const jar = await cookies()
-  const pedido = req.headers.get('x-tenant-id') ?? jar.get(COOKIE_TENANT)?.value ?? null
+  const pedido = req.headers.get('x-tenant-id')
 
   // Um valor que nem uuid é não vale uma ida ao banco, e a resposta é a mesma
   // que a de tenant alheio: quem forjou não descobre se o id existe.
@@ -168,6 +168,18 @@ export async function contextoAtual(req: Request): Promise<Contexto> {
     // vira um verificador de quais estabelecimentos existem no CICLO.
     if (!escolhido) throw new AppError('TENANT_MISMATCH')
     return travaDaPausa(req, { sessao, tenantId: escolhido.tenant_id, papel: escolhido.role, tenant: dadosDoTenant(escolhido.tenants) })
+  }
+
+  /*
+    O cookie é preferência do APARELHO (gravado ao aceitar convite) e sobrevive ao "sair". Recusá-lo
+    derrubava toda tela do painel de quem entrasse depois no mesmo aparelho, ou de quem saiu da
+    equipe (docs/112, achado de 21/10). Cookie que não bate com vínculo ativo vale como cookie
+    nenhum: não dá acesso ao outro tenant e responde igual a quem não mandou, sem revelar nada.
+  */
+  const doAparelho = jar.get(COOKIE_TENANT)?.value
+  const lembrado = doAparelho ? ativos.find((v) => v.tenant_id === doAparelho) : undefined
+  if (lembrado) {
+    return travaDaPausa(req, { sessao, tenantId: lembrado.tenant_id, papel: lembrado.role, tenant: dadosDoTenant(lembrado.tenants) })
   }
 
   if (ativos.length === 0) {
