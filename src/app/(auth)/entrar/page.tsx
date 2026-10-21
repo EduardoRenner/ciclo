@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 
 import Selo from '@/components/shell/selo'
 import TelaPublica from '@/components/shell/tela-publica'
+import { loginPorNumeroDisponivel } from '@/server/auth/login-por-numero'
 import { provedoresSociaisParaRequisicao } from '@/server/auth/provedores-sociais'
 import { sessaoAtual } from '@/server/auth/session'
 
@@ -29,7 +30,7 @@ export default async function PaginaEntrar() {
         <p className="mt-1 text-secundario text-txt-2">Entre para ver o resumo do seu dia.</p>
       </div>
       <LoginSocial provedores={provedores} />
-      <JeitosDeEntrar />
+      <JeitosDeEntrar numeroDisponivel={loginPorNumeroDisponivel()} />
     </TelaPublica>
   )
 }

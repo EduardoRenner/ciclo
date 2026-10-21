@@ -11,9 +11,14 @@ import FormularioNumero from './formulario-numero'
  * conta assim. Quem chega com `?erro=` veio de um link de e-mail (confirmação, recuperação, login
  * social), então abre direto no e-mail, que é onde a mensagem desse erro mora.
  */
-export default function JeitosDeEntrar() {
+export default function JeitosDeEntrar({ numeroDisponivel }: { numeroDisponivel: boolean }) {
   const params = useSearchParams()
-  const [modo, setModo] = useState<'numero' | 'email'>(() => (params.get('erro') ? 'email' : 'numero'))
+  const [modo, setModo] = useState<'numero' | 'email'>(() =>
+    numeroDisponivel && !params.get('erro') ? 'numero' : 'email',
+  )
+
+  // Sem envio de código configurado, o número não aparece: oferecer uma porta que sempre falha prende a pessoa.
+  if (!numeroDisponivel) return <FormularioEntrar />
 
   const trocar = (
     <button
