@@ -33,3 +33,14 @@ export function buscarProfissoes<P extends ProfissaoBuscavel>(profissoes: readon
     .sort((a, b) => a.peso - b.peso || a.i - b.i)
     .map((x) => x.p)
 }
+
+/**
+ * Quantas profissões ficam abertas na lista do cadastro: as seis de beleza feminina (`docs/112`
+ * EXP-S04, `04-salao.md` §7.1), que cabem sem rolar a 375 px. A ordem vem do banco (`posicao`).
+ */
+export const EM_DESTAQUE = 6
+
+/** As primeiras `EM_DESTAQUE` abertas; o resto vai para "Outras áreas", a um toque. */
+export function separarDestaque<P>(profissoes: readonly P[]): { destaque: P[]; outras: P[] } {
+  return { destaque: profissoes.slice(0, EM_DESTAQUE), outras: profissoes.slice(EM_DESTAQUE) }
+}

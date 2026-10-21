@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react'
 
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
-import { buscarProfissoes } from '@/core/onboarding/buscar-profissao'
+import { buscarProfissoes, separarDestaque } from '@/core/onboarding/buscar-profissao'
 import { SLUG_PROFISSAO_GENERICA } from '@/core/profissoes'
 import { APP_HOST } from '@/lib/app-url'
 import { fetchComTentativa } from '@/lib/tentativa'
@@ -35,6 +35,7 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
   const [slug, setSlug] = useState('')
   const [slugTocado, setSlugTocado] = useState(false)
   const [buscaProfissao, setBuscaProfissao] = useState('')
+  const [verOutras, setVerOutras] = useState(false)
   const [professionId, setProfessionId] = useState<string | null>(null)
   const [pendente, setPendente] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
@@ -57,6 +58,14 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
   const filtradas = useMemo(() => {
     return buscarProfissoes(profissoes, buscaProfissao)
   }, [buscaProfissao, profissoes])
+
+  // docs/112 EXP-S04: as seis de beleza abertas (a ordem é a `posicao` do banco), o resto a um toque
+  // em "Outras áreas". Buscando, aparece tudo o que casa, como antes.
+  const buscando = buscaProfissao.trim() !== ''
+  const { destaque, outras } = useMemo(() => separarDestaque(profissoes), [profissoes])
+  // Aberta, "Outras áreas" mostra SÓ as outras: repetir as seis no topo escondia a Barbearia no fim
+  // da caixa, e chegar a ela pedia rolar (medido a 375 px).
+  const visiveis = buscando ? filtradas : verOutras ? outras : destaque
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault()
@@ -122,8 +131,11 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
             onChange={(e) => setBuscaProfissao(e.target.value)}
             placeholder="Ex.: manicure, lash, sobrancelha…"
           />
-          <div className="flex max-h-[220px] flex-col gap-1 overflow-y-auto rounded-[var(--radius-sm)] border border-line-2 p-1">
-            {filtradas.length === 0 ? (
+          {/* Altura máxima só na busca: com ela, as seis de beleza não cabiam sem rolar a caixa. */}
+          <div
+            className={`flex flex-col gap-1 rounded-[var(--radius-sm)] border border-line-2 p-1 ${buscando ? 'max-h-[300px] overflow-y-auto' : ''}`}
+          >
+            {visiveis.length === 0 ? (
               /*
                 O beco que o item 17 da auditoria achou. Aqui ficava só
                 "Nenhuma profissão encontrada." — ponto final, na PRIMEIRA tela depois de criar a
@@ -151,7 +163,7 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
                 </p>
               </div>
             ) : (
-              filtradas.map((p) => (
+              visiveis.map((p) => (
                 <button
                   key={p.id}
                   type="button"
@@ -172,6 +184,17 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
                 </button>
               ))
             )}
+            {!buscando && outras.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setVerOutras((v) => !v)}
+                aria-expanded={verOutras}
+                className="toque-48 flex h-11 shrink-0 items-center justify-between rounded-[var(--radius-sm)] px-3 text-left text-corpo font-semibold text-acc-2 transition-colors hover:bg-surface-2"
+              >
+                {verOutras ? 'Voltar para as de beleza' : `Outras áreas (${outras.length})`}
+                <span aria-hidden="true">{verOutras ? '−' : '+'}</span>
+              </button>
+            ) : null}
           </div>
         </div>
       )}

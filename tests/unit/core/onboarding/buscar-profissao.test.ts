@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buscarProfissoes } from '@/core/onboarding/buscar-profissao'
+import { buscarProfissoes, EM_DESTAQUE, separarDestaque } from '@/core/onboarding/buscar-profissao'
 
 const LISTA = [
   { slug: 'lashes', nome: 'Cílios', sinonimos: ['lash'] },
@@ -40,5 +40,20 @@ describe('busca de profissão do cadastro (docs/112 EXP-S03)', () => {
 
   it('nada casa: lista vazia', () => {
     expect(slugs('advogado')).toEqual([])
+  })
+})
+
+describe('destaque da lista de profissões (docs/112 EXP-S04)', () => {
+  const lista = Array.from({ length: 10 }, (_, i) => ({ slug: `p${i}`, nome: `P${i}`, sinonimos: [] }))
+
+  it('as primeiras ficam abertas e o resto vai para "Outras áreas", na ordem que veio', () => {
+    const { destaque, outras } = separarDestaque(lista)
+    expect(EM_DESTAQUE).toBe(6)
+    expect(destaque.map((p) => p.slug)).toEqual(['p0', 'p1', 'p2', 'p3', 'p4', 'p5'])
+    expect(outras.map((p) => p.slug)).toEqual(['p6', 'p7', 'p8', 'p9'])
+  })
+
+  it('lista curta não ganha grupo vazio', () => {
+    expect(separarDestaque(lista.slice(0, 4)).outras).toEqual([])
   })
 })

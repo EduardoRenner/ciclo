@@ -165,6 +165,7 @@ export const MIGRATIONS_DO_CODIGO: readonly string[] = [
   '0142_login_por_numero',
   '0143_convite_por_numero',
   '0144_sinonimos_de_salao',
+  '0145_ordem_das_profissoes_de_salao',
 ]
 
 /** Quantos arquivos existem em `supabase/migrations/`. */

@@ -38,7 +38,7 @@ describe('a busca de profissão não termina em parede', () => {
   })
 
   it('o ramo de "não achei nada" oferece a genérica', () => {
-    const i = fonteDaTela.indexOf('filtradas.length === 0')
+    const i = fonteDaTela.indexOf('visiveis.length === 0')
     expect(i, 'sumiu o ramo de busca vazia').toBeGreaterThan(-1)
 
     /*
@@ -61,7 +61,10 @@ describe('a busca de profissão não termina em parede', () => {
   })
 
   it('a tela não volta a afirmar a ausência sem oferecer nada', () => {
-    const i = fonteDaTela.indexOf('filtradas.length === 0')
+    // docs/112 EXP-S04: a lista visível virou `visiveis` (destaque, outras ou busca). Sem conferir o
+    // índice, este caso passava com -1, recortando um pedaço qualquer.
+    const i = fonteDaTela.indexOf('visiveis.length === 0')
+    expect(i, 'sumiu o ramo de busca vazia').toBeGreaterThan(-1)
     const fim = fonteDaTela.indexOf(') : (', i)
     const ramo = fonteDaTela.slice(i, fim)
     expect(

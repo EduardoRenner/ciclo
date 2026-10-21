@@ -138,3 +138,17 @@ describe('busca do cadastro com os termos de salão (docs/112 EXP-S03)', () => {
     expect(buscarProfissoes(data!, termo).map((p) => p.slug)).toEqual([slug])
   })
 })
+
+/**
+ * docs/112 EXP-S04 (migration 0145, `04-salao.md` §7.1): as seis de beleza feminina abrem a lista do
+ * cadastro, nesta ordem, e são as que ficam visíveis sem rolar; Barbearia e o resto vão para
+ * "Outras áreas". Lido do banco, porque a ordem mora na coluna `posicao`.
+ */
+describe('ordem das profissões no cadastro (docs/112 EXP-S04)', () => {
+  it('unhas, cílios, sobrancelhas, cabelo, depilação e estética vêm primeiro', async () => {
+    const { data, error } = await svc.from('professions').select('slug, nome').eq('ativa', true).order('posicao').order('nome')
+    if (error) throw error
+    expect(data!.slice(0, 6).map((p) => p.slug)).toEqual(['nails', 'lashes', 'brows', 'hair', 'waxing', 'aesthetics'])
+    expect(data!.find((p) => p.slug === 'aesthetics')?.nome).toBe('Estética')
+  })
+})
