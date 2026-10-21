@@ -1,3 +1,5 @@
+import { decodificar } from '@/core/ingestao/codificacao'
+
 /**
  * Transforma os bytes de um arquivo de texto enviado pela pessoa em texto, sem corromper acento.
  *
@@ -11,11 +13,9 @@
  * para qualquer arquivo e estragaria os UTF-8 com acento.
  */
 export function decodificarTexto(bytes: ArrayBuffer | Uint8Array): string {
-  try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
-  } catch {
-    return new TextDecoder('windows-1252').decode(bytes)
-  }
+  // CNV-001: a regra mora em `core/ingestao/codificacao.ts` (UTF-8, Windows-1252, UTF-16 e o conserto
+  // de "JoÃ£o"); este nome fica para os chamadores antigos, sem uma segunda cópia da regra.
+  return decodificar(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)).texto
 }
 
 /**

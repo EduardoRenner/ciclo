@@ -95,3 +95,39 @@ describe('vitrine e demonstração são listas diferentes, e a diferença import
     expect(SLUGS_DE_VITRINE.length).toBeGreaterThan(0)
   })
 })
+
+/*
+  docs/112 EXP-S01: o "Ver funcionando, sem cadastro" abria na Barbearia Dom Estilo, e o produto é
+  de salão e beleza feminina desde o docs/108-norte. A ordem da vitrine é o que decide na prática
+  (vence a primeira que existe no banco), então a régua olha a ordem.
+*/
+const BARBEARIAS = ['demo-dom-estilo', 'demo-corte-fino', 'demo-navalha-de-ouro', 'dom-rocha']
+
+describe('a primeira vitrine é de salão, não de barbearia', () => {
+  it('as barbearias só entram depois de todos os salões', () => {
+    const primeiraBarbearia = SLUGS_DE_VITRINE.findIndex((s) => BARBEARIAS.includes(s))
+    const ultimoSalao = SLUGS_DE_VITRINE.reduce((ultimo, s, i) => (BARBEARIAS.includes(s) ? ultimo : i), -1)
+    expect(ultimoSalao, 'a vitrine ficou sem salão nenhum').toBeGreaterThanOrEqual(0)
+    expect(primeiraBarbearia === -1 || primeiraBarbearia > ultimoSalao, 'uma barbearia vem antes de um salão').toBe(true)
+  })
+
+  it('o print padrão do exemplo é de salão', () => {
+    const painel = semComentarios(readFileSync('src/app/(public)/[slug]/agendar/painel-do-dono-exemplo.tsx', 'utf8'))
+    const padrao = painel.match(/const SLUG_PADRAO = "([^"]+)"/)?.[1]
+    expect(padrao, 'não achei SLUG_PADRAO: a guarda ficou cega').toBeTruthy()
+    expect(BARBEARIAS).not.toContain(padrao)
+  })
+
+  /*
+    docs/112 EXP-S02: as contas novas de salão só existem onde o `seed-demo-salao.mjs` rodou. Em
+    produção vence a primeira das ANTIGAS, e o Encanto de lá ainda é o antigo (a lash fazendo escova).
+    Pô-lo antes do Studio Bella trocaria o "Ver funcionando" de produção sem ninguém ver.
+  */
+  it('entre as contas que já estavam no ar, a primeira da vitrine é a dos prints', () => {
+    const DE_ANTES = ['demo-studio-bella', 'demo-salao-encanto', 'demo-espaco-vitoria', ...BARBEARIAS]
+    const painel = semComentarios(readFileSync('src/app/(public)/[slug]/agendar/painel-do-dono-exemplo.tsx', 'utf8'))
+    const padrao = painel.match(/const SLUG_PADRAO = "([^"]+)"/)?.[1]
+    expect(padrao, 'não achei SLUG_PADRAO: a guarda ficou cega').toBeTruthy()
+    expect(SLUGS_DE_VITRINE.find((s) => DE_ANTES.includes(s))).toBe(padrao)
+  })
+})

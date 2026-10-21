@@ -7,10 +7,18 @@
  *
  *   node scripts/seed-tenant-teste.mjs lang-barber barber "Lang Barber" "dono-lang-barber@ciclo.app"
  *   node scripts/seed-tenant-teste.mjs lang-unhas nails "Lang Unhas" "dona-lang-unhas@ciclo.app"
+ *   SEED_SENHA='...' node scripts/seed-tenant-teste.mjs apple-review barber "Barbearia do Revisor" "revisor-apple@ciclo.app" avancado
+ *
+ * O 2º argumento é uma vertical com pacote (`barber`, `nails`, `lashes`...) OU o slug de uma profissão do catálogo
+ * (`banho_tosa`, `personal`...): aí o negócio nasce como o cadastro faria, vertical `general` com `profession_id`, os
+ * quatro eixos e os serviços de `apply_profession_pack`.
+ *
+ * O 5º argumento é o plano do CICLO (`gratis` se faltar). LOJA-23 (docs/98-aprimoramento/11): a conta do revisor
+ * da Apple precisa do plano que abre as telas que a revisão vai ver; sem ele o tenant nascia no padrão do banco.
  *
  * Rodar de novo apaga e recria (o tenant cai por slug, o resto vai no cascade).
  */
-import { createHash } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 
 import { createClient } from '@supabase/supabase-js'
@@ -39,13 +47,22 @@ const svc = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE
   auth: { persistSession: false, autoRefreshToken: false },
 })
 
-const [, , SLUG, VERTICAL, NOME, EMAIL] = process.argv
+const [, , SLUG, VERTICAL, NOME, EMAIL, PLANO = 'gratis'] = process.argv
 if (!SLUG || !VERTICAL || !NOME || !EMAIL) {
-  console.error('Uso: node scripts/seed-tenant-teste.mjs <slug> <vertical> "<nome>" "<email>"')
+  console.error('Uso: node scripts/seed-tenant-teste.mjs <slug> <vertical> "<nome>" "<email>" [gratis|essencial|equipe|avancado]')
+  process.exit(1)
+}
+// Os quatro de `src/core/billing/planos.ts` (o enum `plan_tier`); script em Node puro não importa o TS.
+if (!['gratis', 'essencial', 'equipe', 'avancado'].includes(PLANO)) {
+  console.error(`plano desconhecido: ${PLANO}`)
   process.exit(1)
 }
 
-const SENHA = process.env.SEED_SENHA ?? 'teste-ciclo-2026'
+/*
+ * Regra 10 do CLAUDE.md. Era uma senha fixa escrita aqui quando `SEED_SENHA` faltava, num repositório público e num
+ * script que roda contra produção. Sem a variável, sorteia e imprime no fim (mesmo de `seed-demo-escritorio.mjs`).
+ */
+const SENHA = process.env.SEED_SENHA ?? `teste-${randomBytes(9).toString('base64url')}`
 const TZ = 'America/Sao_Paulo'
 const OFFSET = 3
 
@@ -88,12 +105,24 @@ const { data: userData, error: erroUser } = await svc.auth.admin.createUser({
 precisa(erroUser, 'criar usuário')
 const userId = userData.user.id
 
+// As 8 verticais com pacote próprio; fora delas, o 2º argumento é profissão do catálogo (mesma regra do onboarding).
+const VERTICAIS_COM_PACOTE = ['barber', 'nails', 'lashes', 'brows', 'waxing', 'aesthetics', 'tattoo', 'hair']
+let profissao = null
+if (!VERTICAIS_COM_PACOTE.includes(VERTICAL)) {
+  const { data, error } = await svc.from('professions').select('id, slug, onde, cobranca, inicio, ritmo').eq('slug', VERTICAL).maybeSingle()
+  precisa(error, 'ler profissão do catálogo')
+  if (!data) precisa({ message: `"${VERTICAL}" não é vertical com pacote nem profissão do catálogo` }, 'conferir vertical')
+  profissao = data
+}
+
 const { data: tenant, error: erroTenant } = await svc
   .from('tenants')
   .insert({
     name: NOME,
     slug: SLUG,
-    vertical: VERTICAL,
+    vertical: profissao ? 'general' : VERTICAL,
+    ...(profissao ? { profession_id: profissao.id, onde: profissao.onde, cobranca: profissao.cobranca, inicio: profissao.inicio, ritmo: profissao.ritmo } : {}),
+    plan: PLANO,
     timezone: TZ,
     phone: '+5511990000000',
     address: 'Rua de Teste, 100 — São Paulo/SP',
@@ -104,17 +133,23 @@ precisa(erroTenant, 'criar tenant')
 const tenantId = tenant.id
 
 await svc.from('memberships').insert({ tenant_id: tenantId, user_id: userId, role: 'owner' })
-precisa((await svc.rpc('apply_vertical_pack', { p_tenant: tenantId, p_vertical: VERTICAL })).error, 'pack')
+precisa(
+  (profissao
+    ? await svc.rpc('apply_profession_pack', { p_tenant: tenantId, p_profession_id: profissao.id })
+    : await svc.rpc('apply_vertical_pack', { p_tenant: tenantId, p_vertical: VERTICAL })
+  ).error,
+  'pack',
+)
 
 const { data: donoProf } = await svc
   .from('professionals')
-  .insert({ tenant_id: tenantId, user_id: userId, display_name: NOME, comp_model: 'owner', color: '#8b5cf6' })
+  .insert({ tenant_id: tenantId, user_id: userId, display_name: 'Marina Alves', comp_model: 'owner', color: '#8b5cf6' })
   .select('id')
   .single()
 
 const { data: outroProf } = await svc
   .from('professionals')
-  .insert({ tenant_id: tenantId, display_name: 'Assistente Teste', comp_model: 'commission', commission_bps: 4000, color: '#22c55e' })
+  .insert({ tenant_id: tenantId, display_name: 'Rafael Costa', comp_model: 'commission', commission_bps: 4000, color: '#22c55e' })
   .select('id')
   .single()
 const profissionais = [donoProf.id, outroProf.id]
@@ -147,6 +182,26 @@ if (!servicos || servicos.length === 0) {
 const servico1 = servicos[0]
 const servico2 = servicos[Math.min(1, servicos.length - 1)]
 
+/*
+ * Ficha de consumo. O pacote da vertical cria os insumos SEM custo (migration 0069: o pacote não inventa preço) e
+ * com ficha em só alguns serviços; sem custo e sem ficha o Recuperar avisa "N serviços estão sem o custo do material"
+ * e o lucro sai igual ao preço (`medirMaterialIncerto`). Aqui a semente faz o que o dono faria: registra o custo de
+ * compra de cada insumo e põe a toalha na ficha de quem não tem nenhuma. Custo de insumo sem nome conhecido: R$ 1.
+ */
+const CUSTO_DE_COMPRA = { 'Toalha descartável': 45, 'Navalha descartável': 90, 'Pomada modeladora': 2500, 'Pó descolorante': 12, 'Água oxigenada': 3, Matizador: 6 }
+const { data: insumos, error: erroInsumos } = await svc.from('products').select('id, name').eq('tenant_id', tenantId)
+precisa(erroInsumos, 'ler insumos do pacote')
+for (const p of insumos) {
+  precisa((await svc.from('products').update({ avg_cost_cents: CUSTO_DE_COMPRA[p.name] ?? 100, stock_qty: 200 }).eq('id', p.id)).error, `custo de ${p.name}`)
+}
+const { data: comFicha } = await svc.from('service_products').select('service_id').eq('tenant_id', tenantId)
+const jaTem = new Set((comFicha ?? []).map((f) => f.service_id))
+const toalha = insumos.find((p) => p.name === 'Toalha descartável') ?? insumos[0]
+if (toalha) {
+  const faltam = servicos.filter((s) => !jaTem.has(s.id)).map((s) => ({ tenant_id: tenantId, service_id: s.id, product_id: toalha.id, qty: 1 }))
+  if (faltam.length) precisa((await svc.from('service_products').insert(faltam)).error, 'completar fichas de consumo')
+}
+
 // ─────────────────────────────────────────────────────────────── clientes (12, o bastante pra CRM/Motor de Ciclo terem o que mostrar sem virar outra demo cheia)
 
 const NOMES = [
@@ -157,8 +212,15 @@ const NOMES = [
 
 const linhasClientes = NOMES.map((nome, i) => {
   const cadencia = 21 + (i % 3) * 7
-  const ultimaHa = i % 4 === 0 ? cadencia * 3 : i * 2 + 1 // 1 em cada 4 fica "atrasado" pro Motor de Ciclo acusar
-  const tags = i % 4 === 0 ? ['sumido'] : i % 3 === 0 ? ['fiel'] : []
+  /*
+   * Atraso em relação à cadência, um estado do Motor para cada (`estadoPorAtraso` em `src/core/cycle/compute.ts`).
+   * Era "3 cadências atrás" ou "há poucos dias": o Motor só via perdido e em dia, e a conta do revisor da Apple abria
+   * o Recuperar com R$ 10 e três perdidos (medido em 15/10). Folga de 2 dias para o salto de domingo e segunda.
+   */
+  const ATRASO = [45, 0, 6, 20, null, null] // perdido, na hora, atrasado, em risco, em dia, em dia
+  const atraso = ATRASO[i % ATRASO.length]
+  const ultimaHa = atraso === null ? i + 2 : cadencia + atraso
+  const tags = atraso !== null && atraso >= 20 ? ['sumido'] : atraso === null && i % 2 === 0 ? ['fiel'] : []
   const primeiraVisitaHa = ultimaHa + 4 * cadencia
   return {
     tenant_id: tenantId,
@@ -295,7 +357,7 @@ for (const [clientId, dados] of porCliente) {
 
 console.log(
   JSON.stringify(
-    { ok: true, login: { email: EMAIL, senha: SENHA }, site: `/${SLUG}`, tenantId, clientes: clientesCriados.length, agendamentos: agendamentos.length },
+    { ok: true, login: { email: EMAIL, senha: SENHA }, plano: PLANO, site: `/${SLUG}`, tenantId, clientes: clientesCriados.length, agendamentos: agendamentos.length },
     null,
     2,
   ),

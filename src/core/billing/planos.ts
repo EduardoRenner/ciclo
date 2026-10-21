@@ -147,8 +147,12 @@ const PROPRIOS: Record<PlanoTier, Omit<Definicao, 'modulos'> & { modulos: readon
     era de precificação, e o custo de conformidade (LGPD, cifragem, trilha de acesso) já é pago em
     todo tenant que liga o módulo, não só no de cima.
   */
+  /*
+    docs/108 M1 (16/10/2026): R$ 39 até 2 profissionais, para a profissional solo e a dupla que divide
+    a sala; o Equipe vai até 6. Substitui o 1 / 5 do docs/87 D2.
+  */
   essencial: {
-    maxProfissionais: 1,
+    maxProfissionais: 2,
     maxClientes: null,
     modulos: [
       'campaigns',
@@ -174,7 +178,7 @@ const PROPRIOS: Record<PlanoTier, Omit<Definicao, 'modulos'> & { modulos: readon
     capacidades: ['envio_em_lote', 'remover_selo'],
   },
   equipe: {
-    maxProfissionais: 5,
+    maxProfissionais: 6,
     maxClientes: null,
     modulos: [],
     capacidades: [],
@@ -242,16 +246,16 @@ const ORDEM = ORDEM_DOS_PLANOS
 export const NOME_DO_PLANO: Record<PlanoTier, string> = {
   gratis: 'Grátis',
   // O identificador do degrau continua `essencial` (é o valor do enum `plan_tier`); o nome que a
-  // pessoa lê é o da faixa de 1 profissional (docs/87 D2).
-  essencial: 'Solo',
+  // pessoa lê é "Essencial" desde o docs/108 M1: a faixa vai até 2 profissionais, e "Solo" mentiria.
+  essencial: 'Essencial',
   equipe: 'Equipe',
   avancado: 'Avançado',
 }
 
 export const PRECO_MENSAL_CENTS: Record<PlanoTier, number> = {
   gratis: 0,
-  essencial: 4_900,
-  equipe: 9_900,
+  essencial: 3_900,
+  equipe: 7_900,
   avancado: 17_900,
 }
 

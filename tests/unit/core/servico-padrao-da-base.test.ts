@@ -1,6 +1,10 @@
+import { readFileSync } from 'node:fs'
+
 import { describe, expect, it } from 'vitest'
 
 import { servicoPadraoDaBase } from '@/core/cycle/servico-padrao-da-base'
+
+import { semComentarios } from '../../helpers/fonte'
 
 /** O pacote de barbearia como ele nasce: tudo em `position` 0, então a lista sai em ordem alfabética. */
 const BARBEARIA_NOVA = [
@@ -44,5 +48,61 @@ describe('servicoPadraoDaBase (docs/82 §7)', () => {
 
   it('sem serviço: sem padrão', () => {
     expect(servicoPadraoDaBase([])).toBeNull()
+  })
+})
+
+/**
+ * Os três pacotes do alvo de `docs/108-norte`, como nascem numa conta nova (nomes, ritmos e chaves lidos
+ * do banco local em 16/10/2026, em ordem alfabética, que é a ordem da tela).
+ */
+const pacote = (vertical: string, itens: [string, number][]) =>
+  itens.map(([nome, cycleDays]) => ({ id: nome, cycleDays, atendimentos: 0, canonicalKey: `pack:${vertical}:${nome}` }))
+const CILIOS = pacote('lashes', [['Aplicação clássica', 21], ['Aplicação híbrida', 21], ['Aplicação volume russo', 21], ['Lash lifting + botox', 45], ['Manutenção volume russo', 21], ['Remoção', 21]])
+const SOBRANCELHA = pacote('brows', [['Brow lamination', 45], ['Design com henna', 25], ['Design simples', 21], ['Micropigmentação', 365], ['Retoque de micro', 30]])
+const UNHAS = pacote('nails', [['Alongamento em fibra', 25], ['Banho de gel', 21], ['Esmaltação em gel', 18], ['Manicure simples', 15], ['Manutenção de alongamento', 25], ['Pedicure', 21], ['Remoção', 21]])
+
+describe('serviço de volta do pacote (docs/108-norte, teste de 10 minutos)', () => {
+  it('cílios vem com a manutenção, não com a aplicação (a primeira vez da cliente)', () => {
+    expect(servicoPadraoDaBase(CILIOS)).toBe('Manutenção volume russo')
+  })
+
+  it('sobrancelha vem com o design simples, não com o retoque de micropigmentação', () => {
+    expect(servicoPadraoDaBase(SOBRANCELHA)).toBe('Design simples')
+  })
+
+  it('unhas vem com a manicure simples, não com o banho de gel', () => {
+    expect(servicoPadraoDaBase(UNHAS)).toBe('Manicure simples')
+  })
+
+  it('a chave vale mesmo com o serviço renomeado pelo dono', () => {
+    const renomeado = CILIOS.map((s) => (s.id === 'Manutenção volume russo' ? { ...s, id: 'Manutenção da Ju' } : s))
+    expect(servicoPadraoDaBase(renomeado)).toBe('Manutenção da Ju')
+  })
+
+  it('o histórico continua mandando: a mais atendida ganha do serviço de volta', () => {
+    const comHistorico = CILIOS.map((s) => (s.id === 'Aplicação híbrida' ? { ...s, atendimentos: 9 } : s))
+    expect(servicoPadraoDaBase(comHistorico)).toBe('Aplicação híbrida')
+  })
+
+  it('sem o serviço de volta (o dono apagou), cai na mediana', () => {
+    expect(servicoPadraoDaBase(SOBRANCELHA.filter((s) => s.id !== 'Design simples'))).toBe('Retoque de micro')
+  })
+
+  it('pacote fora da lista cai na mediana, sem inventar principal', () => {
+    expect(servicoPadraoDaBase(pacote('tattoo', [['Fechamento', 60], ['Retoque', 30], ['Flash', 90]]))).toBe('Fechamento')
+  })
+})
+
+describe('a importação usa a mesma regra (a esteira nascia com servicos[0], o primeiro do alfabeto)', () => {
+  const pagina = semComentarios(readFileSync('src/app/admin/clientes/importar/page.tsx', 'utf8'))
+  const esteira = semComentarios(readFileSync('src/app/admin/clientes/importar/esteira.tsx', 'utf8'))
+
+  it('a página calcula o padrão pela regra e entrega à esteira', () => {
+    expect(pagina).toMatch(/=\s*servicoPadraoDaBase\(/)
+    expect(pagina).toMatch(/<EsteiraDeImportacao[^>]*servicoPadrao=\{servicoPadrao\}/)
+  })
+
+  it('a esteira começa no padrão recebido, e só sem ele no primeiro da lista', () => {
+    expect(esteira).toMatch(/useState\(servicoPadrao \?\? servicos\[0\]/)
   })
 })

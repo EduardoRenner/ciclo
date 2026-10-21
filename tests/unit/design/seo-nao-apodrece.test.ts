@@ -8,8 +8,8 @@ import { describe, expect, it } from 'vitest'
  * custaram trabalho para tomar.
  */
 const LAYOUT = readFileSync('src/app/layout.tsx', 'utf8')
-const OG = readFileSync('src/app/opengraph-image.tsx', 'utf8')
-const CSS = readFileSync('src/app/globals.css', 'utf8')
+// docs/114 F3: a prévia virou a imagem aprovada da logo final, um PNG estático no lugar do gerado.
+const OG = readFileSync('src/app/opengraph-image.png')
 const ROBOTS = readFileSync('src/app/robots.ts', 'utf8')
 const SITEMAP = readFileSync('src/app/sitemap.ts', 'utf8')
 
@@ -21,17 +21,14 @@ describe('o link colado no WhatsApp mostra prévia', () => {
   })
 
   it('a imagem de prévia tem o tamanho que as redes cortam', () => {
-    // 1200×630 (1,91:1). Os arquivos de marca são 2,46:1 e 0,94:1 — por isso a imagem é gerada.
-    expect(OG).toMatch(/width:\s*1200/)
-    expect(OG).toMatch(/height:\s*630/)
+    // 1200×630 (1,91:1), lido do cabeçalho do PNG.
+    expect(OG.subarray(1, 4).toString('latin1')).toBe('PNG')
+    expect([OG.readUInt32BE(16), OG.readUInt32BE(20)]).toEqual([1200, 630])
   })
 
-  it('a cor da prévia é a cor da marca de verdade', () => {
-    // Cravada porque não há CSS neste contexto. Se `--acc` mudar e a prévia não, o link passa a
-    // divulgar uma cor que o produto não usa mais.
-    const acc = CSS.match(/--acc:\s*(#[0-9a-f]{6})/i)?.[1]
-    expect(acc, 'não achei --acc no globals.css').toBeDefined()
-    expect(OG.toLowerCase(), `a prévia não usa o --acc atual (${acc})`).toContain(acc!.toLowerCase())
+  it('a prévia tem texto alternativo', () => {
+    // O `alt` do arquivo gerado foi junto com ele; o do PNG estático mora no `.alt.txt` ao lado.
+    expect(readFileSync('src/app/opengraph-image.alt.txt', 'utf8')).toMatch(/CICLO/)
   })
 })
 
@@ -91,7 +88,7 @@ describe('llms.txt não vira tabela de preço paralela', () => {
       expect(texto, `o plano ${tier} voltou para a lista de planos do llms.txt`).not.toContain(`- ${NOME_DO_PLANO[tier]}: ${precoDoPlanoPorMes(tier)}`)
     }
     // E o controle positivo: a seção de planos existe e tem as duas linhas, senão a asserção acima passaria vazia.
-    expect((texto.match(/^- (Solo|Equipe): /gm) ?? []).length).toBe(2)
+    expect((texto.match(/^- (Essencial|Equipe): /gm) ?? []).length).toBe(2)
   })
 
   it('diz a oferta de hoje com a mesma função que concede a cortesia, sem prometer "para sempre"', async () => {

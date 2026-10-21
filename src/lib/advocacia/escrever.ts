@@ -1,4 +1,5 @@
 import { explicarFalha, type FalhaDeEscrita } from '@/core/advocacia/falha-de-escrita'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 export type ResultadoDaEscrita<T> = { ok: true; dados: T } | ({ ok: false; campos: Record<string, string> } & FalhaDeEscrita)
 
@@ -15,9 +16,9 @@ export async function escreverJuridico<T = unknown>(
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return { ok: false, campos: {}, ...explicarFalha(null, padrao) }
   let r: Response
   try {
-    r = await fetch(url, {
+    r = await fetchComTentativa(url, {
       method: opcoes.method,
-      headers: { 'idempotency-key': crypto.randomUUID(), ...(opcoes.form ? {} : { 'content-type': 'application/json' }) },
+      headers: {  ...(opcoes.form ? {} : { 'content-type': 'application/json' }) },
       body: opcoes.form ?? (opcoes.json === undefined ? undefined : JSON.stringify(opcoes.json)),
     })
   } catch {

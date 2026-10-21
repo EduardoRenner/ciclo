@@ -16,6 +16,16 @@ export function gerarTokenConfirmacao(appointmentId: string, segredo?: string): 
   return gerarTokenAssinado(ESCOPO, appointmentId, VALIDADE_HORAS, segredo)
 }
 
+/**
+ * docs/114 L-07: o link de remarcar ou cancelar que sai na tela de confirmação, na hora de marcar. O
+ * horário pode ser daqui a semanas, e o token do lembrete (72h) venceria antes dele: este vale até um
+ * dia depois do horário, nunca menos que as 72h do lembrete. Mesmo escopo, mesma página `/confirmar`.
+ */
+export function gerarTokenDeGestao(appointmentId: string, startsAt: string, segredo?: string): string {
+  const horasAteODiaSeguinte = Math.ceil((Date.parse(startsAt) - Date.now()) / 3_600_000) + 24
+  return gerarTokenAssinado(ESCOPO, appointmentId, Math.max(VALIDADE_HORAS, horasAteODiaSeguinte), segredo)
+}
+
 export function verificarTokenConfirmacao(token: string, segredo?: string): string | null {
   return verificarTokenAssinado(ESCOPO, token, segredo)
 }

@@ -7,12 +7,16 @@ export type ConfiguracoesAgenda = {
   minLeadTimeMinutes: number
   maxAdvanceDays: number
   slotGranularityMin: number
+  /** docs/114 L-04: dias de calendário antes do primeiro horário marcável pelo link (`core/scheduling/antecedencia`). */
+  minAdvanceDays: number
 }
 
 const PADRAO: ConfiguracoesAgenda = {
   minLeadTimeMinutes: 120,
   maxAdvanceDays: 60,
   slotGranularityMin: 15,
+  // docs/114 L-04 (decisão do Vitor): pelo link, a partir de amanhã. Para hoje, a cliente chama no WhatsApp.
+  minAdvanceDays: 1,
 }
 
 /**
@@ -46,5 +50,6 @@ export function lerConfiguracoesAgenda(settings: unknown): ConfiguracoesAgenda {
       agendamento público trava prendendo CPU. Por isso o piso aqui é 1, não 0.
     */
     slotGranularityMin: numeroOuPadrao(s.slot_granularity_minutes, PADRAO.slotGranularityMin, 1),
+    minAdvanceDays: numeroOuPadrao(s.min_advance_days, PADRAO.minAdvanceDays),
   }
 }

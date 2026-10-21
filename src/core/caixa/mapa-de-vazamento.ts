@@ -30,7 +30,7 @@ export type Vazamento = {
 }
 
 export type EntradaDoMapa = {
-  recuperar: { pessoas: number; lucroCents: number }
+  recuperar: { pessoas: number; valorCents: number }
   clube: ReadonlyArray<{ margemCents: number; noPrejuizo: boolean }>
   servicosAbaixoDoPiso: ReadonlyArray<{ nome: string; parcela: 'comissao' | 'material' | 'taxa' }>
   procurasEmDiaFechado: ReadonlyArray<{ weekday: Weekday; procuras: number }>
@@ -55,13 +55,14 @@ export const MINIMO_DE_PROCURAS = 3
 export function montarMapaDeVazamento(e: EntradaDoMapa): Vazamento[] {
   const linhas: Vazamento[] = []
 
-  if (e.recuperar.pessoas > 0 && e.recuperar.lucroCents > 0) {
+  if (e.recuperar.pessoas > 0 && e.recuperar.valorCents > 0) {
     linhas.push({
       chave: 'recuperar',
       // A lista inclui quem está CHEGANDO na data (`due`) — "passou da hora" exagerava a conta.
       titulo: 'Clientes para chamar de volta',
-      valorCents: e.recuperar.lucroCents,
-      fato: `${e.recuperar.pessoas === 1 ? '1 pessoa; é o que sobraria se ela voltasse' : `${e.recuperar.pessoas} pessoas; é o que sobraria se voltassem`} (estimativa, não promessa).`,
+      valorCents: e.recuperar.valorCents,
+      // 16/10, pedido do Eduardo: um número só, o mesmo "Dá para recuperar" do Recuperar (nada de lucro ao lado).
+      fato: `${e.recuperar.pessoas === 1 ? '1 pessoa para chamar de volta' : `${e.recuperar.pessoas} pessoas para chamar de volta`} (estimativa, não promessa).`,
       href: '/admin/recuperar',
       acao: 'Chamar de volta',
     })

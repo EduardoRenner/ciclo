@@ -32,6 +32,20 @@ export type PrevisaoAuditada = {
   predictedOn: string
   /** `YYYY-MM-DD` da volta, ou `null` enquanto a previsão está em aberto. */
   actualReturnOn: string | null
+  /**
+   * `YYYY-MM-DD` em que a previsão foi REGISTRADA (`predicted_at`). Obrigatório de propósito: um
+   * leitor que esquecesse de passar faria a previsão depois do fato voltar a contar sem ninguém ver.
+   */
+  predictedAt: string
+}
+
+/**
+ * Previsão feita depois da data que ela prevê não é previsão (docs/112, achado de 21/10). Na
+ * primeira rodada do Motor, quem sumiu há meses recebe data prevista JÁ PASSADA; contá-la fazia
+ * a conta abrir com "o Motor acertou 0%" no primeiro dia de quem importou a base antiga.
+ */
+export function previstaAntesDoFato(p: PrevisaoAuditada): boolean {
+  return p.predictedOn >= p.predictedAt
 }
 
 /**
@@ -90,6 +104,7 @@ export function prestacaoDeContas(previsoes: readonly PrevisaoAuditada[], hoje: 
   let emAberto = 0
 
   for (const p of previsoes) {
+    if (!previstaAntesDoFato(p)) continue
     if (p.actualReturnOn) {
       const erro = diasEntre(p.predictedOn, p.actualReturnOn)
       erros.push(erro)

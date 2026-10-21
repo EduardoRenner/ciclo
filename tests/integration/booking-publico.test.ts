@@ -11,6 +11,9 @@ import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { criarAgendamentoPublico, disponibilidadePublica, perfilPublico } from '@/server/services/public-booking'
 import { procurasEmDiaFechado } from '@/server/services/demanda-nao-atendida'
+import { atualizarTenant, lerTenant } from '@/server/services/site'
+import { verificarTokenConfirmacao } from '@/server/services/confirmacao-token'
+import { lembreteDaVespera } from '@/server/services/lembrete-da-vespera'
 
 import { POST as reservar } from '@/app/api/v1/public/[slug]/book/route'
 
@@ -464,6 +467,11 @@ describe('POST /api/v1/public/:slug/book — a rota inteira', () => {
       expect(r1.status).toBe(200)
       expect(r2.status).toBe(200)
       expect(Object.keys(json1.data)).toEqual(Object.keys(json2.data))
+
+      // docs/114 L-07: a resposta leva o link de remarcar ou cancelar, que abre ESTE agendamento.
+      const comGestao = json1.data as { appointmentId: string; gestaoToken?: string }
+      expect(comGestao.gestaoToken, 'a confirmação não leva o link de remarcar ou cancelar').toBeTruthy()
+      expect(verificarTokenConfirmacao(comGestao.gestaoToken!)).toBe(comGestao.appointmentId)
     },
     30_000,
   )
@@ -528,3 +536,165 @@ describe('POST /api/v1/public/:slug/book — a rota inteira', () => {
     30_000,
   )
 })
+
+/**
+ * APR-004 (achado C-04): a resposta do 1º pedido se perde, a cliente toca de novo. Sem a chave, o
+ * 2º pedido dava 409 "horário já reservado" para o horário DELA, e ela marcava outro. Com a chave
+ * por intenção, o reenvio devolve o MESMO agendamento. Outra pessoa no mesmo horário segue 409.
+ */
+describe('POST /api/v1/public/:slug/book — reenvio com Idempotency-Key', () => {
+  function reqComChave(corpo: unknown, chave: string, ip: string): Request {
+    return new Request(`https://interno/api/v1/public/${slug}/book`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': ip, 'idempotency-key': chave },
+      body: JSON.stringify(corpo),
+    })
+  }
+
+  it(
+    'mesma chave 2×: um agendamento só, mesma resposta; token de reconhecimento só na 1ª',
+    async () => {
+      const chave = randomUUID()
+      const corpo = corpoBooking('09:30', '11988330001')
+      const r1 = await reservar(reqComChave(corpo, chave, '203.0.113.41'), ctx())
+      const r2 = await reservar(reqComChave(corpo, chave, '203.0.113.42'), ctx())
+      expect(r1.status).toBe(200)
+      expect(r2.status).toBe(200)
+      const j1 = (await r1.json()) as { data: { appointmentId: string; reconhecimentoToken: string | null } }
+      const j2 = (await r2.json()) as { data: { appointmentId: string; reconhecimentoToken: string | null } }
+      expect(j2.data.appointmentId).toBe(j1.data.appointmentId)
+      expect(j1.data.reconhecimentoToken).toBeTruthy()
+      expect(j2.data.reconhecimentoToken).toBeNull()
+
+      const { count } = await svc
+        .from('appointments')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId)
+        .eq('starts_at', new Date(`${DIA}T09:30:00-03:00`).toISOString())
+      expect(count).toBe(1)
+
+      // A resposta guardada para a chave não leva o telefone nem o token (R-06).
+      const guardada = await svc.from('idempotency_keys').select('response_body').eq('key', `${tenantId}:${chave}`).single()
+      const texto = JSON.stringify(guardada.data?.response_body)
+      expect(texto).not.toContain('11988330001')
+      expect(texto).toContain('"reconhecimentoToken":null')
+    },
+    30_000,
+  )
+
+  it(
+    'outra pessoa, outra chave, mesmo horário: continua 409 com alternativas',
+    async () => {
+      const r1 = await reservar(reqComChave(corpoBooking('16:30', '11988330002'), randomUUID(), '203.0.113.43'), ctx())
+      expect(r1.status).toBe(200)
+      const r2 = await reservar(reqComChave(corpoBooking('16:30', '11988330003'), randomUUID(), '203.0.113.44'), ctx())
+      expect(r2.status).toBe(409)
+      const j2 = (await r2.json()) as { error: { code: string } }
+      expect(j2.error.code).toBe('SLOT_TAKEN')
+    },
+    30_000,
+  )
+})
+
+/*
+  docs/114 L-04 e AGD-01 (decisões do Vitor, 21/10): pelo link a cliente marca a partir de amanhã (o
+  salão escolhe a antecedência em dias, `settings.min_advance_days`, padrão 1), e o horário marcado pelo
+  link nasce CONFIRMADO: quem atende vê na agenda e, se não puder, remarca ou cancela por lá.
+*/
+describe('antecedência em dias e horário já confirmado (L-04, AGD-01)', () => {
+  async function antecedencia(dias: number | null) {
+    const { data } = await svc.from('tenants').select('settings').eq('id', tenantId).single()
+    const settings = { ...((data?.settings ?? {}) as Record<string, unknown>), min_advance_days: dias }
+    const { error } = await svc.from('tenants').update({ settings }).eq('id', tenantId)
+    if (error) throw error
+  }
+
+  it(
+    'dia antes do primeiro dia aceito não tem horário, e o mesmo dia tem quando a antecedência deixa',
+    async () => {
+      try {
+        await antecedencia(30)
+        expect(await disponibilidadePublica(slug, servicoOnlineId, DIA, professionalId)).toEqual([])
+        await antecedencia(0)
+        expect((await disponibilidadePublica(slug, servicoOnlineId, DIA, professionalId)).length, 'controle: o dia tem vaga').toBeGreaterThan(0)
+      } finally {
+        await antecedencia(null)
+      }
+    },
+    30_000,
+  )
+
+  it(
+    'marcar pelo link antes do primeiro dia aceito é recusado no servidor, mesmo com o profissional escolhido',
+    async () => {
+      try {
+        await antecedencia(30)
+        await expect(
+          criarAgendamentoPublico(slug, { serviceId: servicoOnlineId, professionalId, startsAt: `${DIA}T10:00:00-03:00`, name: 'Cedo Demais', phone: '11988110091' }),
+        ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' })
+      } finally {
+        await antecedencia(null)
+      }
+    },
+    30_000,
+  )
+
+  it(
+    'o horário marcado pelo link nasce confirmado',
+    async () => {
+      const r = await criarAgendamentoPublico(slug, { serviceId: servicoOnlineId, professionalId, startsAt: `${DIA}T10:30:00-03:00`, name: 'Já Marcada', phone: '11988110092' })
+      const { data } = await svc.from('appointments').select('status, confirmed_at').eq('id', r.appointmentId).single()
+      expect(data?.status).toBe('confirmed')
+      expect(data?.confirmed_at).not.toBeNull()
+    },
+    30_000,
+  )
+  it(
+    'a chave da tela de Negócio grava 0 (aceita hoje) ou 1 (a partir de amanhã) sem apagar o resto do settings',
+    async () => {
+      try {
+        const antes = (await svc.from('tenants').select('settings').eq('id', tenantId).single()).data?.settings as Record<string, unknown>
+        await atualizarTenant(svc, tenantId, { marcarParaHoje: true })
+        let depois = (await svc.from('tenants').select('settings').eq('id', tenantId).single()).data?.settings as Record<string, unknown>
+        expect(depois.min_advance_days).toBe(0)
+        expect((await lerTenant(svc, tenantId)).marcarParaHoje).toBe(true)
+        expect(Object.keys(depois).filter((k) => k !== 'min_advance_days').sort(), 'o resto do settings sumiu').toEqual(Object.keys(antes).filter((k) => k !== 'min_advance_days').sort())
+
+        await atualizarTenant(svc, tenantId, { marcarParaHoje: false })
+        depois = (await svc.from('tenants').select('settings').eq('id', tenantId).single()).data?.settings as Record<string, unknown>
+        expect(depois.min_advance_days).toBe(1)
+        expect((await lerTenant(svc, tenantId)).marcarParaHoje).toBe(false)
+      } finally {
+        await antecedencia(null)
+      }
+    },
+    30_000,
+  )
+})
+
+/*
+  docs/114 L-07 (parte 2): sem a Meta, o lembrete da véspera é a profissional que manda, com um toque. O
+  servidor monta o número e o texto (o modelo do negócio + o link de remarcar ou cancelar DESTE horário).
+*/
+describe('lembrete da véspera que a profissional manda (L-07)', () => {
+  it(
+    'devolve o número de quem marcou e o texto com o link que abre este horário; horário desmarcado não tem lembrete',
+    async () => {
+      const r = await criarAgendamentoPublico(slug, { serviceId: servicoOnlineId, professionalId, startsAt: `${DIA}T12:30:00-03:00`, name: 'Lembrada Teste', phone: '11988110093' })
+      const lembrete = await lembreteDaVespera(svc, tenantId, r.appointmentId)
+      expect(lembrete?.telefone).toBe('+5511988110093')
+      expect(lembrete?.texto).toContain('Oi Lembrada!')
+      const token = lembrete?.texto.match(/\/confirmar\/([A-Za-z0-9_-]+)/)?.[1]
+      expect(token, 'o lembrete não leva o link de remarcar ou cancelar').toBeTruthy()
+      expect(verificarTokenConfirmacao(token!)).toBe(r.appointmentId)
+
+      // APR-040: com alcance own, quem não é a profissional deste horário não recebe o telefone.
+      await expect(lembreteDaVespera(svc, tenantId, r.appointmentId, 'own')).rejects.toMatchObject({ code: 'FORBIDDEN' })
+
+      await svc.from('appointments').update({ status: 'canceled', canceled_at: new Date().toISOString() }).eq('id', r.appointmentId)
+      expect(await lembreteDaVespera(svc, tenantId, r.appointmentId)).toBeNull()
+    },
+    30_000,
+  )
+})
+

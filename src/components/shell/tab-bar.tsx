@@ -49,7 +49,17 @@ export default function TabBar({ pacote = 'base' }: Props) {
   const pathname = usePathname()
   const { abas, centro } = PACOTES[pacote]
   const hrefFab = centro.href
-  const ativo = hrefDaAbaAtiva(pathname, abas)
+  /*
+    APR-102: a aba tocada fica marcada NO MESMO QUADRO do toque. Esperar o `pathname` novo era esperar
+    a rota (medido no celular 4x mais lento: 344 a 516 ms até a primeira mudança visível). O toque vale
+    só enquanto a rota de quando ele aconteceu não mudou; trocou, volta a mandar o `pathname`.
+  */
+  const [tocada, setTocada] = useState<{ href: string; em: string } | null>(null)
+  const ativo = tocada && tocada.em === pathname ? tocada.href : hrefDaAbaAtiva(pathname, abas)
+  const aoTocar = (href: string) => (e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+    setTocada({ href, em: pathname })
+  }
   const [esquerda, direita] = [abas.slice(0, 2), abas.slice(2)]
 
   return (
@@ -74,7 +84,7 @@ export default function TabBar({ pacote = 'base' }: Props) {
         )}
       >
         {esquerda.map((aba) => (
-          <ItemAba key={aba.href} aba={aba} ativa={ativo === aba.href} />
+          <ItemAba key={aba.href} aba={aba} ativa={ativo === aba.href} aoTocar={aoTocar(aba.href)} />
         ))}
 
         <div className="flex flex-1 items-center justify-center lg:order-first lg:flex-none lg:pb-4">
@@ -114,7 +124,7 @@ export default function TabBar({ pacote = 'base' }: Props) {
         </div>
 
         {direita.map((aba) => (
-          <ItemAba key={aba.href} aba={aba} ativa={ativo === aba.href} />
+          <ItemAba key={aba.href} aba={aba} ativa={ativo === aba.href} aoTocar={aoTocar(aba.href)} />
         ))}
       </div>
     </nav>
@@ -162,12 +172,13 @@ function IconeDoFab({ icone }: { icone: Aba['icone'] }) {
   return <Icone aria-hidden className={cn('size-7 transition-opacity lg:size-5', girando && 'opacity-60')} />
 }
 
-function ItemAba({ aba, ativa }: { aba: Aba; ativa: boolean }) {
+function ItemAba({ aba, ativa, aoTocar }: { aba: Aba; ativa: boolean; aoTocar: (e: React.MouseEvent) => void }) {
   const Icone = ICONES[aba.icone]
 
   return (
     <Link
       href={aba.href}
+      onClick={aoTocar}
       aria-current={ativa ? 'page' : undefined}
       className={cn(
         // min-w garante o alvo de 48px mesmo com a barra dividindo 5 espaços

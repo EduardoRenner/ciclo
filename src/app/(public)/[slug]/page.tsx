@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const perfil = await perfilPublico(slug).catch(() => null)
   if (!perfil) return {}
 
-  const descricao = perfil.tagline ?? perfil.about ?? `Agende seu horário na ${perfil.name}.`
+  const descricao = perfil.tagline ?? perfil.about ?? `Agende seu horário em ${perfil.name}.`
   const base = process.env.NEXT_PUBLIC_APP_URL
   const url = base ? `${base}/${perfil.slug}` : undefined
 

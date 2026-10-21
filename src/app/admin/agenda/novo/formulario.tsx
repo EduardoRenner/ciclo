@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
@@ -9,11 +9,16 @@ import Chip from '@/components/ui/chip'
 import Input from '@/components/ui/input'
 import PhoneInput from '@/components/ui/phone-input'
 import Select from '@/components/ui/select'
+import GradeDeHorarios, { slotsUnicosDe, type SlotLivre } from '@/components/agenda/grade-de-horarios'
+import TrilhoDeDias from '@/components/agenda/trilho-de-dias'
+import { hojeNoFuso, proximosDias } from '@/core/agenda/dias'
 import { useToast } from '@/components/ui/toast'
 import { comMaiuscula, type Vocabulario } from '@/core/text/vocabulario'
 import { formatarPreco, type ModeloDePreco } from '@/core/pricing/formatar'
-import { formatarTelefone } from '@/lib/formato'
+import { useFuso } from '@/components/shell/fuso'
+import { formatarTelefone, horaLocal } from '@/lib/formato'
 import { apiFetch } from '@/lib/offline/api-client'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Servico = {
   id: string
@@ -30,9 +35,10 @@ function paraIso(dataLocal: string): string {
   return new Date(dataLocal).toISOString()
 }
 
-function formatarAlternativa(iso: string): string {
+// APR-202: no fuso do negócio.
+function formatarAlternativa(iso: string, fuso: string): string {
   const d = new Date(iso)
-  return d.toLocaleString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: fuso })
 }
 
 export default function FormularioAgendamento({
@@ -62,9 +68,62 @@ export default function FormularioAgendamento({
   // docs/102 M1.10: remarcar quem já é cliente era redigitar nome e telefone inteiros a partir do Hoje.
   const [sugestoes, setSugestoes] = useState<{ id: string; name: string; phone_e164: string | null }[]>([])
   const [escolhido, setEscolhido] = useState<string | null>(null)
+  // APR-207 (F-22): telefone conhecido com outro nome digitado — avisa antes de confirmar, em vez de agendar no cadastro existente em silêncio.
+  const [jaCliente, setJaCliente] = useState<{ id: string; name: string; phone_e164: string | null } | null>(null)
   const [dataHora, setDataHora] = useState('')
   const [alternativas, setAlternativas] = useState<string[] | null>(null)
   const [erro, setErro] = useState<string | null>(null)
+  // APR-022: o que ficou guardado neste aparelho, dito por extenso. A tela não sai daqui offline.
+  const [guardadoOffline, setGuardadoOffline] = useState<string | null>(null)
+  const fuso = useFuso()
+  /*
+    APR-110b (docs/98 I-10): o horário sai de um campo livre de data e hora (que aceitava horário
+    ocupado e só descobria no 409) e vira o mesmo trilho de dias + grade de horários livres do
+    agendar público, pela mesma conta do servidor (APR-110a). "Outro horário" reabre o campo manual
+    para o encaixe fora da lista. A série de recorrência segue pelo campo manual: ela precisa de
+    uma hora de referência, não de um horário livre de um dia.
+  */
+  const [dia, setDia] = useState(() => hojeNoFuso(fuso))
+  const dias = useMemo(() => proximosDias(14, hojeNoFuso(fuso)), [fuso])
+  const [slots, setSlots] = useState<SlotLivre[] | null>(null)
+  const [erroDosHorarios, setErroDosHorarios] = useState<string | null>(null)
+  const [slotEscolhido, setSlotEscolhido] = useState<SlotLivre | null>(null)
+  const [horarioManual, setHorarioManual] = useState(false)
+  // Enquanto ninguém tocou no trilho, um dia sem vaga pula para o seguinte (como o público abre no
+  // primeiro dia útil): medido, a tela abria em "hoje" às 23h com "Sem horários livres" como primeira frase.
+  const [diaTocado, setDiaTocado] = useState(false)
+  const pedidoDeHorarios = useRef(0)
+  useEffect(() => {
+    if (!serviceId || horarioManual) return
+    const meuPedido = ++pedidoDeHorarios.current
+    setSlots(null)
+    setErroDosHorarios(null)
+    const params = new URLSearchParams({ serviceId, date: dia })
+    if (professionalId) params.set('professionalId', professionalId)
+    fetch(`/api/v1/appointments/availability?${params.toString()}`)
+      .then(async (r) => {
+        const json = (await r.json()) as { data?: { slots: SlotLivre[] }; error?: { message: string } }
+        if (meuPedido !== pedidoDeHorarios.current) return
+        if (!r.ok) {
+          setErroDosHorarios(json.error?.message ?? 'Não consegui buscar os horários.')
+          return
+        }
+        const livres = json.data?.slots ?? []
+        const seguinte = dias[dias.indexOf(dia) + 1]
+        if (livres.length === 0 && !diaTocado && seguinte) {
+          setDia(seguinte)
+          return
+        }
+        setSlots(livres)
+      })
+      .catch(() => {
+        // A resposta velha não sobrescreve a nova (APR-003), e rede caída não vira "sem horário".
+        if (meuPedido === pedidoDeHorarios.current) setErroDosHorarios('Não consegui falar com o servidor. Confira a conexão e toque no dia de novo.')
+      })
+  }, [serviceId, professionalId, dia, horarioManual, dias, diaTocado])
+  const resumoDoHorario = slotEscolhido
+    ? `${new Intl.DateTimeFormat('pt-BR', { timeZone: fuso, weekday: 'short', day: '2-digit', month: '2-digit' }).format(new Date(slotEscolhido.startsAt))}, às ${horaLocal(slotEscolhido.startsAt, fuso)}`
+    : null
 
   // docs/09-PLATAFORMA.md §12: série de recorrência é um agendamento a mais que se repete,
   // não uma tela separada — por isso vive dentro do mesmo formulário, atrás de um toggle.
@@ -91,6 +150,12 @@ export default function FormularioAgendamento({
   // são texto livre, sem `service_id` por trás, então quem decide isso continua sendo o
   // profissional aqui na tela normal — ver `converterOrcamentoEmAgendamento` em orcamentos.ts.
   const orcamentoId = searchParams.get('orcamento')
+  // APR-115: "Marcar de novo" na ficha manda `?servico=<id>` (o último feito). Só vale se o serviço
+  // ainda existe na lista; senão fica o primeiro, como sempre.
+  const servicoId = searchParams.get('servico')
+  useEffect(() => {
+    if (servicoId && servicos.some((s) => s.id === servicoId)) setServiceId(servicoId)
+  }, [servicoId, servicos])
   useEffect(() => {
     if (!clienteId) return
     let cancelado = false
@@ -154,16 +219,34 @@ export default function FormularioAgendamento({
       // enfileirar e revalidar quando a mutação sair da fila de verdade. O
       // servidor é quem decide se o horário oferecido offline ainda existe.
       if (typeof navigator !== 'undefined' && !navigator.onLine) {
-        await apiFetch('/api/v1/appointments', { method: 'POST', body: corpo })
-        mostrarToast({ tom: 'ok', titulo: 'Sem conexão', descricao: 'Agendamento entrou na fila e será enviado quando a conexão voltar.' })
-        router.push('/admin/agenda')
+        // APR-203 (C-47): `apiFetch` sem rede grava no IndexedDB, e IndexedDB falha de verdade (janela
+        // anônima, armazenamento cheio). Sem o `try`, a rejeição dentro da Action derrubava a tela
+        // inteira no boundary e levava o que a pessoa preencheu.
+        try {
+          await apiFetch('/api/v1/appointments', { method: 'POST', body: corpo })
+        } catch {
+          setErro('Não consegui guardar neste aparelho (sem internet e sem espaço para a fila). Tente de novo com rede.')
+          return
+        }
+        /*
+         * APR-022: fica NESTA tela. Ir para `/admin/agenda` sem rede caía na tela do dinossauro do
+         * navegador (o service worker não guarda o painel, `public/sw.js`) — medido. O formulário
+         * limpa para o próximo, e o aviso diz QUAL horário ficou guardado.
+         */
+        const dia = new Intl.DateTimeFormat('pt-BR', { timeZone: fuso, weekday: 'long', day: '2-digit', month: 'long' }).format(new Date(startsAtIso))
+        setGuardadoOffline(`Guardado neste aparelho: ${clienteNome.trim() || 'cliente sem nome'}, ${dia}, às ${horaLocal(startsAtIso, fuso)}. Sai quando a internet voltar.`)
+        setClienteNome('')
+        setClienteTelefone('')
+        setEscolhido(null)
+        setDataHora('')
         return
       }
+      setGuardadoOffline(null)
 
       try {
-        const r = await fetch('/api/v1/appointments', {
+        const r = await fetchComTentativa('/api/v1/appointments', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(corpo),
         })
         const json = (await r.json()) as {
@@ -176,14 +259,19 @@ export default function FormularioAgendamento({
             // Best-effort: o agendamento já existe e é o que importa — se o vínculo falhar, a
             // cliente já tem hora marcada, só o orçamento não fica marcado como "virou agendamento"
             // (segue "Aprovado" na lista, sem perder nada; dá pra tentar nessa tela de novo depois).
-            await fetch(`/api/v1/quotes/${orcamentoId}/convert`, {
+            // APR-206 (C-29): `fetch` não rejeita em 4xx/5xx, então o `.catch` sozinho engolia a falha
+            // em silêncio. Confere `r.ok` e avisa — o agendamento fica, o orçamento é que não virou.
+            const vinculo = await fetchComTentativa(`/api/v1/quotes/${orcamentoId}/convert`, {
               method: 'POST',
-              headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+              headers: { 'content-type': 'application/json' },
               body: JSON.stringify({ appointmentId: json.data.appointment.id }),
-            }).catch(() => {})
+            }).catch(() => null)
+            if (!vinculo?.ok) {
+              mostrarToast({ tom: 'erro', titulo: 'Horário marcado, mas o orçamento não ficou ligado a ele. Dá para tentar de novo pela lista de orçamentos.' })
+            }
           }
           mostrarToast({ tom: 'ok', titulo: 'Agendamento criado' })
-          router.push('/admin/agenda')
+          router.push(`/admin/agenda?date=${new Intl.DateTimeFormat('en-CA', { timeZone: fuso }).format(new Date(startsAtIso))}`)
           return
         }
 
@@ -226,9 +314,9 @@ export default function FormularioAgendamento({
 
     iniciarTransicao(async () => {
       try {
-        const r = await fetch('/api/v1/appointments/series', {
+        const r = await fetchComTentativa('/api/v1/appointments/series', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(corpo),
         })
         const json = (await r.json()) as {
@@ -267,16 +355,98 @@ export default function FormularioAgendamento({
 
   function aoEnviarFormulario(e: React.FormEvent) {
     e.preventDefault()
-    if (!dataHora) return
     if (repetirAtivo) {
+      if (!dataHora) return
       enviarSerie()
       return
     }
+    // O horário da grade vai como veio do servidor (ISO): nada de ida e volta pelo fuso do aparelho.
+    if (!horarioManual && slotEscolhido) {
+      enviar(slotEscolhido.startsAt)
+      return
+    }
+    if (!dataHora) return
     enviar(paraIso(dataHora))
   }
 
   return (
     <form method="post" onSubmit={aoEnviarFormulario} className="flex flex-col gap-4">
+      <div aria-live="polite">
+        {guardadoOffline && (
+          <Card className="border-warn/50">
+            <p className="text-secundario text-txt">{guardadoOffline}</p>
+          </Card>
+        )}
+      </div>
+      <Input
+        rotulo={comMaiuscula(vocabulario.cliente)}
+        value={clienteNome}
+        onChange={(e) => setClienteNome(e.target.value)}
+        placeholder="Nome"
+        autoComplete="name"
+        required
+      />
+      {sugestoes.length > 0 ? (
+        <div role="group" aria-label="Já é cliente?" className="-mt-2 flex flex-col gap-1 rounded-[var(--radius-sm)] border border-line-2 p-1">
+          <span className="px-2 pt-1 text-label font-semibold text-txt-3">Já é cliente?</span>
+          {sugestoes.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => {
+                setClienteNome(c.name)
+                setClienteTelefone(formatarTelefone(c.phone_e164) ?? '')
+                setEscolhido(c.name)
+                setSugestoes([])
+              }}
+              className="flex min-h-12 items-center justify-between gap-3 rounded-[var(--radius-sm)] px-2 text-left hover:bg-surface-2"
+            >
+              <span className="truncate text-corpo font-semibold text-txt">{c.name}</span>
+              <span className="shrink-0 text-secundario text-txt-3">{formatarTelefone(c.phone_e164) ?? ''}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <PhoneInput
+        valor={clienteTelefone}
+        aoMudar={(v) => {
+          setClienteTelefone(v)
+          setJaCliente(null)
+        }}
+        onBlur={() => {
+          const digitos = clienteTelefone.replace(/\D/g, '')
+          if (clienteId || digitos.length < 10) return
+          fetch(`/api/v1/clients?q=${encodeURIComponent(digitos)}&limit=1`)
+            .then((r) => (r.ok ? (r.json() as Promise<{ data?: { clients?: { id: string; name: string; phone_e164: string | null }[] } }>) : null))
+            .then((json) => {
+              const achado = json?.data?.clients?.[0]
+              // Só avisa quando o nome digitado NÃO é o do cadastro: aí é que a pessoa ia duplicar sem saber.
+              setJaCliente(achado && achado.name.trim().toLowerCase() !== clienteNome.trim().toLowerCase() ? achado : null)
+            })
+            .catch(() => undefined)
+        }}
+        required
+      />
+      {jaCliente ? (
+        <div role="status" className="flex items-center justify-between gap-3 rounded-[var(--radius-sm)] bg-acc-soft px-3 py-2">
+          <p className="min-w-0 text-secundario text-txt">
+            Esse telefone já é de <span className="font-semibold">{jaCliente.name}</span>. O horário vai para o cadastro dela.
+          </p>
+          <button
+            type="button"
+            className="shrink-0 text-label font-semibold text-acc-2 underline underline-offset-2"
+            onClick={() => {
+              setClienteNome(jaCliente.name)
+              setEscolhido(jaCliente.name)
+              setJaCliente(null)
+            }}
+          >
+            Usar o nome do cadastro
+          </button>
+        </div>
+      ) : null}
+
       <Select rotulo={comMaiuscula(vocabulario.servico)} value={serviceId} onChange={(e) => setServiceId(e.target.value)} required>
         {servicos.map((s) => (
           <option key={s.id} value={s.id}>
@@ -312,46 +482,38 @@ export default function FormularioAgendamento({
         </Select>
       ) : null}
 
-      <Input
-        rotulo={comMaiuscula(vocabulario.cliente)}
-        value={clienteNome}
-        onChange={(e) => setClienteNome(e.target.value)}
-        placeholder="Nome"
-        autoComplete="name"
-        required
-      />
-      {sugestoes.length > 0 ? (
-        <div role="group" aria-label="Já é cliente?" className="-mt-2 flex flex-col gap-1 rounded-[var(--radius-sm)] border border-line-2 p-1">
-          <span className="px-2 pt-1 text-label font-semibold text-txt-3">Já é cliente?</span>
-          {sugestoes.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => {
-                setClienteNome(c.name)
-                setClienteTelefone(formatarTelefone(c.phone_e164) ?? '')
-                setEscolhido(c.name)
-                setSugestoes([])
-              }}
-              className="flex min-h-12 items-center justify-between gap-3 rounded-[var(--radius-sm)] px-2 text-left hover:bg-surface-2"
-            >
-              <span className="truncate text-corpo font-semibold text-txt">{c.name}</span>
-              <span className="shrink-0 text-secundario text-txt-3">{formatarTelefone(c.phone_e164) ?? ''}</span>
-            </button>
-          ))}
+
+      {!horarioManual && !repetirAtivo ? (
+        <div className="flex flex-col gap-3">
+          <TrilhoDeDias dias={dias} dia={dia} fechados={new Set()} aoEscolher={(d) => { setDiaTocado(true); setDia(d); setSlotEscolhido(null) }} />
+          {/* Vive sempre no DOM: trocar de dia troca a lista inteira sem trocar de rota. */}
+          <p aria-live="polite" className="sr-only">
+            {erroDosHorarios ? '' : slots === null ? 'Buscando horários.' : slots.length === 0 ? 'Sem horários livres nesse dia.' : `${slotsUnicosDe(slots).length} horários livres.`}
+          </p>
+          {erroDosHorarios ? (
+            <p role="alert" className="text-secundario text-bad">{erroDosHorarios}</p>
+          ) : slots === null ? (
+            <p className="text-secundario text-txt-2">Buscando horários…</p>
+          ) : slots.length === 0 ? (
+            <p className="text-secundario text-txt-2">Sem horários livres nesse dia. Tente outro dia, ou use &ldquo;Outro horário&rdquo;.</p>
+          ) : (
+            <GradeDeHorarios slots={slotsUnicosDe(slots)} timezone={fuso} escolhido={slotEscolhido} aoEscolher={setSlotEscolhido} />
+          )}
+          <button type="button" onClick={() => setHorarioManual(true)} className="flex min-h-12 items-center self-start text-secundario font-semibold text-acc-2 underline underline-offset-2">
+            Outro horário (fora da lista)
+          </button>
         </div>
-      ) : null}
-
-      <PhoneInput valor={clienteTelefone} aoMudar={setClienteTelefone} required />
-
-      <Input
-        rotulo="Data e horário"
-        type="datetime-local"
-        value={dataHora}
-        onChange={(e) => setDataHora(e.target.value)}
-        required
-        classNameCampo="tabular"
-      />
+      ) : (
+        <Input
+          rotulo="Data e horário"
+          type="datetime-local"
+          value={dataHora}
+          onChange={(e) => setDataHora(e.target.value)}
+          required
+          classNameCampo="tabular"
+          ajuda={repetirAtivo ? undefined : 'Encaixe fora dos horários livres. O sistema ainda recusa se o horário estiver ocupado.'}
+        />
+      )}
 
       {/*
         Travado, e dizendo por quê no mesmo lugar. A alternativa seria mandar a pessoa para
@@ -447,7 +609,7 @@ export default function FormularioAgendamento({
             <div className="mt-3 flex flex-wrap gap-2">
               {alternativas.map((a) => (
                 <Chip key={a} onClick={() => enviar(a)}>
-                  {formatarAlternativa(a)}
+                  {formatarAlternativa(a, fuso)}
                 </Chip>
               ))}
             </div>
@@ -455,18 +617,25 @@ export default function FormularioAgendamento({
         </Card>
       ) : null}
 
+      {resumoDoHorario && !horarioManual && !repetirAtivo ? (
+        <p className="text-secundario text-txt-2">
+          Marcar para <span className="font-semibold text-txt">{resumoDoHorario}</span>.
+        </p>
+      ) : null}
       <Button
         type="submit"
         largura="cheia"
         carregando={pendente}
-        disabled={servicos.length === 0 || profissionais.length === 0}
+        disabled={servicos.length === 0 || profissionais.length === 0 || (!horarioManual && !repetirAtivo && !slotEscolhido)}
         motivoDesabilitado={
           servicos.length === 0
             ? 'Cadastre pelo menos um serviço em Configurações para poder agendar.'
-            : 'Cadastre pelo menos um profissional em Configurações para poder agendar.'
+            : profissionais.length === 0
+              ? 'Cadastre pelo menos um profissional em Configurações para poder agendar.'
+              : 'Escolha um horário na lista acima.'
         }
       >
-        {repetirAtivo ? 'Criar série' : 'Confirmar agendamento'}
+        {repetirAtivo ? 'Criar série' : 'Marcar horário'}
       </Button>
     </form>
   )

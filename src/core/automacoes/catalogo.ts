@@ -53,6 +53,12 @@ export type Automacao = {
   sempreLigada?: boolean
   /** Por que o teto é esse — aparece na tela quando o dial trava. */
   motivoDoTeto?: string
+  /**
+   * Por que ela ainda não roda sozinha, quando a rota não está agendada (docs/112 EXP-A02). Antes a
+   * tela dizia "falta ligar o envio no WhatsApp" para toda automação parada, inclusive o aviso de
+   * estoque, que não tem nada de WhatsApp.
+   */
+  motivoDeParada?: string
 }
 
 export const AUTOMACOES: readonly Automacao[] = [
@@ -80,7 +86,11 @@ export const AUTOMACOES: readonly Automacao[] = [
     descricao: 'A cada atendimento concluído, os pontos entram sozinhos, sem ninguém lançar na mão.',
     nivelMaximo: 3,
     rota: null,
-    motivoDoTeto: 'Escreve só na ficha de quem foi atendido, e não manda mensagem.',
+    // docs/112 EXP-A01, padrão provisório (Do Vitor): o dial desta não tinha leitor, e "Só me avisa"
+    // lançava pontos do mesmo jeito. Até ele decidir se o nível deve mudar o comportamento, o dial
+    // sai e a tela diz o que acontece de verdade: segue o programa de pontos.
+    sempreLigada: true,
+    motivoDoTeto: 'Os pontos entram sozinhos quando o programa de pontos está ligado. Para parar, desligue o programa.',
   },
   {
     chave: 'alertas_de_estoque',
@@ -88,6 +98,7 @@ export const AUTOMACOES: readonly Automacao[] = [
     descricao: 'Avisa quando um produto bate o ponto de recompra.',
     nivelMaximo: 1,
     rota: 'stock-alerts',
+    motivoDeParada: 'a conferência diária do estoque ainda não está agendada',
     motivoDoTeto: 'Comprar é decisão sua, e o CICLO nunca gasta dinheiro por você.',
   },
   {
@@ -96,6 +107,7 @@ export const AUTOMACOES: readonly Automacao[] = [
     descricao: 'Lembra do horário marcado e pede a confirmação.',
     nivelMaximo: 3,
     rota: 'reminders',
+    motivoDeParada: 'falta ligar o envio pelo WhatsApp oficial',
     motivoDoTeto: 'Uma pessoa por vez, de um horário que ela já marcou.',
   },
   {
@@ -106,6 +118,7 @@ export const AUTOMACOES: readonly Automacao[] = [
     // Um erro que atinge 1 cliente é constrangimento; que atinge 46 é a reputação do salão.
     nivelMaximo: 2,
     rota: 'campaigns',
+    motivoDeParada: 'falta ligar o envio pelo WhatsApp oficial',
     motivoDoTeto: 'Alcança várias pessoas de uma vez, então esta sempre espera seu toque.',
   },
 ]

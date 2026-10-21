@@ -23,7 +23,24 @@ export type BaseEm = (typeof BASES_EM)[number]
  * ainda existir para ele — a resposta ainda vale para a métrica de quantas contas vêm de outro
  * sistema, que é o ganho desta pergunta.
  */
-export const SISTEMAS_ANTERIORES = ['appbarber', 'trinks', 'belasis', 'barbup', 'booksy', 'outro'] as const
+/*
+ * docs/112 EXP-S14 (`04-salao.md` §7.3): a beleza em cima, na ordem do §7.3; AppBarber e BarbUp no fim,
+ * antes de "Outro", porque a barbearia continua aceita. Nenhuma chave antiga sai: o evento
+ * `perfil_respondido` guarda a chave, e há respostas gravadas com cada uma.
+ */
+export const SISTEMAS_ANTERIORES = [
+  'trinks',
+  'booksy',
+  'avec',
+  'gendo',
+  'fresha',
+  'agendapro',
+  'agendiva',
+  'belasis',
+  'appbarber',
+  'barbup',
+  'outro',
+] as const
 
 export type SistemaAnterior = (typeof SISTEMAS_ANTERIORES)[number]
 

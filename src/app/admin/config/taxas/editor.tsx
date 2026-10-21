@@ -7,6 +7,7 @@ import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { FORMAS_DE_PAGAMENTO, NOME_DA_FORMA, type FormaDePagamento, type TaxasDePagamento } from '@/core/comanda/taxa-de-pagamento'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 /** O dono sabe "três e meio por cento", não "350 basis points". A conversão mora aqui, na borda. */
 function bpsParaPercentual(valor: number): string {
@@ -38,9 +39,9 @@ export default function EditorTaxas({ inicial, respondida }: { inicial: TaxasDeP
     iniciarTransicao(async () => {
       try {
         const corpo = Object.fromEntries(FORMAS_DE_PAGAMENTO.map((f) => [f, percentualParaBps(valores[f])]))
-        const r = await fetch('/api/v1/tenant/payment-fees', {
+        const r = await fetchComTentativa('/api/v1/tenant/payment-fees', {
           method: 'PATCH',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(corpo),
         })
         const json = (await r.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }

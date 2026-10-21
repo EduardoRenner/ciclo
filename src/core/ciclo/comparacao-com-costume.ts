@@ -33,3 +33,22 @@ export function compararComCostume(receitasPassadasCents: readonly number[], rec
   const percentual = Math.round(((receitaHojeCents - mediaCents) / mediaCents) * 100)
   return { percentual }
 }
+
+/** Um dia passado do mesmo dia da semana: cada atendimento concluído com o minuto local de início. */
+export type DiaPassado = { atendimentos: readonly { minutoDoDia: number; cents: number }[] }
+
+/**
+ * APR-034 (achados A-05, C-26a): de manhã a Hoje dizia "100% abaixo do costume" — comparava o dia
+ * PARCIAL com a média de dias INTEIROS. Aqui cada dia passado conta só o que já tinha acontecido
+ * até o mesmo minuto de agora. Dia que o salão abriu mas ainda não tinha nada a essa hora entra
+ * como zero (é costume também); e antes do primeiro horário de costume a média até agora é zero,
+ * então não há comparação — melhor nenhum número do que "abaixo" às 7 da manhã.
+ */
+export function compararComCostumeAteAgora(
+  diasPassados: readonly DiaPassado[],
+  receitaHojeCents: number,
+  minutoAgora: number,
+): ComparacaoComCostume | null {
+  const ateAgora = diasPassados.map((d) => d.atendimentos.filter((a) => a.minutoDoDia <= minutoAgora).reduce((soma, a) => soma + a.cents, 0))
+  return compararComCostume(ateAgora, receitaHojeCents)
+}

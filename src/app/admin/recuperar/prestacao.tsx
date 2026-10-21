@@ -28,8 +28,9 @@ export default function PrestacaoDeContasDoMotor({
   const percentual = contas.acertoBps === null ? null : Math.round(contas.acertoBps / 100)
 
   return (
-    <Card className="mb-5 flex flex-col gap-1">
-      <p className="text-corpo">
+    <Card className="mb-5">
+      <details className="flex flex-col gap-1">
+        <summary className="cursor-pointer text-corpo">
         {percentual === null ? (
           <>
             O Motor ainda tem pouco histórico deste negócio:{' '}
@@ -44,7 +45,7 @@ export default function PrestacaoDeContasDoMotor({
             <strong className="tabular">{contas.conferidas}</strong> previsões já conferidas.
           </>
         )}
-      </p>
+      </summary>
 
       <p className="text-secundario text-txt-2">
         Acerto é a pessoa ter voltado até {TOLERANCIA_DIAS} dias da data prevista. Quem passou de um mês sem voltar conta como erro. Senão
@@ -82,6 +83,7 @@ export default function PrestacaoDeContasDoMotor({
       {probabilidadeCalibrada ? (
         <p className="text-label text-txt-3">Quem vale mais a pena chamar de volta já leva em conta o histórico real deste salão.</p>
       ) : null}
+      </details>
     </Card>
   )
 }

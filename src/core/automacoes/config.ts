@@ -22,3 +22,14 @@ export function lerConfigAutomacoes(settings: unknown): ConfigAutomacoes {
   }
   return saida
 }
+
+/**
+ * Se a automação pode AGIR sozinha (nível 3, "Faz e me conta") neste negócio (docs/112 EXP-A01).
+ *
+ * Até 21/10/2026 o dial da tela Automações gravava e nada lia: lembrete e campanha mandariam no
+ * nível 1 ("Só me avisa") assim que a rota fosse agendada. Quem manda mensagem sozinho pergunta
+ * aqui antes. O padrão de fábrica é 1, então nada sai sozinho sem a dona subir o dial.
+ */
+export function fazSozinha(settings: unknown, chave: ChaveAutomacao): boolean {
+  return lerConfigAutomacoes(settings)[chave] === 3
+}

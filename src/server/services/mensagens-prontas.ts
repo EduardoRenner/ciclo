@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { parcialSemPadroes } from '@/server/http/esquema-parcial'
 
 import { AppError } from '@/server/http/errors'
+import { CORPOS_PADRAO_DE_VOLTA, CORPO_PADRAO_DO_LEMBRETE } from '@/lib/mensagens'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -37,13 +38,13 @@ type EntradaParcial = z.infer<typeof EsquemaModeloParcial>
  */
 export const MODELOS_PADRAO: { slug: string; title: string; body: string }[] = [
   { slug: 'confirmacao', title: 'Confirmar horário', body: 'Oi {{nome}}! Confirmando: {{servico}} no dia {{data}} às {{hora}}. Posso confirmar?' },
-  { slug: 'lembrete', title: 'Lembrete de amanhã', body: 'Oi {{nome}}! Passando pra lembrar do seu horário amanhã, {{data}} às {{hora}}. Até lá!' },
-  { slug: 'sentimos_falta', title: 'Sumiu, chamar de volta', body: 'Oi {{nome}}, quanto tempo! Faz um tempinho que a gente não se fala. Bora marcar um horário? Me chama que eu encaixo.' },
-  { slug: 'aniversario', title: 'Feliz aniversário', body: 'Parabéns, {{nome}}! 🎉 Te desejo tudo de bom. Esse mês tem um mimo te esperando, me chama pra combinar.' },
+  { slug: 'lembrete', title: 'Lembrete de amanhã', body: CORPO_PADRAO_DO_LEMBRETE },
+  { slug: 'sentimos_falta', title: 'Sumiu, chamar de volta', body: CORPOS_PADRAO_DE_VOLTA[0]! },
+  { slug: 'aniversario', title: 'Feliz aniversário', body: 'Parabéns, {{nome}}! 🎉 Te desejo tudo de bom, e que o ano seja lindo.' },
   { slug: 'pos_atendimento', title: 'Depois do atendimento', body: 'Que bom te atender, {{nome}}! Qualquer dúvida sobre o que foi feito, é só chamar.' },
   { slug: 'reagendar', title: 'Preciso remarcar', body: 'Oi {{nome}}, tudo bem? Preciso remarcar seu horário do dia {{data}}. Tenho outros horários livres. Qual fica melhor pra você?' },
-  { slug: 'promocao', title: 'Promoção da semana', body: 'Oi {{nome}}! Essa semana o {{servico}} está saindo por {{valor}}. Quer que eu separe um horário?' },
-  { slug: 'indicacao', title: 'Pedir indicação', body: '{{nome}}, que bom que você confia no meu trabalho! 🙏 Dê um desconto pra quem você indicar: a pessoa agenda o primeiro horário por aqui, sem esperar resposta: {{link}}' },
+  { slug: 'promocao', title: 'Promoção da semana', body: 'Oi {{nome}}! Essa semana, {{servico}} sai por {{valor}}. Quer que eu separe um horário?' },
+  { slug: 'indicacao', title: 'Pedir indicação', body: '{{nome}}, que bom que você confia no meu trabalho! 🙏 Que tal indicar alguém? Pelo link, a pessoa marca o primeiro horário sem esperar resposta: {{link}}' },
   { slug: 'falta', title: 'Cliente faltou', body: 'Oi {{nome}}, senti sua falta no horário das {{hora}}. Aconteceu alguma coisa? Se quiser eu já remarco.' },
   { slug: 'agradecimento', title: 'Agradecer cliente fiel', body: '{{nome}}, que bom te ter por perto esse tempo todo! Cliente como você é o que faz diferença.' },
 ]

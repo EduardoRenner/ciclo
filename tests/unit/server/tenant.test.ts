@@ -85,11 +85,41 @@ describe('resolução do tenant ativo', () => {
     })
   })
 
-  it('cookie forjado também não passa — a revalidação não olha a origem', async () => {
+  /*
+    docs/112, achado da noite de 21/10: o cookie é preferência do APARELHO, gravada ao aceitar um
+    convite, e sobrevive ao "sair". Recusá-lo com TENANT_MISMATCH derrubava toda tela do painel de
+    quem entrasse depois no mesmo aparelho, ou de quem saiu da equipe. Cookie que não bate com
+    vínculo ativo vale o mesmo que cookie nenhum: o forjado continua sem dar acesso ao outro tenant,
+    e a resposta é a mesma de quem não mandou cookie, então não revela se o tenant existe.
+  */
+  it('cookie forjado não dá acesso ao outro tenant: vale como cookie nenhum', async () => {
     comUsuarioEVinculos(USUARIO, [vinculo(TENANT_A, 'owner')])
     comCookie(TENANT_B)
 
-    await expect(contextoAtual(req())).rejects.toMatchObject({ code: 'TENANT_MISMATCH' })
+    const ctx = await contextoAtual(req())
+    expect(ctx.tenantId).toBe(TENANT_A)
+    expect(ctx.tenantId).not.toBe(TENANT_B)
+  })
+
+  it('cookie velho com dois vínculos pede para escolher, como sem cookie', async () => {
+    comUsuarioEVinculos(USUARIO, [vinculo(TENANT_A, 'professional'), vinculo('33333333-3333-4333-8333-333333333333', 'owner')])
+    comCookie(TENANT_B)
+
+    await expect(contextoAtual(req())).rejects.toMatchObject({ code: 'VALIDATION_ERROR' })
+  })
+
+  it('cookie que nem uuid é também vale como cookie nenhum', async () => {
+    comUsuarioEVinculos(USUARIO, [vinculo(TENANT_A, 'owner')])
+    comCookie("' or 1=1 --")
+
+    expect(await contextoAtual(req())).toMatchObject({ tenantId: TENANT_A })
+  })
+
+  it('o header continua estrito mesmo com cookie válido', async () => {
+    comUsuarioEVinculos(USUARIO, [vinculo(TENANT_A, 'owner')])
+    comCookie(TENANT_A)
+
+    await expect(contextoAtual(req({ 'x-tenant-id': TENANT_B }))).rejects.toMatchObject({ code: 'TENANT_MISMATCH' })
   })
 
   it('header que nem uuid é leva o mesmo erro, sem ir ao banco', async () => {

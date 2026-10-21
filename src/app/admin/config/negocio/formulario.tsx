@@ -8,6 +8,7 @@ import Card from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { PALETA_PRESET } from '@/core/text/cor'
 import { APP_HOST } from '@/lib/app-url'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Tenant = {
   name: string
@@ -15,6 +16,8 @@ type Tenant = {
   phone: string | null
   address: string | null
   site: { tagline?: string | null; about?: string | null; whatsapp?: string | null; instagram?: string | null; accent?: string | null }
+  marcarParaHoje: boolean
+  aparecerNaBusca: boolean
 }
 
 /** O mesmo osso do app (`--acc` em globals.css) — nunca o roxo antigo. */
@@ -36,6 +39,10 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
   // escolhe de propósito — nunca herda cor de nicho/profissão (era assim que
   // cílios/sobrancelha nasciam roxo, ver docs/13-CAUSA-RAIZ-LAYOUT-LEGADO.md).
   const [acento, setAcento] = useState<string | null>(tenant.site.accent ?? null)
+  // docs/114 L-04: desligado (padrão) = pelo link só a partir de amanhã; para hoje, a cliente chama no WhatsApp.
+  const [marcarParaHoje, setMarcarParaHoje] = useState(tenant.marcarParaHoje)
+  // docs/114 L-06: ligado por padrão; desligado, o negócio some da busca da cliente (o link continua valendo).
+  const [aparecerNaBusca, setAparecerNaBusca] = useState(tenant.aparecerNaBusca)
   const [erro, setErro] = useState<string | null>(null)
 
   function copiarLink() {
@@ -58,13 +65,15 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
         instagram: instagram.trim() || null,
         accent: acento,
       },
+      marcarParaHoje,
+      aparecerNaBusca,
     }
 
     iniciarTransicao(async () => {
       try {
-        const r = await fetch('/api/v1/tenant', {
+        const r = await fetchComTentativa('/api/v1/tenant', {
           method: 'PATCH',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(corpo),
         })
         const json = (await r.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
@@ -233,6 +242,32 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
             )}
           </div>
         </div>
+
+        <label className="flex min-h-12 cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            checked={marcarParaHoje}
+            onChange={(e) => setMarcarParaHoje(e.target.checked)}
+            className="size-5 shrink-0 rounded border-line-2 bg-surface-2 accent-[var(--acc-2)]"
+          />
+          <span className="text-corpo text-txt">
+            Aceitar horário para hoje pelo link
+            <span className="block text-secundario text-txt-2">Desligado, quem marca pelo link escolhe a partir de amanhã e, para hoje, chama no seu WhatsApp.</span>
+          </span>
+        </label>
+
+        <label className="flex min-h-12 cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            checked={aparecerNaBusca}
+            onChange={(e) => setAparecerNaBusca(e.target.checked)}
+            className="size-5 shrink-0 rounded border-line-2 bg-surface-2 accent-[var(--acc-2)]"
+          />
+          <span className="text-corpo text-txt">
+            Aparecer na busca do CICLO
+            <span className="block text-secundario text-txt-2">Quem procura seu serviço na sua cidade acha sua página. Desligado, só quem tem o seu link chega.</span>
+          </span>
+        </label>
 
         {erro ? (
           <p role="alert" className="text-secundario text-bad">

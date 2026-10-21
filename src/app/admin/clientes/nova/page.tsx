@@ -7,7 +7,7 @@ import FormularioCliente from './formulario'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = { title: "Novo cliente" }
+export const metadata = { title: "Cadastrar cliente" }
 
 export default async function PaginaNovoCliente() {
   const ctx = await contextoDoPainel(new Request('https://interno/clientes/nova', { headers: await headers() }))
@@ -18,5 +18,5 @@ export default async function PaginaNovoCliente() {
   // existia. Usado só para a mensagem de "primeiro cliente" (docs/61 §5.6), sem outro efeito.
   const { count } = await db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', ctx.tenantId)
 
-  return <FormularioCliente vertical={data?.vertical ?? 'barber'} ehPrimeiroCliente={(count ?? 0) === 0} />
+  return <FormularioCliente vertical={data?.vertical ?? ''} ehPrimeiroCliente={(count ?? 0) === 0} />
 }

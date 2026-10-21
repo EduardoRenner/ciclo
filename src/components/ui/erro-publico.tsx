@@ -1,6 +1,7 @@
 'use client'
 
 import { XCircle } from 'lucide-react'
+import Link from 'next/link'
 
 import Button from '@/components/ui/button'
 import TituloDeEstado from '@/components/ui/titulo-de-estado'
@@ -30,6 +31,7 @@ export default function ErroPublico({
   titulo,
   mensagem,
   aoTentarDeNovo,
+  saida,
 }: {
   titulo: string
   /** A mensagem da rota. Diz o que houve. */
@@ -40,6 +42,11 @@ export default function ErroPublico({
    * recusado, não há de onde tirar), e um link para lugar nenhum é pior que uma frase útil.
    */
   aoTentarDeNovo?: () => void
+  /**
+   * APR-117 (A-10, F-23): uma saída tocável quando não há retentativa. Medido com token inválido:
+   * a tela tinha 0 interativos — beco sem saída aberto a partir de um link do WhatsApp.
+   */
+  saida?: { href: string; rotulo: string }
 }) {
   return (
     <>
@@ -69,9 +76,19 @@ export default function ErroPublico({
           Tentar de novo
         </Button>
       ) : (
-        <p className="mt-4 text-secundario text-txt-3">
-          Chame quem vai te atender pelo WhatsApp: por lá dá para resolver na hora.
-        </p>
+        <>
+          <p className="mt-4 text-secundario text-txt-3">
+            Chame quem vai te atender pelo WhatsApp: por lá dá para resolver na hora.
+          </p>
+          {saida ? (
+            <Link
+              href={saida.href}
+              className="mt-6 inline-flex h-12 items-center justify-center rounded-[var(--radius-sm)] border border-line-2 px-5 text-corpo font-semibold text-txt"
+            >
+              {saida.rotulo}
+            </Link>
+          ) : null}
+        </>
       )}
     </>
   )

@@ -1,11 +1,19 @@
 import { cache } from 'react'
 
-import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { createClient } from '@supabase/supabase-js'
+
+import { criarClienteDoUsuario, exigirEnv } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
 
 export type Sessao = {
   userId: string
   email: string
+  /**
+   * O número que a pessoa PROVOU com o código do login por número (docs/110 L1), em E.164. Só o
+   * confirmado: o telefone digitado no cadastro por e-mail nunca foi conferido e não vale como
+   * prova (o aceite do convite pelo WhatsApp, EXP-K01, trava por ele).
+   */
+  telefone?: string | null
   /** `aal1` = só senha; `aal2` = com o segundo fator. Ações sensíveis exigem aal2. */
   aal: string
   /**
@@ -48,6 +56,7 @@ export const sessaoAtual = cache(async function sessaoAtual(): Promise<Sessao | 
   return {
     userId: data.user.id,
     email: data.user.email ?? '',
+    telefone: data.user.phone && data.user.phone_confirmed_at ? `+${data.user.phone.replace(/^\+/, '')}` : null,
     aal: nivel?.currentLevel ?? 'aal1',
     metodos: (nivel?.currentAuthenticationMethods ?? []).map((m) => (typeof m === 'string' ? m : m.method)),
     origemNoCadastro: typeof data.user.user_metadata?.origem === 'string' ? data.user.user_metadata.origem : null,
@@ -78,4 +87,44 @@ export async function exigirAal2(): Promise<Sessao> {
   const sessao = await exigirSessao()
   if (sessao.aal !== 'aal2') throw new AppError('MFA_REQUIRED')
   return sessao
+}
+
+/**
+ * docs/98-aprimoramento/11 LOJA-27: o que a exclusão da própria conta precisa saber para escolher a confirmação
+ * (`core/auth/confirmar-exclusao.ts`). Duas idas de rede, e só nesta tela: por isso fora de `sessaoAtual`.
+ */
+export async function contextoDeReautenticacao(): Promise<{
+  sessao: Sessao
+  temSegundoFator: boolean
+  temSenha: boolean
+  autenticadoEmMs: number | null
+}> {
+  const sessao = await exigirSessao()
+  const db = await criarClienteDoUsuario()
+  const [{ data: usuario }, { data: nivel }] = await Promise.all([db.auth.getUser(), db.auth.mfa.getAuthenticatorAssuranceLevel()])
+  const instantes = (nivel?.currentAuthenticationMethods ?? [])
+    .map((m) => (typeof m === 'string' ? null : m.timestamp))
+    .filter((t): t is number => typeof t === 'number')
+  return {
+    sessao,
+    // `nextLevel` aal2 com `currentLevel` aal1 é exatamente "tem fator cadastrado e ainda não verificou".
+    temSegundoFator: nivel?.nextLevel === 'aal2',
+    temSenha: (usuario.user?.identities ?? []).some((i) => i.provider === 'email'),
+    // O `amr` vem em segundos.
+    autenticadoEmMs: instantes.length ? Math.max(...instantes) * 1000 : null,
+  }
+}
+
+/**
+ * Confere a senha sem mexer na sessão do cookie: cliente público descartável, sem persistir nada. A sessão que o
+ * login de conferência cria é encerrada logo depois (`scope: 'local'` encerra só ela).
+ */
+export async function senhaConfere(email: string, senha: string): Promise<boolean> {
+  const conferencia = createClient(exigirEnv('NEXT_PUBLIC_SUPABASE_URL'), exigirEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'), {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+  const { data, error } = await conferencia.auth.signInWithPassword({ email, password: senha })
+  if (error || !data.session) return false
+  await conferencia.auth.signOut({ scope: 'local' }).catch(() => undefined)
+  return true
 }

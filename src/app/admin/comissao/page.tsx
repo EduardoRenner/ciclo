@@ -51,26 +51,27 @@ export default async function PaginaComissao() {
   // `all` é owner/finance — eles já veem o total por profissional no Caixa (`caixa/page.tsx`). O
   // extrato item a item para QUALQUER profissional escolhido é trabalho maior que este ticket
   // pediu (um seletor de profissional, não só "o próprio"), e fica para quando alguém pedir.
-  if (escopo === 'all') {
+  const { data: proprioId, error } = await db.rpc('my_professional_id', { t: ctx.tenantId })
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  // APR-212 (C-42, D-39): o dono que também atende vê o PRÓPRIO extrato; o que não atende vê para
+  // onde ir (o total por profissional está no Caixa) — sem "chega aqui em breve".
+  if (!proprioId && escopo === 'all') {
     return (
       <>
         <PageHeader titulo="Comissão" descricao="O extrato item a item de cada profissional." />
         <Card>
           <p className="text-corpo text-txt-2">
-            O total de comissão por profissional já está no{' '}
+            O total de comissão por profissional está no{' '}
             <Link href="/admin/caixa" className="toque-48 -mx-1 px-1 font-semibold text-acc-2">
               Caixa
             </Link>
-            . O extrato item a item de um profissional específico chega aqui em breve.
+            . Por enquanto, o extrato item a item de cada profissional fica lá; aqui aparece o seu, quando a sua conta estiver ligada a um cadastro de profissional.
           </p>
         </Card>
       </>
     )
   }
-
-  const { data: proprioId, error } = await db.rpc('my_professional_id', { t: ctx.tenantId })
-  if (error) throw new AppError('INTERNAL', { cause: error })
-
   if (!proprioId) {
     return (
       <>

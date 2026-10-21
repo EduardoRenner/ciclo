@@ -19,7 +19,7 @@ import { linkComOrigem } from '@/core/aquisicao/origem'
  */
 
 /** Campo "Nome" do perfil no Instagram (limite de 30 caracteres): é o que a busca indexa. */
-export const NOME_DO_PERFIL = 'CICLO | Retenção de clientes'
+export const NOME_DO_PERFIL = 'CICLO | Agenda de beleza'
 
 /**
  * O único link da bio. Absoluto porque o Instagram só aceita link absoluto, e com `?origem=instagram`
@@ -35,9 +35,9 @@ export function linkDaBio(appUrl: string): string {
  * terminam apontando para o link, porque a bio existe para levar até ele.
  */
 export const BIOS_DO_INSTAGRAM = [
-  'Seu sistema de retenção de clientes. Mostra quem sumiu, pelo nome, e o texto pronto pra chamar de volta. Veja quanto você perde 👇',
-  'Sistema de retenção de clientes pra quem vive de cliente que volta. Descubra quanto seu negócio deixou de faturar com quem sumiu 👇',
-  'Retenção de clientes pra quem tem agenda. Faça a conta do que você deixou de faturar com quem parou de voltar 👇',
+  'Agenda pra quem faz unha, cílios, sobrancelha e cabelo. Mostra, pelo nome, quem passou da hora de voltar, com a mensagem pronta 👇',
+  'Quem sumiu da manutenção, pelo nome, e o texto pronto pra chamar de volta pelo seu WhatsApp. Faça a conta do que deixou de entrar 👇',
+  'Agenda e retorno de clientes pra salão e beleza. Veja quanto deixou de entrar com quem parou de voltar 👇',
 ] as const
 
 export type LinkDaBio = {
@@ -87,7 +87,7 @@ export function linksDaBio({ slugDeDemonstracao }: { slugDeDemonstracao: string 
     links.push({
       chave: 'exemplo',
       titulo: 'Ver funcionando, sem cadastro',
-      descricao: 'Abre um negócio de exemplo, do lado de quem atende.',
+      descricao: 'Abre um salão de exemplo, com a agenda cheia, do lado de quem atende.',
       href: linkComOrigem(`/${slugDeDemonstracao}/agendar?ver=dono`, 'instagram'),
     })
   }

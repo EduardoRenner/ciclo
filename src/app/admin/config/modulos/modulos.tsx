@@ -10,6 +10,7 @@ import { NOME_DO_PLANO } from '@/core/billing/planos'
 import { APP_HOST } from '@/lib/app-url'
 
 import type { ModuloNaTela } from '@/server/services/modulos'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 export default function Modulos({ iniciais, nativo }: { iniciais: ModuloNaTela[]; nativo: boolean }) {
   const [modulos, setModulos] = useState(iniciais)
@@ -26,9 +27,9 @@ export default function Modulos({ iniciais, nativo }: { iniciais: ModuloNaTela[]
     setModulos((atual) => atual.map((x) => (x.key === m.key ? { ...x, ligado } : x)))
 
     try {
-      const r = await fetch('/api/v1/tenant/modules', {
+      const r = await fetchComTentativa('/api/v1/tenant/modules', {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ modulo: m.key, ligado }),
       })
       const json = (await r.json()) as { data?: { modules: ModuloNaTela[] }; error?: { message?: string } }

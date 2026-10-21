@@ -87,6 +87,42 @@ export class WhatsAppCloudProvider implements MessagingProvider {
     return { providerId: json.messages[0].id }
   }
 
+  /**
+   * Código do login por número (docs/110 L1). Modelo da categoria AUTENTICAÇÃO, que a Meta exige
+   * para código de acesso e cobra mais barato que marketing: o corpo leva só o código e o botão
+   * "copiar código" leva o mesmo valor (é a forma de envio que a Meta define para esse botão,
+   * `sub_type: url` no índice 0). O nome do modelo aprovado vem de `WHATSAPP_TEMPLATE_CODIGO`.
+   */
+  async enviarCodigoDeAcesso({ to, codigo }: { to: string; codigo: string }): Promise<{ providerId: string }> {
+    const { phoneNumberId, accessToken } = config()
+    const template = process.env.WHATSAPP_TEMPLATE_CODIGO || 'codigo_de_acesso'
+
+    const r = await fetch(`https://graph.facebook.com/${VERSAO_GRAPH}/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: to.replace(/^\+/, ''),
+        type: 'template',
+        template: {
+          name: template,
+          language: { code: 'pt_BR' },
+          components: [
+            { type: 'body', parameters: [{ type: 'text', text: codigo }] },
+            { type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: codigo }] },
+          ],
+        },
+      }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    })
+
+    const json = (await r.json()) as { messages?: { id: string }[]; error?: { message: string } }
+    if (!r.ok || !json.messages?.[0]) {
+      throw new ErroDeEnvio(json.error?.message ?? 'Falha ao enviar o código.', 'falha_transitoria')
+    }
+    return { providerId: json.messages[0].id }
+  }
+
   parseWebhook(raw: string, signature: string): EventoWebhook {
     const { appSecret } = config()
 

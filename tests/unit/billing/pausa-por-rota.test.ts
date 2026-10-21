@@ -65,8 +65,13 @@ describe('toda rota de escrita está classificada para a pausa', () => {
     const regras = new Set(ROTAS.map((r) => ROTAS_DE_ESCRITA[r.chave]))
     expect(regras.has('bloqueia') && regras.has('permite') && regras.has('fora')).toBe(true)
     const tenant = semComentarios(readFileSync('src/server/auth/tenant.ts', 'utf8').replace(/\r\n/g, '\n'))
-    // As DUAS saídas de contextoAtual passam pela trava: a que usa o cookie/header e a do vínculo único.
-    expect([...tenant.matchAll(/return travaDaPausa\(req, /g)]).toHaveLength(2)
+    // TODA saída de contextoAtual passa pela trava: o header, o cookie lembrado no aparelho (docs/112,
+    // 21/10) e o vínculo único. Contagem fixa reprovava a saída nova sem dizer se ela estava sem trava;
+    // a régua é "todo contexto montado sai por travaDaPausa".
+    const contextos = [...tenant.matchAll(/\{ sessao, tenantId: /g)].length
+    const comTrava = [...tenant.matchAll(/return travaDaPausa\(req, \{ sessao, tenantId: /g)].length
+    expect(contextos, 'não achei nenhum contexto montado: a guarda ficou cega').toBeGreaterThanOrEqual(3)
+    expect(comTrava).toBe(contextos)
     expect(tenant).toMatch(/exigirContaQueEscreve\(req\.method, new URL\(req\.url\)\.pathname, ctx\.tenant\.plan, ctx\.tenant\.cortesia\)/)
   })
 })
@@ -83,7 +88,9 @@ describe('toda entrada pública por slug confere a pausa (C8)', () => {
   const LEEM_POR_SLUG = fontes('src')
     .filter((a) => !a.startsWith(join('src', 'app', 'admin')))
     .map((arquivo) => ({ arquivo, fonte: semComentarios(readFileSync(arquivo, 'utf8').replace(/\r\n/g, '\n')) }))
-    .filter((f) => /\.eq\('slug', /.test(f.fonte))
+    // A consulta a `tenants` filtrada pelo slug, não qualquer `.eq('slug', ...)`: `lembrete-da-vespera`
+    // (docs/114 L-07) filtra o MODELO de mensagem por slug ('lembrete') e não resolve negócio nenhum.
+    .filter((f) => /\.from\('tenants'\)[\s\S]{0,400}?\.eq\('slug', /.test(f.fonte))
 
   it('o leitor achou os dois pontos de entrada conhecidos (controle contra varredura vazia)', () => {
     const nomes = LEEM_POR_SLUG.map((f) => f.arquivo.split(sep).join('/'))

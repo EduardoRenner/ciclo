@@ -3,8 +3,8 @@ import Link from 'next/link'
 
 import Calculadora from './calculadora'
 
-import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
-import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-aqua-claro.png'
+import wordmark from '../../../../public/marca/ciclo-logo-escrita-branca.svg'
+import wordmarkClaro from '../../../../public/marca/ciclo-logo-escrita-preta.svg'
 
 import type { Metadata } from 'next'
 
@@ -23,13 +23,16 @@ export const revalidate = 3600
 export const metadata = {
   title: 'Quanto você perde com cliente que parou de voltar',
   description:
-    'Calculadora grátis para salão e barbearia: quanto deixou de entrar com os clientes que pararam de vir, pelo ritmo de retorno do seu negócio. Sem cadastro.',
+    'Calculadora grátis para quem faz unha, cílios, sobrancelha e cabelo: quanto deixou de entrar com quem parou de vir, pelo ritmo de retorno do seu negócio. Sem cadastro.',
   alternates: { canonical: '/calculadora' },
   openGraph: {
     title: 'Quanto você perde com cliente que parou de voltar · CICLO',
     description: 'Três números que você sabe de cabeça e a conta aparece. Grátis, sem cadastro.',
     type: 'website',
     locale: 'pt_BR',
+    // docs/114 F3: o `openGraph` desta página substitui o da raiz e levava junto a imagem; sem
+    // ela, o link colado no Instagram ou no WhatsApp saía sem prévia.
+    images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'CICLO' }],
   },
 } satisfies Metadata
 
@@ -53,7 +56,7 @@ export default function PaginaCalculadora() {
         </header>
 
         <section className="py-8 sm:py-10">
-          <h1 className="text-numero font-bold sm:text-[2.25rem] sm:leading-[1.1]">
+          <h1 className="font-display text-numero font-semibold sm:text-[2.25rem] sm:leading-[1.1]">
             Quanto deixou de entrar com quem parou de voltar?
           </h1>
           <p className="mt-4 max-w-[52ch] text-corpo text-txt-2">

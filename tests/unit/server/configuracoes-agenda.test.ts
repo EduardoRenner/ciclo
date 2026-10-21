@@ -15,14 +15,14 @@ import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
  */
 describe('só número de verdade vira configuração', () => {
   it('ausente cai no padrão', () => {
-    expect(lerConfiguracoesAgenda({})).toEqual({ minLeadTimeMinutes: 120, maxAdvanceDays: 60, slotGranularityMin: 15 })
-    expect(lerConfiguracoesAgenda(null)).toEqual({ minLeadTimeMinutes: 120, maxAdvanceDays: 60, slotGranularityMin: 15 })
+    expect(lerConfiguracoesAgenda({})).toEqual({ minLeadTimeMinutes: 120, maxAdvanceDays: 60, slotGranularityMin: 15, minAdvanceDays: 1 })
+    expect(lerConfiguracoesAgenda(null)).toEqual({ minLeadTimeMinutes: 120, maxAdvanceDays: 60, slotGranularityMin: 15, minAdvanceDays: 1 })
   })
 
   it('número de verdade é respeitado', () => {
     expect(
-      lerConfiguracoesAgenda({ min_lead_time_minutes: 30, max_advance_days: 90, slot_granularity_minutes: 20 }),
-    ).toEqual({ minLeadTimeMinutes: 30, maxAdvanceDays: 90, slotGranularityMin: 20 })
+      lerConfiguracoesAgenda({ min_lead_time_minutes: 30, max_advance_days: 90, slot_granularity_minutes: 20, min_advance_days: 2 }),
+    ).toEqual({ minLeadTimeMinutes: 30, maxAdvanceDays: 90, slotGranularityMin: 20, minAdvanceDays: 2 })
   })
 
   it('`null` e string vazia caem no padrão — não viram zero', () => {
@@ -33,7 +33,7 @@ describe('só número de verdade vira configuração', () => {
     const nulos = { min_lead_time_minutes: null, max_advance_days: null, slot_granularity_minutes: null }
     const vazios = { min_lead_time_minutes: '', max_advance_days: '', slot_granularity_minutes: '' }
     for (const entrada of [nulos, vazios]) {
-      expect(lerConfiguracoesAgenda(entrada)).toEqual({ minLeadTimeMinutes: 120, maxAdvanceDays: 60, slotGranularityMin: 15 })
+      expect(lerConfiguracoesAgenda(entrada)).toEqual({ minLeadTimeMinutes: 120, maxAdvanceDays: 60, slotGranularityMin: 15, minAdvanceDays: 1 })
     }
   })
 
@@ -56,13 +56,15 @@ describe('só número de verdade vira configuração', () => {
      */
     expect(lerConfiguracoesAgenda({ min_lead_time_minutes: 0 }).minLeadTimeMinutes).toBe(0)
     expect(lerConfiguracoesAgenda({ max_advance_days: 0 }).maxAdvanceDays).toBe(0)
+    // docs/114 L-04: 0 dia de antecedência é a profissional aceitando horário para hoje pelo link.
+    expect(lerConfiguracoesAgenda({ min_advance_days: 0 }).minAdvanceDays).toBe(0)
     expect(lerConfiguracoesAgenda({ slot_granularity_minutes: 0 }).slotGranularityMin).toBe(15)
   })
 
   it('negativo cai no padrão nos três', () => {
     expect(
       lerConfiguracoesAgenda({ min_lead_time_minutes: -1, max_advance_days: -5, slot_granularity_minutes: -15 }),
-    ).toEqual({ minLeadTimeMinutes: 120, maxAdvanceDays: 60, slotGranularityMin: 15 })
+    ).toEqual({ minLeadTimeMinutes: 120, maxAdvanceDays: 60, slotGranularityMin: 15, minAdvanceDays: 1 })
   })
 
   it('NaN e Infinity são `number` e mesmo assim não passam', () => {

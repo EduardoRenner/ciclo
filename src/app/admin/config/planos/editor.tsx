@@ -12,6 +12,7 @@ import Sheet from '@/components/ui/sheet'
 import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
 import { dinheiro } from '@/lib/formato'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Plano = { id: string; name: string; price_cents: number; sessions_per_month: number | null; benefits: string | null; active: boolean }
 
@@ -39,9 +40,9 @@ export default function EditorPlanos({
     setErro(null)
     iniciarTransicao(async () => {
       try {
-        const r = await fetch('/api/v1/subscription-plans', {
+        const r = await fetchComTentativa('/api/v1/subscription-plans', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             name: nome,
             priceCents: precoCentavos,
@@ -108,7 +109,7 @@ export default function EditorPlanos({
             rotulo="Nome do plano"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            placeholder="Corte ilimitado"
+            placeholder="2 manutenções por mês"
           />
           <MoneyInput rotulo="Preço mensal" centavos={precoCentavos} aoMudar={setPrecoCentavos} />
 

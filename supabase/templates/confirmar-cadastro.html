@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="pt-BR">
+  <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color: #1c1917; line-height: 1.5">
+    <p>Oi!</p>
+    <p>Falta um passo para começar no CICLO: confirmar que este e-mail é seu.</p>
+    <p>
+      <a
+        href="{{ .SiteURL }}/auth/confirmar?token_hash={{ .TokenHash }}&type=signup&next=/onboarding"
+        style="display: inline-block; padding: 12px 20px; border-radius: 10px; background: #0d0c0c; color: #ffffff; text-decoration: none; font-weight: 600"
+        >Confirmar e-mail</a
+      >
+    </p>
+    <p>Pode abrir no celular ou no computador, não precisa ser no mesmo aparelho do cadastro.</p>
+    <p>Não fez cadastro? É só ignorar este e-mail.</p>
+  </body>
+</html>

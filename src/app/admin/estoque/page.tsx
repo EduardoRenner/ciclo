@@ -55,7 +55,7 @@ export default async function PaginaEstoque() {
   // conhecido) — antes rodava DEPOIS deste `Promise.all`, sozinho, inline no JSX. Achado do
   // loop de performance: entrar aqui não muda o que `podeLancar` calcula, só quando a consulta
   // parte — as três agora começam juntas.
-  const [{ data: produtos }, alertas, plano] = await Promise.all([
+  const [{ data: produtos }, alertas, plano, { data: equipe }] = await Promise.all([
     db
       .from('products')
       // docs/62 Fase 1: `price_cents`/`is_retail` nunca eram buscados aqui, mesmo existindo desde
@@ -67,6 +67,8 @@ export default async function PaginaEstoque() {
       .order('name'),
     listarAlertasDeEstoque(db, ctx.tenantId, hoje),
     contextoDePlano(db, ctx.tenantId),
+    // Quem pode ser dono de uma venda de balcão: a comissão do item é de quem vendeu.
+    db.from('professionals').select('id, display_name').eq('tenant_id', ctx.tenantId).eq('active', true).is('deleted_at', null).order('display_name'),
   ])
 
   const emAlerta = new Set(alertas.map((a) => a.productId))
@@ -84,6 +86,8 @@ export default async function PaginaEstoque() {
       <ListaEstoque
         nativo={nativo}
         podeLancar={podeUsarModulo(plano, 'stock').estado === 'liberado'}
+        podeVender={podeUsarModulo(plano, 'register').estado === 'liberado'}
+        equipe={(equipe ?? []).map((e) => ({ id: e.id, nome: e.display_name }))}
         produtos={(produtos ?? []).map((p) => ({
           id: p.id,
           nome: p.name,

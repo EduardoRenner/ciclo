@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+
 import { describe, expect, it } from 'vitest'
 
 import { origemDaUrl } from '@/core/aquisicao/origem'
@@ -138,5 +140,27 @@ describe('bio do Instagram', () => {
     expect(url.origin).toBe(new URL(APP_URL).origin)
     expect(url.pathname).toBe('/links')
     expect(origemDaUrl(url.searchParams, '2026-09-25')?.canal).toBe('instagram')
+  })
+})
+
+describe('links da bio falam de salão (docs/112 EXP-S16)', () => {
+  it('as bios cabem no Instagram, sem o jargão "retenção", e falam de manutenção ou salão', () => {
+    for (const bio of BIOS_DO_INSTAGRAM) {
+      expect([...bio].length, bio).toBeLessThanOrEqual(150)
+      expect(bio, bio).not.toMatch(/reten[cç][aã]o/i)
+      expect(bio, bio).toMatch(/manuten[cç][aã]o|sal[aã]o|unha|c[ií]lios/i)
+    }
+  })
+
+  it('a página /links e o llms.txt abrem pela beleza, não por "quem tem agenda"', () => {
+    const pagina = readFileSync('src/app/(public)/links/page.tsx', 'utf8')
+    expect(pagina).not.toMatch(/reten[cç][aã]o/i)
+    expect(pagina).toMatch(/title: 'Agenda para quem faz unha, cílios, sobrancelha e cabelo'/)
+    const llms = readFileSync('src/app/llms.txt/route.ts', 'utf8')
+    expect(llms).toMatch(/^> Agenda e retorno de clientes para salão e beleza/m)
+  })
+
+  it('o exemplo é um salão', () => {
+    expect(linksDaBio({ slugDeDemonstracao: 'demo-carol-cilios' }).find((l) => l.chave === 'exemplo')?.descricao).toMatch(/sal[aã]o/)
   })
 })

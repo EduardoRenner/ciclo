@@ -86,7 +86,7 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
       timezone={ctx.tenant.timezone}
       modelos={modelos.filter((m) => m.active)}
       nomeDoNegocio={negocio.data?.name ?? ''}
-      vertical={negocio.data?.vertical ?? 'barber'}
+      vertical={negocio.data?.vertical ?? ''}
       planos={planos.filter((p) => p.active)}
       profissionais={profissionais.map((p) => ({ id: p.id, name: p.display_name }))}
       configFidelidade={lerConfigFidelidade(negocio.data?.settings)}

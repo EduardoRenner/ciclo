@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { headers } from 'next/headers'
 
 import { linkComOrigem } from '@/core/aquisicao/origem'
+import { CICLO_COBRANCA } from '@/core/billing/cobranca'
 import { textoDeParaQueIndicar, textoDoConviteDoCiclo } from '@/core/billing/convite-do-ciclo'
 import { acessoPagoVigente, lerAssinatura } from '@/core/billing/mercado-pago'
 import { visaoDoMeuPlano } from '@/core/billing/meu-plano'
@@ -61,6 +62,20 @@ function textoDeTeto(limite: number | null, usado: number): string {
 }
 
 export default async function PaginaMeuPlano() {
+  // docs/114 L-01: grátis no lançamento. Sem plano, preço, assinatura nem convite que vale mês grátis.
+  if (!CICLO_COBRANCA) {
+    return (
+      <>
+        <PageHeader titulo="Meu plano" />
+        <Card>
+          <p className="text-corpo font-semibold text-txt">Grátis no lançamento</p>
+          <p className="mt-1 text-secundario text-txt-2">
+            Tudo liberado, sem cartão e sem prazo por enquanto. Se um dia houver cobrança, você fica sabendo aqui, com antecedência.
+          </p>
+        </Card>
+      </>
+    )
+  }
   const cabecalhos = await headers()
   /*
    * T1.5 (docs/64 §0.2/§0.7): nenhuma tela de preço, plano ou "Assinar" pode ser alcançável de
@@ -184,7 +199,7 @@ export default async function PaginaMeuPlano() {
           <p className="text-secundario text-txt-2">
             <span className="font-semibold text-txt">Seu pagamento não passou.</span>{' '}
             {assinatura.graca_ate
-              ? `Você continua no ${NOME_DO_PLANO[pago]} até ${new Date(assinatura.graca_ate).toLocaleDateString('pt-BR')}. Depois disso, cai para o Grátis, sem perder nada: só limita o que dá para criar.`
+              ? `Você continua no ${NOME_DO_PLANO[pago]} até ${descreverDia(diaDeBrasilia(new Date(assinatura.graca_ate)))}. Depois disso, cai para o Grátis, sem perder nada: só limita o que dá para criar.`
               : 'O Mercado Pago está tentando de novo. Se não resolver, o plano cai para o Grátis.'}
           </p>
         </Card>

@@ -36,6 +36,9 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'POST v1/appointments/series': 'bloqueia',
   'POST v1/assistant/rapido': 'permite',
   'POST v1/assistant': 'permite',
+  'POST v1/auth/codigo/entrar': 'fora',
+  'POST v1/auth/codigo/hook': 'fora',
+  'POST v1/auth/codigo': 'fora',
   'POST v1/auth/login': 'fora',
   'POST v1/auth/logout': 'fora',
   'POST v1/auth/mfa/enroll': 'fora',
@@ -43,7 +46,6 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'POST v1/auth/mfa/verify': 'fora',
   'POST v1/auth/password/forgot': 'fora',
   'POST v1/auth/password/reset': 'fora',
-  'POST v1/auth/signup/resend': 'fora',
   'POST v1/auth/signup': 'fora',
   'POST v1/billing/assinar': 'permite',
   'POST v1/billing/cancelar': 'permite',
@@ -59,8 +61,10 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'POST v1/clients/[id]/subscription': 'bloqueia',
   'DELETE v1/clients/[id]/subscription': 'permite',
   'PUT v1/clients/[id]/vault': 'bloqueia',
-  'POST v1/clients/import/preview': 'bloqueia',
-  'POST v1/clients/import': 'bloqueia',
+  'POST v1/imports': 'bloqueia',
+  'POST v1/imports/[id]/rows': 'bloqueia',
+  // Desfazer só tira o que entrou: como excluir ficha, segue liberado na pausa.
+  'POST v1/imports/[id]/undo': 'permite',
   'POST v1/clients/ja-atendo': 'bloqueia',
   'POST v1/clients': 'bloqueia',
   'POST v1/cycle/recover/manual': 'bloqueia',
@@ -103,6 +107,8 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'POST v1/packages': 'bloqueia',
   'PATCH v1/products/[id]': 'permite',
   'POST v1/products': 'bloqueia',
+  // Venda de balcão é uma venda nova (abre e fecha uma comanda), a mesma natureza de lançar item.
+  'POST v1/products/[id]/sale': 'bloqueia',
   'PUT v1/professionals/[id]/business-hours': 'permite',
   'PATCH v1/professionals/[id]': 'permite',
   'DELETE v1/professionals/[id]': 'permite',
@@ -124,6 +130,7 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'DELETE v1/services/[id]': 'permite',
   'POST v1/services/reorder': 'permite',
   'POST v1/services': 'bloqueia',
+  'POST v1/subjects/[id]/odometer-readings': 'bloqueia', // leitura de km: linha nova no histórico do carro
   'POST v1/subscription-plans': 'bloqueia',
   // docs/101 T4.6: regras de contagem e OAB da equipe são configuração do próprio escritório
   'PATCH v1/tenant/advocacia': 'permite',
@@ -164,7 +171,7 @@ const PADROES: readonly Padrao[] = Object.entries(ROTAS_DE_ESCRITA)
     const re = new RegExp('^' + segmentos.map((s) => (s.startsWith('[') ? '[^/]+' : s)).join('/') + '$')
     return { chave, regra, metodo, re, dinamicos: segmentos.filter((s) => s.startsWith('[')).length }
   })
-  // Segmento fixo antes do dinâmico: `clients/import` ganha de `clients/[id]`.
+  // Segmento fixo antes do dinâmico: `clients/ja-atendo` ganha de `clients/[id]`.
   .sort((a, b) => a.dinamicos - b.dinamicos)
 
 /**

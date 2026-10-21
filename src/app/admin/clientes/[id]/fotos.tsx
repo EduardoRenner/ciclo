@@ -9,6 +9,7 @@ import Chip from '@/components/ui/chip'
 import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Foto = { id: string; phase: string | null; createdAt: string; publicada: boolean }
 type Fase = 'before' | 'after' | 'reference'
@@ -63,9 +64,8 @@ export default function Fotos({ clientId, fotos: fotosIniciais, consentimentoIma
 
       // Sem `content-type` manual: `fetch` com `FormData` como corpo define o boundary sozinho, e
       // sobrescrever isso quebra o multipart. `idempotency-key` é o header extra, não json.
-      const r = await fetch(`/api/v1/clients/${clientId}/media`, {
+      const r = await fetchComTentativa(`/api/v1/clients/${clientId}/media`, {
         method: 'POST',
-        headers: { 'idempotency-key': crypto.randomUUID() },
         body: form,
       })
       // A rota devolve a linha CRUA de `media` (snake_case, sem `publicada` — esse campo só existe
@@ -89,9 +89,9 @@ export default function Fotos({ clientId, fotos: fotosIniciais, consentimentoIma
     if (!arquivoPendente) return
     setCarregando(true)
     try {
-      const r = await fetch(`/api/v1/clients/${clientId}/consents`, {
+      const r = await fetchComTentativa(`/api/v1/clients/${clientId}/consents`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ kind: 'image_use', version: VERSAO_CONSENTIMENTO_IMAGEM, text: TEXTO_CONSENTIMENTO_IMAGEM, granted: true }),
       })
       const json = (await r.json()) as { data?: { id: string }; error?: { message: string } }
@@ -114,10 +114,9 @@ export default function Fotos({ clientId, fotos: fotosIniciais, consentimentoIma
   async function revogar() {
     setCarregando(true)
     try {
-      const r = await fetch(`/api/v1/clients/${clientId}/consents/image_use`, {
+      const r = await fetchComTentativa(`/api/v1/clients/${clientId}/consents/image_use`, {
         method: 'DELETE',
-        headers: { 'idempotency-key': crypto.randomUUID() },
-      })
+        })
       if (!r.ok) {
         mostrarToast({ tom: 'erro', titulo: 'Não consegui revogar', descricao: 'Tente de novo.' })
         return
@@ -152,7 +151,7 @@ export default function Fotos({ clientId, fotos: fotosIniciais, consentimentoIma
   async function publicar(id: string) {
     setCarregando(true)
     try {
-      const r = await fetch(`/api/v1/media/${id}/publish`, { method: 'POST', headers: { 'idempotency-key': crypto.randomUUID() } })
+      const r = await fetchComTentativa(`/api/v1/media/${id}/publish`, { method: 'POST' })
       const json = (await r.json()) as { error?: { message: string } }
       if (!r.ok) {
         mostrarToast({ tom: 'erro', titulo: 'Não consegui publicar', descricao: json.error?.message ?? 'Tente de novo.' })
@@ -170,7 +169,7 @@ export default function Fotos({ clientId, fotos: fotosIniciais, consentimentoIma
   async function despublicar(id: string) {
     setCarregando(true)
     try {
-      const r = await fetch(`/api/v1/media/${id}/publish`, { method: 'DELETE', headers: { 'idempotency-key': crypto.randomUUID() } })
+      const r = await fetchComTentativa(`/api/v1/media/${id}/publish`, { method: 'DELETE' })
       if (!r.ok) {
         mostrarToast({ tom: 'erro', titulo: 'Não consegui tirar do site', descricao: 'Tente de novo.' })
         return
@@ -187,7 +186,7 @@ export default function Fotos({ clientId, fotos: fotosIniciais, consentimentoIma
   async function excluir(id: string) {
     setCarregando(true)
     try {
-      const r = await fetch(`/api/v1/media/${id}`, { method: 'DELETE', headers: { 'idempotency-key': crypto.randomUUID() } })
+      const r = await fetchComTentativa(`/api/v1/media/${id}`, { method: 'DELETE' })
       if (!r.ok) {
         mostrarToast({ tom: 'erro', titulo: 'Não consegui excluir', descricao: 'Tente de novo.' })
         return

@@ -4,7 +4,7 @@ import { ErroDeEnvio, type MessagingProvider } from '@/server/providers/messagin
 import { WhatsAppCloudProvider } from '@/server/providers/messaging/whatsapp'
 import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import { AppError } from '@/server/http/errors'
-import { inscricoesPushDoCliente, inscricoesPushDoTenant, removerInscricaoPorEndpoint } from '@/server/services/push'
+import { inscricoesPushDaEquipe, inscricoesPushDoCliente, removerInscricaoPorEndpoint } from '@/server/services/push'
 import { limitador } from '@/server/services/rate-limit'
 
 import type { Database } from '@/server/db/types.gen'
@@ -203,9 +203,12 @@ export async function notificarEquipe(
   db: Cliente,
   tenantId: string,
   payload: PayloadPush,
+  // Obrigatório de propósito (docs/112 EXP-A06): quem chama decide se o aviso é de uma profissional
+  // (vai para ela e para quem administra) ou do negócio (só quem administra). `null` = do negócio.
+  destino: { professionalId: string | null },
   enviarPushFn: (i: Parameters<typeof enviarPush>[0], p: PayloadPush) => ReturnType<typeof enviarPush> = enviarPush,
 ): Promise<{ enviados: number }> {
-  const inscricoes = await inscricoesPushDoTenant(db, tenantId)
+  const inscricoes = await inscricoesPushDaEquipe(db, tenantId, destino.professionalId)
   let enviados = 0
 
   for (const inscricao of inscricoes) {

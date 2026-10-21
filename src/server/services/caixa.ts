@@ -5,6 +5,7 @@ import { margemPorServico, type ItemFechado, type MargemDoServico } from '@/core
 import { mesesJaEncerrados, serieMensal, type SerieMensal } from '@/core/caixa/serie-mensal'
 import { calcularTaxaDoMes, type TaxaDoMes } from '@/core/caixa/taxa-por-forma'
 import { lerTaxasDePagamento, taxaEstaConfigurada } from '@/core/comanda/taxa-de-pagamento'
+import { entrouCents, type VendaParaEntrou } from '@/core/caixa/entrou'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -12,6 +13,39 @@ import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 type Cliente = SupabaseClient<Database>
+
+/**
+ * APR-016b: as vendas de pacote (`payments`, `kind = 'package'`) com `paid_at` em `[inicio, fim)` —
+ * a outra metade do "Entrou" (`docs/DECISOES.md`, 2026-10-13 · APR-016). Paginado pelo mesmo motivo
+ * das comandas: o corte de mil linhas não avisa.
+ */
+export async function vendasDePacote(db: Cliente, tenantId: string, inicio: string, fim: string): Promise<VendaParaEntrou[]> {
+  const linhas = await buscarTudoPaginado(() =>
+    db
+      .from('payments')
+      .select('status, amount_cents, paid_at')
+      .eq('tenant_id', tenantId)
+      .eq('kind', 'package')
+      .gte('paid_at', inicio)
+      .lt('paid_at', fim)
+      .order('id'),
+  )
+  return linhas.map((l) => ({ status: l.status, amountCents: l.amount_cents, paidAt: l.paid_at }))
+}
+
+/** As vendas de pacote de uma pessoa, de sempre — o "Entrou" da Ficha. */
+export async function vendasDePacoteDoCliente(db: Cliente, tenantId: string, clientId: string): Promise<VendaParaEntrou[]> {
+  const linhas = await buscarTudoPaginado(() =>
+    db
+      .from('payments')
+      .select('status, amount_cents, paid_at')
+      .eq('tenant_id', tenantId)
+      .eq('kind', 'package')
+      .eq('client_id', clientId)
+      .order('id'),
+  )
+  return linhas.map((l) => ({ status: l.status, amountCents: l.amount_cents, paidAt: l.paid_at }))
+}
 
 /** `month` no formato `YYYY-MM` → janela `[inicio, fim)` em instante UTC, no fuso do tenant. */
 function janelaDoMes(timezone: string, month: string): { inicio: string; fim: string } {
@@ -32,6 +66,8 @@ function janelaDoMes(timezone: string, month: string): { inicio: string; fim: st
 
 export type ResumoCaixa = {
   ticketsCount: number
+  /** APR-211: gorjetas do mês. Entram no Entrou e não são receita de serviço. */
+  tipCents: number
   revenueCents: number
   materialCents: number
   feeCents: number
@@ -58,7 +94,7 @@ export type ResumoCaixa = {
  * bug em vez de herdá-lo. Registrado em `docs/DECISOES.md`.
  */
 async function somarTickets(db: Cliente, tenantId: string, inicio: string, fim: string): Promise<ResumoCaixa> {
-  const resumo: ResumoCaixa = { ticketsCount: 0, revenueCents: 0, materialCents: 0, feeCents: 0, commissionCents: 0, fixedCostCents: 0, profitCents: 0 }
+  const resumo: ResumoCaixa = { ticketsCount: 0, revenueCents: 0, materialCents: 0, feeCents: 0, commissionCents: 0, fixedCostCents: 0, tipCents: 0, profitCents: 0 }
 
   /*
     `buscarTudoPaginado` em vez do laço à mão. A paginação estava certa — o que faltava era teto:
@@ -71,27 +107,36 @@ async function somarTickets(db: Cliente, tenantId: string, inicio: string, fim: 
     por ticket, num recorte de um dia de um salão; o teto do helper limita o pior caso, e ele só é
     alcançado num cenário que hoje travaria.
   */
-  const tickets = await buscarTudoPaginado(() =>
-    db
-      .from('tickets')
-      .select('total_cents, material_cost_cents, fee_cents, commission_cents, fixed_cost_cents, profit_cents')
-      .eq('tenant_id', tenantId)
-      .in('status', ['closed', 'paid'])
-      .gte('closed_at', inicio)
-      .lt('closed_at', fim)
-      .order('id'),
-  )
+  const [tickets, vendas] = await Promise.all([
+    buscarTudoPaginado(() =>
+      db
+        .from('tickets')
+        .select('status, total_cents, payment_method, material_cost_cents, fee_cents, commission_cents, fixed_cost_cents, tip_cents, profit_cents')
+        .eq('tenant_id', tenantId)
+        .in('status', ['closed', 'paid'])
+        .gte('closed_at', inicio)
+        .lt('closed_at', fim)
+        .order('id'),
+    ),
+    vendasDePacote(db, tenantId, inicio, fim),
+  ])
 
   for (const t of tickets) {
     resumo.ticketsCount++
-    resumo.revenueCents += t.total_cents
     resumo.materialCents += t.material_cost_cents
     resumo.feeCents += t.fee_cents
     resumo.commissionCents += t.commission_cents
     resumo.fixedCostCents += t.fixed_cost_cents
+    resumo.tipCents += t.tip_cents
     resumo.profitCents += t.profit_cents
   }
 
+  // APR-036a: "Entrou" sai da função única do core — a mesma da Hoje. APR-016b: com as vendas de
+  // pacote do período, e sem as comandas pagas com o pacote (o dinheiro delas entrou na venda).
+  resumo.revenueCents = entrouCents(
+    tickets.map((t) => ({ status: t.status, totalCents: t.total_cents, paymentMethod: t.payment_method })),
+    vendas,
+  )
   return resumo
 }
 
@@ -116,6 +161,30 @@ export async function fechamentoDiario(db: Cliente, tenantId: string, timezone: 
 }
 
 /** `GET /cash/summary?month=` — `month` no formato `YYYY-MM`. */
+/**
+ * APR-123 (docs/98 I-20): o que foi ATENDIDO no dia e ainda não passou por comanda fechada — é o
+ * aviso do caixa vazio ("Você atendeu R$ X hoje e ainda não fechou as comandas"). Soma o preço de
+ * tabela dos atendimentos concluídos cujo ticket não está fechado (sem ticket, ou ticket aberto);
+ * atendimento com comanda fechada já está no "Entrou" e não entra aqui.
+ */
+export async function atendidoSemComandaDoDia(db: Cliente, tenantId: string, timezone: string, date: string): Promise<{ cents: number; atendimentos: number }> {
+  const dia = Temporal.PlainDate.from(date)
+  const inicio = dia.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
+  const fim = dia.add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
+  const { data, error } = await db
+    .from('appointments')
+    .select('price_cents, tickets ( status )')
+    .eq('tenant_id', tenantId)
+    .eq('status', 'done')
+    .gte('starts_at', inicio)
+    .lt('starts_at', fim)
+    // Teto (guarda consulta-sem-teto): um dia de UM negócio não chega perto disto; passar seria dado errado, não escala.
+    .limit(500)
+  if (error) throw new AppError('INTERNAL', { cause: error })
+  const semComanda = (data ?? []).filter((a) => !(a.tickets as { status: string }[] | null)?.some((t) => t.status === 'closed'))
+  return { cents: semComanda.reduce((soma, a) => soma + a.price_cents, 0), atendimentos: semComanda.length }
+}
+
 export async function resumoMensal(db: Cliente, tenantId: string, timezone: string, month: string): Promise<ResumoCaixa & { month: string }> {
   const { inicio, fim } = janelaDoMes(timezone, month)
   const resumo = await somarTickets(db, tenantId, inicio, fim)
@@ -250,8 +319,9 @@ export async function concentracaoDoMes(db: Cliente, tenantId: string, timezone:
  * daquele atendimento, não os de hoje.
  */
 export async function margemDosServicos(db: Cliente, tenantId: string, timezone: string, ate: string): Promise<MargemDoServico[]> {
-  const fim = Temporal.PlainDate.from(ate).add({ days: 1 })
-  const inicio = fim.subtract({ days: 90 })
+  const fimDia = Temporal.PlainDate.from(ate).add({ days: 1 })
+  const inicio = fimDia.subtract({ days: 90 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
+  const fim = fimDia.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
 
   const tickets = await buscarTudoPaginado(() =>
     db
@@ -259,21 +329,25 @@ export async function margemDosServicos(db: Cliente, tenantId: string, timezone:
       .select('id, discount_cents, fee_cents')
       .eq('tenant_id', tenantId)
       .in('status', ['closed', 'paid'])
-      .gte('closed_at', inicio.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString())
-      .lt('closed_at', fim.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString())
+      .gte('closed_at', inicio)
+      .lt('closed_at', fim)
       .order('id'),
   )
   if (tickets.length === 0) return []
 
+  /*
+    APR-010: join com o MESMO recorte, como em `concentracaoDoMes`, e não `.in('ticket_id', ids)`.
+    Medido: com ~220 comandas em 90 dias a URL passava do limite do gateway (414) e o Mês e os
+    Serviços abriam em "Não consegui carregar esta tela" — só no salão movimentado.
+  */
   const itens = await buscarTudoPaginado(() =>
     db
       .from('ticket_items')
-      .select('ticket_id, service_id, total_cents, cost_cents, commission_cents')
+      .select('ticket_id, service_id, total_cents, cost_cents, commission_cents, tickets!inner(status, closed_at)')
       .eq('tenant_id', tenantId)
-      .in(
-        'ticket_id',
-        tickets.map((t) => t.id),
-      )
+      .in('tickets.status', ['closed', 'paid'])
+      .gte('tickets.closed_at', inicio)
+      .lt('tickets.closed_at', fim)
       .order('id'),
   )
 
@@ -350,6 +424,9 @@ export async function congelarMesesFechados(db: Cliente, tenantId: string, timez
       fee_cents: resumo.feeCents,
       commission_cents: resumo.commissionCents,
       profit_cents: resumo.profitCents,
+      // APR-211 (E-14): o mês congelado guarda o aluguel rateado e a gorjeta — sem eles a conta da tabela não fechava.
+      fixed_cost_cents: resumo.fixedCostCents,
+      tip_cents: resumo.tipCents,
       tickets_count: resumo.ticketsCount,
     })
 

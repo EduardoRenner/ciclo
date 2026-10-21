@@ -17,6 +17,8 @@ import { caminhoInternoSeguro } from '@/server/auth/destino'
  */
 const MENSAGEM_DE_ERRO: Record<string, string> = {
   link_invalido: 'Esse link não é mais válido. Peça um novo.',
+  // APR-026: link de confirmação de e-mail já usado — quase sempre já está confirmado.
+  confirmacao_usada: 'Esse link de confirmação já foi usado. Se o seu e-mail já está confirmado, é só entrar com a sua senha.',
   login_cancelado: 'O login foi cancelado. Tente de novo quando quiser.',
 }
 
@@ -36,7 +38,7 @@ export default function FormularioEntrar() {
       const resposta = await fetch('/api/v1/auth/login', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email: formData.get('email'), password: formData.get('password') }),
+        body: JSON.stringify({ identificador: formData.get('identificador'), password: formData.get('password') }),
       })
       const json = (await resposta.json()) as {
         data?: { tenants: unknown[]; mfaRequired?: boolean; factorId?: string }
@@ -67,7 +69,10 @@ export default function FormularioEntrar() {
       }
 
       const semNegocio = (json.data?.tenants.length ?? 0) === 0
-      router.push(semNegocio ? '/onboarding' : proximo)
+      // APR-023: quem vem de um convite de equipe ainda não tem negócio — e não deve criar um. Sem
+      // esta exceção, o login mandava o convidado para o cadastro de negócio e o convite se perdia.
+      const vemDeConvite = proximo.startsWith('/convite/')
+      router.push(semNegocio && !vemDeConvite ? '/onboarding' : proximo)
       router.refresh()
     } catch {
       setErro('Não consegui falar com o servidor. Tente de novo.')
@@ -97,7 +102,12 @@ export default function FormularioEntrar() {
       }}
       className="flex w-full max-w-sm flex-col gap-3"
     >
-      <Input rotulo="E-mail" name="email" type="email" autoComplete="email" required />
+      {/*
+        docs/114 L-03: o WhatsApp é o login. Teclado comum (não `type="tel"`) de propósito: a conta
+        criada antes de 21/10 entra digitando o e-mail neste mesmo campo, e o teclado de número não
+        tem "@". `EsquemaLogin` decide pelo "@".
+      */}
+      <Input rotulo="Seu WhatsApp" name="identificador" autoComplete="username" placeholder="(11) 99999-9999" required />
       <Input rotulo="Senha" name="password" type="password" autoComplete="current-password" required />
       {erro ? (
         <p role="alert" className="text-secundario text-bad">

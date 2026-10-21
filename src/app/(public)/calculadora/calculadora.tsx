@@ -8,7 +8,7 @@ import Chip from '@/components/ui/chip'
 import Input from '@/components/ui/input'
 import MoneyInput from '@/components/ui/money-input'
 import { linkComOrigem } from '@/core/aquisicao/origem'
-import { LIMITES, RITMOS_COMUNS, calcularParado } from '@/core/aquisicao/calculadora'
+import { EXEMPLO, EXEMPLO_DO_RITMO, LIMITES, RITMOS_COMUNS, calcularParado } from '@/core/aquisicao/calculadora'
 
 const reais = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 const decimal = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 })
@@ -19,7 +19,7 @@ function paraInteiro(texto: string): number {
 }
 
 /**
- * `docs/82` §8. Começa com números de exemplo (uma barbearia de cidade pequena) para o resultado
+ * `docs/82` §8. Começa com números de exemplo (uma lash designer com manutenção a cada 21 dias, `EXEMPLO`) para o resultado
  * aparecer antes de a pessoa digitar qualquer coisa — um formulário vazio pede esforço antes de
  * mostrar por que vale a pena. Enquanto a pessoa não mexe em nada, o rótulo do resultado diz que é o
  * exemplo e pede os números dela; depois de qualquer edição, vira "só com essas pessoas". Antes o
@@ -27,9 +27,9 @@ function paraInteiro(texto: string): number {
  * nunca foi dele.
  */
 export default function Calculadora() {
-  const [clientes, setClientes] = useState(8)
-  const [ticketCents, setTicketCents] = useState(3500)
-  const [retorno, setRetorno] = useState(30)
+  const [clientes, setClientes] = useState<number>(EXEMPLO.clientesSumidos)
+  const [ticketCents, setTicketCents] = useState<number>(EXEMPLO.ticketCents)
+  const [retorno, setRetorno] = useState<number>(EXEMPLO.retornoDias)
   const [mexeu, setMexeu] = useState(false)
   const editar =
     <T,>(definir: (valor: T) => void) =>
@@ -44,15 +44,15 @@ export default function Calculadora() {
   // erro faz o resultado sumir com a tela dizendo "preencha os três números" — os três preenchidos.
   const erroClientes =
     clientes < LIMITES.clientesSumidos.min
-      ? 'Pense em pelo menos um cliente que sumiu.'
+      ? 'Pense em pelo menos uma pessoa que sumiu.'
       : clientes > LIMITES.clientesSumidos.max
         ? `Até ${LIMITES.clientesSumidos.max}. Esta conta é de quem você lembra de cabeça.`
         : undefined
   const erroTicket =
     ticketCents < LIMITES.ticketCents.min
-      ? 'Digite quanto um cliente gasta por visita.'
+      ? 'Digite quanto cada pessoa paga, mais ou menos.'
       : ticketCents > LIMITES.ticketCents.max
-        ? `Até ${reais.format(LIMITES.ticketCents.max / 100)} por visita.`
+        ? `Até ${reais.format(LIMITES.ticketCents.max / 100)} por manutenção.`
         : undefined
   const erroRetorno =
     retorno < LIMITES.retornoDias.min || retorno > LIMITES.retornoDias.max
@@ -70,7 +70,7 @@ export default function Calculadora() {
     <div className="flex flex-col gap-6">
       <section className="flex flex-col gap-5 rounded-[var(--radius)] border border-line bg-surface p-5 shadow-elevado">
         <Input
-          rotulo="Quantos clientes que vinham sempre pararam de vir? Conte quem você lembra."
+          rotulo="Quantas pessoas que vinham sempre pararam de vir? Conte quem você lembra."
           ajuda="Pense em nomes, não em porcentagem. Exemplo: 8."
           erro={erroClientes}
           type="text"
@@ -81,8 +81,8 @@ export default function Calculadora() {
         />
 
         <MoneyInput
-          rotulo="Quanto rendia cada visita?"
-          ajuda="O ticket médio. Exemplo: R$ 35,00."
+          rotulo="Quanto rendia cada manutenção?"
+          ajuda="Quanto custa a manutenção ou o serviço de sempre. Exemplo: R$ 120,00."
           erro={erroTicket}
           centavos={ticketCents}
           aoMudar={editar(setTicketCents)}
@@ -95,7 +95,10 @@ export default function Calculadora() {
           <div className="flex flex-wrap gap-2">
             {RITMOS_COMUNS.map((dias) => (
               <Chip key={dias} ligado={retorno === dias} onClick={() => editar(setRetorno)(dias)}>
-                {dias} dias
+                <span className="flex flex-col items-center leading-tight">
+                  {dias} dias
+                  <span className="text-label font-normal opacity-80">{EXEMPLO_DO_RITMO[dias]}</span>
+                </span>
               </Chip>
             ))}
           </div>
@@ -131,7 +134,7 @@ export default function Calculadora() {
             <p className="mt-4 rounded-[var(--radius-sm)] bg-surface-2 p-3 text-secundario text-txt-2">
               <span className="font-semibold text-txt">A conta: </span>
               quem volta a cada {retorno} dias vem {decimal.format(resultado.visitasPorAno)} vezes por ano. A{' '}
-              {reais.format(ticketCents / 100)} por visita, cada cliente nesse ritmo vale{' '}
+              {reais.format(ticketCents / 100)} por manutenção, cada pessoa nesse ritmo vale{' '}
               {reais.format(resultado.valorPorClientePorAnoCents / 100)} por ano. Vezes {clientes}.
             </p>
           </>
@@ -143,7 +146,7 @@ export default function Calculadora() {
           E essa conta é só de quem você lembrou. Quem sumiu sem você notar não entra nela.
         </p>
         <p className="mt-2 text-secundario text-txt-2">
-          O CICLO usa o intervalo entre as visitas de cada cliente e mostra, pelo nome, quem passou da hora
+          O CICLO usa o intervalo entre as visitas de cada pessoa e mostra, pelo nome, quem passou da hora
           de voltar. Com uma mensagem pronta para mandar pelo seu WhatsApp. É grátis, sem cartão.
         </p>
 

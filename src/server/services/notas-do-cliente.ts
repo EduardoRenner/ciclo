@@ -68,6 +68,9 @@ export async function recalcularNotasDoTenant(db: Cliente, tenantId: string, ago
 
 export type NotaResumida = { nota: number; classe: Classe; perfil: Perfil }
 
+/** Ids por consulta: metade do limite de URL medido no gateway (~210 ids). */
+const LOTE_DE_IDS = 100
+
 /**
  * `docs/95` E2: junta nota, classe e perfil aos itens da lista Recuperar, para a fila ordenar e
  * filtrar. Uma ida ao banco para a lista toda. Cliente sem nota ainda fica com `null` nos três.
@@ -79,8 +82,17 @@ export async function comNotas<T extends { clientId: string }>(
 ): Promise<(T & { nota: number | null; classe: Classe | null; perfil: Perfil | null })[]> {
   const ids = [...new Set(itens.map((i) => i.clientId))]
   const porCliente = new Map<string, NotaResumida>()
-  if (ids.length > 0) {
-    const { data, error } = await db.from('client_scores').select('client_id, score, tier, profile').eq('tenant_id', tenantId).in('client_id', ids)
+  /*
+   * APR-011: em lotes. Uma lista só de até 200 ids (o teto do Recuperar) chegava perto do limite
+   * de URL do gateway, medido entre 210 e 220 ids: o 414 virava `INTERNAL` e o Recuperar caía
+   * inteiro. Os lotes saem juntos, então continua uma espera só.
+   */
+  const lotes: string[][] = []
+  for (let i = 0; i < ids.length; i += LOTE_DE_IDS) lotes.push(ids.slice(i, i + LOTE_DE_IDS))
+  const respostas = await Promise.all(
+    lotes.map((lote) => db.from('client_scores').select('client_id, score, tier, profile').eq('tenant_id', tenantId).in('client_id', lote)),
+  )
+  for (const { data, error } of respostas) {
     if (error) throw new AppError('INTERNAL', { cause: error })
     for (const l of data ?? []) porCliente.set(l.client_id, { nota: l.score, classe: l.tier as Classe, perfil: l.profile as Perfil })
   }

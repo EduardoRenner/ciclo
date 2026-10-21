@@ -9,7 +9,7 @@ import PageHeader from '@/components/ui/page-header'
 import { RELATORIO_DA_EQUIPE, avaliarPermissao } from '@/server/auth/rbac'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
-import { concentracaoDoMes, fechamentoDiario, resumoMensal } from '@/server/services/caixa'
+import { atendidoSemComandaDoDia, concentracaoDoMes, fechamentoDiario, resumoMensal } from '@/server/services/caixa'
 import { extratoDeComissao } from '@/server/services/comissao'
 import { medirMaterialDoCatalogo } from '@/server/services/ficha-de-consumo'
 import { lerCustoFixoDoTenant } from '@/server/services/custo-fixo'
@@ -80,8 +80,6 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
   // São fontes diferentes de propósito (§5.7: receita é o que foi cobrado), mas
   // quem toca no número de "Hoje" e cai num caixa zerado merece saber por quê —
   // por isso o total de atendimentos do dia vem junto, só para o estado vazio.
-  const inicioDoDia = dia.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
-  const fimDoDia = dia.add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
 
   const inicioDoMes = `${mes}-01`
   const fimDoMes = Temporal.PlainDate.from(inicioDoMes).add({ months: 1 }).subtract({ days: 1 }).toString()
@@ -120,13 +118,7 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
   const [diario, mensal, atendimentos, taxas, concentracao, material, custoFixo, comissoes] = await Promise.all([
     fechamentoDiario(db, ctx.tenantId, timezone, dia.toString()),
     resumoMensal(db, ctx.tenantId, timezone, mes),
-    db
-      .from('appointments')
-      .select('price_cents')
-      .eq('tenant_id', ctx.tenantId)
-      .eq('status', 'done')
-      .gte('starts_at', inicioDoDia)
-      .lt('starts_at', fimDoDia),
+    atendidoSemComandaDoDia(db, ctx.tenantId, timezone, dia.toString()),
     lerTaxasDoTenant(db, ctx.tenantId),
     /*
       `docs/48` C7. Entra no mesmo `Promise.all` — latência somada: zero — e a tela inteira já
@@ -145,7 +137,7 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
     comissoesPromise,
   ])
 
-  const atendidoCents = (atendimentos.data ?? []).reduce((soma, a) => soma + a.price_cents, 0)
+  const atendidoCents = atendimentos.cents
 
   return (
     <Caixa

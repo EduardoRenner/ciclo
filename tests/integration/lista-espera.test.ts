@@ -117,7 +117,19 @@ function providerFalso(): MessagingProvider {
   }
 }
 
+/** WhatsApp fora (ou sem credencial): todo envio lança. */
+function providerQueFalha(): MessagingProvider {
+  return {
+    sendTemplate: vi.fn(async () => {
+      throw new Error('WhatsApp Cloud API não configurado')
+    }),
+    sendText: vi.fn(),
+    parseWebhook: vi.fn(),
+  }
+}
+
 describe('lista de espera', () => {
+
   it(
     'avisa só a primeira pessoa da fila, na ordem de entrada',
     async () => {
@@ -224,7 +236,7 @@ describe('lista de espera', () => {
       const link = chamada![0].params.link!
       const token = link.split('/lista-espera/')[1]!
 
-      const agendamento = await reivindicarEncaixe(svc, token)
+      const { agendamento } = await reivindicarEncaixe(svc, token)
       expect(agendamento.status).toBe('pending')
 
       const naAgenda = await svc.from('appointments').select('id, origin').eq('id', agendamento.id).single()
@@ -234,7 +246,7 @@ describe('lista de espera', () => {
   )
 
   it(
-    'reivindicar duas vezes o mesmo link falha na segunda — o encaixe já foi usado',
+    'reabrir o mesmo link devolve o horário já garantido (APR-119); "já foi usado" só quando esse horário caiu',
     async () => {
       const cliente = await criarCliente('Vai Tentar Duas Vezes')
       await entrarNaLista(svc, tenantId, { clientId: cliente, serviceId: servicoId })
@@ -251,9 +263,15 @@ describe('lista de espera', () => {
       const link = vi.mocked(provider.sendTemplate).mock.calls.at(-1)![0].params.link!
       const token = link.split('/lista-espera/')[1]!
 
-      await reivindicarEncaixe(svc, token)
+      const primeira = await reivindicarEncaixe(svc, token)
+      expect(primeira.jaGarantido).toBe(false)
+      const segunda = await reivindicarEncaixe(svc, token)
+      expect(segunda).toMatchObject({ jaGarantido: true, timezone: TZ })
+      expect(segunda.agendamento.id).toBe(primeira.agendamento.id)
+
+      await svc.from('appointments').update({ status: 'canceled' }).eq('id', primeira.agendamento.id)
       const erro = await reivindicarEncaixe(svc, token).catch((e: unknown) => e)
-      expect(erro).toMatchObject({ code: 'NOT_FOUND' })
+      expect(erro).toMatchObject({ code: 'NOT_FOUND', details: { slug: expect.any(String), negocio: expect.any(String) } })
     },
     30_000,
   )
@@ -298,4 +316,36 @@ describe('lista de espera', () => {
     },
     30_000,
   )
+  /*
+    docs/112 EXP-A04 (achado D6): `notified_at` era gravado ANTES de mandar. Sem WhatsApp e sem
+    e-mail, o envio terminava `failed` e a fila registrava a pessoa como avisada: ninguém sabia da
+    vaga, e ela ficava presa na exclusividade dos minutos seguintes.
+  */
+  it(
+    'sem canal que chegue, a pessoa NÃO fica marcada como avisada',
+    async () => {
+      const semEmail = await criarCliente('Fila Sem Canal')
+      await entrarNaLista(svc, tenantId, { clientId: semEmail, serviceId: servicoId })
+
+      // Os casos de cima deixam gente na fila, e a chamada escolhe a primeira elegível, que pode
+      // não ser esta. Por isso a régua é a fila inteira: nenhuma linha ganha `notified_at` agora.
+      const marcadasAntes = await svc.from('waitlist').select('id').eq('tenant_id', tenantId).not('notified_at', 'is', null)
+
+      const provider = providerQueFalha()
+      const resultado = await notificarProximoDaLista(
+        svc,
+        tenantId,
+        { serviceId: servicoId, professionalId, startsAt: horario('16:00'), timezone: TZ },
+        'https://ciclo.test',
+        provider,
+      )
+
+      expect(provider.sendTemplate, 'o cenário não tentou mandar: o teste passaria vazio').toHaveBeenCalled()
+      expect(resultado.notificado).toBe(false)
+      const marcadasDepois = await svc.from('waitlist').select('id').eq('tenant_id', tenantId).not('notified_at', 'is', null)
+      expect(marcadasDepois.data?.length, 'alguém foi marcado como avisado sem envio que saiu').toBe(marcadasAntes.data?.length)
+    },
+    30_000,
+  )
+
 })

@@ -5,8 +5,10 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { concentracaoDoMes, congelarMesesFechados, fechamentoDiario, resumoDoIntervalo, resumoMensal, serieMensalDeLucro } from '@/server/services/caixa'
+import { atendidoSemComandaDoDia, concentracaoDoMes, congelarMesesFechados, fechamentoDiario, resumoDoIntervalo, resumoMensal, serieMensalDeLucro } from '@/server/services/caixa'
 import { executarOnboarding } from '@/server/services/onboarding'
+import { criarProfissional } from '@/server/services/profissionais'
+import { criarServico } from '@/server/services/servicos'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -324,5 +326,49 @@ describe('serieMensalDeLucro — congela o passado e não o reescreve', () => {
       expect(count, 'o mês foi gravado duas vezes — a chave primária não está segurando').toBe(1)
     },
     120_000,
+  )
+})
+
+describe('atendidoSemComandaDoDia (APR-123)', () => {
+  it(
+    'soma só os atendimentos concluídos do dia que ainda não têm comanda fechada',
+    async () => {
+      const profissional = await criarProfissional(svc, tenantId, { displayName: 'Quem Atende', compModel: 'owner', commissionBps: 0, rentCents: 0, acceptsOnline: true })
+      const servico = await criarServico(svc, tenantId, {
+        name: 'Corte',
+        description: null,
+        durationMin: 30,
+        bufferBeforeMin: 0,
+        bufferAfterMin: 0,
+        priceCents: 5000,
+        pricingModel: 'fixed',
+        cycleDays: 30,
+        depositBps: 0,
+        depositMinCents: 0,
+        parallelCapacity: 1,
+        requiresAnamnesis: false,
+        bookableOnline: true,
+        categoryId: null,
+      })
+      const dia = '2026-03-10'
+      const em = (hhmm: string) => `${dia}T${hhmm}:00-03:00`
+      const base = { tenant_id: tenantId, professional_id: profissional.id, service_id: servico.id, status: 'done' as const, origin: 'app' as const }
+      const { data: criados, error } = await svc
+        .from('appointments')
+        .insert([
+          { ...base, starts_at: em('09:00'), ends_at: em('09:30'), price_cents: 5000 },
+          { ...base, starts_at: em('10:00'), ends_at: em('10:30'), price_cents: 7000 },
+          { ...base, starts_at: em('11:00'), ends_at: em('11:30'), price_cents: 9000 },
+        ])
+        .select('id')
+      expect(error).toBeNull()
+      // O terceiro já passou pela comanda: entra no "Entrou", não no aviso.
+      await svc.from('tickets').insert({ tenant_id: tenantId, appointment_id: criados![2]!.id, status: 'closed', total_cents: 9000, closed_at: em('11:40') })
+
+      const aviso = await atendidoSemComandaDoDia(svc, tenantId, TZ, dia)
+      expect(aviso).toEqual({ cents: 12_000, atendimentos: 2 })
+      expect(await atendidoSemComandaDoDia(svc, tenantId, TZ, '2026-03-11')).toEqual({ cents: 0, atendimentos: 0 })
+    },
+    30_000,
   )
 })

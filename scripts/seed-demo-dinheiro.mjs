@@ -3,7 +3,7 @@
  * por atendimento concluído, com item de serviço, comissão, custo de material, desconto e gorjeta
  * ocasionais — mais fila de espera, avaliações e pacotes vendidos.
  *
- *   node scripts/seed-demo-dinheiro.mjs                 # dom-rocha + teste-* + lang-barber
+ *   node scripts/seed-demo-dinheiro.mjs                 # os 6 demo-* + dom-rocha + teste-* + lang-barber
  *   node scripts/seed-demo-dinheiro.mjs dom-rocha       # so uma
  *
  * Roda de novo apaga as comandas que ele criou (por `appointment_id` dos atendimentos do tenant)
@@ -42,6 +42,11 @@ const env = Object.fromEntries(
 )
 
 const URL_SUPABASE = process.env.SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL
+// Este script apaga comandas: só no Supabase local, a mesma regra do `db-reset.mjs`.
+if (!/^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?(\/|$)/i.test(URL_SUPABASE ?? '')) {
+  console.error(`RECUSADO — ${URL_SUPABASE} não é o Supabase local.`)
+  process.exit(1)
+}
 const svc = createClient(URL_SUPABASE, process.env.SUPABASE_SERVICE_ROLE_KEY ?? env.SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
@@ -61,17 +66,63 @@ function rnd(...partes) {
 }
 const escolha = (semente, arr) => arr[Math.floor(rnd(semente) * arr.length)]
 
-const ALVO_PADRAO = ['dom-rocha', 'teste-essencial', 'teste-equipe', 'teste-avancado', 'lang-barber']
+const ALVO_PADRAO = [
+  'demo-navalha-de-ouro',
+  'demo-corte-fino',
+  'demo-dom-estilo',
+  'demo-studio-bella',
+  'demo-salao-encanto',
+  'demo-espaco-vitoria',
+  'dom-rocha',
+  'teste-essencial',
+  'teste-equipe',
+  'teste-avancado',
+  'lang-barber',
+]
+/*
+ * Este script APAGA todas as comandas, itens e pagamentos do tenant antes de recriar. Aceitava qualquer slug na linha de
+ * comando: um salão de verdade digitado por engano perderia o caixa inteiro (regra 11 do CLAUDE.md). Só conta de
+ * demonstração, a mesma lista de `src/core/tenants/demonstracao.ts` (a guarda `seed-dinheiro-so-demonstracao` confere).
+ */
+const SLUGS_DE_DEMONSTRACAO = [
+  'dom-rocha', 'ruivo-barber', 'teste-essencial', 'teste-equipe', 'teste-avancado', 'lang-barber', 'lang-unhas',
+  'demo-navalha-de-ouro', 'demo-corte-fino', 'demo-dom-estilo', 'demo-studio-bella', 'demo-salao-encanto', 'demo-espaco-vitoria',
+  'demo-alvorada-advocacia', 'apple-review', 'demo-esmalteria-rosa', 'demo-studio-olhar', 'demo-pet-amigo',
+  'demo-carol-cilios', 'demo-esmalteria-rosa-cha', 'demo-ana-paula-unhas',
+]
 const alvo = process.argv.slice(2).length ? process.argv.slice(2) : ALVO_PADRAO
-const { data: tenantsAlvo } = await svc.from('tenants').select('id, slug').in('slug', alvo)
+const foraDaDemonstracao = alvo.filter((s) => !SLUGS_DE_DEMONSTRACAO.includes(s))
+if (foraDaDemonstracao.length) precisa({ message: `só conta de demonstração: ${foraDaDemonstracao.join(', ')}` }, 'conferir alvo')
+const { data: tenantsAlvo } = await svc.from('tenants').select('id, slug, settings').in('slug', alvo)
 if (!tenantsAlvo?.length) precisa({ message: `nenhum tenant para: ${alvo.join(', ')}` }, 'achar tenants')
+
+/** Como o negócio comum recebe. A taxa de cada forma vem do próprio tenant (`payment_fees_bps`). */
+const FORMAS = [
+  ['pix', 0.45],
+  ['credit', 0.2],
+  ['debit', 0.2],
+  ['cash', 0.15],
+]
+function formaDe(semente) {
+  let r = rnd(semente, 'forma')
+  for (const [forma, peso] of FORMAS) {
+    if (r < peso) return forma
+    r -= peso
+  }
+  return 'pix'
+}
 
 for (const tnt of tenantsAlvo) {
   const T = tnt.id
   const slug = tnt.slug
+  const taxas = tnt.settings?.payment_fees_bps ?? {}
+  // Hora de cadeira, como `custoFixoDoAtendimento`: sem as três respostas, custo fixo desconhecido = 0.
+  const cf = tnt.settings?.custo_fixo
+  const custoPorMinuto =
+    cf && cf.mensal_cents >= 0 && cf.horas_por_mes > 0 && cf.cadeiras >= 1 ? cf.mensal_cents / cf.horas_por_mes / Math.round(cf.cadeiras) / 60 : 0
 
   const { data: dono } = await svc.from('memberships').select('user_id').eq('tenant_id', T).eq('role', 'owner').single()
-  const { data: servicos } = await svc.from('services').select('id, name, price_cents').eq('tenant_id', T)
+  const { data: servicos } = await svc.from('services').select('id, name, price_cents, duration_min').eq('tenant_id', T)
   const { data: profs } = await svc.from('professionals').select('id, commission_bps').eq('tenant_id', T)
   const { data: vinculos } = await svc.from('service_products').select('service_id, product_id, qty').eq('tenant_id', T)
   const { data: produtos } = await svc.from('products').select('id, avg_cost_cents').eq('tenant_id', T)
@@ -80,6 +131,7 @@ for (const tnt of tenantsAlvo) {
   const custoPorProduto = new Map(produtos.map((p) => [p.id, p.avg_cost_cents ?? 0]))
   const precoPorServico = new Map(servicos.map((s) => [s.id, s.price_cents]))
   const nomePorServico = new Map(servicos.map((s) => [s.id, s.name]))
+  const duracaoPorServico = new Map(servicos.map((s) => [s.id, s.duration_min ?? 0]))
   const materialPorServico = new Map()
   for (const v of vinculos) {
     const soma = (materialPorServico.get(v.service_id) ?? 0) + Math.round(Number(v.qty) * (custoPorProduto.get(v.product_id) ?? 0))
@@ -166,8 +218,13 @@ for (const tnt of tenantsAlvo) {
     const material = linhas.reduce((s, l) => s + l.cost_cents, 0)
     const comissao = linhas.reduce((s, l) => s + l.commission_cents, 0)
     const receitaSalao = Math.max(0, subtotal - descComanda)
-    const profit = receitaSalao - material - 0 - comissao
     const total = receitaSalao + gorjeta
+    // Taxa sobre o TOTAL (a maquininha cobra a gorjeta junto), como `calcularTaxaDaMaquininha`.
+    const forma = formaDe(a.id)
+    const feeBps = Number(taxas[forma] ?? 0)
+    const fee = total > 0 && feeBps > 0 ? Math.round((total * feeBps) / 10_000) : 0
+    const fixo = Math.max(0, Math.round(custoPorMinuto * (duracaoPorServico.get(a.service_id) ?? 0)))
+    const profit = receitaSalao - material - fee - comissao - fixo
 
     tickets.push({
       id: ticketId,
@@ -181,7 +238,10 @@ for (const tnt of tenantsAlvo) {
       tip_cents: gorjeta,
       total_cents: total,
       material_cost_cents: material,
-      fee_cents: 0,
+      payment_method: forma,
+      fee_bps: feeBps,
+      fee_cents: fee,
+      fixed_cost_cents: fixo,
       commission_cents: comissao,
       profit_cents: profit,
       closed_at: a.starts_at,
@@ -263,17 +323,17 @@ for (const tnt of tenantsAlvo) {
   console.log(`  ${notas.length} avaliações novas`)
 
   // ── Pacotes vendidos ──────────────────────────────────────────────────────────────────────────
-  const BARBA = servicos.find((s) => s.name === 'Barba')
-  const CORTE = servicos.find((s) => s.name === 'Corte')
-  const planos = [
-    { servico: BARBA, total: 4, preco: 12000 },
-    { servico: CORTE, total: 5, preco: 18000 },
-    { servico: CORTE, total: 10, preco: 34000 },
-  ]
+  // Pelo catálogo do PRÓPRIO negócio, com ~10% de desconto sobre as sessões avulsas. A 1ª versão
+  // procurava "Barba" e "Corte" pelo nome e quebrava em todo negócio que não é barbearia (APR-037).
+  const porPreco = [...servicos].sort((x, y) => x.price_cents - y.price_cents)
+  const pacoteDe = (servico, total) => ({ servico, total, preco: Math.round((servico.price_cents * total * 0.9) / 100) * 100 })
+  const planos = porPreco.length
+    ? [pacoteDe(porPreco[0], 4), pacoteDe(porPreco[Math.min(1, porPreco.length - 1)], 5), pacoteDe(porPreco[Math.min(1, porPreco.length - 1)], 10)]
+    : []
   const { data: pacotesExistentes } = await svc.from('packages').select('client_id, service_id').eq('tenant_id', T)
   const chavesPacote = new Set((pacotesExistentes ?? []).map((p) => `${p.client_id}:${p.service_id}`))
   const pacotes = []
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < (planos.length ? 6 : 0); i++) {
     const cli = clientes[Math.floor(rnd('pk', i) * clientes.length)]
     const plano = planos[i % planos.length]
     const chave = `${cli.id}:${plano.servico.id}`
@@ -297,7 +357,7 @@ for (const tnt of tenantsAlvo) {
   // ── Conferência ───────────────────────────────────────────────────────────────────────────────
   const { data: conf } = await svc
     .from('tickets')
-    .select('subtotal_cents, discount_cents, tip_cents, total_cents, material_cost_cents, fee_cents, commission_cents, profit_cents, closed_at')
+    .select('subtotal_cents, discount_cents, tip_cents, total_cents, material_cost_cents, fee_cents, fixed_cost_cents, commission_cents, profit_cents, closed_at')
     .eq('tenant_id', T)
   const agoraIso = new Date().toISOString()
   let erros = 0
@@ -305,7 +365,7 @@ for (const tnt of tenantsAlvo) {
   let lucro = 0
   for (const t of conf) {
     const receitaSalao = Math.max(0, t.subtotal_cents - t.discount_cents)
-    const profitEsperado = receitaSalao - t.material_cost_cents - t.fee_cents - t.commission_cents
+    const profitEsperado = receitaSalao - t.material_cost_cents - t.fee_cents - (t.fixed_cost_cents ?? 0) - t.commission_cents
     const totalEsperado = receitaSalao + t.tip_cents
     if (t.profit_cents !== profitEsperado) erros++
     if (t.total_cents !== totalEsperado) erros++
@@ -321,4 +381,26 @@ for (const tnt of tenantsAlvo) {
   }
   console.log(`  ✓ [${slug}] consistente: profit = fórmula do core, total = receita + gorjeta, nada no futuro`)
 
+}
+
+/*
+ * ── Motor de Ciclo (APR-037) ───────────────────────────────────────────────────────────────────
+ *
+ * Sem rodar o Motor, `client_cycles` fica vazio e Recuperar, Hoje e a ficha da cliente abrem como
+ * se ninguém tivesse sumido. O recálculo mora na rota de cron (TypeScript, com as regras do core),
+ * então o seed chama a rota do app LOCAL. App fora do ar não é silêncio: sai com erro e diz o que
+ * fazer — e o `conferir-seed` reprova "0 ciclos" de qualquer jeito.
+ */
+const URL_DO_APP = process.env.SEED_APP_URL ?? 'http://localhost:3000'
+const segredo = process.env.CRON_SECRET ?? env.CRON_SECRET
+try {
+  const r = await fetch(`${URL_DO_APP}/api/cron/recompute-cycles`, { headers: { authorization: `Bearer ${segredo}` } })
+  const corpo = await r.json().catch(() => null)
+  if (!r.ok) throw new Error(`HTTP ${r.status}`)
+  console.log(`
+Motor de Ciclo rodado em ${URL_DO_APP}: ${JSON.stringify(corpo?.data ?? corpo)}`)
+} catch (erro) {
+  console.error(`
+✗ Motor de Ciclo NÃO rodou (${erro.message}). Suba o app (pnpm dev) e rode este script de novo, ou SEED_APP_URL=<url do app local>.`)
+  process.exit(1)
 }

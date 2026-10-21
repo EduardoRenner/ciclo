@@ -1,3 +1,4 @@
+import { fazSozinha } from '@/core/automacoes/config'
 import { lembretesDevidos } from '@/core/reminders/schedule'
 import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import { gerarTokenConfirmacao } from '@/server/services/confirmacao-token'
@@ -61,17 +62,22 @@ export async function identificarLembretesPendentes(db: Cliente, now: string): P
   const linhas = (candidatos ?? []) as unknown as LinhaCandidata[]
   if (linhas.length === 0) return []
 
-  const { data: jaEnviadas, error: erroMsgs } = await db
-    .from('messages')
-    .select('appointment_id, kind, template')
-    .in(
-      'appointment_id',
-      linhas.map((l) => l.id),
-    )
-    .in('kind', ['confirmation', 'reminder'])
-  if (erroMsgs) throw new AppError('INTERNAL', { cause: erroMsgs })
+  /*
+   * APR-011: em lotes de 100. São todos os horários das próximas 36 h do negócio; num salão com 10
+   * cadeiras isso passa de 200 ids e a URL estoura no gateway (~210 medido) — o lembrete não saía.
+   */
+  const ids = linhas.map((l) => l.id)
+  const lotes: string[][] = []
+  for (let i = 0; i < ids.length; i += 100) lotes.push(ids.slice(i, i + 100))
+  const respostas = await Promise.all(
+    lotes.map((lote) => db.from('messages').select('appointment_id, kind, template').in('appointment_id', lote).in('kind', ['confirmation', 'reminder'])),
+  )
+  const jaEnviadas = respostas.flatMap(({ data, error }) => {
+    if (error) throw new AppError('INTERNAL', { cause: error })
+    return data ?? []
+  })
 
-  const jaTem = new Set((jaEnviadas ?? []).map((m) => `${m.appointment_id}:${m.kind}:${m.template}`))
+  const jaTem = new Set(jaEnviadas.map((m) => `${m.appointment_id}:${m.kind}:${m.template}`))
 
   const pendentes: EnvioPendente[] = []
 
@@ -82,6 +88,8 @@ export async function identificarLembretesPendentes(db: Cliente, now: string): P
     // Interruptor manual do dono (F0, docs/25-ESTRATEGIA-E-EXECUCAO.md) — o teto diário
     // (mensageria.ts) limita volume, isto aqui é "não mandar nada", ligado por escolha do dono.
     if (lerMensageria(linha.tenants.settings).paused) continue
+    // docs/112 EXP-A01: o dial de Automações. Só sai sozinho no "Faz e me conta" (nível 3).
+    if (!fazSozinha(linha.tenants.settings, 'lembrete_de_agendamento')) continue
     // Confirmação transacional passa por cima de opt-out de marketing (H110),
     // mas sem telefone não tem para onde mandar — nem WhatsApp nem SMS existe.
     if (!linha.clients.phone_e164) continue

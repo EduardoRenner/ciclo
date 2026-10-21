@@ -2,7 +2,7 @@ import { readdirSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
-import { MIGRATIONS_ESPERADAS, ULTIMA_MIGRATION, compararSchema } from '@/core/schema/versao'
+import { MIGRATIONS_DO_CODIGO, MIGRATIONS_ESPERADAS, ULTIMA_MIGRATION, compararSchema } from '@/core/schema/versao'
 
 /**
  * O irmão de `saude-vigia-so-o-que-roda`, para a outra cópia que o runtime não consegue ler.
@@ -34,6 +34,10 @@ describe('as constantes de schema espelham o disco', () => {
     ).toBe(noDisco.length)
   })
 
+  it('MIGRATIONS_DO_CODIGO é a lista do disco, nome por nome', () => {
+    expect([...MIGRATIONS_DO_CODIGO]).toEqual(migrationsNoDisco())
+  })
+
   it('ULTIMA_MIGRATION é o arquivo de maior número', () => {
     const noDisco = migrationsNoDisco()
     expect(ULTIMA_MIGRATION).toBe(noDisco[noDisco.length - 1])
@@ -60,11 +64,11 @@ describe('compararSchema decide pela direção da diferença', () => {
     expect(estado.detail).toContain('ATRÁS')
   })
 
-  it('banco ATRÁS: as três de 05/09 faltando — conta quantas, não só a última', () => {
-    const tresAMenos = aplicadasAteAUltima().slice(0, -3)
-    const estado = compararSchema(tresAMenos)
+  it('banco ATRÁS: as três de 05/09 faltando — cita as três, não só a última', () => {
+    const todas = aplicadasAteAUltima()
+    const estado = compararSchema(todas.slice(0, -3))
     expect(estado.ok).toBe(false)
-    expect(estado.detail).toContain('e mais 2')
+    for (const nome of todas.slice(-3)) expect(estado.detail).toContain(nome)
   })
 
   /*
@@ -72,11 +76,29 @@ describe('compararSchema decide pela direção da diferença', () => {
    * do nome. Aplicar a última pulando uma do meio é o que acontece quando alguém roda migration à
    * mão, que é exatamente o processo real desta base hoje.
    */
-  it('banco ATRÁS com buraco no meio: a última está lá e ainda assim é vermelho', () => {
-    const comBuraco = aplicadasAteAUltima().filter((_, i) => i !== 5)
-    const estado = compararSchema(comBuraco)
+  it('banco ATRÁS com buraco no meio: a última está lá e ainda assim é vermelho, citando qual', () => {
+    const todas = aplicadasAteAUltima()
+    const estado = compararSchema(todas.filter((_, i) => i !== 5))
     expect(estado.ok).toBe(false)
-    expect(estado.detail).toContain('do meio')
+    expect(estado.detail).toContain(todas[5])
+  })
+
+  /*
+   * APR-030: o caso que a CONTAGEM não via. Uma do meio faltando e uma aplicada à mão que o código
+   * não conhece dão o mesmo total — e o banco passava como em dia, sem a coluna que o código usa.
+   */
+  it('falta uma do meio e sobra uma de fora: mesmo total, e ainda assim vermelho', () => {
+    const todas = aplicadasAteAUltima()
+    const trocada = [...todas.filter((_, i) => i !== 40), '9998_aplicada_a_mao']
+    expect(trocada).toHaveLength(MIGRATIONS_ESPERADAS)
+    const estado = compararSchema(trocada)
+    expect(estado.ok).toBe(false)
+    expect(estado.detail).toContain(todas[40])
+  })
+
+  it('aplicadas pelo CLI (sem o prefixo numérico) contam como as mesmas', () => {
+    const peloCli = aplicadasAteAUltima().map((nome) => nome.replace(/^\d+_/, ''))
+    expect(compararSchema(peloCli)).toEqual({ ok: true })
   })
 
   /*
@@ -89,5 +111,6 @@ describe('compararSchema decide pela direção da diferença', () => {
     const estado = compararSchema(comUmaAMais)
     expect(estado.ok).toBe(true)
     expect(estado.detail).toContain('à frente')
+    expect(estado.detail).toContain('9999_ainda_nao_existe_no_codigo')
   })
 })

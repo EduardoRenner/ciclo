@@ -63,6 +63,29 @@ const SEM_COLUNA_TENANT = new Set([
  */
 const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: string }[] = [
   {
+    arquivo: 'src/server/services/confirmacao-publica.ts',
+    tabela: 'appointments',
+    quantas: 1,
+    porque:
+      'APR-117: leitura pública pelo token de confirmação (HMAC). O id do agendamento É a autorização — ' +
+      'o token não carrega tenant, mesmo caso das rotas confirm/cancel que já existiam. Só lê status, horário, ' +
+      'serviço, profissional e nome/fuso/slug do negócio.',
+  },
+  {
+    arquivo: 'src/server/services/quem-ja-atendo.ts',
+    tabela: 'clients',
+    quantas: 2,
+    porque: 'os dois `insert` (em lote e, na corrida, linha a linha): `tenant_id` vai no VALOR montado por `ficha()`, do tenant do contexto. Escrita não aceita `.eq`; cliente do usuário (RLS)',
+  },
+  {
+    arquivo: 'src/server/services/lote-de-importacao.ts',
+    tabela: 'clients',
+    quantas: 2,
+    porque:
+      '`upsert` da carga (em lote e linha a linha): `tenant_id` vai no VALOR de cada ficha, e o conflito é no par ' +
+      '(lote, linha) de um lote que acabou de ser lido filtrando o tenant. Escrita não aceita `.eq`; cliente do usuário (RLS)',
+  },
+  {
     arquivo: 'src/server/advocacia/casos.ts',
     tabela: 'legal_checklist_templates',
     quantas: 1,

@@ -234,11 +234,16 @@ const CAMPOS_DO_CLIENTE_PARA_O_MODELO = [
   'marketing_opt_in',
   'whatsapp_opt_out',
   'visits_count',
-  'no_show_count',
+  // APR-213 (E-08, G-08): `no_show_count` nunca é escrita por ninguém (dizia 0 para quem faltou 2×). A conta sai do histórico, em `faltas`.
   'ltv_cents',
   'last_visit_at',
   'created_at',
 ] as const
+
+/** APR-213: faltas contadas do histórico ao vivo — a mesma régua da ficha, nunca a coluna do cron. */
+export function contarFaltas(agendamentos: readonly { status: string }[]): number {
+  return agendamentos.filter((a) => a.status === 'no_show').length
+}
 
 export function soCadastroQueOModeloPrecisa<T extends Record<string, unknown>>(cliente: T): Partial<T> {
   const saida: Partial<T> = {}
@@ -302,7 +307,12 @@ export const FERRAMENTAS: Ferramenta[] = [
       )
       // Só os 10 mais recentes voltam ao modelo — histórico inteiro de anos não cabe no
       // contexto e não muda a resposta de "quando ela veio da última vez".
-      return { cliente: soCadastroQueOModeloPrecisa(cliente), ultimosAgendamentos: agendamentos.slice(-10).reverse(), memoria }
+      return {
+        cliente: soCadastroQueOModeloPrecisa(cliente),
+        faltas: contarFaltas(agendamentos),
+        ultimosAgendamentos: agendamentos.slice(-10).reverse(),
+        memoria,
+      }
     },
   }),
   apagarTipo({
@@ -756,11 +766,19 @@ export const FERRAMENTAS: Ferramenta[] = [
       if (!alvo) {
         // Fora da lista não é "não achei": a pessoa pode existir e estar no ritmo. Dizer "não achei"
         // para uma cliente que está na tela ao lado seria mentir sobre o cadastro.
-        const existe = cliente ? (await listarClientes(ctx.db, ctx.tenantId, { busca: cliente, limite: 5 })).length > 0 : Boolean(clientId)
+        const candidatos = clientId
+          ? [await buscarCliente(ctx.db, ctx.tenantId, clientId).catch(() => null)].filter((c): c is NonNullable<typeof c> => c !== null)
+          : cliente
+            ? await listarClientes(ctx.db, ctx.tenantId, { busca: cliente, limite: 5 })
+            : []
+        // APR-035: quem pediu "PARAR" já sai da lista (`v_quem_sumiu`). A resposta continua dizendo o
+        // motivo verdadeiro — é a mesma trava da tela e do servidor (`registrarChamadaManual`).
+        if (candidatos.length === 1 && candidatos[0]!.whatsapp_opt_out) {
+          return { status: 'nao_da', motivo: 'pediu_para_nao_receber', cliente: candidatos[0]!.name }
+        }
+        const existe = candidatos.length > 0 || Boolean(clientId)
         return existe ? { status: 'nao_da', motivo: 'fora_da_lista', cliente: cliente ?? '' } : { status: 'nao_achei', oQue: 'cliente', termo: cliente ?? '' }
       }
-      // A mesma trava da tela e do servidor (`registrarChamadaManual`): pediu para parar, não recebe.
-      if (alvo.optOut) return { status: 'nao_da', motivo: 'pediu_para_nao_receber', cliente: alvo.name }
 
       return {
         status: 'proposta',

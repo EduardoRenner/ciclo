@@ -47,6 +47,13 @@ const DISPENSADAS: Dispensa[] = [
       'a linha da chave foi criada nesta mesma requisição, segundos antes; só a faxina de retenção a ' +
       'remove, e ela só alcança chave velha',
   },
+  {
+    arquivo: 'src/server/services/segmentos.ts',
+    guarda: 'anonymized_at',
+    porque:
+      'zero linhas é o resultado CERTO (APR-018): a cliente foi eliminada entre a leitura e a escrita ' +
+      'do cron, e o contador dela não deve ser gravado; a próxima passada já nem a lê',
+  },
 ]
 
 const RAIZ = join('src', 'server')

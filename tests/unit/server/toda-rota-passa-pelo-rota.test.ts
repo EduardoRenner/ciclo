@@ -58,7 +58,16 @@ function rotasVersionadas(): string[] {
  * armadilha nº1 da tabela do CLAUDE.md.
  */
 function passaPeloRota(caminho: string): boolean {
-  return /=\s*rota\(/.test(readFileSync(caminho, 'utf8'))
+  return chamaRota(readFileSync(caminho, 'utf8'))
+}
+
+/**
+ * `rota` é genérica (`rota<Ctx>`): `= rota<Params>(` é a mesma chamada com o tipo do contexto, e o
+ * padrão antigo (`= rota\(`) reprovava a rota de km (C-039) que passa pelo `rota()`. O tipo entre `<>`
+ * não tem parêntese, por isso `[^()]` atravessa até `<` aninhado sem engolir a chamada.
+ */
+function chamaRota(fonte: string): boolean {
+  return /=\s*rota\s*(?:<[^()]*>)?\s*\(/.test(fonte)
 }
 
 describe('toda rota da API passa pelo `rota()`', () => {
@@ -71,6 +80,14 @@ describe('toda rota da API passa pelo `rota()`', () => {
      * motivo e realmente não use `rota()`.
      */
     expect(FORA_DO_ROTA.map((f) => f.arquivo)).toEqual(['src/app/api/health/route.ts'])
+  })
+
+  it('controle positivo: o detector casa com a chamada, com ou sem o tipo, e nunca com o import', () => {
+    expect(chamaRota('export const GET = rota(async (req) => {')).toBe(true)
+    expect(chamaRota('export const POST = rota<Params>(async (req, { params }) => {')).toBe(true)
+    expect(chamaRota('export const GET = rota<{ params: Promise<{ id: string }> }>(async (req) => {')).toBe(true)
+    expect(chamaRota("import { rota } from '@/server/http/handler'")).toBe(false)
+    expect(chamaRota('export async function GET(req: Request) { return new Response(null) }')).toBe(false)
   })
 
   it('o leitor enxerga as rotas — senão a guarda passa vazia', () => {

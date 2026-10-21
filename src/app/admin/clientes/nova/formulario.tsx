@@ -6,7 +6,6 @@ import { useState, useTransition } from 'react'
 
 import { useVocabulario } from '@/components/shell/vocabulario'
 import { mensagemDeClienteCadastrado } from '@/core/ciclo/primeiro-cliente'
-import { comMaiuscula } from '@/core/text/vocabulario'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import PageHeader from '@/components/ui/page-header'
@@ -14,6 +13,7 @@ import PhoneInput from '@/components/ui/phone-input'
 import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
 import { camposDePreferencia } from '@/lib/preferencias'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 /**
  * Faltava a tela mais básica de todas: o vazio da lista de clientes mandava para
@@ -46,9 +46,9 @@ export default function FormularioCliente({ vertical, ehPrimeiroCliente = false 
     setErro(null)
     iniciarSalvamento(async () => {
       try {
-        const r = await fetch('/api/v1/clients', {
+        const r = await fetchComTentativa('/api/v1/clients', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             name: nome,
             phone: telefone.trim() || null,
@@ -86,7 +86,7 @@ export default function FormularioCliente({ vertical, ehPrimeiroCliente = false 
   return (
     <div className="pb-8">
       {/* O voltar mora na Topbar desde o redesenho — dois numa tela só confundem. */}
-      <PageHeader titulo={`${comMaiuscula(vocabulario.cliente)} novo`} />
+      <PageHeader titulo={`Cadastrar ${vocabulario.cliente}`} />
 
       <div className="flex flex-col gap-3">
         <Input rotulo="Nome" value={nome} onChange={(e) => setNome(e.target.value)} autoFocus autoComplete="name" />
@@ -152,7 +152,7 @@ export default function FormularioCliente({ vertical, ehPrimeiroCliente = false 
           />
           <span className="text-corpo text-txt">
             Autorizou receber promoções e lembretes
-            <span className="block text-secundario text-txt-3">Só marque se o cliente disse que pode.</span>
+            <span className="block text-secundario text-txt-3">Só marque se a pessoa disse que pode.</span>
           </span>
         </label>
 
@@ -163,7 +163,7 @@ export default function FormularioCliente({ vertical, ehPrimeiroCliente = false 
         ) : null}
 
         <Button largura="cheia" carregando={salvando} onClick={salvar} disabled={nome.trim().length < 2}
-          motivoDesabilitado={nome.trim().length < 2 ? 'Digite o nome do cliente primeiro.' : undefined}>
+          motivoDesabilitado={nome.trim().length < 2 ? 'Digite o nome primeiro.' : undefined}>
           Cadastrar cliente
         </Button>
       </div>

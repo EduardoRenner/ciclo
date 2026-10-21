@@ -177,6 +177,7 @@ export type Database = {
           service_id: string
           starts_at: string
           status: Database["public"]["Enums"]["appointment_status"]
+          subject_id: string | null
           tenant_id: string
           updated_at: string
         }
@@ -207,6 +208,7 @@ export type Database = {
           service_id: string
           starts_at: string
           status?: Database["public"]["Enums"]["appointment_status"]
+          subject_id?: string | null
           tenant_id: string
           updated_at?: string
         }
@@ -237,6 +239,7 @@ export type Database = {
           service_id?: string
           starts_at?: string
           status?: Database["public"]["Enums"]["appointment_status"]
+          subject_id?: string | null
           tenant_id?: string
           updated_at?: string
         }
@@ -282,6 +285,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "services"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_subject_fk"
+            columns: ["tenant_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["tenant_id", "id"]
           },
           {
             foreignKeyName: "appointments_tenant_id_fkey"
@@ -445,6 +455,8 @@ export type Database = {
           sample_size: number
           service_id: string
           state: Database["public"]["Enums"]["cycle_state"]
+          subject_id: string | null
+          subject_key: string
           tenant_id: string
           value_at_risk_cents: number
         }
@@ -460,6 +472,8 @@ export type Database = {
           sample_size?: number
           service_id: string
           state?: Database["public"]["Enums"]["cycle_state"]
+          subject_id?: string | null
+          subject_key?: string
           tenant_id: string
           value_at_risk_cents?: number
         }
@@ -475,6 +489,8 @@ export type Database = {
           sample_size?: number
           service_id?: string
           state?: Database["public"]["Enums"]["cycle_state"]
+          subject_id?: string | null
+          subject_key?: string
           tenant_id?: string
           value_at_risk_cents?: number
         }
@@ -499,6 +515,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "services"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_cycles_subject_fk"
+            columns: ["tenant_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["tenant_id", "id"]
           },
           {
             foreignKeyName: "client_cycles_tenant_id_fkey"
@@ -766,6 +789,8 @@ export type Database = {
           emergency_contact: string | null
           gender: string | null
           id: string
+          import_batch_id: string | null
+          import_row: number | null
           last_visit_at: string | null
           ltv_cents: number
           marketing_opt_in: boolean
@@ -797,6 +822,8 @@ export type Database = {
           emergency_contact?: string | null
           gender?: string | null
           id?: string
+          import_batch_id?: string | null
+          import_row?: number | null
           last_visit_at?: string | null
           ltv_cents?: number
           marketing_opt_in?: boolean
@@ -828,6 +855,8 @@ export type Database = {
           emergency_contact?: string | null
           gender?: string | null
           id?: string
+          import_batch_id?: string | null
+          import_row?: number | null
           last_visit_at?: string | null
           ltv_cents?: number
           marketing_opt_in?: boolean
@@ -849,6 +878,13 @@ export type Database = {
           whatsapp_opt_out?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "clients_import_batch_id_fkey"
+            columns: ["import_batch_id"]
+            isOneToOne: false
+            referencedRelation: "import_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clients_preferred_professional_id_fkey"
             columns: ["preferred_professional_id"]
@@ -1045,6 +1081,7 @@ export type Database = {
           predicted_on: string
           resolved_at: string | null
           service_id: string
+          subject_id: string | null
           tenant_id: string
         }
         Insert: {
@@ -1059,6 +1096,7 @@ export type Database = {
           predicted_on: string
           resolved_at?: string | null
           service_id: string
+          subject_id?: string | null
           tenant_id: string
         }
         Update: {
@@ -1073,6 +1111,7 @@ export type Database = {
           predicted_on?: string
           resolved_at?: string | null
           service_id?: string
+          subject_id?: string | null
           tenant_id?: string
         }
         Relationships: [
@@ -1096,6 +1135,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "services"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cycle_predictions_subject_fk"
+            columns: ["tenant_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["tenant_id", "id"]
           },
           {
             foreignKeyName: "cycle_predictions_tenant_id_fkey"
@@ -1256,14 +1302,80 @@ export type Database = {
         }
         Relationships: []
       }
+      import_batches: {
+        Row: {
+          completed_at: string | null
+          counts: Json
+          created_at: string
+          created_by: string | null
+          declaration_version: string | null
+          file_sha256: string
+          formato: string
+          id: string
+          nivel: string
+          origem: string
+          rows_expected: number
+          rows_written: number
+          status: string
+          tenant_id: string
+          undone_at: string | null
+          undone_by: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          counts: Json
+          created_at?: string
+          created_by?: string | null
+          declaration_version?: string | null
+          file_sha256: string
+          formato: string
+          id?: string
+          nivel: string
+          origem: string
+          rows_expected: number
+          rows_written?: number
+          status?: string
+          tenant_id: string
+          undone_at?: string | null
+          undone_by?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          counts?: Json
+          created_at?: string
+          created_by?: string | null
+          declaration_version?: string | null
+          file_sha256?: string
+          formato?: string
+          id?: string
+          nivel?: string
+          origem?: string
+          rows_expected?: number
+          rows_written?: number
+          status?: string
+          tenant_id?: string
+          undone_at?: string | null
+          undone_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_batches_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invites: {
         Row: {
           accepted_at: string | null
           created_at: string
           display_name: string | null
-          email: string
+          email: string | null
           expires_at: string
           id: string
+          phone: string | null
           invited_by: string
           role: Database["public"]["Enums"]["user_role"]
           tenant_id: string
@@ -1273,9 +1385,10 @@ export type Database = {
           accepted_at?: string | null
           created_at?: string
           display_name?: string | null
-          email: string
+          email?: string | null
           expires_at: string
           id?: string
+          phone?: string | null
           invited_by: string
           role: Database["public"]["Enums"]["user_role"]
           tenant_id: string
@@ -1285,9 +1398,10 @@ export type Database = {
           accepted_at?: string | null
           created_at?: string
           display_name?: string | null
-          email?: string
+          email?: string | null
           expires_at?: string
           id?: string
+          phone?: string | null
           invited_by?: string
           role?: Database["public"]["Enums"]["user_role"]
           tenant_id?: string
@@ -3218,6 +3332,7 @@ export type Database = {
         Row: {
           commission_cents: number
           fee_cents: number
+          fixed_cost_cents: number
           frozen_at: string
           material_cents: number
           month: string
@@ -3225,10 +3340,12 @@ export type Database = {
           revenue_cents: number
           tenant_id: string
           tickets_count: number
+          tip_cents: number
         }
         Insert: {
           commission_cents: number
           fee_cents: number
+          fixed_cost_cents?: number
           frozen_at?: string
           material_cents: number
           month: string
@@ -3236,10 +3353,12 @@ export type Database = {
           revenue_cents: number
           tenant_id: string
           tickets_count: number
+          tip_cents?: number
         }
         Update: {
           commission_cents?: number
           fee_cents?: number
+          fixed_cost_cents?: number
           frozen_at?: string
           material_cents?: number
           month?: string
@@ -3247,6 +3366,7 @@ export type Database = {
           revenue_cents?: number
           tenant_id?: string
           tickets_count?: number
+          tip_cents?: number
         }
         Relationships: [
           {
@@ -3255,6 +3375,64 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      odometer_readings: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          created_by: string | null
+          flag: string | null
+          id: string
+          km: number
+          read_on: string
+          subject_id: string
+          tenant_id: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          flag?: string | null
+          id?: string
+          km: number
+          read_on: string
+          subject_id: string
+          tenant_id: string
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          flag?: string | null
+          id?: string
+          km?: number
+          read_on?: string
+          subject_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "odometer_readings_tenant_id_appointment_id_fkey"
+            columns: ["tenant_id", "appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "odometer_readings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "odometer_readings_tenant_id_subject_id_fkey"
+            columns: ["tenant_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["tenant_id", "id"]
           },
         ]
       }
@@ -3382,6 +3560,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["payment_kind"]
           method: Database["public"]["Enums"]["payment_method"]
           net_cents: number | null
+          package_id: string | null
           paid_at: string | null
           pix_copy_paste: string | null
           pix_qr: string | null
@@ -3406,6 +3585,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["payment_kind"]
           method: Database["public"]["Enums"]["payment_method"]
           net_cents?: number | null
+          package_id?: string | null
           paid_at?: string | null
           pix_copy_paste?: string | null
           pix_qr?: string | null
@@ -3430,6 +3610,7 @@ export type Database = {
           kind?: Database["public"]["Enums"]["payment_kind"]
           method?: Database["public"]["Enums"]["payment_method"]
           net_cents?: number | null
+          package_id?: string | null
           paid_at?: string | null
           pix_copy_paste?: string | null
           pix_qr?: string | null
@@ -3462,6 +3643,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "v_client_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
             referencedColumns: ["id"]
           },
           {
@@ -3721,6 +3909,7 @@ export type Database = {
           bio: string | null
           color: string | null
           commission_bps: number
+          product_commission_bps: number | null
           comp_model: Database["public"]["Enums"]["comp_model"]
           created_at: string
           deleted_at: string | null
@@ -3740,6 +3929,7 @@ export type Database = {
           bio?: string | null
           color?: string | null
           commission_bps?: number
+          product_commission_bps?: number | null
           comp_model?: Database["public"]["Enums"]["comp_model"]
           created_at?: string
           deleted_at?: string | null
@@ -3759,6 +3949,7 @@ export type Database = {
           bio?: string | null
           color?: string | null
           commission_bps?: number
+          product_commission_bps?: number | null
           comp_model?: Database["public"]["Enums"]["comp_model"]
           created_at?: string
           deleted_at?: string | null
@@ -4344,6 +4535,64 @@ export type Database = {
           },
         ]
       }
+      subjects: {
+        Row: {
+          active: boolean
+          attributes: Json
+          client_id: string
+          created_at: string
+          id: string
+          identifier: string | null
+          kind: string
+          name: string
+          tenant_id: string
+        }
+        Insert: {
+          active?: boolean
+          attributes?: Json
+          client_id: string
+          created_at?: string
+          id?: string
+          identifier?: string | null
+          kind: string
+          name: string
+          tenant_id: string
+        }
+        Update: {
+          active?: boolean
+          attributes?: Json
+          client_id?: string
+          created_at?: string
+          id?: string
+          identifier?: string | null
+          kind?: string
+          name?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subjects_tenant_id_client_id_fkey"
+            columns: ["tenant_id", "client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "subjects_tenant_id_client_id_fkey"
+            columns: ["tenant_id", "client_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "subjects_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           active: boolean
@@ -4581,6 +4830,7 @@ export type Database = {
           professional_id: string | null
           qty: number
           service_id: string | null
+          subject_id: string | null
           tenant_id: string
           ticket_id: string
           total_cents: number
@@ -4598,6 +4848,7 @@ export type Database = {
           professional_id?: string | null
           qty?: number
           service_id?: string | null
+          subject_id?: string | null
           tenant_id: string
           ticket_id: string
           total_cents: number
@@ -4615,6 +4866,7 @@ export type Database = {
           professional_id?: string | null
           qty?: number
           service_id?: string | null
+          subject_id?: string | null
           tenant_id?: string
           ticket_id?: string
           total_cents?: number
@@ -4641,6 +4893,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "services"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_items_subject_fk"
+            columns: ["tenant_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["tenant_id", "id"]
           },
           {
             foreignKeyName: "ticket_items_tenant_id_fkey"
@@ -5197,6 +5456,64 @@ export type Database = {
           },
         ]
       }
+      v_quem_sumiu: {
+        Row: {
+          client_id: string | null
+          client_name: string | null
+          last_campaign_at: string | null
+          last_visit_on: string | null
+          late_days: number | null
+          personal_cycle_days: number | null
+          phone_e164: string | null
+          predicted_on: string | null
+          profit_at_risk_cents: number | null
+          sample_size: number | null
+          service_id: string | null
+          service_name: string | null
+          state: Database["public"]["Enums"]["cycle_state"] | null
+          subject_id: string | null
+          subject_name: string | null
+          tenant_id: string | null
+          value_at_risk_cents: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_cycles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_cycles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_cycles_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_cycles_subject_fk"
+            columns: ["tenant_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "client_cycles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_recover_revenue: {
         Row: {
           client_id: string | null
@@ -5248,6 +5565,43 @@ export type Database = {
       }
     }
     Functions: {
+      aplicar_fechamento_de_comanda: {
+        Args: {
+          p_consumo: Json
+          p_itens: Json
+          p_tenant: string
+          p_ticket: string
+          p_ticket_campos: Json
+        }
+        Returns: {
+          appointment_id: string | null
+          client_id: string | null
+          closed_at: string | null
+          commission_cents: number
+          created_at: string
+          created_by: string | null
+          discount_cents: number
+          fee_bps: number
+          fee_cents: number
+          fixed_cost_cents: number
+          id: string
+          material_cost_cents: number
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
+          professional_id: string | null
+          profit_cents: number
+          status: Database["public"]["Enums"]["ticket_status"]
+          subtotal_cents: number
+          tenant_id: string
+          tip_cents: number
+          total_cents: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       apply_profession_pack: {
         Args: { p_profession_id: string; p_tenant: string }
         Returns: undefined
@@ -5269,7 +5623,7 @@ export type Database = {
       }
       can_see_ticket: { Args: { prof: string; t: string }; Returns: boolean }
       claim_jobs: {
-        Args: { p_limit?: number }
+        Args: { p_kinds?: string[]; p_limit?: number }
         Returns: {
           attempts: number
           created_at: string
@@ -5307,6 +5661,13 @@ export type Database = {
           p_valor: number
         }
         Returns: number
+      }
+      desfazer_lote_de_importacao: {
+        Args: { p_batch: string }
+        Returns: {
+          mantidas: number
+          removidas: number
+        }[]
       }
       finish_job: {
         Args: {
@@ -5371,7 +5732,10 @@ export type Database = {
           name: string
         }[]
       }
+      my_full_view_tenant_ids: { Args: never; Returns: string[] }
       my_professional_id: { Args: { t: string }; Returns: string }
+      my_professional_keys: { Args: never; Returns: string[] }
+      my_tenant_ids: { Args: never; Returns: string[] }
       privilegios_report: {
         Args: never
         Returns: {
@@ -5385,6 +5749,35 @@ export type Database = {
       redigir_trilha_do_cliente: {
         Args: { p_client: string; p_tenant: string }
         Returns: Json
+      }
+      registrar_venda_de_pacote: {
+        Args: {
+          p_client: string
+          p_expires_on: string
+          p_fee_cents: number
+          p_method: Database["public"]["Enums"]["payment_method"]
+          p_paid_cents: number
+          p_service: string
+          p_tenant: string
+          p_total_sessions: number
+        }
+        Returns: {
+          client_id: string
+          created_at: string
+          expires_on: string | null
+          id: string
+          paid_cents: number
+          service_id: string
+          tenant_id: string
+          total_sessions: number
+          used_sessions: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "packages"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       resolver_previsoes_em_lote: {
         Args: { p_atualizacoes: Json; p_tenant_id: string }
@@ -5410,6 +5803,7 @@ export type Database = {
           schedule: string
         }[]
       }
+      telefone_em_outra_conta: { Args: never; Returns: boolean }
       tenant_rls_report: {
         Args: never
         Returns: {
@@ -5461,7 +5855,13 @@ export type Database = {
         | "read"
         | "failed"
         | "opted_out"
-      payment_kind: "deposit" | "service" | "product" | "club" | "fee"
+      payment_kind:
+        | "deposit"
+        | "service"
+        | "product"
+        | "club"
+        | "fee"
+        | "package"
       payment_method:
         | "pix"
         | "credit"
@@ -5660,7 +6060,7 @@ export const Constants = {
         "failed",
         "opted_out",
       ],
-      payment_kind: ["deposit", "service", "product", "club", "fee"],
+      payment_kind: ["deposit", "service", "product", "club", "fee", "package"],
       payment_method: [
         "pix",
         "credit",

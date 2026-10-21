@@ -6,6 +6,7 @@ import { useState } from 'react'
 import type { PlanoTier } from '@/core/billing/planos'
 
 import { NOME_DO_PLANO } from '@/core/billing/planos'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 /**
  * O botão "Assinar {plano}" — só aparece quando `MERCADOPAGO_ACCESS_TOKEN` está configurado
@@ -26,9 +27,9 @@ export default function AssinarPlano({ tier }: { tier: PlanoTier }) {
     setPendente(true)
     setErro(null)
     try {
-      const resposta = await fetch('/api/v1/billing/assinar', {
+      const resposta = await fetchComTentativa('/api/v1/billing/assinar', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ tier }),
       })
       const corpo = (await resposta.json().catch(() => null)) as { data?: { initPoint?: string }; error?: { message?: string } } | null

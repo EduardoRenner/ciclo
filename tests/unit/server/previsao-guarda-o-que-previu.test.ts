@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { registrarPrevisoes, resolverPrevisoes, type PrevisaoParaRegistrar } from '@/server/services/previsao'
+import { chaveDaCombinacao, registrarPrevisoes, resolverPrevisoes, type PrevisaoParaRegistrar } from '@/server/services/previsao'
 
 /**
  * O único ativo do produto que o tempo protege (`docs/45` §1.6) é a previsão guardada ANTES do
@@ -74,7 +74,7 @@ describe('a previsão é registrada uma vez e nunca reescrita', () => {
      * que o Motor previu, no dia da visita, uma data que ele só calculou meses depois.
      */
     expect(upserts[0]!.opcoes.ignoreDuplicates).toBe(true)
-    expect(upserts[0]!.opcoes.onConflict).toBe('tenant_id,client_id,service_id,last_visit_on')
+    expect(upserts[0]!.opcoes.onConflict).toBe('tenant_id,client_id,service_id,subject_id,last_visit_on')
   })
 
   it('carimba a versão do algoritmo em toda linha', async () => {
@@ -100,7 +100,7 @@ describe('só fecha a previsão cujo resultado realmente aconteceu', () => {
 
   it('fecha com a primeira visita DEPOIS da que originou a previsão', async () => {
     const { db, rpcs } = fakeDb([aberta])
-    const historico = new Map([['cli-1:srv-1', ['2026-01-10', '2026-02-04', '2026-03-01']]])
+    const historico = new Map([[chaveDaCombinacao('cli-1', 'srv-1', null), ['2026-01-10', '2026-02-04', '2026-03-01']]])
 
     const fechadas = await resolverPrevisoes(db, 'tenant-1', historico)
 
@@ -118,7 +118,7 @@ describe('só fecha a previsão cujo resultado realmente aconteceu', () => {
      * calibração como se fosse medição — o defeito mais caro que esta série pode ter.
      */
     const { db, rpcs } = fakeDb([aberta])
-    const historico = new Map([['cli-1:srv-1', ['2026-01-10']]])
+    const historico = new Map([[chaveDaCombinacao('cli-1', 'srv-1', null), ['2026-01-10']]])
 
     const fechadas = await resolverPrevisoes(db, 'tenant-1', historico)
 
@@ -129,7 +129,7 @@ describe('só fecha a previsão cujo resultado realmente aconteceu', () => {
   it('duas visitas no MESMO dia não fecham uma à outra', async () => {
     // Corte e barba no mesmo atendimento são duas linhas com a mesma data. Isso não é retorno.
     const { db, rpcs } = fakeDb([aberta])
-    const historico = new Map([['cli-1:srv-1', ['2026-01-10', '2026-01-10']]])
+    const historico = new Map([[chaveDaCombinacao('cli-1', 'srv-1', null), ['2026-01-10', '2026-01-10']]])
 
     expect(await resolverPrevisoes(db, 'tenant-1', historico)).toBe(0)
     expect(rpcs).toHaveLength(0)
@@ -143,7 +143,7 @@ describe('só fecha a previsão cujo resultado realmente aconteceu', () => {
 
   it('nada em aberto não vira trabalho', async () => {
     const { db, rpcs } = fakeDb([])
-    expect(await resolverPrevisoes(db, 'tenant-1', new Map([['cli-1:srv-1', ['2026-02-04']]]))).toBe(0)
+    expect(await resolverPrevisoes(db, 'tenant-1', new Map([[chaveDaCombinacao('cli-1', 'srv-1', null), ['2026-02-04']]]))).toBe(0)
     expect(rpcs).toHaveLength(0)
   })
 })
@@ -159,5 +159,20 @@ describe('o registro anda junto com o recálculo, não num job à parte', () => 
     const fonte = await import('node:fs').then((fs) => fs.readFileSync('src/server/services/ciclo.ts', 'utf8'))
     expect(fonte).toMatch(/await registrarPrevisoes\(db, tenantId, previsoes\)/)
     expect(fonte).toMatch(/await resolverPrevisoes\(db, tenantId, datasPorCombinacao\)/)
+  })
+})
+
+describe('C-030: a previsão do animal casa com as visitas DELE, não com as do outro animal do tutor', () => {
+  it('fecha a previsão da Mel com a volta da Mel (01/02), nunca com a do Thor (17/01)', async () => {
+    const daMel = { id: 'p-mel', client_id: 'cli-1', service_id: 'srv-1', subject_id: 'mel', last_visit_on: '2026-01-10' }
+    const { db, rpcs } = fakeDb([daMel])
+    const historico = new Map([
+      [chaveDaCombinacao('cli-1', 'srv-1', 'thor'), ['2026-01-10', '2026-01-17']],
+      [chaveDaCombinacao('cli-1', 'srv-1', 'mel'), ['2026-01-10', '2026-02-01']],
+    ])
+    // Controle positivo: fecha UMA, com a data da Mel. Só "nada fecha" passaria vazio se o casamento
+    // ignorasse o sujeito (mutação do C-030).
+    expect(await resolverPrevisoes(db, 'tenant-1', historico)).toBe(1)
+    expect(rpcs[0]!.args.p_atualizacoes).toEqual([{ id: 'p-mel', actual_return_on: '2026-02-01' }])
   })
 })

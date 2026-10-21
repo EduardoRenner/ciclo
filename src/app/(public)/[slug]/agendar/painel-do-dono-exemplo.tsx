@@ -8,7 +8,7 @@ import Chip from "@/components/ui/chip";
 import FilterRow from "@/components/ui/filter-row";
 
 /**
- * A visão de quem atende, em prints das seis contas de demonstração (`SLUGS_COM_PRINT`). Um print
+ * A visão de quem atende, em prints das contas de demonstração (`SLUGS_COM_PRINT`). Um print
  * por vitrine, porque o nome do negócio na tela tem que ser o do título da página.
  *
  * Os dados são FICTÍCIOS e foram semeados para a demonstração (`scripts/seed-demo-6-negocios.mjs`
@@ -18,7 +18,9 @@ import FilterRow from "@/components/ui/filter-row";
  * Como refazer (manutenção esperada, a tela "Hoje" mostra a data em que foi capturada): painel em
  * tema CLARO, viewport 375x812 a 2x, corte de 1444 px de altura (tira a barra de abas do admin),
  * WebP em `public/exemplo/<slug>-<aba>.webp`. `recuperar-topo` (750x580) é o recorte do topo de
- * Recuperar, usado fora daqui.
+ * Recuperar, usado fora daqui. Grave os arquivos FORA de `public/` e copie no fim: com o servidor de
+ * desenvolvimento ligado, cada arquivo novo ali faz o Next reescrever os manifestos, e a tela seguinte
+ * abre no erro "Unexpected end of JSON input" (medido ao refazer os prints em 21/10).
  */
 
 type AbaInterna = "recuperar" | "hoje" | "clientes";
@@ -39,11 +41,15 @@ const LEGENDA_POR_ABA: Record<AbaInterna, string> = {
 const ALTURA_DO_PRINT = 1444;
 
 /**
- * As seis vitrines de verdade. `dom-rocha` (último recurso de `SLUGS_DE_VITRINE`, só existe fora
+ * As vitrines de verdade. `dom-rocha` (último recurso de `SLUGS_DE_VITRINE`, só existe fora
  * de produção) cai no `?? SLUG_PADRAO` abaixo — não vale gerar print de uma conta que a própria
  * `demonstracao.ts` documenta como "não existe mais em produção".
  */
 const SLUGS_COM_PRINT = [
+  // docs/112 EXP-S02: as contas de salão novas, que abrem a vitrine onde o seed delas rodou.
+  "demo-carol-cilios",
+  "demo-esmalteria-rosa-cha",
+  "demo-ana-paula-unhas",
   "demo-navalha-de-ouro",
   "demo-corte-fino",
   "demo-dom-estilo",
@@ -51,7 +57,7 @@ const SLUGS_COM_PRINT = [
   "demo-salao-encanto",
   "demo-espaco-vitoria",
 ];
-const SLUG_PADRAO = "demo-dom-estilo";
+const SLUG_PADRAO = "demo-studio-bella"; // docs/112 EXP-S01: o print padrão é de salão
 
 export default function PainelDoDonoExemplo({ slug }: { slug: string }) {
   const [aba, setAba] = useState<AbaInterna>("recuperar");

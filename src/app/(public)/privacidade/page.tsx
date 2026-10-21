@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { dataLegivel, VERSOES_LEGAIS } from '@/core/legal/versoes'
 import { canalDeContato } from '@/lib/contato'
 
-import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
-import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-aqua-claro.png'
+import wordmark from '../../../../public/marca/ciclo-logo-escrita-branca.svg'
+import wordmarkClaro from '../../../../public/marca/ciclo-logo-escrita-preta.svg'
 
 const CANAL = canalDeContato('Oi! É sobre os meus dados no CICLO.')
 
@@ -169,6 +169,18 @@ export default function Privacidade() {
             <li>
               <strong className="font-semibold text-txt">Supabase</strong>, que hospeda o banco de
               dados, com o mesmo isolamento por conta descrito na seção 4.
+            </li>
+            <li>
+              <strong className="font-semibold text-txt">Vercel</strong>, que hospeda o site e o app e
+              por onde passa cada acesso.
+            </li>
+            <li>
+              <strong className="font-semibold text-txt">Google (Gemini)</strong>, quando você usa o
+              assistente: recebe a sua pergunta e os dados do seu negócio que ele precisa para responder.
+            </li>
+            <li>
+              <strong className="font-semibold text-txt">Sentry</strong>, quando está ligado, pra registrar
+              erro técnico. Telefone, e-mail, senha e dado de saúde são tirados antes do envio.
             </li>
           </ul>
         </section>

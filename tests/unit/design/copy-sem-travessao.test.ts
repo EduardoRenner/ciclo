@@ -80,6 +80,8 @@ const FORA_DO_CORE: Record<string, string> = {
   'src/core/schema/versao.ts': 'diagnóstico de schema',
   // O travessão aqui é um caractere dentro de uma classe de regex (separador de lista colada).
   'src/core/ciclo/lista-de-nomes.ts': 'regex',
+  // Idem: meia-risca e travessão como marcador e separador da lista livre colada (CNV-014b).
+  'src/core/ingestao/lista-livre.ts': 'regex',
 }
 const CORE = rastrear('src/core/**/*.ts').filter((a) => !a.endsWith('.test.ts') && !(a in FORA_DO_CORE))
 

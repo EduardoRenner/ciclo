@@ -33,7 +33,7 @@ export default function CompartilharSite({
 
   async function compartilhar() {
     const url = `${window.location.origin}/${slug}`
-    const texto = `Agende seu horário na ${nome}: ${url}`
+    const texto = `Agende seu horário em ${nome}: ${url}`
 
     if (navigator.share) {
       try {

@@ -69,6 +69,16 @@ export const SLUGS_DE_DEMONSTRACAO: readonly string[] = [
   'demo-espaco-vitoria',
   // docs/101 anexo 06: o escritório-modelo do pacote Advocacia (`scripts/seed-demo-escritorio.mjs`).
   'demo-alvorada-advocacia',
+  // docs/98-aprimoramento/11 LOJA-22: a conta do revisor da Apple (`docs/64` T-DEMO), semeada em produção em 16/09.
+  'apple-review',
+  // 16/10: uma conta de teste por nicho além de barbearia e salão (`seed-tenant-teste.mjs`).
+  'demo-esmalteria-rosa',
+  'demo-studio-olhar',
+  'demo-pet-amigo',
+  // 21/10, docs/112 EXP-S02: as contas de salão de `scripts/seed-demo-salao.mjs` (o Encanto reaproveita o slug).
+  'demo-carol-cilios',
+  'demo-esmalteria-rosa-cha',
+  'demo-ana-paula-unhas',
 ]
 
 /** O tenant deste slug é uma demonstração, e não um negócio de verdade. */
@@ -94,18 +104,25 @@ export const SLUGS_DE_DEMONSTRACAO_PARA_TESTE = SLUGS_DE_DEMONSTRACAO
  * Ficam de fora `teste-*` (degrau de plano), e os legados `dom-rocha`/`ruivo-barber`/`lang-*`, que
  * não existem mais em produção (conferido por requisição: respondem 404).
  *
- * **A ORDEM é a preferência**, e é decisão de produto: barbearia primeiro, porque é onde o esforço
- * de venda está (`docs/18` §B.2), e dentro dela a de conteúdo mais cheio primeiro — uma vitrine com
- * três profissionais demonstra mais que uma com um. Quem resolve pega o primeiro que existir de
- * fato no banco (`server/services/demonstracao.ts`), então a ordem é o que decide na prática.
+ * **A ORDEM é a preferência**, e é decisão de produto: salão primeiro, porque o público é a beleza
+ * feminina desde o `docs/108-norte` (a barbearia saiu do alvo em 16/10; até 21/10 esta lista abria
+ * na Barbearia Dom Estilo, `docs/112` EXP-S01). As barbearias ficam como reserva, depois de todos os
+ * salões. Quem resolve pega o primeiro que existir de fato no banco (`server/services/demonstracao.ts`),
+ * então a ordem é o que decide na prática.
  */
 export const SLUGS_DE_VITRINE: readonly string[] = [
-  'demo-dom-estilo',
-  'demo-corte-fino',
-  'demo-navalha-de-ouro',
+  // `docs/112` EXP-S02 (`04-salao.md` §5.4): a autônoma primeiro (o público maior). Os três primeiros só
+  // existem onde o `seed-demo-salao.mjs` rodou; em produção, hoje, vale o Studio Bella, que é o dos prints.
+  // O Encanto vem DEPOIS dele de propósito: em produção o Encanto ainda é o antigo, com a lash fazendo escova.
+  'demo-carol-cilios',
+  'demo-esmalteria-rosa-cha',
+  'demo-ana-paula-unhas',
   'demo-studio-bella',
   'demo-salao-encanto',
   'demo-espaco-vitoria',
+  'demo-dom-estilo',
+  'demo-corte-fino',
+  'demo-navalha-de-ouro',
   /*
     Último recurso, e não engano: `dom-rocha` não existe mais em PRODUÇÃO (404, conferido por
     requisição), mas existe no banco de desenvolvimento — que é outro projeto Supabase, medido em

@@ -1,3 +1,4 @@
+import { fazSozinha } from '@/core/automacoes/config'
 import { dentroDaJanela, horaLocalDe } from '@/core/cron/janela'
 import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import { withNovoTenant } from '@/server/db/with-tenant'
@@ -44,6 +45,9 @@ export const GET = rota(async (req) => {
       if (ehDemonstracao(tenant.slug)) continue
       // Interruptor manual do dono (F0, docs/25-ESTRATEGIA-E-EXECUCAO.md).
       if (lerMensageria(tenant.settings).paused) continue
+      // docs/112 EXP-A01: o dial de Automações. A campanha tem teto 2 ("Deixa pronto"), então o
+      // agendador nunca manda por ela; ela espera o toque da dona, como a tela promete.
+      if (!fazSozinha(tenant.settings, 'campanha_de_recuperacao')) continue
 
       if (!dentroDaJanela(horaLocalDe(tenant.timezone, agora), 10)) continue
 

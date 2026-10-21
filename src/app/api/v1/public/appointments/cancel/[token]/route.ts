@@ -1,4 +1,9 @@
+import { avisoDeCancelamentoPelaCliente } from '@/core/mensageria/aviso-de-cancelamento'
+import { APP_URL } from '@/lib/app-url'
 import { withNovoTenant } from '@/server/db/with-tenant'
+import { agendarDepois } from '@/server/http/depois'
+import { notificarProximoDaLista } from '@/server/services/lista-espera'
+import { notificarEquipe } from '@/server/services/mensageria'
 import { cancelarAgendamento } from '@/server/services/agendamentos'
 import { verificarTokenConfirmacao } from '@/server/services/confirmacao-token'
 import { AppError } from '@/server/http/errors'
@@ -27,7 +32,7 @@ export const POST = rota(async (req, ctx) => {
   return withNovoTenant(async (svc) => {
     const { data, error } = await svc
       .from('appointments')
-      .select('tenant_id, status, tenants ( slug )')
+      .select('tenant_id, status, starts_at, service_id, professional_id, tenants ( slug, timezone ), clients ( name )')
       .eq('id', appointmentId)
       .maybeSingle()
     if (error) throw new AppError('INTERNAL', { cause: error })
@@ -47,6 +52,45 @@ export const POST = rota(async (req, ctx) => {
       canceledBy: 'client',
       reason: null,
     })
+
+    // docs/112 EXP-A03: cancelar pelo link liberava a vaga sem ninguém saber; a profissional
+    // descobria com a cadeira vazia. Avisa quem vai atender e quem administra (EXP-A06), depois da
+    // resposta e por melhor esforço: o push falhar não pode desfazer o cancelamento.
+    const tenant = data.tenants as { slug: string; timezone: string } | null
+    if (tenant) {
+      const aviso = avisoDeCancelamentoPelaCliente({
+        nomeDaCliente: (data.clients as { name: string } | null)?.name ?? null,
+        startsAt: data.starts_at,
+        timezone: tenant.timezone,
+      })
+      agendarDepois(() =>
+        notificarEquipe(svc, data.tenant_id, aviso, { professionalId: data.professional_id }).catch((erro: unknown) => {
+          console.error(JSON.stringify({ level: 'error', event: 'push_cancelamento_falhou', tenantId: data.tenant_id }), erro)
+        }),
+      )
+
+      // EXP-A03 parte 2: a vaga liberada pela cliente oferece o encaixe à próxima da lista de espera,
+      // como o cancelamento pelo painel (TICKET-034) já fazia. Só depois do EXP-A04: sem canal que
+      // chegue, a fila não marca ninguém como avisado.
+      agendarDepois(() =>
+        notificarProximoDaLista(
+          svc,
+          data.tenant_id,
+          {
+            serviceId: data.service_id,
+            professionalId: data.professional_id,
+            startsAt: data.starts_at,
+            timezone: tenant.timezone,
+          },
+          // `APP_URL` (fonte única, com o domínio de reserva) e não `exigirEnv`: este argumento é avaliado
+          // FORA do `.catch` abaixo, e sem a variável a rota inteira respondia 500 (CI de 21/10, job de banco).
+          APP_URL,
+        ).catch((erro: unknown) => {
+          console.error(JSON.stringify({ level: 'error', event: 'lista_espera_cancelamento_falhou', tenantId: data.tenant_id }), erro)
+        }),
+      )
+    }
+
     return { status: agendamento.status, slug }
   })
 })

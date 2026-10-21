@@ -45,7 +45,7 @@ export default async function PaginaRecuperar() {
    * São `head: true` com `count: 'exact'`: não trazem linha nenhuma, só o número, e vão no mesmo
    * `Promise.all` que já existia — custo de latência zero contra o que a tela já pagava.
    */
-  const [lista, atribuicao, clientes, ciclos, concluidos, resumoDoMotor, material, proximo] = await Promise.all([
+  const [lista, atribuicao, clientes, ciclos, concluidos, resumoDoMotor, material, proximo, modeloDeVolta] = await Promise.all([
     listarParaRecuperar(db, ctx.tenantId),
     receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate),
     db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', ctx.tenantId).is('deleted_at', null),
@@ -89,6 +89,13 @@ export default async function PaginaRecuperar() {
       .order('predicted_on')
       .limit(1)
       .maybeSingle(),
+    // RET-01: o "Sumiu, chamar de volta" do negócio, para o botão usar o texto que ele escreveu.
+    db
+      .from('message_templates')
+      .select('body, active')
+      .eq('tenant_id', ctx.tenantId)
+      .eq('slug', 'sentimos_falta')
+      .maybeSingle(),
   ])
 
   return (
@@ -104,7 +111,7 @@ export default async function PaginaRecuperar() {
         descricao="Quem o Motor de Ciclo identificou em atraso para voltar."
         acao={
           <Link
-            href="/admin/campanhas"
+            href="/admin/campanhas?de=recuperar"
             className="flex h-12 items-center gap-1 text-label font-semibold text-acc-2 transition active:scale-[.97]"
           >
             Campanhas
@@ -130,6 +137,8 @@ export default async function PaginaRecuperar() {
         temAtendimentosConcluidos={(concluidos.count ?? 0) > 0}
         quandoOProximoVolta={proximo.data?.predicted_on ? quandoVolta(proximo.data.predicted_on, hoje) : null}
         servicosSemMaterial={material.semFicha + material.comProdutoSemCusto}
+        modeloDeVolta={modeloDeVolta.data ?? null}
+        nomeDoNegocio={ctx.tenant.name}
       />
     </>
   )

@@ -1,7 +1,16 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
+import { PREFIXOS_REDIRECIONADOS_PARA_ADMIN } from "./src/core/tenants/slugs-reservados";
+
+/** Páginas públicas com token de UMA pessoa (APR-031). A guarda confere contra as pastas `[token]`. */
+export const ROTAS_COM_TOKEN = ["confirmar", "avaliar", "orcamento", "lista-espera", "convite"];
+
 const nextConfig: NextConfig = {
+  // Sem o cabeçalho `X-Powered-By: Next.js`: ele só diz a quem varre a internet qual stack (e qual
+  // família de CVEs) tentar. Medido em produção em 2026-09-21: estava presente em todas as respostas.
+  // C-016: o conserto ficou na branch local loop/integracao-final (aac4d356) e nunca chegou à main.
+  poweredByHeader: false,
   /**
    * Identificador de build exposto ao cliente (docs/13-CAUSA-RAIZ-LAYOUT-LEGADO.md
    * T1): é o que faz o service worker trocar de nome de cache a cada deploy,
@@ -24,12 +33,20 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_URL || "dev",
   },
+  /*
+   * APR-031 (achado G-05): as páginas com token mostram negócio, serviço e horário de UMA pessoa.
+   * `noindex` no cabeçalho, além do metadata de cada página. E elas NÃO entram no `Disallow` do
+   * `robots.ts`: bloqueada, o robô não lê o `noindex` e a URL pode aparecer se alguém linkar (R-09).
+   */
+  async headers() {
+    return ROTAS_COM_TOKEN.map((rota) => ({ source: `/${rota}/:token`, headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] }));
+  },
   // O app do profissional morava na raiz (`/hoje`, `/agenda`...) e mudou pra
   // `/admin/*` — favoritos e o PWA já instalado no celular apontam pro
   // endereço velho. Redirect permanente, não um `notFound()`.
   async redirects() {
-    const prefixosAntigos = ["hoje", "agenda", "clientes", "recuperar", "comanda", "caixa", "config"];
-    return prefixosAntigos.map((prefixo) => ({
+    // APR-216: a lista vive em `core/tenants/slugs-reservados`, junto da reserva de slug — redirect sem reserva sequestrava o slug do salão.
+    return PREFIXOS_REDIRECIONADOS_PARA_ADMIN.map((prefixo) => ({
       source: `/${prefixo}/:path*`,
       destination: `/admin/${prefixo}/:path*`,
       permanent: true,

@@ -133,9 +133,9 @@ describe('a tabela de preço é coerente consigo mesma', () => {
   })
 
   it('preço sai sem centavos, com NBSP, e o grátis não vira "R$ 0/mês"', () => {
-    expect(precoDoPlano('essencial')).toBe(`R$${NBSP}49`)
+    expect(precoDoPlano('essencial')).toBe(`R$${NBSP}39`)
     expect(precoDoPlano('gratis')).toBe(`R$${NBSP}0`)
-    expect(precoDoPlanoPorMes('essencial')).toBe(`R$${NBSP}49/mês`)
+    expect(precoDoPlanoPorMes('essencial')).toBe(`R$${NBSP}39/mês`)
     // "/mês" num preço de zero sugere cobrança recorrente de zero, que é pior que só "R$ 0".
     expect(precoDoPlanoPorMes('gratis')).toBe(`R$${NBSP}0`)
   })

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { aplicarVariaveis, linkWhatsApp, precisaDeAgendamento, saidaDeContato, textoDeVolta } from '@/lib/mensagens'
+import { CORPOS_PADRAO_DE_VOLTA, CORPO_PADRAO_DO_LEMBRETE, aplicarVariaveis, linkWhatsApp, precisaDeAgendamento, saidaDeContato, textoDeVolta, textoDoLembreteDaVespera, textoDoRetorno } from '@/lib/mensagens'
+import { MODELOS_PADRAO } from '@/server/services/mensagens-prontas'
 
 describe('aplicarVariaveis', () => {
   it('troca as variáveis pelo valor', () => {
@@ -122,5 +123,73 @@ describe('textoDeVolta (docs/82 §7)', () => {
     expect(textoDeVolta({ nome: 'Joana', servico: 'Corte', link: null })).toBe(
       'Oi, Joana! Faz um tempinho desde seu último horário de corte. Quer marcar essa semana?',
     )
+  })
+})
+
+describe('textoDeVolta com o sujeito (C-025, AUT-101)', () => {
+  it('o animal entra com a grafia original e sem artigo; sem sujeito, o texto não muda', () => {
+    expect(textoDeVolta({ nome: 'Ana Souza', servico: 'Banho', sujeito: 'Mel' })).toBe(
+      'Oi, Ana! Faz um tempinho desde seu último horário de banho para Mel. Quer marcar essa semana?',
+    )
+    expect(textoDeVolta({ nome: 'Ana Souza', servico: 'Banho', sujeito: null })).toBe(textoDeVolta({ nome: 'Ana Souza', servico: 'Banho' }))
+    expect(textoDeVolta({ nome: 'Ana', servico: 'Banho', sujeito: 'Mel' })).not.toMatch(/\bd[ao] Mel\b/)
+  })
+})
+
+
+describe('textoDoRetorno: o Recuperar usa a mensagem que o negócio escreveu (RET-01)', () => {
+  const pessoa = { nome: 'Fernanda Lima', servico: 'Manutenção de cílios', link: 'https://x.test/v/abc' }
+
+  it('modelo editado: usa o corpo, com nome e serviço trocados', () => {
+    const modelo = { body: 'Oi {{nome}}! Vi que faz tempo da sua {{servico}}. Quer voltar? {{link}}', active: true }
+    expect(textoDoRetorno({ modelo, ...pessoa })).toBe('Oi Fernanda! Vi que faz tempo da sua Manutenção de cílios. Quer voltar? https://x.test/v/abc')
+  })
+
+  it('modelo igual ao padrão (o de hoje ou o de antes de 19/08): o texto de volta de sempre', () => {
+    expect(CORPOS_PADRAO_DE_VOLTA.length).toBeGreaterThanOrEqual(2)
+    for (const body of CORPOS_PADRAO_DE_VOLTA) {
+      expect(textoDoRetorno({ modelo: { body, active: true }, ...pessoa })).toBe(textoDeVolta(pessoa))
+    }
+    // Espaço sobrando nas pontas não conta como edição.
+    expect(textoDoRetorno({ modelo: { body: ` ${CORPOS_PADRAO_DE_VOLTA[0]}\n`, active: true }, ...pessoa })).toBe(textoDeVolta(pessoa))
+  })
+
+  it('modelo desligado ou ausente: o texto de volta de sempre', () => {
+    expect(textoDoRetorno({ modelo: { body: 'Oi {{nome}}, saudade!', active: false }, ...pessoa })).toBe(textoDeVolta(pessoa))
+    expect(textoDoRetorno({ modelo: null, ...pessoa })).toBe(textoDeVolta(pessoa))
+  })
+
+  it('modelo editado sem {{link}}: nada é acrescentado', () => {
+    expect(textoDoRetorno({ modelo: { body: 'Oi {{nome}}, saudade! Me chama.', active: true }, ...pessoa })).toBe('Oi Fernanda, saudade! Me chama.')
+  })
+
+  it('o padrão semeado no negócio novo é o mesmo que o Retorno reconhece como padrão', () => {
+    const semeado = MODELOS_PADRAO.find((m) => m.slug === 'sentimos_falta')?.body
+    expect(semeado).toBeTruthy()
+    expect(CORPOS_PADRAO_DE_VOLTA).toContain(semeado)
+  })
+})
+
+describe('textoDoLembreteDaVespera: o lembrete que a profissional manda com um toque (L-07)', () => {
+  const dados = { nome: 'Fernanda Lima', servico: 'Manutenção de cílios', data: '22/10', hora: '14:30', negocio: 'Studio Carol', link: 'https://x.test/confirmar/abc' }
+
+  it('sem modelo editado, o texto padrão do "Lembrete de amanhã" com o link de remarcar ou cancelar no fim', () => {
+    const texto = textoDoLembreteDaVespera({ modelo: null, ...dados })
+    expect(texto).toBe(`${aplicarVariaveis(CORPO_PADRAO_DO_LEMBRETE, dados)}\n\nPrecisa remarcar ou cancelar? É por aqui: https://x.test/confirmar/abc`)
+    expect(texto).toContain('Oi Fernanda!')
+  })
+
+  it('com o modelo do negócio, usa o texto dele', () => {
+    const texto = textoDoLembreteDaVespera({ modelo: { body: 'Fala {{nome}}, amanhã {{hora}} tem {{servico}}!', active: true }, ...dados })
+    expect(texto.startsWith('Fala Fernanda, amanhã 14:30 tem Manutenção de cílios!')).toBe(true)
+    expect(texto).toContain('https://x.test/confirmar/abc')
+  })
+
+  it('modelo desligado volta para o padrão', () => {
+    expect(textoDoLembreteDaVespera({ modelo: { body: 'Fala {{nome}}', active: false }, ...dados })).toBe(textoDoLembreteDaVespera({ modelo: null, ...dados }))
+  })
+
+  it('o padrão semeado no negócio novo é o mesmo texto', () => {
+    expect(MODELOS_PADRAO.find((m) => m.slug === 'lembrete')?.body).toBe(CORPO_PADRAO_DO_LEMBRETE)
   })
 })

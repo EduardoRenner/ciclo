@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 
 import { NOME_DO_PLANO, menorPlanoCom, podeUsarModulo } from '@/core/billing/planos'
+import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { contextoDePlano } from '@/server/services/planos'
@@ -8,12 +9,27 @@ import { listarProfissionais } from '@/server/services/profissionais'
 import { listarServicos } from '@/server/services/servicos'
 
 import FormularioAgendamento from './formulario'
+import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 
 export const metadata = { title: "Novo agendamento" }
 
 export default async function PaginaNovoAgendamento() {
   const ctx = await contextoDoPainel(new Request('https://interno/agenda/novo', { headers: await headers() }))
+  // APR-041: quem não marca horário (o financeiro, `rbac.ts`) preenchia o formulário inteiro e só
+  // descobria no último toque, com um 403. A tela diz antes, e diz quem marca.
+  if (avaliarPermissao(ctx.papel, 'appointment:create') === null) {
+    return (
+      <>
+        <PageHeader titulo="Novo agendamento" />
+        <Card>
+          <p className="text-corpo font-semibold">Seu acesso não marca horários</p>
+          <p className="mt-1 text-secundario text-txt-2">Quem marca é o dono, a gerência, a recepção ou o profissional. Você continua vendo a agenda.</p>
+        </Card>
+      </>
+    )
+  }
+
   const db = await criarClienteDoUsuario()
 
   const [servicos, profissionais, plano] = await Promise.all([

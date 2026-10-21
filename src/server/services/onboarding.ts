@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { cortesiaDoCadastro } from '@/core/billing/prelancamento'
 import { VERSOES_LEGAIS } from '@/core/legal/versoes'
 import { normalizarPacote } from '@/core/pacotes'
+import { modulosDesligadosNaEntrada } from '@/core/onboarding/modulos-de-entrada'
 import { pacoteAberto } from '@/core/pacotes/abertos'
 import { SLUG_PROFISSAO_GENERICA } from '@/core/profissoes'
 import type { Origem } from '@/core/aquisicao/origem'
@@ -167,6 +168,17 @@ export async function executarOnboarding(
       comp_model: 'owner',
     })
     if (erroProfissional) throw erroProfissional
+
+    // docs/108: cílios, sobrancelha, unhas e depilação começam sem orçamento, estoque, campanhas, clube e
+    // documentos (`core/onboarding/modulos-de-entrada.ts`). Gravado como escolha da dona (`origem: 'dono'`),
+    // o mesmo registro do interruptor de Configurações → Módulos, que é onde ela religa.
+    const desligados = modulosDesligadosNaEntrada(profissao?.slug)
+    if (desligados.length > 0) {
+      const { error: erroModulos } = await svc
+        .from('tenant_modules')
+        .insert(desligados.map((modulo) => ({ tenant_id: tenant.id, modulo, ligado: false, origem: 'dono' })))
+      if (erroModulos) throw erroModulos
+    }
 
     const { error: erroChave } = await svc
       .from('tenant_keys')

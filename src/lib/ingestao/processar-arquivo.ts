@@ -1,0 +1,37 @@
+/**
+ * A esteira inteira para UM arquivo: bytes → grades → caixas. É o corpo do Web Worker
+ * (`esteira.worker.ts` só liga as mensagens a esta função) e o que roda na linha principal quando o
+ * navegador não tem Worker — a mesma função nos dois casos, então não há duas versões da regra.
+ */
+import { processarGrade, type ContextoDaEsteira, type ResultadoDaEsteira } from '@/core/ingestao/esteira'
+import { lerParaGrades } from '@/lib/ingestao/ler'
+
+import type { Formato } from '@/core/ingestao/formato'
+
+export type PedidoDaEsteira = { bytes: Uint8Array; nome: string; contexto: ContextoDaEsteira; aba?: number }
+
+export type RespostaDaEsteira =
+  | { ok: true; formato: Formato; abas: string[]; aba: number; grade: string[][]; resultado: ResultadoDaEsteira; avisos: string[]; lidoDeImagem: boolean }
+  | { ok: false; mensagem: string }
+
+export async function processarArquivo(pedido: PedidoDaEsteira): Promise<RespostaDaEsteira> {
+  let lido: Awaited<ReturnType<typeof lerParaGrades>>
+  try {
+    lido = await lerParaGrades(pedido.bytes, pedido.nome)
+  } catch {
+    // Leitor que estourou com arquivo estranho: mensagem, nunca exceção na tela.
+    return { ok: false, mensagem: 'Não consegui ler este arquivo. Nada foi gravado. Abra no seu computador, salve de novo e envie, ou cole a lista.' }
+  }
+  if (!lido.ok) return lido
+  // Sem escolha, a aba com mais linhas: em planilha de verdade é quase sempre a da lista.
+  const aba = pedido.aba ?? lido.abas.reduce((melhor, a, i, todas) => (a.grade.length > todas[melhor]!.grade.length ? i : melhor), 0)
+  const grade = lido.abas[aba]?.grade ?? []
+  try {
+    const resultado = processarGrade(grade, lido.lidoDeImagem ? { ...pedido.contexto, lidoDeImagem: true } : pedido.contexto)
+    return { ok: true, formato: lido.formato, abas: lido.abas.map((a) => a.nome), aba, grade: resultado.gradeLida, resultado, avisos: lido.avisos, lidoDeImagem: Boolean(lido.lidoDeImagem) }
+  } catch {
+    // A invariante não fechou (erro da esteira, não do arquivo): melhor parar do que mostrar
+    // uma prévia com linha sumida.
+    return { ok: false, mensagem: 'Não consegui conferir este arquivo por inteiro. Nada foi gravado. Envie de novo ou cole a lista.' }
+  }
+}

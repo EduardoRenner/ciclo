@@ -52,26 +52,20 @@
   --txt-3: #99938c;
 
   /*
-   * Acento do PRODUTO — aqua, a cor da marca. Fixo.
+   * Acento do PRODUTO — rosé antigo, a cor da marca. Fixo.
    *
-   * Era osso (#f0ebe3, 16,46:1) desde o redesenho E0–E6. Trocado em 2026-08-26,
-   * depois de uma medição que mostrou o problema: o uróboros entrou como marca
-   * nova em turquesa e a varredura de CSS da landing achou o turquesa em ZERO
-   * propriedades — ele existia só dentro do PNG do logo. O produto era osso
-   * monocromático com um símbolo colorido colado por cima, e o logo lia como
-   * adesivo em vez de origem do sistema. Aqui a cor da marca passa a ser a cor
-   * do produto: botão primário, link, aba ativa, foco.
+   * Foi osso (#f0ebe3) até 2026-08-26 e turquesa (#14b8a6) até 2026-10-20. O
+   * turquesa saiu com o foco no público feminino (`docs/109-marca-feminina`):
+   * era neutro de propósito porque o produto servia barbearia, e medido no
+   * navegador ficava parecido com o Booksy (fundo escuro, botão turquesa). Roxo
+   * (Gendo, Fresha), rosa-choque (Agendiva) e azul estão ocupados; rosé apagado
+   * com ameixa no tema claro não está.
    *
-   * O que se perde e foi aceito conscientemente: osso dava 16,46:1 e aqua dá
-   * 7,85:1. Continua bem acima do piso de 4,5 do §7, e o teste de contraste
-   * guarda isso — mas não é mais o caso de "nunca precisa pensar no contraste".
-   *
-   * --acc-2 é #99F6E4 e NÃO a menta #5EEAD4 do arquivo de marca, por um motivo
-   * medido: menta tem Δ luminância de 0,037 contra --ok (#90dfba). As duas são
-   * da família verde, e em daltonismo vermelho-verde (~8% dos homens, público
-   * direto de barbearia) seriam a mesma cor — link ativo indistinguível de selo
-   * de sucesso. #99F6E4 dá Δ0,160, acima do piso de 0,15 que o resto da paleta
-   * já respeita. Há teste guardando esse par agora.
+   * --acc-2 é um blush quase branco, e não um rosé médio, por conta: os
+   * semânticos ocupam luminância de 0,266 (--bad) a 0,622 (--ok), e o link
+   * precisa de Δ0,15 contra cada um para não virar selo de estado em
+   * daltonismo. Só sobra L ≤ 0,116 (escuro demais sobre preto) ou L ≥ 0,772.
+   * #f9dfe3 dá L 0,785 (Δ0,162 contra --ok, o mais perto). Há teste.
    *
    * O acento do site público de cada salão (`/[slug]`) é OUTRA coisa e vem de
    * `tenants.settings.site.accent`, escolha do dono. NÃO vem mais de
@@ -79,13 +73,13 @@
    * voltava em salão de cílios e sobrancelha (`docs/13-CAUSA-RAIZ-LAYOUT-
    * LEGADO.md` T3, executado no 14). Cor de acento nunca é hardcoded em
    * componente, nem o valor antigo nem o novo. É também por isso que a marca
-   * (`IconeAnel`, wordmark, favicon) segue com o aqua CRAVADO e não `var(--acc)`: na
+   * (`IconeAnel`, wordmark, favicon) segue com o rosé CRAVADO e não `var(--acc)`: na
    * página do salão o `--acc` é do tenant, e o logo do CICLO não pode vestir a
    * cor do cliente.
    */
-  --acc: #14b8a6;
-  --acc-2: #99f6e4;
-  --acc-soft: rgba(20, 184, 166, 0.14);
+  --acc: #d4949f;
+  --acc-2: #f9dfe3;
+  --acc-soft: rgba(212, 148, 159, 0.14);
   --on-acc: #0d0c0c;
   --ring: var(--acc-2);
 
@@ -98,8 +92,8 @@
    */
   --ok: #90dfba;
   --warn: #e2af36;
-  --risk: #e79955;
-  --bad: #e05d52;
+  --risk: #e89d5c; /* APR-124: era #e79955; clareado para manter a separacao de luminancia (0,15) com o --bad legivel sobre a tinta */
+  --bad: #e2675c; /* APR-124: era #e05d52, 4,27:1 sobre a própria tinta a 15% */
   --info: #6da1d5;
 
   --radius: 16px;
@@ -155,10 +149,10 @@
     --txt-2: #5b544c;
     --txt-3: #655d53;
 
-    /* Aqua mais fundo: o #14b8a6 do escuro dá 2,5:1 com texto branco num botão de fundo claro. */
-    --acc: #0b7d6f;
-    --acc-2: #0a6a5e;
-    --acc-soft: rgba(11, 125, 111, 0.12);
+    /* Ameixa: o rosé #d4949f do escuro dá 2,46:1 com texto branco num botão de fundo claro. */
+    --acc: #8c4766;
+    --acc-2: #7f3f5e;
+    --acc-soft: rgba(140, 71, 102, 0.12);
     --on-acc: #ffffff;
     --ring: var(--acc);
 
@@ -188,17 +182,17 @@
   --txt-2: #5b544c;
   --txt-3: #655d53;
 
-  /* Aqua mais fundo: o #14b8a6 do escuro dá 2,5:1 com texto branco num botão de fundo claro. */
-  --acc: #0b7d6f;
-  --acc-2: #0a6a5e;
-  --acc-soft: rgba(11, 125, 111, 0.12);
+  /* Ameixa: o rosé #d4949f do escuro dá 2,46:1 com texto branco num botão de fundo claro. */
+  --acc: #8c4766;
+  --acc-2: #7f3f5e;
+  --acc-soft: rgba(140, 71, 102, 0.12);
   --on-acc: #ffffff;
   --ring: var(--acc);
 
-  --ok: #2a8148;
+  --ok: #277742; /* APR-124: era #2a8148, 3,98:1 sobre a própria tinta a 15% (axe) */
   --warn: #835800;
   --risk: #934315;
-  --bad: #78120b;
+  --bad: #6e110a; /* APR-124: era #78120b; escurecido para manter a separacao de luminancia (0,10) com o --ok legivel sobre a tinta */
   --info: #2563a0;
 
   /* Sombra de tema claro é curta: o card já se destaca do fundo sozinho. */
@@ -226,9 +220,9 @@
   --txt-2: #a8a29c;
   --txt-3: #99938c;
 
-  --acc: #14b8a6;
-  --acc-2: #99f6e4;
-  --acc-soft: rgba(20, 184, 166, 0.14);
+  --acc: #d4949f;
+  --acc-2: #f9dfe3;
+  --acc-soft: rgba(212, 148, 159, 0.14);
   --on-acc: #0d0c0c;
   --ring: var(--acc-2);
 
@@ -327,6 +321,7 @@
   --color-ring: var(--acc);
 
   --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
 
   /*
    * Escala de §2, com as correções de `08-REDESIGN-E-IDENTIDADE.md`. `rem` para
@@ -357,7 +352,8 @@
   --text-label: 0.75rem; /* 12px */
   --text-label--line-height: 1.35;
 
-  --text-overline: 0.6875rem; /* 11px */
+  /* APR-104: era 11px, abaixo do piso de 12px da leitura no sol (docs/98 I-07). */
+  --text-overline: 0.75rem; /* 12px */
   --text-overline--line-height: 1.2;
   --text-overline--letter-spacing: 0.13em;
 
@@ -559,6 +555,23 @@ body[data-scroll-locked] .recua-com-sheet {
   font-variant-numeric: tabular-nums;
 }
 
+@property --esmaece-esq {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@property --esmaece-dir {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 20px;
+}
+@keyframes esmaece-pela-rolagem {
+  0% { --esmaece-esq: 0px; --esmaece-dir: 20px; }
+  8% { --esmaece-esq: 12px; }
+  92% { --esmaece-dir: 20px; }
+  100% { --esmaece-esq: 12px; --esmaece-dir: 0px; }
+}
+
 @utility scroll-x {
   /*
    * Fileira que rola no horizontal (filtros, dias, horários). Três coisas que
@@ -571,7 +584,17 @@ body[data-scroll-locked] .recua-com-sheet {
   scroll-snap-type: x proximity;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  mask-image: linear-gradient(to right, transparent 0, #000 12px, #000 calc(100% - 20px), transparent 100%);
+  /*
+   * APR-104: o esmaecimento só do lado em que ainda há conteúdo. Fixo nas duas bordas, ele apagava
+   * o item SELECIONADO quando ele estava na ponta esquerda (o dia de hoje na faixa da Agenda). Com
+   * animação guiada pela rolagem, a borda esquerda só esmaece depois de rolar e a direita some no
+   * fim; sem suporte, só a direita esmaece.
+   */
+  mask-image: linear-gradient(to right, transparent 0, #000 var(--esmaece-esq), #000 calc(100% - var(--esmaece-dir)), transparent 100%);
+  @supports (animation-timeline: scroll()) {
+    animation: esmaece-pela-rolagem linear both;
+    animation-timeline: scroll(self inline);
+  }
 
   &::-webkit-scrollbar {
     display: none;

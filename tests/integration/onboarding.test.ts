@@ -99,14 +99,16 @@ describe('executarOnboarding — contra o projeto real', () => {
       expect(abrirDekCifrada(chave.data!.dek_wrapped)).toHaveLength(32)
 
       // O pack de verdade rodou — não é um mock do apply_vertical_pack.
-      // Contagem verificada no TICKET-004 para 'lashes': 6 serviços, 7 produtos,
-      // 6 dias de expediente.
+      // Contagem verificada no TICKET-004 para 'lashes': 7 produtos e 6 dias de expediente. Os
+      // serviços saem do próprio pacote no banco: a 0146 (docs/112 EXP-S06) acrescentou um.
       const [servicos, produtos, expediente] = await Promise.all([
         svc.from('services').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id),
         svc.from('products').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id),
         svc.from('business_hours').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id),
       ])
-      expect(servicos.count).toBe(6)
+      const { data: pack } = await svc.from('vertical_packs').select('services').eq('vertical', 'lashes').single()
+      expect(servicos.count).toBe((pack!.services as unknown[]).length)
+      expect(servicos.count).toBeGreaterThanOrEqual(6)
       expect(produtos.count).toBe(7)
       expect(expediente.count).toBe(6)
 
@@ -252,6 +254,35 @@ describe('executarOnboarding com professionId (P4)', () => {
 
       const tenantCompleto = await svc.from('tenants').select('profession_id').eq('id', tenant.id).single()
       expect(tenantCompleto.data?.profession_id).toBe(profissao.id) // eixos/profession_id são setados mesmo usando o pack antigo
+
+      // docs/108: barbearia não muda o começo — nenhum módulo nasce desligado.
+      const modulos = await svc.from('tenant_modules').select('modulo').eq('tenant_id', tenant.id)
+      expect(modulos.data ?? []).toEqual([])
+    },
+    60_000,
+  )
+
+  it(
+    'cílios (docs/108) nasce sem orçamento, estoque, campanhas, clube, documentos e equipe, como escolha da dona',
+    async () => {
+      const userId = await criarUsuario('cilios')
+      const slug = `cilios-enxuta-${randomUUID().slice(0, 8)}`
+      const { data: profissao, error } = await svc.from('professions').select('id').eq('slug', 'lashes').single()
+      if (error) throw error
+
+      const { tenant } = await executarOnboarding(svc, {
+        userId,
+        businessName: 'Studio de Cílios',
+        vertical: 'lashes',
+        professionId: profissao.id,
+        slug,
+        timezone: 'America/Sao_Paulo',
+      })
+      tenantsParaLimpar.push(tenant.id)
+
+      const { data: modulos } = await svc.from('tenant_modules').select('modulo, ligado, origem').eq('tenant_id', tenant.id)
+      expect((modulos ?? []).map((m) => m.modulo).sort()).toEqual(['campaigns', 'club', 'documents', 'quotes', 'stock', 'team'])
+      expect((modulos ?? []).every((m) => m.ligado === false && m.origem === 'dono')).toBe(true)
     },
     60_000,
   )

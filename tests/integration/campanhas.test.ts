@@ -81,7 +81,7 @@ async function criarClienteEmCiclo(nome: string, opcoes: { state: Database['publ
   const telefone = `+551198877${String(contadorTelefone).padStart(4, '0')}`
   const cliente = await svc
     .from('clients')
-    .insert({ tenant_id: tenantId, name: nome, phone_e164: telefone, whatsapp_opt_out: opcoes.optOut ?? false })
+    .insert({ tenant_id: tenantId, name: nome, phone_e164: telefone, whatsapp_opt_out: opcoes.optOut ?? false, marketing_opt_in: true })
     .select('id')
     .single()
   if (cliente.error) throw cliente.error
@@ -130,7 +130,14 @@ describe('executarCampanhaDiaria', () => {
       const resultado = await executarCampanhaDiaria(svc, tenantId, TZ, AGORA_10H_LOCAL)
 
       expect(resultado.queued).toBe(1)
-      expect(resultado.skipped).toEqual([{ clientId: emOptOut, reason: 'opt_out' }])
+      // APR-035: quem pediu para sair nem entra em "quem sumiu" (`v_quem_sumiu`), então não chega a ser
+      // candidato — antes chegava e era pulado aqui. O que importa continua: nenhuma mensagem para ela.
+      expect(resultado.skipped).toEqual([])
+      const paraQuemSaiu = await svc.from('messages').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('client_id', emOptOut)
+      expect(paraQuemSaiu.error).toBeNull()
+      expect(paraQuemSaiu.count, 'mandou mensagem para quem pediu para não receber').toBe(0)
+      const paraQuemFicou = await svc.from('messages').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('client_id', elegivel)
+      expect(paraQuemFicou.count, 'controle: a mensagem da elegível existe na mesma tabela').toBe(1)
 
       const linha = await svc.from('client_cycles').select('last_campaign_at').eq('tenant_id', tenantId).eq('client_id', elegivel).single()
       expect(linha.data?.last_campaign_at).not.toBeNull()

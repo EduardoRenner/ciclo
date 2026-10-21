@@ -1,119 +1,48 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import PhoneInput from '@/components/ui/phone-input'
-import { useToast } from '@/components/ui/toast'
-import { caixaDeEntrada } from '@/core/auth/caixa-de-entrada'
 
 export default function FormularioCadastro() {
-  const mostrarToast = useToast()
   const [telefone, setTelefone] = useState('')
   const [pendente, setPendente] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
-  const [enviado, setEnviado] = useState(false)
-  const [emailEnviado, setEmailEnviado] = useState('')
-  const [reenviando, setReenviando] = useState(false)
-  const confirmacaoRef = useRef<HTMLParagraphElement>(null)
 
   /*
-   * O formulário inteiro é substituído pela confirmação sem trocar de rota — a mesma armadilha do
-   * CLAUDE.md ("trocar conteúdo sem avisar quem usa leitor de tela"), só que numa transição ÚNICA
-   * (submeter uma vez), não repetida como filtro/busca. Para uma troca única com conteúdo novo
-   * relevante — e agora um botão "Reenviar e-mail" que ninguém acha sem ver a tela — mover o foco
-   * para a mensagem é o padrão certo (o leitor de tela anuncia o texto ao focar), não uma região
-   * `aria-live` (essa é para atualização passiva; aqui a pessoa acabou de agir).
-   */
-  useEffect(() => {
-    if (enviado) confirmacaoRef.current?.focus()
-  }, [enviado])
-
+    docs/114 L-03 (decisão do Vitor, 21/10): nome, WhatsApp e senha, sem e-mail. A conta nasce com
+    sessão (o número entra sem código enquanto a Meta não está ligada), então não existe mais a tela
+    de "mandamos um link para o seu e-mail": ou abre o painel, ou o erro aparece aqui.
+  */
   async function enviar(formData: FormData) {
     setPendente(true)
     setErro(null)
     try {
-      const email = String(formData.get('email') ?? '')
       const resposta = await fetch('/api/v1/auth/signup', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           fullName: formData.get('fullName'),
-          email,
           phone: formData.get('phone'),
           password: formData.get('password'),
         }),
       })
-      const json = (await resposta.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
-      if (!resposta.ok) {
+      const json = (await resposta.json()) as { data?: { status?: string }; error?: { message: string; details?: { fields?: Record<string, string> } } }
+      if (!resposta.ok || json.data?.status !== 'conta_criada') {
         const primeiroCampo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
         setErro(primeiroCampo ?? json.error?.message ?? 'Não consegui criar sua conta.')
         return
       }
-      setEmailEnviado(email)
-      setEnviado(true)
+      // Navegação inteira (não o router) para o servidor ler o cookie de sessão recém-gravado.
+      window.location.assign('/onboarding')
     } catch {
       setErro('Não consegui falar com o servidor. Tente de novo.')
     } finally {
       setPendente(false)
     }
-  }
-
-  /*
-   * F0 da missão de onboarding (2026-09-21): a tela dizia "abra a mensagem e clique nele" e
-   * parava aí — sem reenvio, sem lembrar qual e-mail foi usado, sem mencionar spam. Quem digitou
-   * o e-mail errado, ou cujo provedor demorou/filtrou a mensagem, não tinha o que fazer além de
-   * recarregar a página e recomeçar o cadastro inteiro — a primeira etapa depois de dar nome,
-   * e-mail, telefone e senha virando um beco sem saída.
-   */
-  async function reenviar() {
-    setReenviando(true)
-    try {
-      const resposta = await fetch('/api/v1/auth/signup/resend', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email: emailEnviado }),
-      })
-      if (!resposta.ok) {
-        mostrarToast({ tom: 'erro', titulo: 'Não consegui reenviar agora', descricao: 'Confira sua conexão e tente de novo.' })
-        return
-      }
-      mostrarToast({ tom: 'ok', titulo: 'E-mail reenviado' })
-    } catch {
-      mostrarToast({ tom: 'erro', titulo: 'Não consegui falar com o servidor', descricao: 'Confira sua conexão e tente de novo.' })
-    } finally {
-      setReenviando(false)
-    }
-  }
-
-  if (enviado) {
-    // `docs/82` §7: o degrau que mais perde cadastro self-serve. Provedor conhecido ganha o botão
-    // que já abre a caixa de entrada; desconhecido fica só com o texto.
-    const caixa = caixaDeEntrada(emailEnviado)
-    return (
-      <div className="flex max-w-sm flex-col items-center gap-3 text-center">
-        <p ref={confirmacaoRef} tabIndex={-1} className="text-corpo text-txt">
-          Quase lá! Mandamos um link de confirmação para <span className="font-semibold">{emailEnviado}</span>. Abra a mensagem e clique nele
-          para continuar.
-        </p>
-        {caixa ? (
-          <a
-            href={caixa.url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex h-12 w-full items-center justify-center rounded-[var(--radius-sm)] bg-acc px-5 text-corpo font-semibold text-on-acc shadow-elevado transition active:scale-[.97]"
-          >
-            Abrir o {caixa.nome}
-          </a>
-        ) : null}
-        <p className="text-secundario text-txt-2">Não chegou? Confira também a caixa de spam ou lixo eletrônico.</p>
-        <Button type="button" variante="secondary" carregando={reenviando} onClick={() => void reenviar()}>
-          Reenviar e-mail
-        </Button>
-      </div>
-    )
   }
 
   return (
@@ -137,9 +66,8 @@ export default function FormularioCadastro() {
       }}
       className="flex w-full max-w-sm flex-col gap-3"
     >
-      <Input rotulo="Nome completo" name="fullName" autoComplete="name" required />
-      <Input rotulo="E-mail" name="email" type="email" autoComplete="email" required />
-      <PhoneInput rotulo="Telefone com DDD" name="phone" valor={telefone} aoMudar={setTelefone} required />
+      <Input rotulo="Seu nome" name="fullName" autoComplete="name" required />
+      <PhoneInput rotulo="Seu WhatsApp" name="phone" autoComplete="username" valor={telefone} aoMudar={setTelefone} required />
       {/*
         TICKET-UX22: pedido do usuário foi simplificar "que nem os das big techs" — o texto de
         ajuda permanente ("No mínimo 10 caracteres.") saiu, igual a um cadastro do Google ou da

@@ -85,7 +85,7 @@ export function corLegivelNoClaro(hex: string, minimo: number): string {
 
 /**
  * O acento da página pública, que agora é clara. `null` para o osso de fábrica (ou hex inválido):
- * o layout então NÃO sobrescreve nada e valem os tokens do tema claro (`--acc` #0b7d6f), que já
+ * o layout então NÃO sobrescreve nada e valem os tokens do tema claro (`--acc` #8c4766, ameixa), que já
  * foram medidos. Antes o osso era gravado por cima dentro de um wrapper claro: aba ativa, botão
  * e dia escolhido saíam bege sobre creme, 1,1:1, em todo negócio que nunca escolheu cor.
  *

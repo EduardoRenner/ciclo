@@ -79,10 +79,12 @@ afterAll(async () => {
 
 describe('CRUD de serviços', () => {
   it(
-    'o catálogo já nasce com os 6 serviços do pack de cílios',
+    'o catálogo já nasce com cada serviço do pack de cílios',
     async () => {
       const lista = await listarServicos(svc, tenantId)
-      expect(lista).toHaveLength(6)
+      // Do pacote no banco, não um número fixo: a 0146 (docs/112 EXP-S06) acrescentou a manutenção de fio a fio.
+      const { data: pack } = await svc.from('vertical_packs').select('services').eq('vertical', 'lashes').single()
+      expect(lista).toHaveLength((pack!.services as unknown[]).length)
     },
     30_000,
   )

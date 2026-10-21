@@ -129,3 +129,13 @@ export async function definirModulo(db: Cliente, tenantId: string, entrada: Entr
 
   return listarModulos(db, tenantId)
 }
+
+/**
+ * A regra de "aparece na interface" de um módulo, a MESMA no hub de Configurações e no menu do topo
+ * (APR-103). Ausente da lista = fora do eixo ou do pacote: some. Desligado pelo dono: some. Bloqueado
+ * pelo PLANO continua aparecendo, de propósito (a regra 5.2 manda mostrar o caminho para liberar).
+ */
+export function moduloVisivel(modulos: readonly ModuloNaTela[], chave: ModuloKey): boolean {
+  const m = modulos.find((x) => x.key === chave)
+  return Boolean(m) && m!.veredito.estado !== 'desligado_pelo_dono'
+}

@@ -1,9 +1,11 @@
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+import { CICLO_COBRANCA } from '@/core/billing/cobranca'
 import { ofertaDoCadastro } from '@/core/billing/prelancamento'
 import Selo from '@/components/shell/selo'
 import TelaPublica from '@/components/shell/tela-publica'
-import { provedoresSociaisAtivos } from '@/server/auth/provedores-sociais'
+import { provedoresSociaisParaRequisicao } from '@/server/auth/provedores-sociais'
 import { sessaoAtual } from '@/server/auth/session'
 
 import LoginSocial from '../login-social'
@@ -22,7 +24,7 @@ export default async function PaginaCadastro({ searchParams }: { searchParams: P
   */
   const daCalculadora = (await searchParams).origem === 'calculadora'
 
-  const provedores = await provedoresSociaisAtivos()
+  const provedores = await provedoresSociaisParaRequisicao((await headers()).get('user-agent'))
   // A MESMA função que concede a cortesia quando a conta é criada (docs/87 §3.2): o que a tela diz e o que a pessoa ganha não divergem.
   const oferta = ofertaDoCadastro(new Date())
 
@@ -34,7 +36,7 @@ export default async function PaginaCadastro({ searchParams }: { searchParams: P
           Era "Criar conta no CICLO", com o logotipo do `Selo` logo acima dizendo CICLO — a marca
           duas vezes em 60 px, o mesmo defeito que a landing tinha na dobra.
         */}
-        <h1 className="text-titulo font-bold">{daCalculadora ? 'Vamos achar quem sumiu, pelo nome' : 'Criar sua conta'}</h1>
+        <h1 className="font-display text-titulo font-semibold">{daCalculadora ? 'Vamos achar quem sumiu, pelo nome' : 'Criar sua conta'}</h1>
         {/*
           "Leva menos de um minuto" fala do custo. Esta linha fala do risco, que é a objeção real
           de quem está com o dedo em cima de um formulário de quatro campos: a landing prometeu
@@ -47,9 +49,16 @@ export default async function PaginaCadastro({ searchParams }: { searchParams: P
           {daCalculadora
             ? 'Crie a conta, escreva quem você lembra e o CICLO mostra quem passou da hora de voltar. '
             : 'Leva menos de um minuto. '}
-          Você começa com {oferta.chamada[0]?.toLowerCase()}
-          {oferta.chamada.slice(1)}
-          {oferta.aberto ? '. Sem prazo por enquanto.' : `: o último dia é ${oferta.fim}.`}
+          {/* docs/114 L-01: com a cobrança desligada não há teste nem prazo para anunciar. */}
+          {!CICLO_COBRANCA ? (
+            'É grátis no lançamento, sem cartão.'
+          ) : (
+            <>
+              Você começa com {oferta.chamada[0]?.toLowerCase()}
+              {oferta.chamada.slice(1)}
+              {oferta.aberto ? '. Sem prazo por enquanto.' : `: o último dia é ${oferta.fim}.`}
+            </>
+          )}
         </p>
       </div>
       <LoginSocial provedores={provedores} />

@@ -10,12 +10,13 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 type Cliente = SupabaseClient<Database>
 
 /**
- * §5.6/TICKET-044: "baixa ao FECHAR a comanda (não ao abrir)". Um item de serviço consome os
- * produtos da própria ficha de consumo (`service_products`, quanto*qty do serviço); um item de
- * produto vendido direto (revenda) consome a si mesmo. Nunca bloqueia o fechamento por estoque
- * insuficiente (F83) — só desce o número, mesmo que fique negativo.
+ * §5.6/TICKET-044: QUANTO de cada produto a comanda consome ao FECHAR (não ao abrir), sem escrever
+ * nada. Um item de serviço consome os produtos da própria ficha de consumo (`service_products`,
+ * quanto*qty do serviço); um item de produto vendido direto (revenda) consome a si mesmo. A baixa é
+ * do `aplicar_fechamento_de_comanda` (0122, APR-033), na mesma transação que fecha. Nunca bloqueia
+ * o fechamento por estoque insuficiente (F83) — só desce o número, mesmo que fique negativo.
  */
-export async function baixarEstoqueDaComanda(db: Cliente, tenantId: string, ticketId: string): Promise<void> {
+export async function consumoDaComanda(db: Cliente, tenantId: string, ticketId: string): Promise<{ product_id: string; qty: number }[]> {
   const { data: items, error: erroItems } = await db.from('ticket_items').select('id, qty, service_id, product_id').eq('tenant_id', tenantId).eq('ticket_id', ticketId)
   if (erroItems) throw new AppError('INTERNAL', { cause: erroItems })
 
@@ -44,21 +45,7 @@ export async function baixarEstoqueDaComanda(db: Cliente, tenantId: string, tick
     consumoPorProduto.set(item.product_id, (consumoPorProduto.get(item.product_id) ?? 0) + item.qty)
   }
 
-  // Cada produto é uma linha independente (`consumoPorProduto` já está deduplicado e somado por
-  // `productId`), então os `registrarMovimento` de produtos diferentes não competem por linha
-  // nenhuma — rodavam em série, três idas ao banco por produto, uma comanda de N produtos atrás
-  // da outra no fechamento (docs/28-LATENCIA-DE-CLIQUE-PLANO.md §10).
-  await Promise.all(
-    [...consumoPorProduto].map(([productId, qty]) =>
-      registrarMovimento(db, tenantId, {
-        productId,
-        kind: 'out',
-        qty: -qty,
-        source: 'ticket',
-        sourceId: ticketId,
-      }),
-    ),
-  )
+  return [...consumoPorProduto].map(([product_id, qty]) => ({ product_id, qty }))
 }
 
 /**
@@ -277,6 +264,17 @@ const EsquemaProdutoBase = z.object({
 })
 
 export const EsquemaProduto = EsquemaProdutoBase.refine((d) => !d.isRetail || d.priceCents != null, {
+  message: 'Defina o preço de venda para um produto de revenda.',
+  path: ['priceCents'],
+})
+
+/**
+ * O cadastro simples é nome, preço e quanto tem em mãos. A quantidade só existe na CRIAÇÃO: depois
+ * dela o estoque muda por entrada, por venda ou por baixa de serviço, nunca por edição de campo.
+ */
+export const EsquemaProdutoNovo = EsquemaProdutoBase.extend({
+  initialQty: z.number().nonnegative('O estoque não pode ser negativo.').max(1_000_000, 'Quantidade alta demais.').default(0),
+}).refine((d) => !d.isRetail || d.priceCents != null, {
   message: 'Defina o preço de venda para um produto de revenda.',
   path: ['priceCents'],
 })

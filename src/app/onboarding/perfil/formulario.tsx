@@ -16,6 +16,7 @@ import {
   type SistemaAnterior,
   type Tamanho,
 } from '@/core/onboarding/perfil'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 const ROTULO_BASE_EM: Record<BaseEm, string> = {
   cabeca_caderno: 'Na minha cabeça ou num caderno',
@@ -26,11 +27,16 @@ const ROTULO_BASE_EM: Record<BaseEm, string> = {
 }
 
 const ROTULO_SISTEMA: Record<SistemaAnterior, string> = {
-  appbarber: 'AppBarber',
   trinks: 'Trinks',
-  belasis: 'Belasis',
-  barbup: 'BarbUp',
   booksy: 'Booksy',
+  avec: 'Avec (Salão VIP, Beauty Date)',
+  gendo: 'Gendo',
+  fresha: 'Fresha',
+  agendapro: 'AgendaPro',
+  agendiva: 'Agendiva',
+  belasis: 'Belasis',
+  appbarber: 'AppBarber',
+  barbup: 'BarbUp',
   outro: 'Outro',
 }
 
@@ -75,9 +81,9 @@ export default function FormularioPerfil() {
   async function enviar(corpo: Corpo, destino: string) {
     setPendente(true)
     try {
-      await fetch('/api/v1/onboarding/perfil', {
+      await fetchComTentativa('/api/v1/onboarding/perfil', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify(corpo),
       })
     } catch {
@@ -116,7 +122,8 @@ export default function FormularioPerfil() {
         type="button"
         onClick={pular}
         disabled={pendente}
-        className="self-center text-label font-semibold text-txt-3 underline underline-offset-2 disabled:opacity-50"
+        // APR-125 (G-35): 48 px de alvo — era só o texto (16–18 px de altura).
+        className="inline-flex min-h-12 items-center self-center px-3 text-label font-semibold text-txt-3 underline underline-offset-2 disabled:opacity-50"
       >
         Pular tudo e ir pro painel
       </button>
@@ -125,14 +132,14 @@ export default function FormularioPerfil() {
         {etapa === 'pergunta' ? (
           <>
             <div>
-              <h2 className="text-corpo font-semibold text-txt">Onde estão seus clientes hoje?</h2>
+              <h2 className="text-corpo font-semibold text-txt">Onde está sua clientela hoje?</h2>
               <p className="mt-1 text-label text-txt-3">
                 A gente já te leva pro jeito mais rápido de trazer todo mundo, e te mostra na hora quem já passou do
                 tempo de voltar.
               </p>
             </div>
 
-            <div role="radiogroup" aria-label="Onde estão seus clientes hoje?" className="flex flex-col gap-2">
+            <div role="radiogroup" aria-label="Onde está sua clientela hoje?" className="flex flex-col gap-2">
               {BASES_EM.map((baseEm) => (
                 <button
                   key={baseEm}

@@ -25,8 +25,8 @@ sem precisar gravar/editar vídeo.
 
 - Gancho: "Isso aqui não existia até hoje."
 - Cena: tela preta, só a logo do CICLO aparecendo (o "C" fazendo a volta).
-- Fala: "Todo profissional que vive de cliente que volta — barbeiro, manicure, personal, faxineira
-  — tem o mesmo problema: alguém para de vir, e ninguém percebe."
+- Fala: "Quem faz unha, cílios, sobrancelha ou cabelo vive de quem volta pra manutenção. E tem
+  o mesmo problema: alguém para de vir, e ninguém percebe."
 - Corta pra: "Amanhã eu mostro o que a gente fez pra resolver isso."
 - CTA: "Segue pra não perder."
 

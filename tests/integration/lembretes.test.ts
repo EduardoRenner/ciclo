@@ -41,6 +41,19 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
 const svc = createClient<Database>(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
 
 const TZ = 'America/Sao_Paulo'
+
+/** O nível do dial de Automações para o lembrete, mexendo só nessa chave de `settings`. */
+async function definirNivelDoLembrete(id: string, nivel: 1 | 2 | 3): Promise<void> {
+  const { data } = await svc.from('tenants').select('settings').eq('id', id).single()
+  const settings = (data?.settings as Record<string, unknown> | null) ?? {}
+  const automacoes = (settings.automacoes as Record<string, unknown> | undefined) ?? {}
+  const { error } = await svc
+    .from('tenants')
+    .update({ settings: { ...settings, automacoes: { ...automacoes, lembrete_de_agendamento: nivel } } })
+    .eq('id', id)
+  if (error) throw new Error(`não deu para mudar o dial: ${error.message}`)
+}
+
 let tenantId: string
 let professionalId: string
 let servicoId: string
@@ -86,6 +99,8 @@ beforeAll(async () => {
   })
   tenantId = tenant.id
   tenants.push(tenantId)
+  // docs/112 EXP-A01: lembrete só sai sozinho no nível 3 do dial; o padrão de fábrica é 1.
+  await definirNivelDoLembrete(tenantId, 3)
 
   const profissional = await criarProfissional(svc, tenantId, {
     displayName: 'Esteticista dos Lembretes',
@@ -170,6 +185,27 @@ describe('identificarLembretesPendentes', () => {
 
       const pendentes = await identificarLembretesPendentes(svc, h.antesDeTudo)
       expect(pendentes.find((p) => p.appointmentId === agId)).toBeUndefined()
+    },
+    30_000,
+  )
+
+  it(
+    'no nível "Só me avisa" o lembrete não sai sozinho; no "Faz e me conta", sai (EXP-A01)',
+    async () => {
+      const h = horariosDoTeste(9)
+      const cliente = await criarCliente('Dial do Lembrete')
+      const agId = await criarAgendamento(cliente, h.startsAt)
+
+      try {
+        await definirNivelDoLembrete(tenantId, 1)
+        const noNivel1 = await identificarLembretesPendentes(svc, h.depoisDaConfirmacao)
+        expect(noNivel1.find((p) => p.appointmentId === agId), 'o lembrete saiu no nível 1').toBeUndefined()
+      } finally {
+        await definirNivelDoLembrete(tenantId, 3)
+      }
+      // Controle positivo: o mesmo cenário, no nível 3, aparece. Sem isto, o caso de cima passaria vazio.
+      const noNivel3 = await identificarLembretesPendentes(svc, h.depoisDaConfirmacao)
+      expect(noNivel3.find((p) => p.appointmentId === agId)).toBeTruthy()
     },
     30_000,
   )

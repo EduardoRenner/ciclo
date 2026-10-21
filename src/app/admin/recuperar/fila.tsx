@@ -4,12 +4,17 @@ import { useEffect, useMemo, useState } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
+import IconeWhatsApp from '@/components/ui/icone-whatsapp'
 import { chaveDaFila, proximoDaFila } from '@/core/ciclo/fila-de-chamadas'
+import { fraseDoRitmo, ritmoDoCliente } from '@/core/ciclo/ritmo-do-cliente'
 import { ROTULO_DA_CLASSE, ROTULO_DO_PERFIL } from '@/core/crm/nota-do-cliente'
 import { dinheiro } from '@/lib/formato'
-import { linkWhatsApp, linkWhatsAppCompartilhar, textoDeVolta } from '@/lib/mensagens'
+import { linkWhatsApp, linkWhatsAppCompartilhar, textoDoRetorno } from '@/lib/mensagens'
 
 import type { ItemRecuperar } from '@/server/services/recuperar-receita'
+
+import { useFuso } from '@/components/shell/fuso'
+import { hojeNoFuso } from '@/core/agenda/dias'
 
 /**
  * `docs/95` E2 — a fila de chamadas: um cliente por vez, na ordem que o dono escolheu. "Chamar"
@@ -19,22 +24,23 @@ import type { ItemRecuperar } from '@/server/services/recuperar-receita'
  * dia: é conveniência de quem está chamando, não dado do salão. Navegador sem armazenamento (aba
  * anônima, dado bloqueado) só perde isso ao recarregar; a fila continua funcionando.
  */
-function chaveDoDia(): string {
-  return `ciclo:fila-de-chamadas:${new Date().toLocaleDateString('sv-SE')}`
+// APR-202: o "dia" é o do negócio — a lista de quem já foi tratado vira na meia-noite do salão, não na do aparelho.
+function chaveDoDia(fuso: string): string {
+  return `ciclo:fila-de-chamadas:${hojeNoFuso(fuso)}`
 }
 
-function lerTratados(): Set<string> {
+function lerTratados(fuso: string): Set<string> {
   try {
-    const bruto = window.localStorage.getItem(chaveDoDia())
+    const bruto = window.localStorage.getItem(chaveDoDia(fuso))
     return new Set(bruto ? (JSON.parse(bruto) as string[]) : [])
   } catch {
     return new Set()
   }
 }
 
-function gravarTratados(tratados: Set<string>) {
+function gravarTratados(fuso: string, tratados: Set<string>) {
   try {
-    window.localStorage.setItem(chaveDoDia(), JSON.stringify([...tratados]))
+    window.localStorage.setItem(chaveDoDia(fuso), JSON.stringify([...tratados]))
   } catch {
     // Sem armazenamento a fila só não lembra depois de recarregar.
   }
@@ -45,19 +51,25 @@ export default function FilaDeChamadas({
   anotarChamada,
   pararDeChamar,
   sair,
+  modeloDeVolta,
+  nomeDoNegocio,
 }: {
   itens: ItemRecuperar[]
+  /** RET-01: o mesmo texto do botão da lista (`textoDoRetorno`). */
+  modeloDeVolta: { body: string; active: boolean } | null
+  nomeDoNegocio: string
   /** Anota a chamada para o Motor medir a volta (mesma rota do "Chamar" da lista). */
   anotarChamada: (item: ItemRecuperar) => Promise<void>
   /** Marca o opt-out do WhatsApp da pessoa (`docs/95` E2.4). Devolve se gravou. */
   pararDeChamar: (item: ItemRecuperar) => Promise<boolean>
   sair: () => void
 }) {
+  const fuso = useFuso()
   const [tratados, setTratados] = useState<Set<string>>(() => new Set())
   // Pergunta antes de gravar: "não chamar mais" tira a pessoa da fila e do Chamar até alguém desfazer na ficha.
   const [confirmandoParar, setConfirmandoParar] = useState(false)
   const [parando, setParando] = useState(false)
-  useEffect(() => setTratados(lerTratados()), [])
+  useEffect(() => setTratados(lerTratados(fuso)), [fuso])
 
   const chamaveis = useMemo(() => itens.filter((i) => !i.optOut), [itens])
   const atual = proximoDaFila(chamaveis, tratados)
@@ -68,7 +80,7 @@ export default function FilaDeChamadas({
     const proximo = new Set(tratados)
     proximo.add(chaveDaFila(item))
     setTratados(proximo)
-    gravarTratados(proximo)
+    gravarTratados(fuso, proximo)
   }
 
   return (
@@ -87,12 +99,24 @@ export default function FilaDeChamadas({
           <div>
             <p className="text-titulo font-bold">{atual.name}</p>
             <p className="text-secundario text-txt-2">
-              {atual.serviceName} · {atual.lateDays > 0 ? `${atual.lateDays}d de atraso` : 'na janela'}
+              {atual.subjectName ? `${atual.subjectName} · ` : ''}{atual.serviceName} · {atual.lateDays > 0 ? `${atual.lateDays}d de atraso` : 'na janela'}
             </p>
+            {(() => {
+              // C-015: o POR QUÊ da chamada. Sem intervalo medido (amostra 0) a cadência não é dita.
+              const frase = atual.ritmo
+                ? fraseDoRitmo(
+                    ritmoDoCliente({
+                      cicloPessoalDias: atual.ritmo.cicloPessoalDias,
+                      ultimaVisitaOn: atual.ritmo.ultimaVisitaOn,
+                      hoje: hojeNoFuso(fuso),
+                      visitas: atual.ritmo.amostra + 1,
+                    }),
+                  )
+                : null
+              return frase ? <p className="text-secundario text-txt-2">{frase}</p> : null
+            })()}
             <p className="mt-1 text-secundario text-txt-2">
-              {atual.valueCents === 0 && atual.profitCents === 0
-                ? 'Sem valor avulso'
-                : `${dinheiro.format(atual.valueCents / 100)} · ${dinheiro.format(atual.profitCents / 100)} de lucro`}
+              {atual.fullValueCents === 0 ? 'Sem valor avulso' : dinheiro.format(atual.fullValueCents / 100)}
               {atual.nota != null && atual.classe ? ` · ${ROTULO_DA_CLASSE[atual.classe]} (${atual.nota})` : ''}
               {atual.perfil ? ` · ${ROTULO_DO_PERFIL[atual.perfil]}` : ''}
             </p>
@@ -100,8 +124,8 @@ export default function FilaDeChamadas({
 
           <a
             href={
-              linkWhatsApp(atual.phone, textoDeVolta({ nome: atual.name, servico: atual.serviceName, link: atual.linkVolta })) ??
-              linkWhatsAppCompartilhar(textoDeVolta({ nome: atual.name, servico: atual.serviceName, link: atual.linkVolta }))
+              linkWhatsApp(atual.phone, textoDoRetorno({ modelo: modeloDeVolta, nome: atual.name, servico: atual.serviceName, sujeito: atual.subjectName, link: atual.linkVolta, negocio: nomeDoNegocio })) ??
+              linkWhatsAppCompartilhar(textoDoRetorno({ modelo: modeloDeVolta, nome: atual.name, servico: atual.serviceName, sujeito: atual.subjectName, link: atual.linkVolta, negocio: nomeDoNegocio }))
             }
             target="_blank"
             rel="noreferrer"
@@ -109,8 +133,9 @@ export default function FilaDeChamadas({
               void anotarChamada(atual)
               tratar(atual)
             }}
-            className="flex h-12 items-center justify-center rounded-[var(--radius-sm)] bg-acc text-corpo font-semibold text-on-acc shadow-elevado transition active:scale-[.98]"
+            className="flex h-14 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc text-corpo font-semibold text-on-acc shadow-elevado transition active:scale-[.98]"
           >
+            <IconeWhatsApp className="size-6" />
             Chamar pelo WhatsApp
           </a>
 

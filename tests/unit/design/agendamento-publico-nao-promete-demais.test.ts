@@ -82,7 +82,8 @@ describe('o agendamento público não promete canal que não entrega', () => {
      */
     const copy = copyDaPagina()
     expect(
-      /por telefone|ligar|ligue|chamar no/i.test(copy),
+      // APR-118: sem canal cadastrado a instrução é "procure a {salão}"; com canal, "fale direto" + botão.
+      /por telefone|ligar|ligue|chamar no|fale direto|procure a /i.test(copy),
       'a página precisa dizer O QUE FAZER se ninguém confirmar — tirar a promessa falsa não pode virar silêncio',
     ).toBe(true)
   })
@@ -117,5 +118,62 @@ describe('a tela de sucesso dá a saída que a frase promete', () => {
     const trecho = copy.slice(copy.indexOf('saidaDoSucesso'))
     expect(trecho).toMatch(/href=\{saidaDoSucesso\.href\}/)
     expect(trecho).toMatch(/saidaDoSucesso\.rotulo/)
+  })
+})
+
+/*
+ * APR-118 (docs/98 F-04, S1; I-16; F-14). Conta nova não tem telefone público: a tela de sucesso
+ * dizia "é só chamar por telefone" para um telefone que não existe em lugar nenhum. E o botão dizia
+ * "Confirmar agendamento" quando quem confirma é quem atende; o metadado prometia "sem esperar
+ * resposta". Cada asserção casa com a FRASE, nunca com uma palavra que aparece em rótulo ou comentário.
+ */
+describe('o pedido público não se apresenta como confirmado nem manda ligar para telefone que não existe', () => {
+  it('a tela de sucesso não manda "chamar por telefone": a saída é só a de `saidaDeContato`, que só existe com canal', () => {
+    expect(/chamar por telefone/.test(copyDaPagina()), 'voltou a frase para um telefone que a conta nova não tem').toBe(false)
+  })
+
+  /*
+    docs/114 AGD-01, decisão do Vitor (21/10): o horário pelo link nasce CONFIRMADO no servidor, então o
+    botão marca e a tela diz que está marcado. Era "Pedir este horário" (APR-118), quando quem atende
+    confirmava depois. A promessa continua amarrada ao que o servidor faz: `criarAgendamento` grava
+    `confirmed` para `public_page` (integração `booking-publico`).
+  */
+  it('o botão marca o horário e a tela de sucesso diz que está marcado, não "pedido"', () => {
+    const copy = copyDaPagina()
+    expect(/Marcar este horário/.test(copy)).toBe(true)
+    expect(/Horário marcado/.test(copy)).toBe(true)
+    // "pedir o horário" estava no motivo do botão desabilitado e escapou da 1ª troca (achado da sessão da marca).
+    expect(/Pedir este horário|pedir o horário|Pedido enviado|seu pedido|A confirmação vem de/i.test(copy)).toBe(false)
+  })
+
+  /*
+    docs/114 L-04: o atalho "para hoje" sai da mesma decisão da tela de sucesso. A 1ª versão só olhava o
+    WhatsApp, e a conta que tem só o telefone (a Carol da demonstração) ficava sem atalho nenhum.
+  */
+  it('o atalho para hoje usa a mesma saída da tela de sucesso: WhatsApp ou, sem ele, o telefone', () => {
+    const copy = copyDaPagina()
+    expect(copy).toMatch(/const saidaParaHoje =[\s\S]{0,80}saidaDeContato\(\s*whatsappDoSalao,\s*telefoneDoSalao,/)
+    expect(copy).toMatch(/href=\{saidaParaHoje\.href\}/)
+  })
+
+  /*
+    docs/114 L-07 (B4 do F1): sem a Meta, "Remarcar ou cancelar" só chegava pelo lembrete, que não sai. A
+    tela de sucesso leva o link de gestão que o servidor assina ao marcar.
+  */
+  it('a tela de sucesso tem "Remarcar ou cancelar" com o link assinado deste horário', () => {
+    const copy = copyDaPagina()
+    expect(copy).toMatch(/setTokenDeGestao\(json\.data\?\.gestaoToken/)
+    expect(copy).toMatch(/href=\{`\/confirmar\/\$\{tokenDeGestao\}`\}/)
+    expect(copy).toContain('Remarcar ou cancelar')
+  })
+
+  it('e o servidor grava o que a tela promete: o que vem da página pública nasce confirmado', () => {
+    const servico = semComentarios(readFileSync('src/server/services/agendamentos.ts', 'utf8'))
+    expect(servico).toMatch(/entrada\.origin === 'public_page' \? \{ status: 'confirmed'/)
+  })
+
+  it('o metadado da página não promete "sem esperar resposta"', () => {
+    const pagina = semComentarios(readFileSync('src/app/(public)/[slug]/agendar/page.tsx', 'utf8'))
+    expect(/sem esperar resposta/i.test(pagina)).toBe(false)
   })
 })

@@ -11,6 +11,7 @@ import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
 import { UUID } from '@/core/text/uuid'
+import { exigirClienteDoProfissional } from '@/server/services/clientes'
 
 type Ctx = { params: Promise<{ id: string }> }
 
@@ -23,10 +24,11 @@ async function idValidado(ctx: unknown): Promise<string> {
 /** §2.7: `GET .../vault 🔐 AAL2 → descriptografa e registra acesso`. */
 export const GET = rota(async (req, params) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'vault:own')
+  const escopo = exigirPermissao(ctx.papel, 'vault:own')
   const sessao = await exigirAal2()
 
   const id = await idValidado(params)
+  if (escopo === 'own') await exigirClienteDoProfissional(await criarClienteDoUsuario(), ctx.tenantId, id)
 
   // `withTenant` e não o cliente do usuário: a `0077` tirou `ciphertext`/`iv`/`auth_tag`/
   // `alert_label` do `grant select` de `authenticated`. A permissão e o AAL2 já foram conferidos
@@ -44,11 +46,12 @@ export const GET = rota(async (req, params) => {
 
 export const PUT = rota(async (req, params) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'vault:own')
+  const escopo = exigirPermissao(ctx.papel, 'vault:own')
 
   const id = await idValidado(params)
   const entrada = await lerCorpo(req, EsquemaSalvarVault)
   const db = await criarClienteDoUsuario()
+  if (escopo === 'own') await exigirClienteDoProfissional(db, ctx.tenantId, id)
 
   // §L.2.1: anamnese é módulo do Avançado. Trava só a ESCRITA — o GET acima segue liberado, e
   // isso não é descuido: a regra 5.1 é inviolável, e ficha de saúde já preenchida é o tipo de

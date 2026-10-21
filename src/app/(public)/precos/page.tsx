@@ -2,14 +2,15 @@ import { ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { CICLO_COBRANCA } from '@/core/billing/cobranca'
 import { NOME_DO_PLANO, PLANOS, custoPorAtendimento, precoDoPlano } from '@/core/billing/planos'
 import { PRELANCAMENTO, ofertaDoCadastro } from '@/core/billing/prelancamento'
 
 import { canalDeContato } from '@/lib/contato'
 import { CARTOES } from '@/lib/planos-cartoes'
 
-import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
-import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-aqua-claro.png'
+import wordmark from '../../../../public/marca/ciclo-logo-escrita-branca.svg'
+import wordmarkClaro from '../../../../public/marca/ciclo-logo-escrita-preta.svg'
 
 import type { Metadata } from 'next'
 
@@ -49,6 +50,13 @@ export const revalidate = 3600
  * continuaria dizendo "60 dias" depois de o número deixar de ser verdade (docs/87 §3.2).
  */
 export async function generateMetadata(): Promise<Metadata> {
+  // docs/114 L-01: grátis no lançamento, nem a descrição que vai para o buscador cita preço.
+  if (!CICLO_COBRANCA) {
+    return {
+      title: 'Grátis no lançamento',
+      description: 'O CICLO é grátis no lançamento: agenda, link para marcar horário e quem passou da hora de voltar, sem cartão.',
+    }
+  }
   const oferta = ofertaDoCadastro(new Date())
   return {
     // Sem "CICLO" no título: o `template` do layout raiz já anexa "· CICLO", e repetir cancelaria
@@ -141,7 +149,53 @@ function perguntas(cobrancaLigada: boolean, acessoAberto: boolean) {
 const ID_INCLUI = 'precos-inclui'
 const ID_NAO_INCLUI = 'precos-nao-inclui'
 
+/**
+ * docs/114 L-01: com a cobrança desligada, `/precos` é o destino de mais de dez links do app e da
+ * home; em vez de caçar cada um, a página diz que é grátis e leva ao cadastro. Nenhum valor.
+ */
+function PrecosGratis() {
+  return (
+    <div data-theme="light" style={{ '--tabbar-h': '0px', '--sidebar-w': '0px', color: 'var(--txt)', background: 'var(--bg)' } as React.CSSProperties}>
+      <style dangerouslySetInnerHTML={{ __html: 'html,body{background:#faf8f5}' }} />
+      <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
+        <header className="flex items-center justify-between gap-3 py-5">
+          <Link href="/" className="toque-48 flex items-center">
+            <Image src={wordmark} alt="CICLO" sizes="70px" className="marca-no-escuro h-7 w-auto" />
+            <Image src={wordmarkClaro} alt="" aria-hidden sizes="70px" className="marca-no-claro h-7 w-auto" />
+          </Link>
+          <Link href="/entrar" className="flex h-12 items-center px-1 text-corpo font-semibold text-acc-2 transition active:scale-[.97]">
+            Entrar
+          </Link>
+        </header>
+        <section className="py-8 sm:py-12">
+          <h1 className="font-display text-numero font-semibold sm:text-[2.25rem] sm:leading-[1.1]">O CICLO é grátis no lançamento.</h1>
+          <p className="mt-4 max-w-[52ch] text-corpo text-txt-2">
+            Agenda, link para marcar horário e quem passou da hora de voltar, com a mensagem pronta. Tudo liberado, sem
+            cartão e sem prazo por enquanto. Se um dia houver cobrança, quem usa fica sabendo com antecedência.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:max-w-xs">
+            <Link
+              href="/cadastro"
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 text-corpo font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] hover:brightness-110 active:scale-[.97]"
+            >
+              Criar minha conta
+              <ArrowRight aria-hidden className="size-4" />
+            </Link>
+            <Link
+              href="/entrar"
+              className="inline-flex h-12 w-full items-center justify-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
+            >
+              Já tenho conta
+            </Link>
+          </div>
+        </section>
+      </main>
+    </div>
+  )
+}
+
 export default function Precos() {
+  if (!CICLO_COBRANCA) return <PrecosGratis />
   const oferta = ofertaDoCadastro(new Date())
   const cobrancaLigada = Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN)
   const botaoPrimario =
@@ -181,14 +235,14 @@ export default function Precos() {
           o Grátis existir; agora a razão é a mesma, com dias contados: o Motor de Ciclo inteiro, com a
           base da própria pessoa, antes de qualquer cobrança.
         */}
-        <h1 className="text-numero font-bold sm:text-[2.25rem] sm:leading-[1.1]">
+        <h1 className="font-display text-numero font-semibold sm:text-[2.25rem] sm:leading-[1.1]">
           {oferta.chamada[0]?.toUpperCase()}
           {oferta.chamada.slice(1)}.{oferta.aberto ? ' Sem prazo por enquanto.' : ' Depois, dois planos.'}
         </h1>
         <p className="mt-4 max-w-[52ch] text-corpo text-txt-2">
           Preço na tela, sem cadastro e sem &ldquo;fale com um consultor&rdquo;. Os dois planos têm o produto inteiro,
-          com o Motor de Ciclo e tudo o que ele pede. O que muda é o tamanho da equipe: {NOME_DO_PLANO.essencial} para{' '}
-          {PLANOS.essencial.maxProfissionais} profissional, {NOME_DO_PLANO.equipe} até {PLANOS.equipe.maxProfissionais}.
+          com o Motor de Ciclo e tudo o que ele pede. O que muda é o tamanho da equipe: {NOME_DO_PLANO.essencial} até{' '}
+          {PLANOS.essencial.maxProfissionais} {PLANOS.essencial.maxProfissionais === 1 ? 'profissional' : 'profissionais'}, {NOME_DO_PLANO.equipe} até {PLANOS.equipe.maxProfissionais}.
         </p>
       </section>
 

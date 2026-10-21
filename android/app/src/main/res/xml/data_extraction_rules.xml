@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  LOJA-31 (docs/98-aprimoramento/11): nada do app sai do aparelho por backup do Google nem por transferência para
+  um celular novo. A tela embutida guarda a fila offline com nome e telefone de cliente; o dado mora no servidor,
+  e entrar de novo no aparelho novo traz tudo de volta.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

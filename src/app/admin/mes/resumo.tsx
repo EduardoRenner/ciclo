@@ -75,6 +75,8 @@ export default function ResumoDoMes({
   /** `docs/53` D-01 — o dia mais parado, ou `null` quando nenhum qualifica. Só o fato, nunca preço. */
   diaOcioso: DiaOcioso | null
 }) {
+  // APR-122 (A-23): o mês fechado mais recente, ao lado do número de agora — sem ele, o número não diz se está bom.
+  const mesPassado = serie.pontos.length > 0 ? serie.pontos[serie.pontos.length - 1]! : null
   const maior = concentracao?.maior ?? null
   const nomeDoMaior = concentracao && maior?.professionalId ? concentracao.nomes[maior.professionalId] : null
 
@@ -96,16 +98,16 @@ export default function ResumoDoMes({
         <StatTile
           heroi
           pressionavel
-          rotulo="Entrou"
+          rotulo="Entrou no mês"
           valor={dinheiro.format(entrouCents / 100)}
-          apoio={`${comandas} ${comandas === 1 ? 'comanda fechada' : 'comandas fechadas'}`}
+          apoio={`${comandas} ${comandas === 1 ? 'comanda fechada' : 'comandas fechadas'}${mesPassado ? ` · mês passado ${dinheiro.format(mesPassado.revenueCents / 100)}` : ''}`}
         />
       </Link>
 
       <Link href="/admin/caixa" className="block">
         <StatTile
           pressionavel
-          rotulo="Sobrou"
+          rotulo="Sobrou no mês"
           valor={dinheiro.format(sobrouCents / 100)}
           apoio={[
             'depois do produto, da maquininha, da comissão',
@@ -114,6 +116,7 @@ export default function ResumoDoMes({
               ? `, ainda sem o custo de ${servicosSemMaterial} ${servicosSemMaterial === 1 ? 'serviço' : 'serviços'}`
               : '',
             !custoFixoRespondido && servicosSemMaterial === 0 ? ', o aluguel ainda não entra' : '',
+            mesPassado ? ` · mês passado ${dinheiro.format(mesPassado.profitCents / 100)}` : '',
           ].join('')}
         />
       </Link>
@@ -189,7 +192,7 @@ export default function ResumoDoMes({
           apoio={
             clientesParados === 0
               ? 'ninguém em atraso hoje'
-              : `de lucro, em ${clientesParados} ${clientesParados === 1 ? 'pessoa que passou do tempo' : 'pessoas que passaram do tempo'}`
+              : `em ${clientesParados} ${clientesParados === 1 ? 'pessoa que passou do tempo' : 'pessoas que passaram do tempo'}`
           }
         />
       </Link>

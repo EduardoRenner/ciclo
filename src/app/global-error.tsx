@@ -70,7 +70,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
             Foi uma falha ao carregar a tela, não nos seus dados. Nada do que você salvou foi perdido.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center', marginTop: 12 }}>
-            <button type="button" onClick={() => reset()} style={{ ...botao, backgroundColor: '#14b8a6', color: '#0d0c0c', border: 'none' }}>
+            <button type="button" onClick={() => reset()} style={{ ...botao, backgroundColor: '#d4949f', color: '#0d0c0c', border: 'none' }}>
               Tentar de novo
             </button>
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages --

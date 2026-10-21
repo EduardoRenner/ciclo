@@ -1,6 +1,6 @@
 import { Temporal } from '@js-temporal/polyfill'
 
-import { custoDoServico } from '@/core/comanda/custo-do-servico'
+import { custoDoServico, custoJaGravado } from '@/core/comanda/custo-do-servico'
 import { calcularComissaoItem, type BaseComissao } from '@/core/comanda/totals'
 import { janelaDeCobranca, margemDoAssinante, type MargemDoAssinante } from '@/core/loyalty/margem-do-clube'
 import {
@@ -57,7 +57,9 @@ export async function margensDoClube(db: Cliente, tenantId: string, timezone: st
   const visitas = await buscarTudoPaginado(() =>
     db
       .from('appointments')
-      .select('client_id, service_id, professional_id, price_cents, starts_at')
+      // APR-210 (E-13): a comanda fechada traz a comissão e o material QUE FORAM PAGOS; o cálculo por
+      // percentual fica só para visita sem comanda.
+      .select('client_id, service_id, professional_id, price_cents, starts_at, tickets ( status, ticket_items ( service_id, commission_cents, cost_cents, material_incerto ) )')
       .eq('tenant_id', tenantId)
       .eq('status', 'done')
       .in('client_id', janelas.map((j) => j.client_id))
@@ -109,13 +111,21 @@ export async function margensDoClube(db: Cliente, tenantId: string, timezone: st
       })
 
       const custos = doAssinante.map((v) => {
+        // APR-210: com comanda fechada, o custo é o que ficou gravado no item — mudar o % de comissão
+        // depois não reescreve a margem de um mês que já passou.
+        const itemPago = (v.tickets as { status: string; ticket_items: { service_id: string | null; commission_cents: number; cost_cents: number; material_incerto: boolean }[] }[] | null)
+          ?.filter((t) => t.status === 'closed' || t.status === 'paid')
+          .flatMap((t) => t.ticket_items)
+          .find((i) => i.service_id === v.service_id)
         const ficha = fichaPorServico.get(v.service_id) ?? []
-        const custo = custoDoServico(ficha, 1)
+        const custo = itemPago ? custoJaGravado(itemPago.cost_cents, itemPago.material_incerto) : custoDoServico(ficha, 1)
         const material = custo.custoCents
         const bps = v.professional_id
           ? (bpsDoVinculo.get(`${v.professional_id}:${v.service_id}`) ?? bpsDoProfissional.get(v.professional_id) ?? 0)
           : 0
-        const comissao = calcularComissaoItem({ totalCents: v.price_cents, costCents: material, commissionBps: bps, commissionBase })
+        const comissao = itemPago
+          ? itemPago.commission_cents
+          : calcularComissaoItem({ totalCents: v.price_cents, costCents: material, commissionBps: bps, commissionBase })
         /*
          * A pergunta vem pronta de `custoDoServico`. Ela era remontada aqui como
          * `ficha.length === 0` — e errava, porque a ficha semeada pelo pack responde "tem ficha"

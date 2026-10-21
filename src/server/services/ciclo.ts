@@ -5,7 +5,7 @@ import { computeCycle } from '@/core/cycle/compute'
 import { custoDoServico } from '@/core/comanda/custo-do-servico'
 import { lucroEmRiscoCents, lucroEsperadoCents, valorEmRiscoCents } from '@/core/cycle/valor-em-risco'
 import { buscarTudoPaginado } from '@/server/db/paginar'
-import { calibrarServicos, probabilidadeCalibradaDoTenant, registrarPrevisoes, resolverPrevisoes, type PrevisaoParaRegistrar } from '@/server/services/previsao'
+import { calibrarServicos, chaveDaCombinacao, probabilidadeCalibradaDoTenant, registrarPrevisoes, resolverPrevisoes, type PrevisaoParaRegistrar } from '@/server/services/previsao'
 import { registrarEvento } from '@/server/services/product-events'
 import { AppError } from '@/server/http/errors'
 
@@ -25,7 +25,8 @@ const TAMANHO_DO_LOTE = 1000
  * não tem ciclo nenhum a acompanhar (mesma regra de `computeCycle` para histórico
  * vazio, só que aqui a linha nem chega a existir em vez de existir com estado neutro).
  */
-type Combinacao = { clientId: string; serviceId: string }
+/** AUT-101 (C-023): `subjectId` nulo = o próprio cliente volta (beleza); com sujeito, o ciclo é do animal/carro. */
+type Combinacao = { clientId: string; serviceId: string; subjectId?: string | null }
 
 /*
  * `valorEmRiscoCents` mudou para `@/core/cycle/valor-em-risco` (import no topo). Era `preço ×
@@ -50,7 +51,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
     buscarTudoPaginado(() =>
       db
         .from('appointments')
-        .select('client_id, service_id, starts_at, professional_id')
+        .select('client_id, service_id, subject_id, starts_at, professional_id')
         .eq('tenant_id', tenantId)
         .eq('status', 'done')
         .order('id'),
@@ -58,7 +59,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
     buscarTudoPaginado(() =>
       db
         .from('appointments')
-        .select('client_id, service_id')
+        .select('client_id, service_id, subject_id')
         .eq('tenant_id', tenantId)
         .in('status', ['pending', 'confirmed', 'arrived'])
         .order('id'),
@@ -112,7 +113,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
     buscarTudoPaginado(() =>
       db
         .from('client_cycles')
-        .select('client_id, service_id, last_visit_on')
+        .select('client_id, service_id, subject_id, last_visit_on')
         .eq('tenant_id', tenantId)
         .not('last_visit_on', 'is', null)
         .order('client_id')
@@ -140,6 +141,8 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
     poder comparar e para a correção ser reversível.
   */
   const cycleDaysPorServico = new Map(servicos.map((s) => [s.id, reguaEfetivaDias(s.cycle_days, s.cycle_days_observado)]))
+  // v5 (C-035): o Motor só encolhe em direção à régua quando ela foi medida pelo salão.
+  const reguaCalibradaPorServico = new Set(servicos.filter((s) => s.cycle_days_observado != null).map((s) => s.id))
   const precoPorServico = new Map(servicos.map((s) => [s.id, s.price_cents]))
 
   /*
@@ -157,7 +160,13 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
     comissaoDeCadaProfissional(db, tenantId),
   ])
 
-  const temFuturoPorCombinacao = new Set(futuros.filter((a) => a.client_id).map((a) => `${a.client_id}:${a.service_id}`))
+  /*
+    AUT-101 (C-023): a combinação é (cliente, serviço, SUJEITO). Sem sujeito (toda a beleza) o terceiro
+    pedaço é vazio e tudo segue como antes; com sujeito, o tutor de 2 animais vira 2 ciclos, cada um no
+    ritmo do seu animal, em vez de uma série só com intervalos pela metade (C-003).
+  */
+  const combinacao = chaveDaCombinacao
+  const temFuturoPorCombinacao = new Set(futuros.filter((a) => a.client_id).map((a) => combinacao(a.client_id!, a.service_id, a.subject_id)))
 
   const historicoPorCombinacao = new Map<string, string[]>()
   /*
@@ -169,7 +178,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
   const ultimoAtendimento = new Map<string, { quando: string; professionalId: string | null }>()
   for (const ag of concluidos) {
     if (!ag.client_id) continue
-    const chave = `${ag.client_id}:${ag.service_id}`
+    const chave = combinacao(ag.client_id, ag.service_id, ag.subject_id)
     const lista = historicoPorCombinacao.get(chave) ?? []
     lista.push(ag.starts_at)
     historicoPorCombinacao.set(chave, lista)
@@ -190,11 +199,15 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
   const previsoes: PrevisaoParaRegistrar[] = []
   const datasPorCombinacao = new Map<string, string[]>()
 
-  const visitaInformada = new Map(informadas.map((c) => [`${c.client_id}:${c.service_id}`, c.last_visit_on!]))
+  const visitaInformada = new Map(informadas.map((c) => [combinacao(c.client_id, c.service_id, c.subject_id), c.last_visit_on!]))
   const combinacoes = new Set([...historicoPorCombinacao.keys(), ...visitaInformada.keys()])
 
   for (const chave of combinacoes) {
-    const [clientId, serviceId] = chave.split(':') as [string, string]
+    const [clientId, serviceId, sujeito] = chave.split(':') as [string, string, string]
+    const subjectId = sujeito === '' ? null : sujeito
+    // Pacote é vendido por (cliente, serviço), sem sujeito. A trilha de previsões, desde o C-030, é por
+    // sujeito (a mesma `chave`).
+    const chaveDoPacote = `${clientId}:${serviceId}`
     const defaultCycleDays = cycleDaysPorServico.get(serviceId)
     if (!defaultCycleDays) continue // serviço apagado/desconhecido — sem padrão, sem como calcular
 
@@ -218,6 +231,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
       defaultCycleDays,
       today: hoje,
       hasFutureAppointment: temFuturoPorCombinacao.has(chave),
+      reguaCalibrada: reguaCalibradaPorServico.has(serviceId),
     })
 
     const ultimaVisita = history[history.length - 1]!.date.toString()
@@ -231,6 +245,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
       previsoes.push({
         clientId,
         serviceId,
+        subjectId,
         lastVisitOn: ultimaVisita,
         predictedOn: resultado.predictedDate.toString(),
         // A tabela exige > 0, e o piso do ciclo pessoal é 0.5 do padrão: sem o `max`, um serviço de
@@ -256,14 +271,16 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
       assinatura (cobre o tenant inteiro), pacote é por `(cliente, serviço)` — a MESMA granularidade
       de `client_cycles` — então aqui a checagem é mais precisa, não uma aproximação.
     */
-    const semVendaAvulsa = assinantesAtivos.has(clientId) || combinacoesComPacote.has(chave)
+    const semVendaAvulsa = assinantesAtivos.has(clientId) || combinacoesComPacote.has(chaveDoPacote)
     const precoEfetivo = semVendaAvulsa ? 0 : (precoPorServico.get(serviceId) ?? 0)
 
     linhas.push({
       tenant_id: tenantId,
       client_id: clientId,
       service_id: serviceId,
+      subject_id: subjectId,
       personal_cycle_days: Math.round(resultado.personalCycleDays),
+      sample_size: resultado.amostra,
       last_visit_on: history[history.length - 1]!.date.toString(),
       predicted_on: resultado.predictedDate.toString(),
       late_days: Math.trunc(resultado.lateDays),
@@ -285,13 +302,13 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
 
   if (linhas.length === 0) return 0
 
-  // upsert por (tenant_id, client_id, service_id) — a PK composta da 0001 —
+  // upsert por (tenant_id, client_id, service_id, subject_id) — a chave única da 0134, nulo igual a nulo —
   // é o que torna rodar o job duas vezes seguidas idêntico a rodar uma vez.
   // Em lotes de 1000: um único upsert com 10 mil linhas arrisca estourar
   // limite de corpo da requisição.
   for (let inicio = 0; inicio < linhas.length; inicio += TAMANHO_DO_LOTE) {
     const lote = linhas.slice(inicio, inicio + TAMANHO_DO_LOTE)
-    const { error } = await db.from('client_cycles').upsert(lote, { onConflict: 'tenant_id,client_id,service_id' })
+    const { error } = await db.from('client_cycles').upsert(lote, { onConflict: 'tenant_id,client_id,service_id,subject_id' })
     if (error) throw new AppError('INTERNAL', { cause: error })
   }
 
@@ -338,6 +355,7 @@ export async function recomputarCicloDeUmAtendimento(
       .eq('tenant_id', tenantId)
       .eq('client_id', combinacao.clientId)
       .eq('service_id', combinacao.serviceId)
+      .filter('subject_id', combinacao.subjectId ? 'eq' : 'is', combinacao.subjectId ?? null)
       .eq('status', 'done'),
     db
       .from('appointments')
@@ -345,6 +363,7 @@ export async function recomputarCicloDeUmAtendimento(
       .eq('tenant_id', tenantId)
       .eq('client_id', combinacao.clientId)
       .eq('service_id', combinacao.serviceId)
+      .filter('subject_id', combinacao.subjectId ? 'eq' : 'is', combinacao.subjectId ?? null)
       .in('status', ['pending', 'confirmed', 'arrived']),
     db.from('services').select('cycle_days, cycle_days_observado, price_cents').eq('id', combinacao.serviceId).maybeSingle(),
     // Mesmo motivo do job noturno (`docs/DECISOES.md` 2026-09-18): assinante ativo não gera venda
@@ -410,6 +429,7 @@ export async function recomputarCicloDeUmAtendimento(
     // A MESMA régua do job noturno. Ler `cycle_days` sozinho aqui fazia concluir um atendimento
     // reverter a previsão para o palpite de catálogo até a madrugada seguinte corrigir.
     defaultCycleDays: reguaEfetivaDias(servico.data.cycle_days, servico.data.cycle_days_observado),
+    reguaCalibrada: servico.data.cycle_days_observado != null,
     today: Temporal.PlainDate.from(today),
     hasFutureAppointment: (futuros.count ?? 0) > 0,
   })
@@ -422,7 +442,9 @@ export async function recomputarCicloDeUmAtendimento(
       tenant_id: tenantId,
       client_id: combinacao.clientId,
       service_id: combinacao.serviceId,
+      subject_id: combinacao.subjectId ?? null,
       personal_cycle_days: Math.round(resultado.personalCycleDays),
+      sample_size: resultado.amostra,
       last_visit_on: history[history.length - 1]!.date.toString(),
       predicted_on: resultado.predictedDate.toString(),
       late_days: Math.trunc(resultado.lateDays),
@@ -438,7 +460,7 @@ export async function recomputarCicloDeUmAtendimento(
       ),
       computed_at: new Date().toISOString(),
     },
-    { onConflict: 'tenant_id,client_id,service_id' },
+    { onConflict: 'tenant_id,client_id,service_id,subject_id' },
   )
   if (error) throw new AppError('INTERNAL', { cause: error })
 }

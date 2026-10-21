@@ -6,6 +6,7 @@ import { lerCorpo } from '@/server/http/body'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
 import { criarModelo, EsquemaModelo, listarModelos } from '@/server/services/mensagens-prontas'
+import { AppError } from '@/server/http/errors'
 
 /**
  * Modelo de mensagem é ferramenta de conversa com a cliente, então segue a permissão de
@@ -21,7 +22,8 @@ export const GET = rota(async (req) => {
 
 export const POST = rota(async (req, _params, requestId) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'client:update')
+  const escopo = exigirPermissao(ctx.papel, 'client:update')
+  if (escopo === 'own') throw new AppError('FORBIDDEN', { message: 'Campanha e mensagem automática são do negócio: quem mexe é o dono ou a gerência.' })
 
   const entrada = await lerCorpo(req, EsquemaModelo)
   const db = await criarClienteDoUsuario()

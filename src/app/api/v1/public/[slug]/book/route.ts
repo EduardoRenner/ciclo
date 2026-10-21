@@ -1,18 +1,19 @@
 import { createHash } from 'node:crypto'
 
 import { verificarCaptcha } from '@/server/services/captcha'
-import { criarAgendamentoPublico, EsquemaBookingPublico } from '@/server/services/public-booking'
+import { criarAgendamentoPublico, EsquemaBookingPublico, idDoTenantPublico } from '@/server/services/public-booking'
 import { limitador } from '@/server/services/rate-limit'
 import { normalizarTelefoneBR } from '@/server/services/telefone'
 import { lerCorpo } from '@/server/http/body'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
+import { comIdempotencia } from '@/server/http/idempotency'
 import { ipDe } from '@/server/http/ip'
 
 type Ctx = { params: Promise<{ slug: string }> }
 
 /** Honeypot: resposta com a mesma forma de sucesso, para não ensinar o script a se adaptar. */
-const RESPOSTA_HONEYPOT = { appointmentId: null, reconhecimentoToken: null }
+const RESPOSTA_HONEYPOT = { appointmentId: null, reconhecimentoToken: null, gestaoToken: null }
 
 export const POST = rota(async (req, ctx) => {
   const { slug } = await (ctx as Ctx).params
@@ -49,5 +50,18 @@ export const POST = rota(async (req, ctx) => {
   // `appointmentId` não vaza essa diferença — é sempre um agendamento novo,
   // reaproveitar o *cliente* pelo telefone (dentro de `resolverCliente`) não
   // muda a forma da resposta.
-  return criarAgendamentoPublico(slug, entrada)
+  // APR-004 (achado C-04): sem idempotência, a resposta perdida + o toque de novo davam 409
+  // "horário já reservado" para o horário da própria cliente, e ela marcava outro. Com a chave,
+  // o reenvio devolve a MESMA resposta. Sem a chave (página antiga em cache), segue como antes.
+  if (!req.headers.get('idempotency-key')) return criarAgendamentoPublico(slug, entrada)
+
+  // O token de reconhecimento NÃO fica guardado na resposta da chave (R-06): só sai na primeira
+  // resposta. Um reenvio recebe o mesmo agendamento, sem token.
+  let token: string | null = null
+  const guardado = await comIdempotencia(req, { tenantId: await idDoTenantPublico(slug), endpoint: `/api/v1/public/${slug}/book` }, async () => {
+    const r = await criarAgendamentoPublico(slug, entrada)
+    token = r.reconhecimentoToken
+    return { appointmentId: r.appointmentId, reconhecimentoToken: null as string | null, gestaoToken: r.gestaoToken }
+  })
+  return { ...guardado, reconhecimentoToken: token ?? guardado.reconhecimentoToken }
 })

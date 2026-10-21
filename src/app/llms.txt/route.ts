@@ -37,7 +37,7 @@ export function GET(): Response {
 
   const texto = `# CICLO
 
-> Sistema de gestão para quem atende com hora marcada: agenda, página de agendamento própria,
+> Agenda e retorno de clientes para salão e beleza: agenda, página de agendamento própria,
 > ficha de cliente, comanda e caixa. Feito para celular, em português do Brasil.
 
 O diferencial é o Motor de Ciclo: a partir do intervalo entre as visitas de cada cliente, o CICLO
@@ -46,8 +46,9 @@ entrega a mensagem pronta para chamar de volta.
 
 ## Para quem é
 
-Barbearia, unhas, cílios, sobrancelha, depilação, estética, tatuagem e cabelo. Também serve para
-quem atende com hora marcada fora da beleza — personal trainer, eletricista, faxineira.
+Feito primeiro para a beleza feminina: unhas, cílios, sobrancelha, cabelo, depilação e estética,
+de quem trabalha por conta a quem tem salão com equipe. Também serve para barbearia, tatuagem e quem
+atende com hora marcada fora da beleza, como faxina e personal trainer.
 
 ## O que faz
 

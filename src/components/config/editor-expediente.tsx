@@ -1,32 +1,21 @@
 'use client'
 
 import { Plus, Trash2 } from 'lucide-react'
-import { useState, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
+import { useFuso } from '@/components/shell/fuso'
+import { paraInstante, paraLocal } from '@/core/agenda/instante-local'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 type Bloco = { weekday: number; opens_at: string; closes_at: string }
 type Folga = { id: string; starts_at: string; ends_at: string; reason: string | null }
 
 const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
-/**
- * Conversão de fuso fica para quando o `date-fns-tz`/Temporal da PARTE 2 §1
- * entrar (nenhum ticket ainda instalou essa camada). Por ora o horário do
- * navegador é tratado como o do tenant — America/Sao_Paulo é o único fuso em
- * uso na família até aqui.
- */
-function paraIso(dataLocal: string): string {
-  return new Date(dataLocal).toISOString()
-}
-
-function paraInputLocal(iso: string): string {
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
+// APR-201: a conversão local ↔ instante é no FUSO DO NEGÓCIO (`core/agenda/instante-local`), nunca no do aparelho.
 
 /**
  * `professionalId: null` é o expediente/folga padrão do negócio inteiro —
@@ -49,6 +38,9 @@ export default function EditorExpediente({
   const [blocos, setBlocos] = useState(expedienteInicial)
   const [folgas, setFolgas] = useState(folgasIniciais)
   const [pendente, iniciarTransicao] = useTransition()
+  const fuso = useFuso()
+  // APR-201 (C-22): cada PUT do expediente leva um número; resposta de um PUT velho é descartada.
+  const pedido = useRef(0)
   const mostrarToast = useToast()
 
   const segmentoUrl = professionalId ?? 'default'
@@ -69,16 +61,18 @@ export default function EditorExpediente({
   function salvarExpediente(novos: Bloco[]) {
     const anterior = blocos
     setBlocos(novos)
+    const meu = ++pedido.current
     iniciarTransicao(async () => {
       try {
-        const r = await fetch(`/api/v1/professionals/${segmentoUrl}/business-hours`, {
+        const r = await fetchComTentativa(`/api/v1/professionals/${segmentoUrl}/business-hours`, {
           method: 'PUT',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             professionalId,
             blocos: novos.map((b) => ({ weekday: b.weekday, opensAt: b.opens_at.slice(0, 5), closesAt: b.closes_at.slice(0, 5) })),
           }),
         })
+        if (meu !== pedido.current) return
         if (!r.ok) {
           const json = (await r.json().catch(() => ({}))) as { error?: { message?: string } }
           setBlocos(anterior)
@@ -91,6 +85,7 @@ export default function EditorExpediente({
       } catch {
         // Rede caiu no meio: sem o `try`, o React 19 relança a Action para o error boundary da
         // raiz e a tela inteira some (armadilha do `CLAUDE.md`).
+        if (meu !== pedido.current) return
         setBlocos(anterior)
         mostrarToast({
           tom: 'erro',
@@ -109,8 +104,13 @@ export default function EditorExpediente({
     salvarExpediente(blocos.filter((_, i) => i !== indice))
   }
 
-  function atualizarBloco(indice: number, campo: 'opens_at' | 'closes_at', valor: string) {
-    salvarExpediente(blocos.map((b, i) => (i === indice ? { ...b, [campo]: valor } : b)))
+  // APR-201 (C-22): digitar "10:00" disparava um PUT por tecla ("1", "10", "10:0"…). Agora o campo
+  // muda só a tela; o PUT sai no `onBlur`, uma vez, com o valor final.
+  function editarBloco(indice: number, campo: 'opens_at' | 'closes_at', valor: string) {
+    setBlocos((atual) => atual.map((b, i) => (i === indice ? { ...b, [campo]: valor } : b)))
+  }
+  function confirmarBlocos() {
+    salvarExpediente(blocos)
   }
 
   /**
@@ -132,19 +132,26 @@ export default function EditorExpediente({
     const motivo = String(formData.get('motivo') ?? '').trim() || undefined
 
     iniciarTransicao(async () => {
-      const r = await fetch('/api/v1/time-off', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({ professionalId, startsAt: paraIso(inicio), endsAt: paraIso(fim), reason: motivo }),
-      })
-      const json = (await r.json()) as { data?: Folga; error?: { message: string } }
-      if (!r.ok || !json.data) {
-        mostrarToast({ tom: 'erro', titulo: 'Não consegui salvar a folga', descricao: json.error?.message ?? '' })
-        return
+      // Sem este try, uma piscada de rede re-lançava a Action para o error boundary (React 19):
+      // a tela de Horários sumia e levava as datas e o motivo digitados (APR-002, achado C-05).
+      try {
+        const r = await fetchComTentativa('/api/v1/time-off', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ professionalId, startsAt: paraInstante(inicio, fuso), endsAt: paraInstante(fim, fuso), reason: motivo }),
+        })
+        const json = (await r.json().catch(() => ({}))) as { data?: Folga; error?: { message: string } }
+        if (!r.ok || !json.data) {
+          mostrarToast({ tom: 'erro', titulo: 'Não consegui salvar a folga', descricao: json.error?.message ?? 'Tente de novo em instantes.' })
+          return
+        }
+        setFolgas((atual) => [...atual, json.data!])
+        // Só aqui: a folga entrou na lista, o formulário fica pronto para a próxima.
+        formulario.reset()
+      } catch {
+        // O formulário NÃO é limpo: as datas e o motivo continuam lá para tentar de novo.
+        mostrarToast({ tom: 'erro', titulo: 'Não consegui salvar a folga', descricao: 'Parece que a internet caiu. O que você preencheu continua aqui; tente de novo.' })
       }
-      setFolgas((atual) => [...atual, json.data!])
-      // Só aqui: a folga entrou na lista, o formulário fica pronto para a próxima.
-      formulario.reset()
     })
   }
 
@@ -153,7 +160,7 @@ export default function EditorExpediente({
     setFolgas((atual) => atual.filter((f) => f.id !== id))
     iniciarTransicao(async () => {
       try {
-        const r = await fetch(`/api/v1/time-off/${id}`, { method: 'DELETE', headers: { 'idempotency-key': crypto.randomUUID() } })
+        const r = await fetchComTentativa(`/api/v1/time-off/${id}`, { method: 'DELETE' })
         // Sem isto, a folga sumia da tela otimisticamente e ficava assim pra sempre mesmo se o
         // servidor recusasse — sem try/catch nenhum antes, nem falha de rede revertia. A folga
         // continuava bloqueando horário no banco enquanto a tela mostrava agenda livre.
@@ -217,7 +224,8 @@ export default function EditorExpediente({
                           type="time"
                           aria-label={`${nome}, abre às`}
                           value={b.opens_at.slice(0, 5)}
-                          onChange={(e) => atualizarBloco(b.indiceOriginal, 'opens_at', e.target.value)}
+                          onChange={(e) => editarBloco(b.indiceOriginal, 'opens_at', e.target.value)}
+                          onBlur={confirmarBlocos}
                           className="h-12 flex-1 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
                         />
                         <span aria-hidden className="text-txt-3">
@@ -227,7 +235,8 @@ export default function EditorExpediente({
                           type="time"
                           aria-label={`${nome}, fecha às`}
                           value={b.closes_at.slice(0, 5)}
-                          onChange={(e) => atualizarBloco(b.indiceOriginal, 'closes_at', e.target.value)}
+                          onChange={(e) => editarBloco(b.indiceOriginal, 'closes_at', e.target.value)}
+                          onBlur={confirmarBlocos}
                           className="h-12 flex-1 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
                         />
                         <button
@@ -260,7 +269,7 @@ export default function EditorExpediente({
                 <Card className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-corpo font-semibold">
-                      {new Date(f.starts_at).toLocaleDateString('pt-BR')} – {new Date(f.ends_at).toLocaleDateString('pt-BR')}
+                      {new Date(f.starts_at).toLocaleDateString('pt-BR', { timeZone: fuso })} – {new Date(f.ends_at).toLocaleDateString('pt-BR', { timeZone: fuso })}
                     </p>
                     {f.reason ? <p className="text-secundario text-txt-2">{f.reason}</p> : null}
                   </div>
@@ -292,7 +301,7 @@ export default function EditorExpediente({
                 name="inicio"
                 type="datetime-local"
                 required
-                defaultValue={paraInputLocal(new Date().toISOString())}
+                defaultValue={paraLocal(new Date().toISOString(), fuso)}
                 className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
               />
             </label>
@@ -302,7 +311,7 @@ export default function EditorExpediente({
                 name="fim"
                 type="datetime-local"
                 required
-                defaultValue={paraInputLocal(new Date().toISOString())}
+                defaultValue={paraLocal(new Date().toISOString(), fuso)}
                 className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
               />
             </label>

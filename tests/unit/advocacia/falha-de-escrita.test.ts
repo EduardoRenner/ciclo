@@ -96,8 +96,10 @@ describe('escreverJuridico', () => {
     const r = await escreverJuridico<{ id: string }>('/api/v1/legal/deadlines', { method: 'POST', json: { a: 1 } })
     expect(r).toEqual({ ok: true, dados: { id: 'p1' } })
     const [, init] = fetchFalso.mock.calls[0]! as [string, RequestInit]
-    expect((init.headers as Record<string, string>)['idempotency-key']).toMatch(/^[0-9a-f-]{36}$/)
-    expect((init.headers as Record<string, string>)['content-type']).toBe('application/json')
+    // APR-224: `fetchComTentativa` entrega um `Headers`, com a chave gerada por ela.
+    const headers = new Headers(init.headers)
+    expect(headers.get('idempotency-key')).toMatch(/^[0-9a-f-]{36}$/)
+    expect(headers.get('content-type')).toBe('application/json')
     expect(init.body).toBe('{"a":1}')
   })
 

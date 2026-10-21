@@ -87,10 +87,12 @@ const MUTANTES = TODAS.filter((r) => verbosQueEscrevem(r).length > 0)
 const ISENTAS: { rota: string; porque: string }[] = [
   // ── Sem tenant no momento da chamada. `comIdempotencia` recebe `tenantId` e grava em
   //    `idempotency_keys.tenant_id`, que é NOT NULL: não há onde guardar a chave.
+  { rota: 'auth/codigo', porque: 'sem tenant; pedir o código de novo só manda outro código, e os baldes por IP e por número são a trava' },
+  { rota: 'auth/codigo/entrar', porque: 'sem tenant; o código do Auth só serve uma vez, igual ao login' },
+  { rota: 'auth/codigo/hook', porque: 'chamada do Supabase Auth, não da fila offline; cada chamada é um código novo' },
   { rota: 'auth/login', porque: 'não há tenant ainda; a sessão é o que decide qual será' },
   { rota: 'auth/logout', porque: 'derrubar sessão duas vezes deixa o mesmo estado: sem sessão' },
-  { rota: 'auth/signup', porque: 'não há tenant ainda; o e-mail único no Supabase Auth é a trava' },
-  { rota: 'auth/signup/resend', porque: 'sem tenant; reenviar de novo só manda o mesmo link, e o balde por e-mail é a trava' },
+  { rota: 'auth/signup', porque: 'não há tenant ainda; o número único no Supabase Auth é a trava' },
   { rota: 'auth/password/forgot', porque: 'sem tenant, e o balde de e-mail é a trava (o limite é do PROJETO)' },
   { rota: 'auth/password/reset', porque: 'sem tenant; o token de recuperação só serve uma vez' },
   { rota: 'auth/mfa/enroll', porque: 'sem tenant; o fator repetido é descartado pelo Supabase Auth' },
@@ -102,7 +104,6 @@ const ISENTAS: { rota: string; porque: string }[] = [
   // ── Não escreve.
   { rota: 'assistant', porque: 'só lê: as ferramentas do modelo são de leitura, e há guarda própria disso' },
   { rota: 'assistant/rapido', porque: 'atalho determinístico sobre serviços de leitura, sem escrita' },
-  { rota: 'clients/import/preview', porque: 'lê o CSV e devolve a prévia; não toca no banco' },
 
   // ── Repetir deixa o MESMO estado, e o corpo é o estado inteiro.
   { rota: 'tenant/automacoes', porque: 'PATCH de configuração: o corpo é o estado final, repetir não soma' },
@@ -118,13 +119,11 @@ const ISENTAS: { rota: string; porque: string }[] = [
   //    só embala JSON — ela fixa `content-type: application/json` e é ela que gera a
   //    `idempotency-key`. Estas rotas são chamadas por `fetch` direto, nunca são reenviadas
   //    sozinhas, e o que sobra é o toque duplo humano.
-  { rota: 'clients/import', porque: 'multipart fora da fila offline; e a importação já pula telefone repetido' },
   { rota: 'tenant/vitrine', porque: 'multipart fora da fila offline' },
   { rota: 'tenant/vitrine/entidade', porque: 'multipart fora da fila offline' },
 
   // ── Públicas, e a trava é do BANCO, não do header: quem chama é anônimo e pode mandar a chave
   //    que quiser. `appointments_no_overlap` recusa o segundo agendamento no mesmo horário.
-  { rota: 'public/[slug]/book', porque: 'anônimo escolhe a própria chave; a trava real é a constraint de sobreposição' },
   { rota: 'public/[slug]/quote-request', porque: 'anônimo escolhe a própria chave; o balde por IP é a trava' },
   { rota: 'public/waitlist/claim/[token]', porque: 'anônimo; o encaixe é fechado por estado e pela constraint de sobreposição' },
   /*

@@ -1,20 +1,28 @@
 'use client'
 
-import { CheckCircle2, Gift, Star } from 'lucide-react'
+import { CalendarClock, CheckCircle2, Gift, Star } from 'lucide-react'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import ErroPublico from '@/components/ui/erro-publico'
 import TituloDeEstado from '@/components/ui/titulo-de-estado'
+import { descreverDiaCurto } from '@/core/billing/prelancamento'
 import { linkWhatsAppCompartilhar } from '@/lib/mensagens'
 
 type Estado = 'carregando' | 'pronto' | 'enviando' | 'enviado' | 'erro'
-type Dados = { negocioNome: string; servicoNome: string; jaAvaliado: boolean }
+type Dados = { negocioNome: string; servicoNome: string; jaAvaliado: boolean; proximaVolta: { dia: string; link: string } | null }
 
-export default function Avaliar({ token }: { token: string }) {
-  const [estado, setEstado] = useState<Estado>('carregando')
-  const [dados, setDados] = useState<Dados | null>(null)
+/**
+ * APR-119 (docs/98 F-08): `inicial` vem do Server Component (lido pelo token no servidor), então a
+ * tela abre com o nome do negócio e do serviço já no HTML — medido no celular 4× mais lento, o
+ * caminho antigo (HTML vazio → JS → fetch → render) levava 2,3–3,4 s até o primeiro conteúdo útil.
+ * O fetch continua existindo só para o "Tentar de novo" de uma falha transitória.
+ */
+export default function Avaliar({ token, inicial = null }: { token: string; inicial?: Dados | null }) {
+  const [estado, setEstado] = useState<Estado>(inicial ? (inicial.jaAvaliado ? 'enviado' : 'pronto') : 'carregando')
+  const [dados, setDados] = useState<Dados | null>(inicial)
   const [nota, setNota] = useState(0)
   const [notaEmFoco, setNotaEmFoco] = useState(0)
   const [comentario, setComentario] = useState('')
@@ -30,6 +38,7 @@ export default function Avaliar({ token }: { token: string }) {
   const [tentativa, setTentativa] = useState(0)
 
   useEffect(() => {
+    if (inicial && tentativa === 0) return
     let cancelado = false
     fetch(`/api/v1/public/reviews/${token}`)
       .then(async (r) => {
@@ -54,7 +63,7 @@ export default function Avaliar({ token }: { token: string }) {
     return () => {
       cancelado = true
     }
-  }, [token, tentativa])
+  }, [token, tentativa, inicial])
 
   function enviar() {
     if (nota === 0) return
@@ -118,7 +127,7 @@ export default function Avaliar({ token }: { token: string }) {
      * o link chega marcado, e o salão sabe que foi esta cliente quem trouxe a amiga.
      */
     const mensagemCompartilhar = dados?.negocioNome
-      ? `Oi! Super recomendo a ${dados.negocioNome}. Marca seu primeiro horário por aqui: ${linkIndicacao}`
+      ? `Oi! Super recomendo ${dados.negocioNome}. Marca seu primeiro horário por aqui: ${linkIndicacao}`
       : `Oi! Super recomendo esse lugar. Marca seu primeiro horário por aqui: ${linkIndicacao}`
 
     return (
@@ -126,8 +135,10 @@ export default function Avaliar({ token }: { token: string }) {
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
         <TituloDeEstado>Pronto, avaliação enviada!</TituloDeEstado>
         <p className="mt-2 text-corpo text-txt-2">
-          {dados?.negocioNome ? `A equipe da ${dados.negocioNome} agradece.` : 'Sua opinião ajuda o negócio a melhorar.'}
+          {dados?.negocioNome ? `${dados.negocioNome} agradece a sua opinião.` : 'Sua opinião ajuda o negócio a melhorar.'}
         </p>
+
+        <ProximaVolta servicoNome={dados?.servicoNome ?? 'atendimento'} volta={dados?.proximaVolta ?? null} />
 
         {linkIndicacao ? (
           <Card className="mt-6 w-full text-left">
@@ -136,7 +147,7 @@ export default function Avaliar({ token }: { token: string }) {
               <div className="flex-1">
                 <p className="text-corpo font-semibold text-txt">Indique alguém</p>
                 <p className="mt-1 text-secundario text-txt-2">
-                  Ela agenda o primeiro horário sem esperar resposta, e {dados?.negocioNome ?? 'o salão'} fica sabendo que foi você.
+                  A pessoa marca o primeiro horário sem esperar resposta, e {dados?.negocioNome ?? 'o salão'} fica sabendo que foi você.
                 </p>
               </div>
             </div>
@@ -158,7 +169,7 @@ export default function Avaliar({ token }: { token: string }) {
 
   return (
     <>
-      <h1 className="text-titulo font-bold">Como foi seu {dados?.servicoNome ?? 'atendimento'}?</h1>
+      <h1 className="text-titulo font-bold">{dados?.servicoNome ? `Como foi seu horário de ${dados.servicoNome}?` : 'Como foi seu atendimento?'}</h1>
       <p className="mt-1 text-secundario text-txt-2">{dados?.negocioNome}</p>
 
       <div className="mt-6 flex gap-1" role="radiogroup" aria-label="Nota de 1 a 5 estrelas">
@@ -225,6 +236,33 @@ export default function Avaliar({ token }: { token: string }) {
       >
         Enviar avaliação
       </Button>
+
+      <ProximaVolta servicoNome={dados?.servicoNome ?? 'atendimento'} volta={dados?.proximaVolta ?? null} />
     </>
+  )
+}
+
+/**
+ * docs/114 L-05: logo depois do atendimento, a próxima vez já com o serviço e quem atendeu escolhidos.
+ * O dia vem do Motor (`proximaVolta`, no servidor); sem dia a sugerir, o cartão não aparece.
+ */
+function ProximaVolta({ servicoNome, volta }: { servicoNome: string; volta: Dados['proximaVolta'] }) {
+  if (!volta) return null
+  return (
+    <Card className="mt-6 w-full text-left">
+      <div className="flex items-start gap-3">
+        <CalendarClock aria-hidden className="mt-0.5 size-5 shrink-0 text-acc-2" />
+        <div className="flex-1">
+          <p className="text-corpo font-semibold text-txt">Seu próximo horário de {servicoNome}</p>
+          <p className="mt-1 text-secundario text-txt-2">Por volta de {descreverDiaCurto(volta.dia)}.</p>
+        </div>
+      </div>
+      <Link
+        href={volta.link}
+        className="mt-4 flex h-12 items-center justify-center rounded-[var(--radius-pill)] bg-acc px-5 text-corpo font-semibold text-on-acc"
+      >
+        Marcar agora
+      </Link>
+    </Card>
   )
 }

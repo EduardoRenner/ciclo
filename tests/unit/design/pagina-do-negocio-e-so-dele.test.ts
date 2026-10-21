@@ -38,6 +38,7 @@ const SEGMENTOS_PUBLICOS_CONHECIDOS = new Set([
   '[slug]', // a página de UM negócio — o diferencial em si
   'avaliar', // token de avaliação de um atendimento
   'confirmar', // token de confirmação de um agendamento
+  'convite', // token de UM convite de equipe (APR-023): mostra o negócio que chamou, a quem tem o link
   'lista-espera', // token da fila de espera
   'orcamento', // token de um orçamento
   'precos', // institucional do CICLO
@@ -45,6 +46,13 @@ const SEGMENTOS_PUBLICOS_CONHECIDOS = new Set([
   'calculadora', // institucional do CICLO: ferramenta grátis, não lista ninguém (docs/82 §8)
   'privacidade', // institucional do CICLO
   'termos', // institucional do CICLO
+  /*
+    docs/114 L-06: a busca da cliente, pedida pelo Vitor (dono desde 17/10) para o lançamento, contra o veto
+    de 2026-09-05. Entra atrás da chave `BUSCA_ABERTA` e com a parte do veto que protege a dona preservada:
+    a página DO negócio e o agendamento dela nunca levam para a busca (caso abaixo), e cada negócio pode
+    sair da busca em Configurações > Negócio. O conflito está anotado para o Vitor em docs/DECISOES.md.
+  */
+  'buscar',
 ])
 
 /** Consulta a `tenants` que devolve UM negócio. Qualquer uma destas é escopo, não listagem. */
@@ -147,6 +155,14 @@ describe('nenhuma rota pública lista estabelecimentos', () => {
       `página pública lendo vários tenants: ${ofensores.join(', ')}. Página pública serve UM ` +
         `negócio — ver docs/43 §3.`,
     ).toEqual([])
+  })
+
+  it('a página do negócio e o agendamento dela nunca levam para a busca (docs/114 L-06)', () => {
+    // Quem chegou pelo link de uma dona não esbarra na concorrência: é a promessa da home, que sobrevive à busca.
+    const doNegocio = arquivosDe(join(PUBLICO, '[slug]'))
+    expect(doNegocio.length, 'a varredura da página do negócio voltou vazia').toBeGreaterThan(3)
+    const ofensores = doNegocio.filter((f) => /['"`]\/buscar/.test(readFileSync(f, 'utf8')))
+    expect(ofensores).toEqual([])
   })
 
   it('o sitemap entrega a página do negócio, não uma vitrine central', () => {

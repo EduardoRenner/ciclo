@@ -105,6 +105,9 @@ function traduzirErro(erro: { code?: string }): never {
   throw new AppError('INTERNAL', { cause: erro })
 }
 
+/** Valor entre aspas na sintaxe de filtro do PostgREST: aspas e barra invertida escapadas. */
+const aspasPostgrest = (v: string) => `"${v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+
 export async function listarClientes(
   db: Cliente,
   tenantId: string,
@@ -125,6 +128,10 @@ export async function listarClientes(
       // telefone digitado ("(11) 98765-4321") colidem com a sintaxe do
       // PostgREST para filtro composto, que usa `(` e `,` como separador.
       consulta = consulta.eq('phone_hash', hashTelefone(porTelefone))
+    } else if (soDigitos.length >= 4 && soDigitos.length === termo.replace(/[\s().-]/g, '').length) {
+      // APR-114 (C-19): 4 a 7 dígitos é o FIM do número ("os últimos quatro", que é como o balcão
+      // lembra). `phone_e164` termina com esses dígitos; o hash só serve para o número inteiro.
+      consulta = consulta.like('phone_e164', `%${soDigitos}`)
     } else {
       // Nome busca na coluna GERADA `name_busca` (migration 0047), que guarda o nome sem acento
       // e em minúsculas — e o termo digitado passa pela MESMA normalização (`semAcento`, o par
@@ -142,9 +149,18 @@ export async function listarClientes(
   }
 
   if (opcoes.tag) consulta = consulta.contains('tags', [opcoes.tag])
-  if (opcoes.cursor) consulta = consulta.lt('id', opcoes.cursor)
+  // APR-114 (C-18): a lista sai em ORDEM ALFABÉTICA (`name_busca`, sem acento) com cursor composto
+  // (nome, id), para a página seguinte continuar do ponto certo mesmo com homônimos. Antes era por
+  // `id` desc, que para quem usa é ordem nenhuma. O cursor segue sendo o id da última linha (o
+  // contrato da API e da tela não muda): o nome dela é lido aqui.
+  if (opcoes.cursor) {
+    const { data: ultimo, error: erroCursor } = await db.from('clients').select('name_busca').eq('tenant_id', tenantId).eq('id', opcoes.cursor).maybeSingle()
+    if (erroCursor) throw new AppError('INTERNAL', { cause: erroCursor })
+    const nome = ultimo?.name_busca ?? ''
+    consulta = consulta.or(`name_busca.gt.${aspasPostgrest(nome)},and(name_busca.eq.${aspasPostgrest(nome)},id.gt.${aspasPostgrest(opcoes.cursor)})`)
+  }
 
-  const { data, error } = await consulta.order('id', { ascending: false }).limit(limite)
+  const { data, error } = await consulta.order('name_busca', { ascending: true }).order('id', { ascending: true }).limit(limite)
   if (error) throw new AppError('INTERNAL', { cause: error })
   return data ?? []
 }
@@ -241,6 +257,33 @@ export async function criarCliente(db: Cliente, tenantId: string, entrada: Entra
 
   if (error) traduzirErro(error)
   return data
+}
+
+/**
+ * APR-040: o que `client:own` e `vault:own` querem dizer. O profissional alcança a pessoa que ele
+ * ATENDE — tem agendamento com ela, em qualquer estado (marcado, feito, faltou), ou comanda. É a
+ * agenda que diz quem atende: quem cobre a folga do colega passa a ter o horário e, com ele, a
+ * ficha. Antes, as rotas tratavam `own` como `all` e qualquer profissional com AAL2 abria a
+ * anamnese de qualquer cliente do negócio (medido na APR-039).
+ *
+ * Com o cliente do USUÁRIO: se o negócio ligou `restrict_professional_view`, a RLS já esconde os
+ * horários dos outros; o filtro por `professional_id` aqui vale nos dois modos.
+ */
+export async function exigirClienteDoProfissional(db: Cliente, tenantId: string, clientId: string): Promise<void> {
+  const { data: eu, error: erroEu } = await db.rpc('my_professional_id', { t: tenantId })
+  if (erroEu) throw new AppError('INTERNAL', { cause: erroEu })
+  if (eu) {
+    const [horario, comanda] = await Promise.all([
+      db.from('appointments').select('id').eq('tenant_id', tenantId).eq('client_id', clientId).eq('professional_id', eu).limit(1),
+      db.from('tickets').select('id').eq('tenant_id', tenantId).eq('client_id', clientId).eq('professional_id', eu).limit(1),
+    ])
+    if (horario.error) throw new AppError('INTERNAL', { cause: horario.error })
+    if (comanda.error) throw new AppError('INTERNAL', { cause: comanda.error })
+    if ((horario.data?.length ?? 0) > 0 || (comanda.data?.length ?? 0) > 0) return
+  }
+  throw new AppError('FORBIDDEN', {
+    message: 'Esta ficha fica com quem atende esta pessoa. Marque um horário com ela ou peça ao dono do negócio.',
+  })
 }
 
 export async function buscarCliente(db: Cliente, tenantId: string, id: string) {

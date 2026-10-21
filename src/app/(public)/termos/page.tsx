@@ -6,8 +6,8 @@ import { PRELANCAMENTO, cortesiaDoCadastro, descreverDia, ultimoDiaDaCortesia } 
 import { dataLegivel, VERSOES_LEGAIS } from '@/core/legal/versoes'
 import { canalDeContato } from '@/lib/contato'
 
-import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
-import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-aqua-claro.png'
+import wordmark from '../../../../public/marca/ciclo-logo-escrita-branca.svg'
+import wordmarkClaro from '../../../../public/marca/ciclo-logo-escrita-preta.svg'
 
 const CANAL = canalDeContato('Oi! Tenho uma dúvida sobre os termos de uso do CICLO.')
 
@@ -133,7 +133,8 @@ export default function Termos() {
             <strong className="font-semibold text-txt">você</strong>; a gente só processa o que
             você mandou guardar. Isso significa que cabe a você ter a autorização das pessoas que
             você cadastra. Os detalhes estão na{' '}
-            <Link href="/privacidade" className="font-semibold text-acc-2 underline underline-offset-2">
+            {/* APR-125 (A-19): alvo de 48 px sem `toque-48` (o ::after absoluto de dois links na mesma linha se cobre). */}
+            <Link href="/privacidade" className="inline-flex min-h-12 items-center font-semibold text-acc-2 underline underline-offset-2">
               Política de Privacidade
             </Link>
             .
@@ -154,12 +155,12 @@ export default function Termos() {
         <section>
           <h2>5. Planos e pagamento</h2>
           <p>
-            Há dois planos: o {NOME_DO_PLANO.essencial}, para {PLANOS.essencial.maxProfissionais} profissional,
+            Há dois planos: o {NOME_DO_PLANO.essencial}, até {PLANOS.essencial.maxProfissionais} {PLANOS.essencial.maxProfissionais === 1 ? 'profissional' : 'profissionais'},
             a {precoDoPlano('essencial')} por mês, e o {NOME_DO_PLANO.equipe}, até {PLANOS.equipe.maxProfissionais}{' '}
             profissionais, a {precoDoPlano('equipe')} por mês. O produto é o mesmo nos dois; o que muda é o
             tamanho da equipe. Acima de {PLANOS.equipe.maxProfissionais} profissionais, o plano é combinado à
             parte. Os valores de hoje estão na{' '}
-            <Link href="/precos" className="font-semibold text-acc-2 underline underline-offset-2">
+            <Link href="/precos" className="inline-flex min-h-12 items-center font-semibold text-acc-2 underline underline-offset-2">
               página de preços
             </Link>
             .

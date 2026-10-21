@@ -6,6 +6,7 @@ import { useState } from 'react'
 import Button from '@/components/ui/button'
 import { caminhoInternoSeguro } from '@/server/auth/destino'
 import Input from '@/components/ui/input'
+import { fetchComTentativa } from '@/lib/tentativa'
 
 export default function FormularioVerificar({ factorId, proximo }: { factorId: string; proximo: string | null }) {
   const router = useRouter()
@@ -18,9 +19,9 @@ export default function FormularioVerificar({ factorId, proximo }: { factorId: s
     setPendente(true)
     setErro(null)
     try {
-      const resposta = await fetch('/api/v1/auth/mfa/verify', {
+      const resposta = await fetchComTentativa('/api/v1/auth/mfa/verify', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ factorId, code: codigo }),
       })
       const json = (await resposta.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }

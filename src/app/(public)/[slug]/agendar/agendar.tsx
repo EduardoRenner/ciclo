@@ -1,6 +1,7 @@
 "use client";
 
-import { CalendarPlus, CheckCircle2, ChevronDown, MessageCircle, Phone } from "lucide-react";
+import { CalendarPlus, CheckCircle2, MessageCircle, Phone } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { comMaiuscula, type Vocabulario } from "@/core/text/vocabulario";
@@ -10,12 +11,16 @@ import { saidaDeContato } from "@/lib/mensagens";
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
 import Chip from "@/components/ui/chip";
-import FilterRow from "@/components/ui/filter-row";
+import GradeDeHorarios, { slotsUnicosDe, type SlotLivre } from "@/components/agenda/grade-de-horarios";
+import TrilhoDeDias from "@/components/agenda/trilho-de-dias";
+import { primeiroDiaPeloLink } from "@/core/scheduling/antecedencia";
+import { agoraEmMinutos, diasFechadosDe, hojeNoFuso, paraData, primeiroDiaUtil as primeiroDiaUtilDe, proximosDias } from "@/core/agenda/dias";
 import Input from "@/components/ui/input";
 import PhoneInput from "@/components/ui/phone-input";
 import { textoDoCanalDeConfirmacao } from "@/core/messaging/promessa";
 import { montarIcs, type EventoIcs } from "@/core/scheduling/ics";
 import { dinheiro, duracao, horaLocal } from "@/lib/formato";
+import { diaPorExtensoNoFuso } from "@/core/agenda/resumo-do-horario";
 import {
   lerReconhecimentoLocal,
   salvarReconhecimentoLocal,
@@ -46,79 +51,12 @@ type Servico = {
   suggestedProduct: { id: string; name: string; priceCents: number; inStock: boolean } | null;
 };
 type Profissional = { id: string; displayName: string; photoUrl: string | null };
-type Slot = { startsAt: string; endsAt: string; professionalId: string };
+type Slot = SlotLivre;
 type Reconhecimento = {
   primeiroNome: string;
   diasDesdeUltima: number | null;
   sugestao: { serviceId: string; serviceName: string; professionalId: string | null } | null;
 };
-
-/**
- * "Hoje" é no fuso do salão, não no do aparelho de quem agenda. A versão
- * anterior montava a lista com `toISOString()`, que é UTC: das 21h à meia-noite
- * em Brasília a coluna de hoje sumia do trilho, e um salão que atende de
- * madrugada perdia o próprio dia.
- */
-function hojeNoSalao(timezone: string): string {
-  // `en-CA` formata como `AAAA-MM-DD`, que é exatamente o formato que a API espera.
-  return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(
-    new Date(),
-  );
-}
-
-/** 14 dias corridos a partir de hoje — cobre o horizonte real de quem agenda pelo site, sem paginação. */
-function proximosDias(qtd: number, primeiro: string): string[] {
-  const [ano, mes, dia] = primeiro.split("-").map(Number);
-  return Array.from({ length: qtd }, (_, i) => {
-    const d = new Date(Date.UTC(ano!, mes! - 1, dia!));
-    d.setUTCDate(d.getUTCDate() + i);
-    return d.toISOString().slice(0, 10);
-  });
-}
-
-/** `AAAA-MM-DD` vira data em UTC de propósito: só serve para dizer o dia da semana e o número. */
-function paraData(iso: string): Date {
-  const [ano, mes, dia] = iso.split("-").map(Number);
-  return new Date(Date.UTC(ano!, mes! - 1, dia!));
-}
-
-function diaDaSemana(iso: string): number {
-  return paraData(iso).getUTCDay();
-}
-
-/** Minutos desde a meia-noite, no relógio do salão. */
-function agoraEmMinutos(timezone: string): number {
-  const partes = new Intl.DateTimeFormat("pt-BR", {
-    timeZone: timezone,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(new Date());
-  const valor = (tipo: string) =>
-    Number(partes.find((p) => p.type === tipo)?.value ?? 0);
-  return valor("hour") * 60 + valor("minute");
-}
-
-function paraMinutos(hhmm: string): number {
-  const [h, m] = hhmm.split(":");
-  return Number(h) * 60 + Number(m);
-}
-
-/** Sentinela de "a pessoa fechou a faixa que estava aberta" — distinto de `null`, que é "ainda não mexeu". */
-const NENHUM_PERIODO = "";
-
-function periodo(iso: string, timezone: string): "Manhã" | "Tarde" | "Noite" {
-  const hora = Number(
-    new Intl.DateTimeFormat("pt-BR", {
-      hour: "numeric",
-      hour12: false,
-      timeZone: timezone,
-    }).format(new Date(iso)),
-  );
-  if (hora < 12) return "Manhã";
-  if (hora < 18) return "Tarde";
-  return "Noite";
-}
 
 /**
  * A montagem do arquivo é pura e mora em `src/core` (regra 5 do CLAUDE.md), com teste próprio;
@@ -223,7 +161,8 @@ function BarraFixaDeConfirmacao({
           motivoDesabilitado={motivoBloqueio}
           onClick={onConfirmar}
         >
-          Confirmar agendamento
+          {/* docs/114 AGD-01 (decisão do Vitor): o horário pelo link nasce confirmado; era "Pedir este horário". */}
+          Marcar este horário
         </Button>
       </div>
     </div>
@@ -238,6 +177,7 @@ export default function Agendar({
   whatsappDoSalao,
   telefoneDoSalao,
   timezone,
+  diasDeAntecedencia = 1,
   hours,
   services,
   professionals,
@@ -256,6 +196,8 @@ export default function Agendar({
   whatsappDoSalao: string | null;
   telefoneDoSalao: string | null;
   timezone: string;
+  /** docs/114 L-04: dias de calendário antes do primeiro horário marcável pelo link (padrão 1: amanhã). */
+  diasDeAntecedencia?: number;
   hours: { weekday: number; opensAt: string; closesAt: string }[];
   services: Servico[];
   professionals: Profissional[];
@@ -270,40 +212,13 @@ export default function Agendar({
   indicadaPor: string | null;
 }) {
   const dias = useMemo(
-    () => proximosDias(14, hojeNoSalao(timezone)),
-    [timezone],
+    () => proximosDias(14, primeiroDiaPeloLink(hojeNoFuso(timezone), diasDeAntecedencia)),
+    [timezone, diasDeAntecedencia],
   );
 
-  const diasFechados = useMemo(() => {
-    const abertos = new Set(hours.map((h) => h.weekday));
-    // Sem expediente cadastrado não dá para afirmar que algum dia está fechado —
-    // nesse caso nenhum dia recebe a marca, e o trilho fica como era.
-    return hours.length === 0
-      ? new Set<string>()
-      : new Set(dias.filter((d) => !abertos.has(diaDaSemana(d))));
-  }, [dias, hours]);
-
-  /*
-   * Abrir no primeiro dia em que o salão atende, não em "hoje" seco: numa
-   * barbearia fechada domingo e segunda, quem entrasse no sábado à noite via
-   * "Sem horários livres nesse dia" antes de qualquer outra coisa — que lê como
-   * "está lotado" e não como "hoje não abre". O dia fechado continua no trilho e
-   * continua clicável (a agenda de um profissional pode fugir do expediente
-   * padrão); só deixa de ser a primeira impressão.
-   */
-  const primeiroDiaUtil = useMemo(() => {
-    const hoje = dias[0];
-    const blocosDeHoje = hoje
-      ? hours.filter((h) => h.weekday === diaDaSemana(hoje))
-      : [];
-    const jaFechouHoje =
-      blocosDeHoje.length > 0 &&
-      blocosDeHoje.every(
-        (h) => paraMinutos(h.closesAt) <= agoraEmMinutos(timezone),
-      );
-    const candidatos = jaFechouHoje ? dias.slice(1) : dias;
-    return candidatos.find((d) => !diasFechados.has(d)) ?? dias[0] ?? "";
-  }, [dias, diasFechados, hours, timezone]);
+  const diasFechados = useMemo(() => diasFechadosDe(dias, hours), [dias, hours]);
+  // A regra (e o porquê) mora em `core/agenda/dias.ts`, com teste.
+  const primeiroDiaUtil = useMemo(() => primeiroDiaUtilDe(dias, hours, diasFechados, dias[0] === hojeNoFuso(timezone) ? agoraEmMinutos(timezone) : -1), [dias, diasFechados, hours, timezone]);
 
   /*
    * Quem tocou num serviço na página do salão já escolheu — abrir no primeiro do catálogo
@@ -324,13 +239,8 @@ export default function Agendar({
     horários de uma vez, de 15 em 15 minutos, todos com o mesmo peso visual — escolher entre eles
     é a decisão mais cara da tela, e a última antes da reserva.
   */
-  const [periodoAberto, setPeriodoAberto] = useState<string | null>(null);
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
-  // Opcional: o WhatsApp já é o canal principal (`telefone`), então este campo
-  // nunca bloqueia a confirmação — só existe para quem prefere ser avisado
-  // por e-mail também.
-  const [email, setEmail] = useState("");
   // docs/09-PLATAFORMA.md G3+G13 (P2.5): opcional pra qualquer negócio, não só
   // pra quem "vai até o cliente" — sem geocodificação, é só texto.
   const [endereco, setEndereco] = useState("");
@@ -341,7 +251,15 @@ export default function Agendar({
   // avisa o profissional (vira nota no agendamento); quem cobra de verdade é ele, na comanda.
   const [querLevarProduto, setQuerLevarProduto] = useState(false);
   const [confirmado, setConfirmado] = useState(false);
+  // docs/114 L-07 (B4): o link de remarcar ou cancelar deste horário, assinado no servidor ao marcar.
+  const [tokenDeGestao, setTokenDeGestao] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  /*
+    Horários perto do que a pessoa queria, vindos do 409 (APR-005, achado F-02). O aviso era apagado
+    no mesmo instante pelo `setErro(null)` da recarga, e o formulário sumia sem explicação.
+  */
+  const [alternativas, setAlternativas] = useState<string[]>([]);
+  const avisoRef = useRef<HTMLDivElement>(null);
   const [pendente, iniciarTransicao] = useTransition();
 
   /*
@@ -362,6 +280,8 @@ export default function Agendar({
     conteúdo novo, que é o que ela precisa para ler o resumo do que marcou.
   */
   const tituloDoSucesso = useRef<HTMLHeadingElement>(null);
+  const pedidoDeHorarios = useRef(0);
+  const tentativaDeAgendar = useRef<{ corpo: string; chave: string } | null>(null);
   useEffect(() => {
     if (confirmado) tituloDoSucesso.current?.focus();
   }, [confirmado]);
@@ -422,6 +342,15 @@ export default function Agendar({
   }
 
   const servicoEscolhido = services.find((s) => s.id === serviceId);
+  const saidaParaHoje =
+    diasDeAntecedencia >= 1
+      ? saidaDeContato(
+          whatsappDoSalao,
+          telefoneDoSalao,
+          nomeDoSalao,
+          `Oi! Vi seu link no CICLO. Tem horário hoje para ${servicoEscolhido?.name ?? "um atendimento"}?`,
+        )
+      : null;
   const nomeDoProfissionalEscolhido =
     professionalId === null
       ? "Tanto faz"
@@ -450,6 +379,11 @@ export default function Agendar({
     novoServico?: string,
     novoProfissional?: string | null,
   ) {
+    // Só a busca MAIS RECENTE pode escrever a lista. Sem isto, a resposta de um dia anterior que
+    // chegava atrasada sobrescrevia a do dia escolhido, e a cliente marcava um horário de outro dia
+    // achando que era o da tela (APR-003, achado F-01, reproduzido 3 de 3 com rede lenta).
+    const meuPedido = ++pedidoDeHorarios.current;
+    setAlternativas([]);
     setDia(novoDia);
     setSlots(null);
     setSlotEscolhido(null);
@@ -480,12 +414,14 @@ export default function Agendar({
           data?: { slots: Slot[] };
           error?: { message: string };
         };
+        if (meuPedido !== pedidoDeHorarios.current) return;
         if (!r.ok) {
           setErro(json.error?.message ?? "Não consegui buscar horários.");
           return;
         }
         setSlots(json.data?.slots ?? []);
       } catch {
+        if (meuPedido !== pedidoDeHorarios.current) return;
         /*
           NÃO `setSlots([])` aqui — foi o que a primeira versão deste catch fez, e a verificação no
           navegador pegou: com a lista vazia, a região viva passava a anunciar "Sem horários livres
@@ -605,25 +541,35 @@ export default function Agendar({
         horário apareceu, porque a requisição pode ter chegado antes de a resposta se perder.
       */
       try {
-        const r = await fetch(`/api/v1/public/${slug}/book`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
+        const corpo = JSON.stringify({
             serviceId,
             professionalId: slotEscolhido.professionalId,
             startsAt: slotEscolhido.startsAt,
             name: nome,
             phone: telefone,
-            email: email.trim() || undefined,
             address: endereco.trim() || undefined,
             website: website || undefined,
             ind: ind || undefined,
             volta: volta || undefined,
             wantsSuggestedProduct: querLevarProduto,
-          }),
+          });
+        // Chave por INTENÇÃO: a mesma enquanto o pedido não mudar. Se a resposta se perde e a
+        // pessoa toca de novo, o servidor devolve o mesmo agendamento em vez de "horário já
+        // reservado" para o horário dela (APR-004, achado C-04). Mudou serviço, horário ou dados,
+        // é outro pedido e ganha outra chave.
+        if (tentativaDeAgendar.current?.corpo !== corpo) {
+          tentativaDeAgendar.current = { corpo, chave: crypto.randomUUID() };
+        }
+        const r = await fetch(`/api/v1/public/${slug}/book`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "idempotency-key": tentativaDeAgendar.current.chave,
+          },
+          body: corpo,
         });
         const json = (await r.json()) as {
-          data?: { reconhecimentoToken?: string | null };
+          data?: { reconhecimentoToken?: string | null; gestaoToken?: string | null };
           error?: {
             code: string;
             message: string;
@@ -632,8 +578,16 @@ export default function Agendar({
         };
         if (!r.ok) {
           if (json.error?.code === "SLOT_TAKEN") {
-            setErro("Esse horário acabou de ser reservado. Escolha outro.");
+            // A recarga vem ANTES do aviso: ela limpa o erro, e o aviso tem que ficar na tela.
             buscarDisponibilidade(dia);
+            setErro(
+              "Esse horário acabou de ser marcado por outra pessoa. Escolha outro: seu nome e telefone já ficam guardados.",
+            );
+            setAlternativas(json.error.details?.alternatives ?? []);
+            requestAnimationFrame(() => {
+              avisoRef.current?.scrollIntoView({ block: "center" });
+              avisoRef.current?.focus();
+            });
             return;
           }
           setErro(
@@ -646,10 +600,11 @@ export default function Agendar({
         if (json.data?.reconhecimentoToken) {
           salvarReconhecimentoLocal(slug, { name: nome, phone: telefone, token: json.data.reconhecimentoToken });
         }
+        setTokenDeGestao(json.data?.gestaoToken ?? null);
         setConfirmado(true);
       } catch {
         setErro(
-          "Não consegui falar com o servidor. Confira a conexão e tente de novo. Se o horário já tiver sido marcado, ele aparece ao escolher o dia outra vez.",
+          "Não consegui falar com o servidor. Se o horário foi marcado, ele sai da lista. Toque em Marcar de novo: não vai duplicar.",
         );
       }
     });
@@ -675,7 +630,7 @@ export default function Agendar({
       whatsappDoSalao,
       telefoneDoSalao,
       nomeDoSalao,
-      `Oi! Acabei de marcar um horário pelo site da ${nomeDoSalao} e queria confirmar.`,
+      `Oi! Marquei um horário pelo site de ${nomeDoSalao}.`,
     );
 
     return (
@@ -691,7 +646,7 @@ export default function Agendar({
           navega por teclado não ganha uma parada extra, e o foco programático funciona.
         */}
         <h2 ref={tituloDoSucesso} tabIndex={-1} className="text-titulo font-bold">
-          Agendamento enviado!
+          Horário marcado
         </h2>
 
         {slotEscolhido && servicoEscolhido ? (
@@ -700,12 +655,7 @@ export default function Agendar({
               {servicoEscolhido.name}
             </p>
             <p className="mt-1 text-secundario text-txt-2">
-              {paraData(dia).toLocaleDateString("pt-BR", {
-                weekday: "long",
-                day: "2-digit",
-                month: "long",
-                timeZone: "UTC",
-              })}
+              {diaPorExtensoNoFuso(slotEscolhido.startsAt, timezone)}
               {" às "}
               {horaLocal(slotEscolhido.startsAt, timezone)}
             </p>
@@ -735,14 +685,32 @@ export default function Agendar({
           libera a frase de canal sozinho no dia em que `reminders` entrar no `schedule`.
         */}
         <p className="mt-4 max-w-xs text-corpo text-txt-2">
-          Seu pedido chegou e já apareceu para a equipe. A confirmação vem de
-          quem vai te atender, e pode não ser na hora.
-          {saidaDoSucesso ? (
-            <> Se não tiver retorno em algumas horas, fale direto:</>
+          Já está na agenda de {nomeDoSalao}.
+          {/*
+            APR-118 (F-04, S1): conta nova não tem telefone público, e a frase mandava "chamar por
+            telefone" sem telefone em lugar nenhum. Sem canal, a tela não inventa um.
+          */}
+          {tokenDeGestao ? null : saidaDoSucesso ? (
+            <> Se precisar remarcar ou cancelar, fale direto:</>
           ) : (
-            <> Se não tiver retorno em algumas horas, é só chamar por telefone.</>
+            <> Se precisar remarcar ou cancelar, fale com {nomeDoSalao} do jeito que você costuma.</>
           )}
         </p>
+
+        {/*
+          docs/114 L-07 (B4 do F1): sem a Meta, o link de gestão só chegava pelo lembrete, que não sai.
+          Agora sai aqui, na hora de marcar, e vale até o dia seguinte ao horário (`gerarTokenDeGestao`).
+          A cliente guarda a página ou volta por ela; o WhatsApp abaixo continua como a outra saída.
+        */}
+        {tokenDeGestao ? (
+          <Link
+            href={`/confirmar/${tokenDeGestao}`}
+            className="mt-4 inline-flex h-12 items-center justify-center rounded-[var(--radius-sm)] bg-acc px-5 text-corpo font-semibold text-on-acc shadow-elevado transition active:scale-[.97]"
+          >
+            Remarcar ou cancelar
+          </Link>
+        ) : null}
+        {tokenDeGestao && saidaDoSucesso ? <p className="mt-3 text-secundario text-txt-2">Se preferir, fale direto:</p> : null}
 
         {/*
           A saída que a frase acima prometia em prosa e a tela não dava.
@@ -816,32 +784,7 @@ export default function Agendar({
    *
    * Com profissional escolhido a API já filtra, então não há duplicata e o `Map` não muda nada.
    */
-  const slotsUnicos = slots
-    ? [...new Map(slots.map((s) => [s.startsAt, s])).values()]
-    : null;
-
-  const slotsPorPeriodo =
-    slotsUnicos && slotsUnicos.length > 0
-      ? (["Manhã", "Tarde", "Noite"] as const).map((p) => ({
-          periodo: p,
-          itens: slotsUnicos.filter((s) => periodo(s.startsAt, timezone) === p),
-        }))
-      : [];
-
-  const periodosComVaga = slotsPorPeriodo.filter((g) => g.itens.length > 0);
-
-  /*
-   * Qual período aparece aberto. `null` = ainda não escolheram, e vale o primeiro com vaga —
-   * medido em 31/08: uma terça na Dom Rocha listava 42 horários de uma vez, de 15 em 15 minutos,
-   * todos com o mesmo peso visual. Escolher entre 42 chips iguais é a decisão mais cara da tela,
-   * e é a última antes da reserva.
-   *
-   * Um período JÁ vem aberto de propósito: colapsar tudo trocaria uma tela cheia por uma tela
-   * vazia, e custaria um toque a mais no caso comum, que é aceitar o próximo horário livre.
-   */
-  /* `null` = ninguém mexeu ainda (vale o primeiro com vaga); `NENHUM_PERIODO` = a pessoa fechou a
-     que estava aberta, e aí nenhuma faixa casa — os dois casos precisam ser distinguíveis. */
-  const periodoVisivel = periodoAberto ?? periodosComVaga[0]?.periodo ?? null;
+  const slotsUnicos = slots ? slotsUnicosDe(slots) : null;
 
   const mostrarBarraFixa = Boolean(slotEscolhido && servicoEscolhido);
 
@@ -1025,56 +968,53 @@ export default function Agendar({
 
       <section ref={passoDiaRef}>
         <Passo numero={professionals.length > 1 ? 3 : 2} titulo="Dia" />
-        <FilterRow rotulo="Escolher o dia">
-          {dias.map((d) => {
-            const data = paraData(d);
-            const fechado = diasFechados.has(d);
-            const nomeDoDia = data.toLocaleDateString("pt-BR", {
-              weekday: "long",
-              timeZone: "UTC",
-            });
-            return (
-              <button
-                key={d}
-                type="button"
-                onClick={() => buscarDisponibilidade(d)}
-                aria-current={d === dia ? "date" : undefined}
-                // Todo dia do trilho parecia igualmente disponível; nos fechados a
-                // pessoa tocava e batia numa mensagem vazia. O rótulo é o mesmo que
-                // o leitor de tela ouve.
-                aria-label={`${nomeDoDia}, dia ${data.getUTCDate()}${fechado ? ", fechado" : ""}`}
-                className={
-                  "flex h-16 w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)] text-label font-semibold transition duration-[var(--dur-1)] ease-[var(--ease-ios)] active:scale-[.95] " +
-                  (d === dia
-                    ? "bg-acc text-on-acc shadow-elevado"
-                    : fechado
-                      ? "bg-surface-2/50 text-txt-3 hover:bg-surface-3"
-                      : "bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt")
-                }
-              >
-                <span className="uppercase">
-                  {data
-                    .toLocaleDateString("pt-BR", {
-                      weekday: "short",
-                      timeZone: "UTC",
-                    })
-                    .replace(".", "")}
-                </span>
-                <span
-                  className={`tabular text-corpo font-bold ${d === dia ? "" : fechado ? "text-txt-3" : "text-txt"}`}
-                >
-                  {data.getUTCDate()}
-                </span>
-              </button>
-            );
-          })}
-        </FilterRow>
+        {/* APR-109: o mesmo trilho do "Marcar" do painel (`components/agenda/trilho-de-dias`). */}
+        <TrilhoDeDias dias={dias} dia={dia} fechados={diasFechados} aoEscolher={buscarDisponibilidade} />
+        {/*
+          docs/114 L-04 (decisão do Vitor): pelo link, a partir de amanhã. Quem quer para hoje fala com
+          quem atende, que decide. WhatsApp quando o negócio tem; sem ele, o telefone do negócio
+          (a mesma decisão da tela de sucesso, `saidaDeContato`). Sem nenhum dos dois, nada: a tela
+          não inventa um canal.
+        */}
+        {saidaParaHoje ? (
+          <a
+            href={saidaParaHoje.href}
+            {...(saidaParaHoje.canal === "whatsapp" ? { target: "_blank", rel: "noreferrer" } : {})}
+            className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-4 text-corpo font-semibold text-txt transition active:scale-[.98]"
+          >
+            {saidaParaHoje.canal === "whatsapp" ? <MessageCircle aria-hidden className="size-4" /> : <Phone aria-hidden className="size-4" />}
+            {saidaParaHoje.canal === "whatsapp" ? "Para hoje, chame no WhatsApp" : "Para hoje, ligue para marcar"}
+          </a>
+        ) : null}
       </section>
 
       {erro ? (
-        <p role="alert" className="text-secundario text-bad">
-          {erro}
-        </p>
+        <div ref={avisoRef} tabIndex={-1} className="flex flex-col gap-2">
+          <p role="alert" className="text-secundario text-bad">
+            {erro}
+          </p>
+          {alternativas.length ? (
+            (() => {
+              const livres = alternativas
+                .map((iso) => slots?.find((s) => s.startsAt === iso))
+                .filter((s): s is Slot => Boolean(s));
+              return livres.length ? (
+                <div className="flex flex-col gap-2">
+                  <p className="text-secundario text-txt-2">Estes estão livres, perto do que você queria:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {livres.map((s) => (
+                      <Chip key={`${s.startsAt}-${s.professionalId}`} onClick={() => escolherHorario(s)}>
+                        {horaLocal(s.startsAt, timezone)}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-secundario text-txt-2">Escolha outro horário na lista abaixo ou outro dia.</p>
+              );
+            })()
+          ) : null}
+        </div>
       ) : null}
 
       {/*
@@ -1138,55 +1078,8 @@ export default function Agendar({
               : "Sem horários livres nesse dia. Tente outra data."}
           </p>
         ) : (
-          /*
-            Uma faixa por período, e só a aberta lista os horários. O período fechado continua
-            dizendo o que a pessoa precisa para escolher — quantos horários tem e a partir de que
-            hora —, então fechar não esconde informação, só adia a lista.
-          */
-          <section className="flex flex-col gap-2">
-            {periodosComVaga.map((grupo) => {
-              const aberto = grupo.periodo === periodoVisivel;
-              const primeiro = horaLocal(grupo.itens[0]!.startsAt, timezone);
-              const temEscolhido = grupo.itens.some((s) => s.startsAt === slotEscolhido?.startsAt);
-              return (
-                <div key={grupo.periodo} className="overflow-hidden rounded-[var(--radius-sm)] border border-line-2">
-                  <button
-                    type="button"
-                    onClick={() => setPeriodoAberto(aberto ? NENHUM_PERIODO : grupo.periodo)}
-                    aria-expanded={aberto}
-                    className="flex min-h-12 w-full items-center gap-3 bg-surface-2 px-4 py-2 text-left transition hover:bg-surface-3"
-                  >
-                    <span className="flex-1 text-corpo font-semibold text-txt">{grupo.periodo}</span>
-                    {/*
-                      O ponto marca o período que contém o horário já escolhido — sem ele, fechar
-                      a faixa faria a escolha sumir de vista sem deixar rastro.
-                    */}
-                    {temEscolhido && !aberto ? <span aria-hidden className="size-2 rounded-full bg-acc" /> : null}
-                    <span className="text-secundario text-txt-3">
-                      {grupo.itens.length} {grupo.itens.length === 1 ? "horário" : "horários"} · a partir de {primeiro}
-                    </span>
-                    <ChevronDown
-                      aria-hidden
-                      className={`size-4 shrink-0 text-txt-3 transition-transform duration-[var(--dur-1)] ${aberto ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  {aberto ? (
-                    <div className="flex flex-wrap gap-2 p-3">
-                      {grupo.itens.map((s) => (
-                        <Chip
-                          key={`${s.startsAt}-${s.professionalId}`}
-                          ligado={slotEscolhido?.startsAt === s.startsAt}
-                          onClick={() => escolherHorario(s)}
-                        >
-                          {horaLocal(s.startsAt, timezone)}
-                        </Chip>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
-          </section>
+          /* APR-109: a mesma grade do "Marcar" do painel (`components/agenda/grade-de-horarios`). */
+          <GradeDeHorarios slots={slotsUnicos ?? []} timezone={timezone} escolhido={slotEscolhido} aoEscolher={escolherHorario} />
         )
       ) : pendente ? (
         <p className="text-secundario text-txt-2">Buscando horários…</p>
@@ -1199,12 +1092,7 @@ export default function Agendar({
               {servicoEscolhido.name}
             </p>
             <p className="mt-0.5 text-secundario text-txt-2">
-              {paraData(dia).toLocaleDateString("pt-BR", {
-                weekday: "long",
-                day: "2-digit",
-                month: "long",
-                timeZone: "UTC",
-              })}{" "}
+              {diaPorExtensoNoFuso(slotEscolhido.startsAt, timezone)}{" "}
               às {horaLocal(slotEscolhido.startsAt, timezone)} ·{" "}
               {duracao(servicoEscolhido.durationMin)}
             </p>
@@ -1230,7 +1118,7 @@ export default function Agendar({
                 <strong className="tabular font-semibold text-txt">
                   {dinheiro.format(servicoEscolhido.depositCents / 100)}
                 </strong>
-                . Quem te atende combina o pagamento com você depois de confirmar.
+                . Quem te atende combina o pagamento com você.
               </p>
             ) : null}
           </div>
@@ -1288,19 +1176,7 @@ export default function Agendar({
             ajuda={textoDoCanalDeConfirmacao()}
             required
           />
-          {/*
-            Opcional e nunca trava a confirmação — o WhatsApp já é o canal principal
-            (`textoDoCanalDeConfirmacao` acima). Existe só para quem prefere ser avisado também
-            por e-mail; `clients.email` já existe no banco desde a migration base.
-          */}
-          <Input
-            rotulo="E-mail (opcional)"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            inputMode="email"
-          />
+          {/* docs/114 L-03 (decisão do Vitor, 21/10): sem e-mail em lugar nenhum; o campo opcional saiu. */}
           {/* Opcional: pedir endereço sempre (não só de quem "vai até o cliente")
               evita ramificar a tela por eixo de profissão só pra isto — o campo
               some sozinho da conversa se ninguém preencher. */}
@@ -1348,7 +1224,7 @@ export default function Agendar({
       visivel={mostrarBarraFixa}
       carregando={pendente}
       bloqueada={!nome || !telefone}
-      motivoBloqueio="Preencha seu nome e seu telefone para confirmar."
+      motivoBloqueio="Preencha seu nome e seu telefone para marcar o horário."
       onConfirmar={confirmar}
     />
     </>

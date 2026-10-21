@@ -21,7 +21,9 @@ const ORIGEM = new URL(self.location.href).origin
 // por trás de sessão; cachear por URL faria a segunda pessoa a abrir o mesmo
 // aparelho (o tablet do balcão) herdar a tela renderizada da primeira, e a
 // tela sobreviveria ao próprio logout. Ver docs/13 §4.3.
-const APP_SHELL = ['/manifest.json']
+// APR-611: a página "sem internet" é estática e pública (não tem dado de ninguém), então pode morar no cache.
+const PAGINA_SEM_INTERNET = '/sem-internet.html'
+const APP_SHELL = ['/manifest.json', PAGINA_SEM_INTERNET]
 
 // Regra do CLAUDE.md ("armadilhas conhecidas"): nunca cachear resposta de
 // `/vault` ou mídia assinada no service worker. Generalizado para toda rota
@@ -72,7 +74,12 @@ self.addEventListener('fetch', (event) => {
   // jurídico e de foto de cliente) não é interceptado: a resposta dele vem com `max-age`, não `no-store`,
   // e o "network-first" abaixo a guardava no aparelho, sobrevivendo ao logout e à validade da URL.
   if (url.origin !== ORIGEM) return
-  if (NUNCA_CACHEAR.test(url.pathname)) return
+  if (NUNCA_CACHEAR.test(url.pathname)) {
+    // APR-611: a tela autenticada continua sem cache nenhum. Só quando uma NAVEGAÇÃO falha por falta de rede é que
+    // o SW responde, e com a página estática, nunca com algo do painel. Fetch de dados (`?_rsc`, API) segue direto.
+    if (request.mode === 'navigate') event.respondWith(fetch(request).catch(() => caches.match(PAGINA_SEM_INTERNET)))
+    return
+  }
 
   if (ehEstaticoImutavel(url)) {
     event.respondWith(
@@ -105,7 +112,7 @@ self.addEventListener('fetch', (event) => {
         }
         return resposta
       })
-      .catch(() => caches.match(request)),
+      .catch(async () => (await caches.match(request)) || (request.mode === 'navigate' ? caches.match(PAGINA_SEM_INTERNET) : undefined)),
   )
 })
 

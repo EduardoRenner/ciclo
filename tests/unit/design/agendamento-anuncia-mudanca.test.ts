@@ -133,7 +133,8 @@ describe('o agendamento anuncia o que mudou sem trocar de rota', () => {
      * `tabIndex={-1}` solto casaria com o honeypot, que também o usa.
      */
     const src = fonte()
-    const i = src.indexOf('Agendamento enviado!')
+    // docs/114 AGD-01: o horário pelo link nasce confirmado e o título virou "Horário marcado" (era "Pedido enviado").
+    const i = src.indexOf('Horário marcado')
     expect(i, 'não achei a tela de sucesso').toBeGreaterThan(-1)
 
     const abertura = src.lastIndexOf('<', src.lastIndexOf('>', i))
@@ -191,7 +192,11 @@ describe('a lista do Motor de Ciclo anuncia o que mudou ao trocar o filtro', () 
     const inicio = src.indexOf('aria-live="polite"')
     const bloco = src.slice(inicio, src.indexOf('</p>', inicio))
     expect(/lista\.count/.test(bloco), 'o anúncio precisa dizer a quantidade que os StatTiles mostram').toBe(true)
-    expect(/lista\.totalValueCents/.test(bloco), 'o anúncio precisa dizer o valor que os StatTiles mostram').toBe(true)
+    // C-037: o campo do valor mudou (preço cheio); a guarda lê QUAL campo o cartão usa e exige o mesmo no
+    // anúncio, em vez de fixar o nome — fixar teria cegado na troca, ou cobrado o campo antigo.
+    const doCartao = /rotulo="Dá para recuperar" valor=\{dinheiro\.format\(lista\.(\w+)/.exec(src)?.[1]
+    expect(doCartao, 'não achei o cartão "Dá para recuperar": a guarda cegou').toBeTruthy()
+    expect(new RegExp(`lista\\.${doCartao}\\b`).test(bloco), 'o anúncio precisa dizer o valor que os StatTiles mostram').toBe(true)
     expect(/carregando/.test(bloco), 'o anúncio precisa cobrir o estado de carregando').toBe(true)
   })
 })
@@ -300,7 +305,10 @@ describe('a Agenda anuncia o dia e o filtro que acabaram de mudar', () => {
 
   it('a região vive SEMPRE no DOM — vem depois da faixa da semana e antes da lista', () => {
     const src = fonte(AGENDA)
-    const faixa = src.indexOf('aria-label="Dias da semana"')
+    // APR-102: a faixa virou componente (`FaixaDaSemana`, no fim do arquivo). A ordem na tela é a do
+    // USO dele dentro da Agenda, não a da definição.
+    expect(src.includes('aria-label="Dias da semana"'), 'a faixa perdeu o rótulo do grupo').toBe(true)
+    const faixa = src.indexOf('<FaixaDaSemana ')
     const regiao = src.indexOf('aria-live="polite"')
     const listaOuVazio = src.indexOf('{resumo.appointments.length === 0 ?')
 

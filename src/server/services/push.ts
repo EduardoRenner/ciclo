@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { destinatariosDoAvisoDaEquipe } from '@/core/mensageria/destinatarios-da-equipe'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -70,17 +71,43 @@ export async function removerInscricaoPorEndpoint(db: Cliente, tenantId: string,
 }
 
 /**
- * `docs/09-PLATAFORMA.md` §4 eixo 3: todo agendamento — hoje, de qualquer
- * tenant — nasce `pending` e o cliente lê "você vai receber a confirmação
- * por WhatsApp", mas nada avisava a equipe que existe um pedido esperando.
- * Achado ao implementar o modo "solicitação" (que reusa exatamente esse
- * `pending`/`hold_expires_at`): a notificação faltava para TODO tenant, não
- * só para quem tem `inicio = solicitacao` — corrigido para todos.
- * Devolve os dispositivos de toda a equipe (não de uma cliente específica,
- * ao contrário de `inscricoesPushDoCliente`).
+ * `docs/09-PLATAFORMA.md` §4 eixo 3: todo agendamento nasce `pending` e a equipe precisa saber
+ * que existe um pedido esperando.
+ *
+ * docs/112 EXP-A06: devolvia os aparelhos de TODO o negócio, e o corpo do aviso leva o nome da
+ * cliente; com a visão restrita, uma profissional lia quem a outra ia atender. Agora só quem
+ * administra e a profissional do horário (`destinatariosDoAvisoDaEquipe`).
  */
-export async function inscricoesPushDoTenant(db: Cliente, tenantId: string) {
-  const { data, error } = await db.from('push_subscriptions').select('endpoint, p256dh, auth').eq('tenant_id', tenantId)
+export async function inscricoesPushDaEquipe(db: Cliente, tenantId: string, professionalId: string | null) {
+  const { data: membros, error: erroMembros } = await db
+    .from('memberships')
+    .select('user_id, role, active')
+    .eq('tenant_id', tenantId)
+  if (erroMembros) throw new AppError('INTERNAL', { cause: erroMembros })
+
+  let usuarioDaProfissional: string | null = null
+  if (professionalId) {
+    const { data: profissional, error: erroProfissional } = await db
+      .from('professionals')
+      .select('user_id')
+      .eq('tenant_id', tenantId)
+      .eq('id', professionalId)
+      .maybeSingle()
+    if (erroProfissional) throw new AppError('INTERNAL', { cause: erroProfissional })
+    usuarioDaProfissional = profissional?.user_id ?? null
+  }
+
+  const quem = destinatariosDoAvisoDaEquipe(
+    (membros ?? []).map((m) => ({ userId: m.user_id, role: m.role, active: m.active })),
+    usuarioDaProfissional,
+  )
+  if (quem.size === 0) return []
+
+  const { data, error } = await db
+    .from('push_subscriptions')
+    .select('endpoint, p256dh, auth')
+    .eq('tenant_id', tenantId)
+    .in('user_id', [...quem])
   if (error) throw new AppError('INTERNAL', { cause: error })
   return data ?? []
 }

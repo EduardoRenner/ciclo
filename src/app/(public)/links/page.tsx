@@ -6,8 +6,8 @@ import Card from '@/components/ui/card'
 import { linksDaBio, type LinkDaBio } from '@/core/aquisicao/links-da-bio'
 import { slugDeDemonstracaoNoAr } from '@/server/services/demonstracao'
 
-import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
-import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-aqua-claro.png'
+import wordmark from '../../../../public/marca/ciclo-logo-escrita-branca.svg'
+import wordmarkClaro from '../../../../public/marca/ciclo-logo-escrita-preta.svg'
 
 import type { Metadata } from 'next'
 
@@ -24,14 +24,16 @@ import type { Metadata } from 'next'
 export const revalidate = 600
 
 export const metadata = {
-  title: 'Retenção de clientes para quem tem agenda',
+  title: 'Agenda para quem faz unha, cílios, sobrancelha e cabelo',
   description: 'Mostra quem parou de voltar, pelo nome, e deixa o texto pronto pra chamar de volta. Faça a conta do que você deixou de faturar.',
   alternates: { canonical: '/links' },
   openGraph: {
-    title: 'CICLO · Retenção de clientes',
+    title: 'CICLO · Agenda para salão e beleza',
     description: 'Quanto você deixou de faturar com quem parou de voltar? A conta sai em um minuto.',
     type: 'website',
     locale: 'pt_BR',
+    // docs/114 F3: é o link da bio. O `openGraph` daqui substitui o da raiz e levava junto a imagem.
+    images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'CICLO' }],
   },
 } satisfies Metadata
 
@@ -52,7 +54,7 @@ export default async function PaginaDeLinks() {
         <header className="flex flex-col items-center gap-4 pb-6 pt-10 text-center">
           <Image src={wordmark} alt="CICLO" sizes="96px" priority className="marca-no-escuro h-10 w-auto" />
           <Image src={wordmarkClaro} alt="" aria-hidden sizes="96px" priority className="marca-no-claro h-10 w-auto" />
-          <h1 className="text-numero font-bold">Seu sistema de retenção de clientes</h1>
+          <h1 className="text-numero font-bold">Quem passou do dia da manutenção, pelo nome</h1>
           <p className="max-w-[36ch] text-corpo text-txt-2">
             Mostra quem parou de voltar, pelo nome, e deixa o texto pronto pra chamar de volta.
           </p>

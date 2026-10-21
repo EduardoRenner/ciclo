@@ -4,9 +4,16 @@ import { TriangleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import Card from '@/components/ui/card'
-import { assinarEventosDeFila, drenarFilaPendente } from '@/lib/offline/api-client'
+import {
+  assinarEventosDeFila,
+  assumirFilaSemDono,
+  definirSessaoDaFila,
+  descartarFilaGuardada,
+  drenarFilaPendente,
+} from '@/lib/offline/api-client'
 import { removerMutacao } from '@/lib/offline/db'
 
+import type { ContextoDaSessao } from '@/core/offline/dono'
 import type { Mutacao } from '@/core/offline/queue'
 
 /**
@@ -38,12 +45,36 @@ function descrever(mutacao: Mutacao | null): string {
   return 'Uma alteração feita offline'
 }
 
-export default function ResolucaoDeFila() {
+function alteracoes(n: number): string {
+  return n === 1 ? '1 alteração' : `${n} alterações`
+}
+
+export default function ResolucaoDeFila({ sessao }: { sessao: ContextoDaSessao | null }) {
   const [conflitos, setConflitos] = useState<Mutacao[]>([])
   const [descartadas, setDescartadas] = useState<Descartada[]>([])
+  const [guardadas, setGuardadas] = useState({ deOutros: 0, semDono: 0 })
+  const [aviso, setAviso] = useState<string | null>(null)
+
+  /*
+   * APR-020 + APR-021. A sessão vem do servidor e é definida ANTES da primeira drenagem: a fila só
+   * manda o que é de quem está aqui. E a drenagem roda ao montar a casca e ao voltar para o app — o
+   * evento `online` sozinho não vem quando a rede já voltou antes de o app abrir (medido: 0 POST em
+   * 10 s, item preso na fila).
+   */
+  useEffect(() => {
+    if (!sessao) return
+    definirSessaoDaFila(sessao)
+    void drenarFilaPendente()
+    const aoVoltar = () => {
+      if (document.visibilityState === 'visible') void drenarFilaPendente()
+    }
+    document.addEventListener('visibilitychange', aoVoltar)
+    return () => document.removeEventListener('visibilitychange', aoVoltar)
+  }, [sessao?.userId, sessao?.tenantId]) // eslint-disable-line react-hooks/exhaustive-deps -- o objeto muda a cada render; a identidade é o par
 
   useEffect(() => {
     return assinarEventosDeFila((evento) => {
+      if (evento.tipo === 'guardadas') setGuardadas({ deOutros: evento.deOutros, semDono: evento.semDono })
       if (evento.tipo === 'conflito') {
         setConflitos((atual) => (atual.some((m) => m.id === evento.mutacao.id) ? atual : [...atual, evento.mutacao]))
       }
@@ -58,7 +89,12 @@ export default function ResolucaoDeFila() {
     })
   }, [])
 
-  if (conflitos.length === 0 && descartadas.length === 0) return null
+  async function descartar(qual: 'deOutros' | 'semDono') {
+    const quantas = await descartarFilaGuardada(qual).catch(() => null)
+    setAviso(quantas === null ? 'Não consegui descartar agora. Tente de novo.' : `${alteracoes(quantas)} descartada${quantas === 1 ? '' : 's'} deste aparelho.`)
+  }
+
+  if (conflitos.length === 0 && descartadas.length === 0 && guardadas.deOutros === 0 && guardadas.semDono === 0 && !aviso) return null
 
   return (
     <div className="fixed inset-x-0 bottom-[calc(var(--tabbar-h)+env(safe-area-inset-bottom)+12px)] z-40 mx-auto flex w-full max-w-[560px] flex-col gap-2 px-[var(--gutter)]">
@@ -88,6 +124,44 @@ export default function ResolucaoDeFila() {
           </div>
         </Card>
       ))}
+
+      {guardadas.deOutros > 0 && (
+        <Card flutuante className="border-warn/50">
+          <p className="text-secundario font-semibold text-txt">Há {alteracoes(guardadas.deOutros)} de outra pessoa neste aparelho</p>
+          <p className="mt-0.5 text-label text-txt-2">Foram feitas sem conexão por outro login. Só saem quando essa pessoa entrar de novo aqui.</p>
+          <div className="mt-2 flex gap-3">
+            <button type="button" onClick={() => descartar('deOutros')} className="toque-48 -mx-2 px-2 text-label font-semibold text-txt-3 underline">
+              Descartar
+            </button>
+          </div>
+        </Card>
+      )}
+
+      {guardadas.semDono > 0 && (
+        <Card flutuante className="border-warn/50">
+          <p className="text-secundario font-semibold text-txt">{alteracoes(guardadas.semDono)} guardada{guardadas.semDono === 1 ? '' : 's'} neste aparelho</p>
+          <p className="mt-0.5 text-label text-txt-2">Foram feitas sem conexão antes da última atualização do app. Enviar com a sua conta?</p>
+          <div className="mt-2 flex gap-3">
+            <button type="button" onClick={() => void assumirFilaSemDono()} className="toque-48 -mx-2 px-2 text-label font-semibold text-acc-2 underline">
+              Enviar
+            </button>
+            <button type="button" onClick={() => descartar('semDono')} className="toque-48 -mx-2 px-2 text-label font-semibold text-txt-3 underline">
+              Descartar
+            </button>
+          </div>
+        </Card>
+      )}
+
+      {aviso && (
+        <Card flutuante>
+          <p role="status" className="text-label text-txt-2">
+            {aviso}
+          </p>
+          <button type="button" onClick={() => setAviso(null)} className="toque-48 -mx-2 mt-1 px-2 text-label font-semibold text-acc-2 underline">
+            Entendi
+          </button>
+        </Card>
+      )}
 
       {descartadas.map((d) => (
         <Card key={d.id} flutuante className="border-bad/50">
