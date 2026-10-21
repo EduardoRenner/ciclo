@@ -41,7 +41,7 @@ Logo: `Documentos\CICLO-marca-final` (foto de perfil: `perfil-quadrado/perfil-si
 **Respostas rápidas (atalho → texto):**
 - `/link` → `Cria sua conta aqui: seuciclo.com.br/cadastro. Você entra com o número do WhatsApp e recebe um código.`
 - `/gratis` → `É grátis no lançamento, sem cartão. Se um dia tiver plano pago, você fica sabendo antes e decide.`
-- `/cliente` → `Não precisa baixar nada: abre o seu link, escolhe o serviço, o dia e o horário e toca em marcar. Uns 10 segundos.`
+- `/cliente` → `Não precisa baixar nada: abre o seu link, escolhe o serviço, o dia e o horário, põe nome e número e já fica marcado. Menos de um minuto.`
 - `/voltar` → `Na aba Recuperar aparece, pelo nome, quem passou do tempo de voltar. Um toque abre a mensagem pronta no seu WhatsApp.`
 - `/app` → `Funciona no navegador do celular e dá pra pôr na tela de início como app. Nas lojas da Apple e do Google, em seguida.`
 
