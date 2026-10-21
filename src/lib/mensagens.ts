@@ -139,6 +139,31 @@ export function textoDeVolta({
   return link ? `${base} É só escolher o horário aqui: ${link}` : base
 }
 
+/** O "Lembrete de amanhã" que o CICLO semeia (`MODELOS_PADRAO` lê daqui). */
+export const CORPO_PADRAO_DO_LEMBRETE = 'Oi {{nome}}! Passando pra lembrar do seu horário amanhã, {{data}} às {{hora}}. Até lá!'
+
+/**
+ * docs/114 L-07: sem a Meta, o lembrete da véspera não sai sozinho; a profissional manda pelo
+ * próprio WhatsApp com um toque (Agenda > horário de amanhã). O texto é o "Lembrete de amanhã" do
+ * negócio (editado ou o padrão) e termina no link de remarcar ou cancelar deste horário.
+ */
+export function textoDoLembreteDaVespera({
+  modelo,
+  link,
+  ...variaveis
+}: {
+  modelo: { body: string; active: boolean } | null
+  nome: string
+  servico: string
+  data: string
+  hora: string
+  negocio: string
+  link: string
+}): string {
+  const corpo = modelo?.active ? modelo.body.trim() : CORPO_PADRAO_DO_LEMBRETE
+  return `${aplicarVariaveis(corpo, variaveis)}\n\nPrecisa remarcar ou cancelar? É por aqui: ${link}`
+}
+
 /**
  * Os textos que o CICLO já semeou como `sentimos_falta` (`MODELOS_PADRAO` lê o primeiro). Corpo igual
  * a um deles quer dizer que o negócio não escreveu o dele. O segundo é o de antes de 2026-08-19, que

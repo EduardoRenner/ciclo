@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { CORPOS_PADRAO_DE_VOLTA, aplicarVariaveis, linkWhatsApp, precisaDeAgendamento, saidaDeContato, textoDeVolta, textoDoRetorno } from '@/lib/mensagens'
+import { CORPOS_PADRAO_DE_VOLTA, CORPO_PADRAO_DO_LEMBRETE, aplicarVariaveis, linkWhatsApp, precisaDeAgendamento, saidaDeContato, textoDeVolta, textoDoLembreteDaVespera, textoDoRetorno } from '@/lib/mensagens'
 import { MODELOS_PADRAO } from '@/server/services/mensagens-prontas'
 
 describe('aplicarVariaveis', () => {
@@ -167,5 +167,29 @@ describe('textoDoRetorno: o Recuperar usa a mensagem que o negócio escreveu (RE
     const semeado = MODELOS_PADRAO.find((m) => m.slug === 'sentimos_falta')?.body
     expect(semeado).toBeTruthy()
     expect(CORPOS_PADRAO_DE_VOLTA).toContain(semeado)
+  })
+})
+
+describe('textoDoLembreteDaVespera: o lembrete que a profissional manda com um toque (L-07)', () => {
+  const dados = { nome: 'Fernanda Lima', servico: 'Manutenção de cílios', data: '22/10', hora: '14:30', negocio: 'Studio Carol', link: 'https://x.test/confirmar/abc' }
+
+  it('sem modelo editado, o texto padrão do "Lembrete de amanhã" com o link de remarcar ou cancelar no fim', () => {
+    const texto = textoDoLembreteDaVespera({ modelo: null, ...dados })
+    expect(texto).toBe(`${aplicarVariaveis(CORPO_PADRAO_DO_LEMBRETE, dados)}\n\nPrecisa remarcar ou cancelar? É por aqui: https://x.test/confirmar/abc`)
+    expect(texto).toContain('Oi Fernanda!')
+  })
+
+  it('com o modelo do negócio, usa o texto dele', () => {
+    const texto = textoDoLembreteDaVespera({ modelo: { body: 'Fala {{nome}}, amanhã {{hora}} tem {{servico}}!', active: true }, ...dados })
+    expect(texto.startsWith('Fala Fernanda, amanhã 14:30 tem Manutenção de cílios!')).toBe(true)
+    expect(texto).toContain('https://x.test/confirmar/abc')
+  })
+
+  it('modelo desligado volta para o padrão', () => {
+    expect(textoDoLembreteDaVespera({ modelo: { body: 'Fala {{nome}}', active: false }, ...dados })).toBe(textoDoLembreteDaVespera({ modelo: null, ...dados }))
+  })
+
+  it('o padrão semeado no negócio novo é o mesmo texto', () => {
+    expect(MODELOS_PADRAO.find((m) => m.slug === 'lembrete')?.body).toBe(CORPO_PADRAO_DO_LEMBRETE)
   })
 })

@@ -10,6 +10,8 @@ import TrilhoDeDias from '@/components/agenda/trilho-de-dias'
 import { useFuso } from '@/components/shell/fuso'
 import Chip from '@/components/ui/chip'
 import { hojeNoFuso, proximosDias } from '@/core/agenda/dias'
+import { diaNoFuso } from '@/core/tempo/dia'
+import { linkWhatsApp } from '@/lib/mensagens'
 import { horaLocal } from '@/lib/formato'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
@@ -98,6 +100,31 @@ export default function DetalheAgendamento({
   const [alternativas, setAlternativas] = useState<string[]>([])
   const pedidoDeHorarios = useRef(0)
   const diasRemarcar = proximosDias(14, hojeNoFuso(fuso))
+
+  /*
+    docs/114 L-07 (parte 2): sem a Meta o lembrete da véspera não sai sozinho; no horário de AMANHÃ a
+    profissional manda pelo próprio WhatsApp com um toque. O texto (com o link de remarcar ou cancelar,
+    assinado no servidor) é buscado ao abrir, para o botão ser um link de verdade: abrir o WhatsApp
+    depois de um `await` no toque cai no bloqueio de janela do celular.
+  */
+  const ehAmanha = diaNoFuso(fuso, new Date(agendamento.starts_at)) === proximosDias(2, hojeNoFuso(fuso))[1]
+  const podeLembrar = ehAmanha && (agendamento.status === 'pending' || agendamento.status === 'confirmed')
+  const [lembrete, setLembrete] = useState<{ telefone: string; texto: string } | null>(null)
+  useEffect(() => {
+    if (!podeLembrar) return
+    let cancelado = false
+    fetch(`/api/v1/appointments/${agendamento.id}/lembrete`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json: { data?: { lembrete: { telefone: string; texto: string } | null } } | null) => {
+        if (!cancelado) setLembrete(json?.data?.lembrete ?? null)
+      })
+      // Sem o lembrete o botão só não aparece; a agenda continua inteira.
+      .catch(() => undefined)
+    return () => {
+      cancelado = true
+    }
+  }, [agendamento.id, podeLembrar])
+  const linkDoLembrete = lembrete ? linkWhatsApp(lembrete.telefone, lembrete.texto) : null
   useEffect(() => {
     if (!mostrarRemarcar || remarcarManual) return
     const meuPedido = ++pedidoDeHorarios.current
@@ -325,6 +352,16 @@ export default function DetalheAgendamento({
             >
               Ver comanda
             </Link>
+          ) : null}
+          {linkDoLembrete ? (
+            <a
+              href={linkDoLembrete}
+              target="_blank"
+              rel="noreferrer"
+              className="flex h-12 w-full items-center justify-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 text-corpo font-semibold text-acc-2 transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.98]"
+            >
+              Lembrar pelo WhatsApp
+            </a>
           ) : null}
           {linkAvaliacao ? (
             // `api.whatsapp.com/send?text=` (sem número) abre o seletor de contato do

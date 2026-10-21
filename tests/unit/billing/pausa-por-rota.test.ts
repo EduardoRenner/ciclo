@@ -88,7 +88,9 @@ describe('toda entrada pública por slug confere a pausa (C8)', () => {
   const LEEM_POR_SLUG = fontes('src')
     .filter((a) => !a.startsWith(join('src', 'app', 'admin')))
     .map((arquivo) => ({ arquivo, fonte: semComentarios(readFileSync(arquivo, 'utf8').replace(/\r\n/g, '\n')) }))
-    .filter((f) => /\.eq\('slug', /.test(f.fonte))
+    // A consulta a `tenants` filtrada pelo slug, não qualquer `.eq('slug', ...)`: `lembrete-da-vespera`
+    // (docs/114 L-07) filtra o MODELO de mensagem por slug ('lembrete') e não resolve negócio nenhum.
+    .filter((f) => /\.from\('tenants'\)[\s\S]{0,400}?\.eq\('slug', /.test(f.fonte))
 
   it('o leitor achou os dois pontos de entrada conhecidos (controle contra varredura vazia)', () => {
     const nomes = LEEM_POR_SLUG.map((f) => f.arquivo.split(sep).join('/'))

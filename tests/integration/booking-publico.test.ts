@@ -13,6 +13,7 @@ import { criarAgendamentoPublico, disponibilidadePublica, perfilPublico } from '
 import { procurasEmDiaFechado } from '@/server/services/demanda-nao-atendida'
 import { atualizarTenant, lerTenant } from '@/server/services/site'
 import { verificarTokenConfirmacao } from '@/server/services/confirmacao-token'
+import { lembreteDaVespera } from '@/server/services/lembrete-da-vespera'
 
 import { POST as reservar } from '@/app/api/v1/public/[slug]/book/route'
 
@@ -670,3 +671,30 @@ describe('antecedência em dias e horário já confirmado (L-04, AGD-01)', () =>
     30_000,
   )
 })
+
+/*
+  docs/114 L-07 (parte 2): sem a Meta, o lembrete da véspera é a profissional que manda, com um toque. O
+  servidor monta o número e o texto (o modelo do negócio + o link de remarcar ou cancelar DESTE horário).
+*/
+describe('lembrete da véspera que a profissional manda (L-07)', () => {
+  it(
+    'devolve o número de quem marcou e o texto com o link que abre este horário; horário desmarcado não tem lembrete',
+    async () => {
+      const r = await criarAgendamentoPublico(slug, { serviceId: servicoOnlineId, professionalId, startsAt: `${DIA}T12:30:00-03:00`, name: 'Lembrada Teste', phone: '11988110093' })
+      const lembrete = await lembreteDaVespera(svc, tenantId, r.appointmentId)
+      expect(lembrete?.telefone).toBe('+5511988110093')
+      expect(lembrete?.texto).toContain('Oi Lembrada!')
+      const token = lembrete?.texto.match(/\/confirmar\/([A-Za-z0-9_-]+)/)?.[1]
+      expect(token, 'o lembrete não leva o link de remarcar ou cancelar').toBeTruthy()
+      expect(verificarTokenConfirmacao(token!)).toBe(r.appointmentId)
+
+      // APR-040: com alcance own, quem não é a profissional deste horário não recebe o telefone.
+      await expect(lembreteDaVespera(svc, tenantId, r.appointmentId, 'own')).rejects.toMatchObject({ code: 'FORBIDDEN' })
+
+      await svc.from('appointments').update({ status: 'canceled', canceled_at: new Date().toISOString() }).eq('id', r.appointmentId)
+      expect(await lembreteDaVespera(svc, tenantId, r.appointmentId)).toBeNull()
+    },
+    30_000,
+  )
+})
+
