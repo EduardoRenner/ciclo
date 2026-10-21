@@ -222,6 +222,17 @@ describe('avaliação pós-atendimento', () => {
 
       const dados = await dadosParaAvaliar(svc, agendamentoId)
       expect(dados).toMatchObject({ negocioNome: 'Salão de Inovação', servicoNome: 'Corte de Teste de Inovação', jaAvaliado: false })
+
+      /*
+        docs/114 L-05: a mesma página mostra a próxima volta com o link de marcar, já com o serviço e
+        quem atendeu. O ritmo do serviço é 21 dias e o recálculo roda na conclusão: o dia cai a ~3 semanas.
+      */
+      expect(dados?.proximaVolta, 'a página pós-atendimento não sugere a próxima volta').toBeTruthy()
+      const { data: tenant } = await svc.from('tenants').select('slug').eq('id', tenantId).single()
+      expect(dados!.proximaVolta!.link).toBe(`/${tenant!.slug}/agendar?servico=${servicoId}&profissional=${profissionalId}`)
+      const dias = Math.round((Date.parse(dados!.proximaVolta!.dia) - Date.now()) / 86_400_000)
+      expect(dias).toBeGreaterThanOrEqual(19)
+      expect(dias).toBeLessThanOrEqual(22)
     },
     30_000,
   )

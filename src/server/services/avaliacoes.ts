@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+import { Temporal } from '@js-temporal/polyfill'
+
+import { proximaVolta } from '@/core/ciclo/proxima-volta'
 import { AppError } from '@/server/http/errors'
 import { gerarTokenIndicacao } from '@/server/services/indicacao'
 import { gerarTokenAssinado, verificarTokenAssinado } from '@/server/services/token-assinado'
@@ -31,13 +34,19 @@ export const EsquemaAvaliacao = z.object({
   comment: z.string().trim().max(1000).nullish(),
 })
 
-export type DadosParaAvaliar = { negocioNome: string; servicoNome: string; jaAvaliado: boolean }
+export type DadosParaAvaliar = {
+  negocioNome: string
+  servicoNome: string
+  jaAvaliado: boolean
+  /** docs/114 L-05: a próxima vez, com o link de marcar já com o serviço e quem atendeu. `null` = nada a sugerir. */
+  proximaVolta: { dia: string; link: string } | null
+}
 
 /** O que a página pública mostra antes do cliente escolher a nota — sem vazar nada do tenant. */
 export async function dadosParaAvaliar(db: Cliente, appointmentId: string): Promise<DadosParaAvaliar | null> {
   const { data, error } = await db
     .from('appointments')
-    .select('tenant_id, tenants(name), services(name)')
+    .select('tenant_id, client_id, service_id, professional_id, subject_id, starts_at, tenants(name, slug, timezone), services(name, cycle_days, bookable_online, active, deleted_at)')
     .eq('id', appointmentId)
     .maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
@@ -49,7 +58,48 @@ export async function dadosParaAvaliar(db: Cliente, appointmentId: string): Prom
     negocioNome: data.tenants?.name ?? '',
     servicoNome: data.services?.name ?? 'atendimento',
     jaAvaliado: !!existente,
+    proximaVolta: await proximaVoltaDoAtendimento(db, data),
   }
+}
+
+type AtendimentoParaVolta = {
+  tenant_id: string
+  client_id: string | null
+  service_id: string
+  professional_id: string
+  subject_id: string | null
+  starts_at: string
+  tenants: { slug: string; timezone: string } | null
+  services: { cycle_days: number; bookable_online: boolean; active: boolean; deleted_at: string | null } | null
+}
+
+/**
+ * docs/114 L-05. Só sugere o que dá para marcar pelo link: serviço ativo e aberto para marcar online.
+ * O dia vem do ciclo que a conclusão do atendimento recalcula (`recomputarCicloDeUmAtendimento`).
+ */
+async function proximaVoltaDoAtendimento(db: Cliente, a: AtendimentoParaVolta): Promise<DadosParaAvaliar['proximaVolta']> {
+  const servico = a.services
+  if (!a.client_id || !a.tenants || !servico || !servico.active || !servico.bookable_online || servico.deleted_at) return null
+
+  let consulta = db
+    .from('client_cycles')
+    .select('predicted_on')
+    .eq('tenant_id', a.tenant_id)
+    .eq('client_id', a.client_id)
+    .eq('service_id', a.service_id)
+    .limit(1)
+  consulta = a.subject_id ? consulta.eq('subject_id', a.subject_id) : consulta.is('subject_id', null)
+  const { data: ciclo } = await consulta.maybeSingle()
+
+  const fuso = a.tenants.timezone
+  const dia = proximaVolta({
+    previsto: ciclo?.predicted_on ?? null,
+    ultimaVisita: Temporal.Instant.from(a.starts_at).toZonedDateTimeISO(fuso).toPlainDate().toString(),
+    ritmoDias: servico.cycle_days,
+    hoje: Temporal.Now.plainDateISO(fuso).toString(),
+  })
+  if (!dia) return null
+  return { dia, link: `/${a.tenants.slug}/agendar?servico=${a.service_id}&profissional=${a.professional_id}` }
 }
 
 /**

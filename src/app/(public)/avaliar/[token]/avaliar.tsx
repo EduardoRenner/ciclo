@@ -1,16 +1,18 @@
 'use client'
 
-import { CheckCircle2, Gift, Star } from 'lucide-react'
+import { CalendarClock, CheckCircle2, Gift, Star } from 'lucide-react'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import ErroPublico from '@/components/ui/erro-publico'
 import TituloDeEstado from '@/components/ui/titulo-de-estado'
+import { descreverDiaCurto } from '@/core/billing/prelancamento'
 import { linkWhatsAppCompartilhar } from '@/lib/mensagens'
 
 type Estado = 'carregando' | 'pronto' | 'enviando' | 'enviado' | 'erro'
-type Dados = { negocioNome: string; servicoNome: string; jaAvaliado: boolean }
+type Dados = { negocioNome: string; servicoNome: string; jaAvaliado: boolean; proximaVolta: { dia: string; link: string } | null }
 
 /**
  * APR-119 (docs/98 F-08): `inicial` vem do Server Component (lido pelo token no servidor), então a
@@ -136,6 +138,8 @@ export default function Avaliar({ token, inicial = null }: { token: string; inic
           {dados?.negocioNome ? `${dados.negocioNome} agradece a sua opinião.` : 'Sua opinião ajuda o negócio a melhorar.'}
         </p>
 
+        <ProximaVolta servicoNome={dados?.servicoNome ?? 'atendimento'} volta={dados?.proximaVolta ?? null} />
+
         {linkIndicacao ? (
           <Card className="mt-6 w-full text-left">
             <div className="flex items-start gap-3">
@@ -143,7 +147,7 @@ export default function Avaliar({ token, inicial = null }: { token: string; inic
               <div className="flex-1">
                 <p className="text-corpo font-semibold text-txt">Indique alguém</p>
                 <p className="mt-1 text-secundario text-txt-2">
-                  Ela agenda o primeiro horário sem esperar resposta, e {dados?.negocioNome ?? 'o salão'} fica sabendo que foi você.
+                  A pessoa marca o primeiro horário sem esperar resposta, e {dados?.negocioNome ?? 'o salão'} fica sabendo que foi você.
                 </p>
               </div>
             </div>
@@ -232,6 +236,33 @@ export default function Avaliar({ token, inicial = null }: { token: string; inic
       >
         Enviar avaliação
       </Button>
+
+      <ProximaVolta servicoNome={dados?.servicoNome ?? 'atendimento'} volta={dados?.proximaVolta ?? null} />
     </>
+  )
+}
+
+/**
+ * docs/114 L-05: logo depois do atendimento, a próxima vez já com o serviço e quem atendeu escolhidos.
+ * O dia vem do Motor (`proximaVolta`, no servidor); sem dia a sugerir, o cartão não aparece.
+ */
+function ProximaVolta({ servicoNome, volta }: { servicoNome: string; volta: Dados['proximaVolta'] }) {
+  if (!volta) return null
+  return (
+    <Card className="mt-6 w-full text-left">
+      <div className="flex items-start gap-3">
+        <CalendarClock aria-hidden className="mt-0.5 size-5 shrink-0 text-acc-2" />
+        <div className="flex-1">
+          <p className="text-corpo font-semibold text-txt">Seu próximo horário de {servicoNome}</p>
+          <p className="mt-1 text-secundario text-txt-2">Por volta de {descreverDiaCurto(volta.dia)}.</p>
+        </div>
+      </div>
+      <Link
+        href={volta.link}
+        className="mt-4 flex h-12 items-center justify-center rounded-[var(--radius-pill)] bg-acc px-5 text-corpo font-semibold text-on-acc"
+      >
+        Marcar agora
+      </Link>
+    </Card>
   )
 }
