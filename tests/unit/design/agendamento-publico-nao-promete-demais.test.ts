@@ -156,6 +156,17 @@ describe('o pedido público não se apresenta como confirmado nem manda ligar pa
     expect(copy).toMatch(/href=\{saidaParaHoje\.href\}/)
   })
 
+  /*
+    docs/114 L-07 (B4 do F1): sem a Meta, "Remarcar ou cancelar" só chegava pelo lembrete, que não sai. A
+    tela de sucesso leva o link de gestão que o servidor assina ao marcar.
+  */
+  it('a tela de sucesso tem "Remarcar ou cancelar" com o link assinado deste horário', () => {
+    const copy = copyDaPagina()
+    expect(copy).toMatch(/setTokenDeGestao\(json\.data\?\.gestaoToken/)
+    expect(copy).toMatch(/href=\{`\/confirmar\/\$\{tokenDeGestao\}`\}/)
+    expect(copy).toContain('Remarcar ou cancelar')
+  })
+
   it('e o servidor grava o que a tela promete: o que vem da página pública nasce confirmado', () => {
     const servico = semComentarios(readFileSync('src/server/services/agendamentos.ts', 'utf8'))
     expect(servico).toMatch(/entrada\.origin === 'public_page' \? \{ status: 'confirmed'/)

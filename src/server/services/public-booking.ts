@@ -26,6 +26,7 @@ import { quandoLocal } from '@/core/text/quando-local'
 import { agendarDepois } from '@/server/http/depois'
 import { registrarEvento } from '@/server/services/product-events'
 import { gerarTokenReconhecimento } from '@/server/services/reconhecimento'
+import { gerarTokenDeGestao } from '@/server/services/confirmacao-token'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -627,7 +628,12 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.input<typ
       })
     }
 
-    return { appointmentId: agendamento.id, reconhecimentoToken: gerarTokenReconhecimento(tenant.id, telefone) }
+    return {
+      appointmentId: agendamento.id,
+      reconhecimentoToken: gerarTokenReconhecimento(tenant.id, telefone),
+      // docs/114 L-07 (B4): o link de remarcar ou cancelar sai na própria confirmação, sem depender da Meta.
+      gestaoToken: gerarTokenDeGestao(agendamento.id, entrada.startsAt),
+    }
   })
 }
 

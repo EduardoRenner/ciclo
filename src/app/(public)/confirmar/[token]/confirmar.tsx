@@ -202,12 +202,19 @@ export default function ConfirmarAgendamento({ token, horario }: { token: string
     return (
       <>
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
-        <TituloDeEstado>{jaEstavaConfirmado ? 'Você já confirmou' : 'Prontinho!'}</TituloDeEstado>
-        <p className="mt-2 text-corpo text-txt-2">Seu horário está confirmado. Até lá!</p>
+        {/*
+          docs/114 AGD-01: o horário marcado pelo link já nasce confirmado, então quem chega aqui pelo
+          "Remarcar ou cancelar" da confirmação (L-07) não confirmou nada: o título diz o estado, não um
+          ato da pessoa. Remarcar é desmarcar e escolher outro ("Marcar outro horário" aparece depois).
+        */}
+        <TituloDeEstado>{jaEstavaConfirmado ? 'Seu horário está marcado' : 'Prontinho!'}</TituloDeEstado>
+        <p className="mt-2 text-corpo text-txt-2">
+          {jaEstavaConfirmado ? 'Até lá! Para remarcar, desmarque e escolha outro horário.' : 'Seu horário está confirmado. Até lá!'}
+        </p>
         {cartao}
         {jaEstavaConfirmado ? (
           <Button largura="cheia" variante="secondary" onClick={() => setEstado('conferindo')}>
-            Preciso desmarcar
+            Preciso remarcar ou desmarcar
           </Button>
         ) : null}
       </>

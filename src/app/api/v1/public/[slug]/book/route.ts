@@ -13,7 +13,7 @@ import { ipDe } from '@/server/http/ip'
 type Ctx = { params: Promise<{ slug: string }> }
 
 /** Honeypot: resposta com a mesma forma de sucesso, para não ensinar o script a se adaptar. */
-const RESPOSTA_HONEYPOT = { appointmentId: null, reconhecimentoToken: null }
+const RESPOSTA_HONEYPOT = { appointmentId: null, reconhecimentoToken: null, gestaoToken: null }
 
 export const POST = rota(async (req, ctx) => {
   const { slug } = await (ctx as Ctx).params
@@ -61,7 +61,7 @@ export const POST = rota(async (req, ctx) => {
   const guardado = await comIdempotencia(req, { tenantId: await idDoTenantPublico(slug), endpoint: `/api/v1/public/${slug}/book` }, async () => {
     const r = await criarAgendamentoPublico(slug, entrada)
     token = r.reconhecimentoToken
-    return { appointmentId: r.appointmentId, reconhecimentoToken: null as string | null }
+    return { appointmentId: r.appointmentId, reconhecimentoToken: null as string | null, gestaoToken: r.gestaoToken }
   })
   return { ...guardado, reconhecimentoToken: token ?? guardado.reconhecimentoToken }
 })

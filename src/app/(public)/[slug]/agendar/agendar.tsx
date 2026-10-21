@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarPlus, CheckCircle2, MessageCircle, Phone } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { comMaiuscula, type Vocabulario } from "@/core/text/vocabulario";
@@ -250,6 +251,8 @@ export default function Agendar({
   // avisa o profissional (vira nota no agendamento); quem cobra de verdade é ele, na comanda.
   const [querLevarProduto, setQuerLevarProduto] = useState(false);
   const [confirmado, setConfirmado] = useState(false);
+  // docs/114 L-07 (B4): o link de remarcar ou cancelar deste horário, assinado no servidor ao marcar.
+  const [tokenDeGestao, setTokenDeGestao] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   /*
     Horários perto do que a pessoa queria, vindos do 409 (APR-005, achado F-02). O aviso era apagado
@@ -566,7 +569,7 @@ export default function Agendar({
           body: corpo,
         });
         const json = (await r.json()) as {
-          data?: { reconhecimentoToken?: string | null };
+          data?: { reconhecimentoToken?: string | null; gestaoToken?: string | null };
           error?: {
             code: string;
             message: string;
@@ -597,6 +600,7 @@ export default function Agendar({
         if (json.data?.reconhecimentoToken) {
           salvarReconhecimentoLocal(slug, { name: nome, phone: telefone, token: json.data.reconhecimentoToken });
         }
+        setTokenDeGestao(json.data?.gestaoToken ?? null);
         setConfirmado(true);
       } catch {
         setErro(
@@ -686,12 +690,27 @@ export default function Agendar({
             APR-118 (F-04, S1): conta nova não tem telefone público, e a frase mandava "chamar por
             telefone" sem telefone em lugar nenhum. Sem canal, a tela não inventa um.
           */}
-          {saidaDoSucesso ? (
+          {tokenDeGestao ? null : saidaDoSucesso ? (
             <> Se precisar remarcar ou cancelar, fale direto:</>
           ) : (
             <> Se precisar remarcar ou cancelar, fale com {nomeDoSalao} do jeito que você costuma.</>
           )}
         </p>
+
+        {/*
+          docs/114 L-07 (B4 do F1): sem a Meta, o link de gestão só chegava pelo lembrete, que não sai.
+          Agora sai aqui, na hora de marcar, e vale até o dia seguinte ao horário (`gerarTokenDeGestao`).
+          A cliente guarda a página ou volta por ela; o WhatsApp abaixo continua como a outra saída.
+        */}
+        {tokenDeGestao ? (
+          <Link
+            href={`/confirmar/${tokenDeGestao}`}
+            className="mt-4 inline-flex h-12 items-center justify-center rounded-[var(--radius-sm)] bg-acc px-5 text-corpo font-semibold text-on-acc shadow-elevado transition active:scale-[.97]"
+          >
+            Remarcar ou cancelar
+          </Link>
+        ) : null}
+        {tokenDeGestao && saidaDoSucesso ? <p className="mt-3 text-secundario text-txt-2">Se preferir, fale direto:</p> : null}
 
         {/*
           A saída que a frase acima prometia em prosa e a tela não dava.

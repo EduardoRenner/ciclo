@@ -52,3 +52,37 @@ describe('token de confirmação sem login', () => {
     expect(verificarTokenConfirmacao('====', SEGREDO)).toBeNull()
   })
 })
+
+/*
+  docs/114 L-07 (B4 do F1): o link de remarcar ou cancelar sai na tela de confirmação, no momento em que a
+  pessoa marca, para um horário que pode ser daqui a semanas. O token do lembrete (72h) venceria antes do
+  horário; este vale até um dia depois do horário, e nunca menos que as 72h do lembrete.
+*/
+describe('token de gestão, gerado ao marcar (L-07)', () => {
+  it('um horário daqui a 30 dias: o link ainda abre na véspera', async () => {
+    const { gerarTokenDeGestao } = await import('@/server/services/confirmacao-token')
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-01-01T12:00:00Z'))
+    const id = randomUUID()
+    const token = gerarTokenDeGestao(id, '2026-01-31T13:00:00Z', SEGREDO)
+
+    vi.setSystemTime(new Date('2026-01-30T12:00:00Z'))
+    expect(verificarTokenConfirmacao(token, SEGREDO)).toBe(id)
+
+    // Um dia e pouco depois do horário, não abre mais.
+    vi.setSystemTime(new Date('2026-02-01T14:00:00Z'))
+    expect(verificarTokenConfirmacao(token, SEGREDO)).toBeNull()
+    vi.useRealTimers()
+  })
+
+  it('horário para daqui a pouco ainda tem as 72h do lembrete', async () => {
+    const { gerarTokenDeGestao } = await import('@/server/services/confirmacao-token')
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-01-01T12:00:00Z'))
+    const id = randomUUID()
+    const token = gerarTokenDeGestao(id, '2026-01-01T15:00:00Z', SEGREDO)
+    vi.setSystemTime(new Date('2026-01-03T12:00:00Z'))
+    expect(verificarTokenConfirmacao(token, SEGREDO)).toBe(id)
+    vi.useRealTimers()
+  })
+})

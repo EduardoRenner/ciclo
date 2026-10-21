@@ -12,6 +12,7 @@ import { executarOnboarding } from '@/server/services/onboarding'
 import { criarAgendamentoPublico, disponibilidadePublica, perfilPublico } from '@/server/services/public-booking'
 import { procurasEmDiaFechado } from '@/server/services/demanda-nao-atendida'
 import { atualizarTenant, lerTenant } from '@/server/services/site'
+import { verificarTokenConfirmacao } from '@/server/services/confirmacao-token'
 
 import { POST as reservar } from '@/app/api/v1/public/[slug]/book/route'
 
@@ -465,6 +466,11 @@ describe('POST /api/v1/public/:slug/book — a rota inteira', () => {
       expect(r1.status).toBe(200)
       expect(r2.status).toBe(200)
       expect(Object.keys(json1.data)).toEqual(Object.keys(json2.data))
+
+      // docs/114 L-07: a resposta leva o link de remarcar ou cancelar, que abre ESTE agendamento.
+      const comGestao = json1.data as { appointmentId: string; gestaoToken?: string }
+      expect(comGestao.gestaoToken, 'a confirmação não leva o link de remarcar ou cancelar').toBeTruthy()
+      expect(verificarTokenConfirmacao(comGestao.gestaoToken!)).toBe(comGestao.appointmentId)
     },
     30_000,
   )
