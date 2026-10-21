@@ -23,7 +23,7 @@ export const revalidate = 3600
 export const metadata = {
   title: 'Quanto você perde com cliente que parou de voltar',
   description:
-    'Calculadora grátis para salão e barbearia: quanto deixou de entrar com os clientes que pararam de vir, pelo ritmo de retorno do seu negócio. Sem cadastro.',
+    'Calculadora grátis para quem faz unha, cílios, sobrancelha e cabelo: quanto deixou de entrar com quem parou de vir, pelo ritmo de retorno do seu negócio. Sem cadastro.',
   alternates: { canonical: '/calculadora' },
   openGraph: {
     title: 'Quanto você perde com cliente que parou de voltar · CICLO',

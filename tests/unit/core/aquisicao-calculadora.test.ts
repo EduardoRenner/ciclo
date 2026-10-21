@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { LIMITES, calcularParado } from '@/core/aquisicao/calculadora'
+import { EXEMPLO, EXEMPLO_DO_RITMO, LIMITES, RITMOS_COMUNS, calcularParado } from '@/core/aquisicao/calculadora'
 
 describe('calcularParado (docs/82 §8)', () => {
   it('8 clientes, R$ 35, voltando a cada 30 dias', () => {
@@ -77,5 +77,35 @@ describe('o resultado de exemplo não se passa por número da pessoa (loop de me
     // Toda chamada direta aos setters fica só dentro de `editar(...)`; solta, ela deixaria o rótulo de exemplo.
     const soltas = tela.replace(/editar\(set\w+\)/g, '').match(/\bset(Clientes|TicketCents|Retorno)\(/g) ?? []
     expect(soltas, 'setter chamado sem passar por `editar`').toEqual([])
+  })
+})
+
+/*
+  docs/112 EXP-S05 (`04-salao.md` §6): o exemplo que a calculadora abre era de barbearia (8 · R$ 35 ·
+  30 dias, "por visita"). Agora é a manutenção de cílios: 8 pessoas · R$ 120 · 21 dias. A conta foi
+  refeita à mão no §6: 12.000 × 365 ÷ 21 = R$ 2.086 por pessoa por ano; vezes 8 = R$ 16.688 por ano,
+  R$ 1.391 por mês.
+*/
+describe('exemplo da calculadora é de salão (docs/112 EXP-S05)', () => {
+  it('8 pessoas · R$ 120 por manutenção · 21 dias dá R$ 1.391 por mês e R$ 16.688 por ano', () => {
+    expect(EXEMPLO).toEqual({ clientesSumidos: 8, ticketCents: 12_000, retornoDias: 21 })
+    const r = calcularParado(EXEMPLO)
+    expect(r?.paradoPorMesCents).toBe(139_067)
+    expect(r?.paradoPorAnoCents).toBe(1_668_800)
+  })
+
+  it('cada atalho de ritmo traz o serviço de exemplo, e o exemplo é um deles', () => {
+    expect([...RITMOS_COMUNS]).toEqual([14, 21, 30, 45, 60])
+    for (const dias of RITMOS_COMUNS) expect(EXEMPLO_DO_RITMO[dias], `${dias} dias sem exemplo`).toBeTruthy()
+    expect(EXEMPLO_DO_RITMO[21]).toBe('cílios')
+    expect(RITMOS_COMUNS).toContain(EXEMPLO.retornoDias)
+    for (const dias of RITMOS_COMUNS) expect(dias).toBeGreaterThanOrEqual(LIMITES.retornoDias.min)
+  })
+
+  it('a tela começa no exemplo do core, sem número datilografado', () => {
+    const tela = readFileSync('src/app/(public)/calculadora/calculadora.tsx', 'utf8')
+    expect(tela).toMatch(/useState(<number>)?\(EXEMPLO\.clientesSumidos\)/)
+    expect(tela).toMatch(/useState(<number>)?\(EXEMPLO\.ticketCents\)/)
+    expect(tela).toMatch(/useState(<number>)?\(EXEMPLO\.retornoDias\)/)
   })
 })

@@ -43,8 +43,23 @@ export const LIMITES = {
   retornoDias: { min: 7, max: 180 },
 } as const
 
-/** Ritmos que a tela oferece como atalho. Cobrem de cílios/barba (15) a coloração (60). */
-export const RITMOS_COMUNS = [15, 21, 30, 45, 60] as const
+/** Ritmos que a tela oferece como atalho, de pé e mão (14) a corte (60). */
+export const RITMOS_COMUNS = [14, 21, 30, 45, 60] as const
+
+/** O serviço que cada atalho lembra, embaixo do número (`docs/112` §6): cada uma acha o seu. */
+export const EXEMPLO_DO_RITMO: Record<(typeof RITMOS_COMUNS)[number], string> = {
+  14: 'pé e mão',
+  21: 'cílios',
+  30: 'sobrancelha, depilação',
+  45: 'raiz',
+  60: 'corte',
+}
+
+/**
+ * Os números com que a calculadora abre (`docs/112` EXP-S05): a manutenção de cílios, 8 pessoas ·
+ * R$ 120 · 21 dias, que dá R$ 1.391 por mês. Era uma barbearia (8 · R$ 35 · 30 dias, R$ 284 por mês).
+ */
+export const EXEMPLO = { clientesSumidos: 8, ticketCents: 12_000, retornoDias: 21 } as const
 
 function dentro(valor: number, { min, max }: { min: number; max: number }): boolean {
   return Number.isInteger(valor) && valor >= min && valor <= max
