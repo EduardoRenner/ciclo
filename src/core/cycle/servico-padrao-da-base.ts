@@ -36,6 +36,9 @@ export const SERVICO_DE_VOLTA: ReadonlySet<string> = new Set([
   'pack:barber:Corte',
   'pack:lashes:Manutenção volume russo',
   'pack:brows:Design simples',
+  // docs/112 EXP-S06 (0146): pé e mão é o par mais vendido e abre o pacote de unhas; manicure simples
+  // fica para as contas criadas antes, que não têm o item novo.
+  'pack:nails:Pé e mão',
   'pack:nails:Manicure simples',
 ])
 
