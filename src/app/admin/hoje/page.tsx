@@ -151,7 +151,7 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
       <Hoje
         resumo={resumo}
         atribuicao={atribuicao}
-        emRisco={emRisco ? { totalCents: emRisco.totalValueCents, count: emRisco.count, naHoraDeVoltar: emRisco.naHoraDeVoltar } : null}
+        emRisco={emRisco ? { totalCents: emRisco.totalFullValueCents, count: emRisco.count, naHoraDeVoltar: emRisco.naHoraDeVoltar } : null}
         site={ctx.tenant.slug ? { slug: ctx.tenant.slug, nome: ctx.tenant.name } : null}
         prestacaoDeContas={prestacaoDeContas}
       >

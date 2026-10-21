@@ -37,4 +37,17 @@ describe('a fila de recuperar mostra o preço do serviço, não a estimativa', (
       expect(codigo, `${arquivo} voltou a escrever "de lucro"`).not.toMatch(/de lucro/)
     }
   })
+
+  /*
+    docs/112 EXP-J01: a guarda olhava só as telas do Recuperar, e a manchete do Hoje ficou no campo
+    antigo. Medido em 21/10 na mesma conta: Hoje "R$ 355,40" (totalValueCents, estimativa) e
+    Recuperar "R$ 800,00" (totalFullValueCents, C-037) para as mesmas 6 clientes. O toque na
+    manchete levava a um número diferente do que ela anunciava.
+  */
+  it('a manchete do Hoje anuncia o mesmo total que o topo do Recuperar', () => {
+    const hoje = semComentarios(readFileSync('src/app/admin/hoje/page.tsx', 'utf8'))
+    const recuperar = semComentarios(readFileSync('src/app/admin/recuperar/recuperar.tsx', 'utf8'))
+    expect(recuperar, 'o topo do Recuperar mudou de campo: reveja esta guarda').toMatch(/lista\.totalFullValueCents/)
+    expect(hoje, 'o Hoje anuncia outro total que o Recuperar').toMatch(/totalCents: emRisco\.totalFullValueCents/)
+  })
 })
