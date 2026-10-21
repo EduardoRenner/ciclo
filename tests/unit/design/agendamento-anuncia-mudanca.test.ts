@@ -133,8 +133,8 @@ describe('o agendamento anuncia o que mudou sem trocar de rota', () => {
      * `tabIndex={-1}` solto casaria com o honeypot, que também o usa.
      */
     const src = fonte()
-    // APR-118: o título virou "Pedido enviado para {salão}" — pedido, não agendamento confirmado.
-    const i = src.indexOf('Pedido enviado para {nomeDoSalao}')
+    // docs/114 AGD-01: o horário pelo link nasce confirmado e o título virou "Horário marcado" (era "Pedido enviado").
+    const i = src.indexOf('Horário marcado')
     expect(i, 'não achei a tela de sucesso').toBeGreaterThan(-1)
 
     const abertura = src.lastIndexOf('<', src.lastIndexOf('>', i))

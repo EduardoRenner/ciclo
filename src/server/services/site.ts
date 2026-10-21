@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { apelidoDoInstagram } from '@/core/text/instagram'
 import { AppError } from '@/server/http/errors'
 import { TelefoneBR } from '@/server/auth/schemas'
+import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -142,6 +143,8 @@ export const EsquemaTenant = z.object({
   address: z.string().trim().max(300, 'Endereço muito longo.').nullish(),
   site: EsquemaSite.nullish(),
   messaging: EsquemaMensageria.nullish(),
+  /** docs/114 L-04: `true` aceita horário para hoje pelo link (`min_advance_days` 0); `false` é a partir de amanhã (1). */
+  marcarParaHoje: z.boolean().nullish(),
 })
 
 export type EntradaTenant = z.infer<typeof EsquemaTenant>
@@ -161,7 +164,7 @@ function paraEnderecoTexto(bruto: unknown): string | null {
 export async function lerTenant(db: Cliente, tenantId: string) {
   const { data, error } = await db.from('tenants').select(COLUNAS).eq('id', tenantId).single()
   if (error) throw new AppError('INTERNAL', { cause: error })
-  return { ...data, address: paraEnderecoTexto(data.address), site: lerSite(data.settings), messaging: lerMensageria(data.settings) }
+  return { ...data, address: paraEnderecoTexto(data.address), site: lerSite(data.settings), messaging: lerMensageria(data.settings), marcarParaHoje: aceitaHoje(data.settings) }
 }
 
 /**
@@ -185,15 +188,22 @@ export async function atualizarTenant(db: Cliente, tenantId: string, entrada: En
   if (entrada.name !== undefined && entrada.name !== null) colunas.name = entrada.name
   if (entrada.phone !== undefined) colunas.phone = entrada.phone ?? null
   if (entrada.address !== undefined) colunas.address = entrada.address ?? null
-  if (novoSite !== undefined || novaMensageria !== undefined) {
+  const novaAntecedencia = typeof entrada.marcarParaHoje === 'boolean' ? (entrada.marcarParaHoje ? 0 : 1) : undefined
+  if (novoSite !== undefined || novaMensageria !== undefined || novaAntecedencia !== undefined) {
     colunas.settings = {
       ...settingsAtual,
       ...(novoSite !== undefined ? { site: novoSite } : {}),
       ...(novaMensageria !== undefined ? { messaging: novaMensageria } : {}),
+      ...(novaAntecedencia !== undefined ? { min_advance_days: novaAntecedencia } : {}),
     }
   }
 
   const { data, error } = await db.from('tenants').update(colunas).eq('id', tenantId).select(COLUNAS).single()
   if (error) throw new AppError('INTERNAL', { cause: error })
-  return { ...data, address: paraEnderecoTexto(data.address), site: lerSite(data.settings), messaging: lerMensageria(data.settings) }
+  return { ...data, address: paraEnderecoTexto(data.address), site: lerSite(data.settings), messaging: lerMensageria(data.settings), marcarParaHoje: aceitaHoje(data.settings) }
+}
+
+/** docs/114 L-04: a tela de Negócio mostra a escolha do jeito que ela é lida na hora de oferecer horário. */
+function aceitaHoje(settings: unknown): boolean {
+  return lerConfiguracoesAgenda(settings).minAdvanceDays === 0
 }

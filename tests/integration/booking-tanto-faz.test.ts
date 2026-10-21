@@ -92,7 +92,8 @@ describe('"Tanto faz" às 21h de Brasília (APR-223)', () => {
         phone: `119${String(Math.floor(Math.random() * 1e8)).padStart(8, '0')}`,
       })
       const linha = await svc.from('appointments').select('status, starts_at').eq('id', resultado.appointmentId).single()
-      expect(linha.data?.status).toBe('pending')
+      // docs/114 AGD-01 (decisão do Vitor, 21/10): o que vem do link nasce confirmado.
+      expect(linha.data?.status).toBe('confirmed')
       expect(new Date(linha.data!.starts_at).toISOString()).toBe(new Date(`${DIA}T21:00:00-03:00`).toISOString())
     },
     30_000,

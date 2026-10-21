@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { classificarDemanda } from '@/core/agenda/demanda-nao-atendida'
 import { podeUsarCapacidade } from '@/core/billing/planos'
+import { diaAceitoPeloLink } from '@/core/scheduling/antecedencia'
 import type { ModeloDePreco } from '@/core/pricing/formatar'
 import { resolverVocabulario, type Vocabulario } from '@/core/text/vocabulario'
 import { sinalEmCentavos } from '@/core/pricing/sinal'
@@ -77,6 +78,8 @@ export type PerfilPublico = {
   about: string | null
   whatsapp: string | null
   instagram: string | null
+  /** docs/114 L-04: dias de calendário antes do primeiro horário marcável pelo link. */
+  diasDeAntecedencia: number
   /** Endereço público já montado — `null` quando o salão não subiu imagem. */
   logoUrl: string | null
   coverUrl: string | null
@@ -226,6 +229,8 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
       about: site.about ?? null,
       whatsapp: site.whatsapp ?? null,
       instagram: site.instagram ?? null,
+      // docs/114 L-04: a tela começa o trilho de dias no primeiro dia aceito pelo link.
+      diasDeAntecedencia: lerConfiguracoesAgenda(tenant.settings).minAdvanceDays,
       // Endereço montado aqui, uma vez, em vez de a tela concatenar — mesmo motivo do Instagram.
       // `urlDaVitrine` vive em `core/` e é puro: a página pública não pode ter caminho de import
       // até `vitrine-upload.ts`, que carrega o `sharp`.
@@ -326,6 +331,9 @@ export async function disponibilidadePublica(
 ): Promise<SlotPublico[]> {
   return withNovoTenant(async (svc) => {
     const tenant = await tenantPeloSlug(svc, slug)
+
+    // docs/114 L-04: pelo link, a partir do primeiro dia aceito (padrão amanhã). Antes dele não há vaga.
+    if (!diaAceitoPeloLink(date, diaNoFuso(tenant.timezone, new Date()), lerConfiguracoesAgenda(tenant.settings).minAdvanceDays)) return []
 
     let consultaProfissionais = svc
       .from('professionals')
@@ -518,6 +526,15 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.input<typ
   return withNovoTenant(async (svc) => {
     const tenant = await tenantPeloSlug(svc, slug)
 
+    /*
+      docs/114 L-04: com o profissional escolhido o servidor não passa pela disponibilidade, então a
+      antecedência em dias é conferida aqui também. Sem isto, a mesma regra valeria só na tela.
+    */
+    const diaDoHorario = diaNoFuso(tenant.timezone, new Date(entrada.startsAt))
+    if (!diaAceitoPeloLink(diaDoHorario, diaNoFuso(tenant.timezone, new Date()), lerConfiguracoesAgenda(tenant.settings).minAdvanceDays)) {
+      throw AppError.validacao({ startsAt: 'Esse dia não está aberto para marcar pelo link. Para hoje, chame no WhatsApp de quem te atende.' })
+    }
+
     let professionalId = entrada.professionalId ?? undefined
     if (!professionalId) {
       // APR-223 (R-33): o DIA do horário é o do negócio. `startsAt.slice(0, 10)` era o dia em UTC — às 21h
@@ -589,8 +606,8 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.input<typ
     // da equipe nunca chega. `agendarDepois` usa o `after()` do Next, que segura a instância até acabar.
     agendarDepois(() =>
       notificarEquipe(svc, tenant.id, {
-        title: 'Novo pedido de agendamento',
-        body: `${entrada.name} pediu horário para ${quandoLocal(entrada.startsAt, tenant.timezone)}.${notaProduto ? ` ${notaProduto}` : ''}`,
+        title: 'Novo horário marcado',
+        body: `${entrada.name} marcou para ${quandoLocal(entrada.startsAt, tenant.timezone)} pelo seu link.${notaProduto ? ` ${notaProduto}` : ''}`,
       }, { professionalId: professionalId ?? null }).catch((erro: unknown) => {
         console.error(JSON.stringify({ level: 'error', event: 'push_equipe_falhou', tenantId: tenant.id }), erro)
       }),

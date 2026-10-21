@@ -132,10 +132,22 @@ describe('o pedido público não se apresenta como confirmado nem manda ligar pa
     expect(/chamar por telefone/.test(copyDaPagina()), 'voltou a frase para um telefone que a conta nova não tem').toBe(false)
   })
 
-  it('o botão pede o horário; "Confirmar agendamento" prometia o que quem atende ainda vai decidir', () => {
+  /*
+    docs/114 AGD-01, decisão do Vitor (21/10): o horário pelo link nasce CONFIRMADO no servidor, então o
+    botão marca e a tela diz que está marcado. Era "Pedir este horário" (APR-118), quando quem atende
+    confirmava depois. A promessa continua amarrada ao que o servidor faz: `criarAgendamento` grava
+    `confirmed` para `public_page` (integração `booking-publico`).
+  */
+  it('o botão marca o horário e a tela de sucesso diz que está marcado, não "pedido"', () => {
     const copy = copyDaPagina()
-    expect(/Pedir este horário/.test(copy)).toBe(true)
-    expect(/Confirmar agendamento/.test(copy)).toBe(false)
+    expect(/Marcar este horário/.test(copy)).toBe(true)
+    expect(/Horário marcado/.test(copy)).toBe(true)
+    expect(/Pedir este horário|Pedido enviado|seu pedido|A confirmação vem de/i.test(copy)).toBe(false)
+  })
+
+  it('e o servidor grava o que a tela promete: o que vem da página pública nasce confirmado', () => {
+    const servico = semComentarios(readFileSync('src/server/services/agendamentos.ts', 'utf8'))
+    expect(servico).toMatch(/entrada\.origin === 'public_page' \? \{ status: 'confirmed'/)
   })
 
   it('o metadado da página não promete "sem esperar resposta"', () => {

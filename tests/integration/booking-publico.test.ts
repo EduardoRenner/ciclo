@@ -11,6 +11,7 @@ import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { criarAgendamentoPublico, disponibilidadePublica, perfilPublico } from '@/server/services/public-booking'
 import { procurasEmDiaFechado } from '@/server/services/demanda-nao-atendida'
+import { atualizarTenant, lerTenant } from '@/server/services/site'
 
 import { POST as reservar } from '@/app/api/v1/public/[slug]/book/route'
 
@@ -583,6 +584,82 @@ describe('POST /api/v1/public/:slug/book — reenvio com Idempotency-Key', () =>
       expect(r2.status).toBe(409)
       const j2 = (await r2.json()) as { error: { code: string } }
       expect(j2.error.code).toBe('SLOT_TAKEN')
+    },
+    30_000,
+  )
+})
+
+/*
+  docs/114 L-04 e AGD-01 (decisões do Vitor, 21/10): pelo link a cliente marca a partir de amanhã (o
+  salão escolhe a antecedência em dias, `settings.min_advance_days`, padrão 1), e o horário marcado pelo
+  link nasce CONFIRMADO: quem atende vê na agenda e, se não puder, remarca ou cancela por lá.
+*/
+describe('antecedência em dias e horário já confirmado (L-04, AGD-01)', () => {
+  async function antecedencia(dias: number | null) {
+    const { data } = await svc.from('tenants').select('settings').eq('id', tenantId).single()
+    const settings = { ...((data?.settings ?? {}) as Record<string, unknown>), min_advance_days: dias }
+    const { error } = await svc.from('tenants').update({ settings }).eq('id', tenantId)
+    if (error) throw error
+  }
+
+  it(
+    'dia antes do primeiro dia aceito não tem horário, e o mesmo dia tem quando a antecedência deixa',
+    async () => {
+      try {
+        await antecedencia(30)
+        expect(await disponibilidadePublica(slug, servicoOnlineId, DIA, professionalId)).toEqual([])
+        await antecedencia(0)
+        expect((await disponibilidadePublica(slug, servicoOnlineId, DIA, professionalId)).length, 'controle: o dia tem vaga').toBeGreaterThan(0)
+      } finally {
+        await antecedencia(null)
+      }
+    },
+    30_000,
+  )
+
+  it(
+    'marcar pelo link antes do primeiro dia aceito é recusado no servidor, mesmo com o profissional escolhido',
+    async () => {
+      try {
+        await antecedencia(30)
+        await expect(
+          criarAgendamentoPublico(slug, { serviceId: servicoOnlineId, professionalId, startsAt: `${DIA}T10:00:00-03:00`, name: 'Cedo Demais', phone: '11988110091' }),
+        ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' })
+      } finally {
+        await antecedencia(null)
+      }
+    },
+    30_000,
+  )
+
+  it(
+    'o horário marcado pelo link nasce confirmado',
+    async () => {
+      const r = await criarAgendamentoPublico(slug, { serviceId: servicoOnlineId, professionalId, startsAt: `${DIA}T10:30:00-03:00`, name: 'Já Marcada', phone: '11988110092' })
+      const { data } = await svc.from('appointments').select('status, confirmed_at').eq('id', r.appointmentId).single()
+      expect(data?.status).toBe('confirmed')
+      expect(data?.confirmed_at).not.toBeNull()
+    },
+    30_000,
+  )
+  it(
+    'a chave da tela de Negócio grava 0 (aceita hoje) ou 1 (a partir de amanhã) sem apagar o resto do settings',
+    async () => {
+      try {
+        const antes = (await svc.from('tenants').select('settings').eq('id', tenantId).single()).data?.settings as Record<string, unknown>
+        await atualizarTenant(svc, tenantId, { marcarParaHoje: true })
+        let depois = (await svc.from('tenants').select('settings').eq('id', tenantId).single()).data?.settings as Record<string, unknown>
+        expect(depois.min_advance_days).toBe(0)
+        expect((await lerTenant(svc, tenantId)).marcarParaHoje).toBe(true)
+        expect(Object.keys(depois).filter((k) => k !== 'min_advance_days').sort(), 'o resto do settings sumiu').toEqual(Object.keys(antes).filter((k) => k !== 'min_advance_days').sort())
+
+        await atualizarTenant(svc, tenantId, { marcarParaHoje: false })
+        depois = (await svc.from('tenants').select('settings').eq('id', tenantId).single()).data?.settings as Record<string, unknown>
+        expect(depois.min_advance_days).toBe(1)
+        expect((await lerTenant(svc, tenantId)).marcarParaHoje).toBe(false)
+      } finally {
+        await antecedencia(null)
+      }
     },
     30_000,
   )

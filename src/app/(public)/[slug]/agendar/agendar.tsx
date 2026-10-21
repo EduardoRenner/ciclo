@@ -6,12 +6,13 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { comMaiuscula, type Vocabulario } from "@/core/text/vocabulario";
 import { cn } from "@/lib/utils";
 import { formatarPreco, type ModeloDePreco } from "@/core/pricing/formatar";
-import { saidaDeContato } from "@/lib/mensagens";
+import { linkWhatsApp, saidaDeContato } from "@/lib/mensagens";
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
 import Chip from "@/components/ui/chip";
 import GradeDeHorarios, { slotsUnicosDe, type SlotLivre } from "@/components/agenda/grade-de-horarios";
 import TrilhoDeDias from "@/components/agenda/trilho-de-dias";
+import { primeiroDiaPeloLink } from "@/core/scheduling/antecedencia";
 import { agoraEmMinutos, diasFechadosDe, hojeNoFuso, paraData, primeiroDiaUtil as primeiroDiaUtilDe, proximosDias } from "@/core/agenda/dias";
 import Input from "@/components/ui/input";
 import PhoneInput from "@/components/ui/phone-input";
@@ -159,8 +160,8 @@ function BarraFixaDeConfirmacao({
           motivoDesabilitado={motivoBloqueio}
           onClick={onConfirmar}
         >
-          {/* APR-118 (I-16): "Confirmar" prometia que estava confirmado; quem confirma é quem atende. */}
-          Pedir este horário
+          {/* docs/114 AGD-01 (decisão do Vitor): o horário pelo link nasce confirmado; era "Pedir este horário". */}
+          Marcar este horário
         </Button>
       </div>
     </div>
@@ -175,6 +176,7 @@ export default function Agendar({
   whatsappDoSalao,
   telefoneDoSalao,
   timezone,
+  diasDeAntecedencia = 1,
   hours,
   services,
   professionals,
@@ -193,6 +195,8 @@ export default function Agendar({
   whatsappDoSalao: string | null;
   telefoneDoSalao: string | null;
   timezone: string;
+  /** docs/114 L-04: dias de calendário antes do primeiro horário marcável pelo link (padrão 1: amanhã). */
+  diasDeAntecedencia?: number;
   hours: { weekday: number; opensAt: string; closesAt: string }[];
   services: Servico[];
   professionals: Profissional[];
@@ -207,13 +211,13 @@ export default function Agendar({
   indicadaPor: string | null;
 }) {
   const dias = useMemo(
-    () => proximosDias(14, hojeNoFuso(timezone)),
-    [timezone],
+    () => proximosDias(14, primeiroDiaPeloLink(hojeNoFuso(timezone), diasDeAntecedencia)),
+    [timezone, diasDeAntecedencia],
   );
 
   const diasFechados = useMemo(() => diasFechadosDe(dias, hours), [dias, hours]);
   // A regra (e o porquê) mora em `core/agenda/dias.ts`, com teste.
-  const primeiroDiaUtil = useMemo(() => primeiroDiaUtilDe(dias, hours, diasFechados, agoraEmMinutos(timezone)), [dias, diasFechados, hours, timezone]);
+  const primeiroDiaUtil = useMemo(() => primeiroDiaUtilDe(dias, hours, diasFechados, dias[0] === hojeNoFuso(timezone) ? agoraEmMinutos(timezone) : -1), [dias, diasFechados, hours, timezone]);
 
   /*
    * Quem tocou num serviço na página do salão já escolheu — abrir no primeiro do catálogo
@@ -335,6 +339,10 @@ export default function Agendar({
   }
 
   const servicoEscolhido = services.find((s) => s.id === serviceId);
+  const linkParaHoje =
+    diasDeAntecedencia >= 1
+      ? linkWhatsApp(whatsappDoSalao, `Oi! Vi seu link no CICLO. Tem horário hoje para ${servicoEscolhido?.name ?? "um atendimento"}?`)
+      : null;
   const nomeDoProfissionalEscolhido =
     professionalId === null
       ? "Tanto faz"
@@ -587,7 +595,7 @@ export default function Agendar({
         setConfirmado(true);
       } catch {
         setErro(
-          "Não consegui falar com o servidor. Se o pedido chegou, este horário sai da lista. Toque em Confirmar de novo: não vai duplicar.",
+          "Não consegui falar com o servidor. Se o horário foi marcado, ele sai da lista. Toque em Marcar de novo: não vai duplicar.",
         );
       }
     });
@@ -613,7 +621,7 @@ export default function Agendar({
       whatsappDoSalao,
       telefoneDoSalao,
       nomeDoSalao,
-      `Oi! Acabei de marcar um horário pelo site de ${nomeDoSalao} e queria confirmar.`,
+      `Oi! Marquei um horário pelo site de ${nomeDoSalao}.`,
     );
 
     return (
@@ -629,7 +637,7 @@ export default function Agendar({
           navega por teclado não ganha uma parada extra, e o foco programático funciona.
         */}
         <h2 ref={tituloDoSucesso} tabIndex={-1} className="text-titulo font-bold">
-          Pedido enviado para {nomeDoSalao}
+          Horário marcado
         </h2>
 
         {slotEscolhido && servicoEscolhido ? (
@@ -668,16 +676,15 @@ export default function Agendar({
           libera a frase de canal sozinho no dia em que `reminders` entrar no `schedule`.
         */}
         <p className="mt-4 max-w-xs text-corpo text-txt-2">
-          Seu pedido chegou e já apareceu para a equipe. A confirmação vem de
-          quem vai te atender, e pode não ser na hora.
+          Já está na agenda de {nomeDoSalao}.
           {/*
             APR-118 (F-04, S1): conta nova não tem telefone público, e a frase mandava "chamar por
             telefone" sem telefone em lugar nenhum. Sem canal, a tela não inventa um.
           */}
           {saidaDoSucesso ? (
-            <> Se não tiver retorno em algumas horas, fale direto:</>
+            <> Se precisar remarcar ou cancelar, fale direto:</>
           ) : (
-            <> Se não tiver retorno em algumas horas, fale com {nomeDoSalao} do jeito que você costuma.</>
+            <> Se precisar remarcar ou cancelar, fale com {nomeDoSalao} do jeito que você costuma.</>
           )}
         </p>
 
@@ -939,6 +946,22 @@ export default function Agendar({
         <Passo numero={professionals.length > 1 ? 3 : 2} titulo="Dia" />
         {/* APR-109: o mesmo trilho do "Marcar" do painel (`components/agenda/trilho-de-dias`). */}
         <TrilhoDeDias dias={dias} dia={dia} fechados={diasFechados} aoEscolher={buscarDisponibilidade} />
+        {/*
+          docs/114 L-04 (decisão do Vitor): pelo link, a partir de amanhã. Quem quer para hoje fala com
+          quem atende, que decide. Só com WhatsApp cadastrado: sem ele não há para onde mandar, e a
+          tela não inventa um canal.
+        */}
+        {linkParaHoje ? (
+          <a
+            href={linkParaHoje}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-4 text-corpo font-semibold text-txt transition active:scale-[.98]"
+          >
+            <MessageCircle aria-hidden className="size-4" />
+            Para hoje, chame no WhatsApp
+          </a>
+        ) : null}
       </section>
 
       {erro ? (
@@ -1071,7 +1094,7 @@ export default function Agendar({
                 <strong className="tabular font-semibold text-txt">
                   {dinheiro.format(servicoEscolhido.depositCents / 100)}
                 </strong>
-                . Quem te atende combina o pagamento com você depois de confirmar.
+                . Quem te atende combina o pagamento com você.
               </p>
             ) : null}
           </div>

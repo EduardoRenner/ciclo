@@ -365,6 +365,14 @@ export async function criarAgendamento(
       starts_at: startsAt.toString(),
       ends_at: endsAt.toString(),
       origin: entrada.origin,
+      /*
+        docs/114 AGD-01, decisão do Vitor (21/10): "é pra confirmar pelo link ou pelo app na parte do
+        cliente sem ter que ficar chamando pra confirmar; se o profissional não tiver disponível [...]
+        vai ver na agenda e vai mandar mensagem pro cliente". O que vem da página pública nasce
+        confirmado; o resto continua nascendo `pending` (padrão da coluna). A trava contra horário
+        sobreposto (`appointments_no_overlap`) vale para os dois estados.
+      */
+      ...(entrada.origin === 'public_page' ? { status: 'confirmed' as const, confirmed_at: new Date().toISOString() } : {}),
       price_cents: servico.price_cents,
       /*
        * `appointments.deposit_cents` existe desde a migration 0001 e **nunca foi escrito** — achado

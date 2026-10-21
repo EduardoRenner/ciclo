@@ -16,6 +16,7 @@ type Tenant = {
   phone: string | null
   address: string | null
   site: { tagline?: string | null; about?: string | null; whatsapp?: string | null; instagram?: string | null; accent?: string | null }
+  marcarParaHoje: boolean
 }
 
 /** O mesmo osso do app (`--acc` em globals.css) — nunca o roxo antigo. */
@@ -37,6 +38,8 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
   // escolhe de propósito — nunca herda cor de nicho/profissão (era assim que
   // cílios/sobrancelha nasciam roxo, ver docs/13-CAUSA-RAIZ-LAYOUT-LEGADO.md).
   const [acento, setAcento] = useState<string | null>(tenant.site.accent ?? null)
+  // docs/114 L-04: desligado (padrão) = pelo link só a partir de amanhã; para hoje, a cliente chama no WhatsApp.
+  const [marcarParaHoje, setMarcarParaHoje] = useState(tenant.marcarParaHoje)
   const [erro, setErro] = useState<string | null>(null)
 
   function copiarLink() {
@@ -59,6 +62,7 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
         instagram: instagram.trim() || null,
         accent: acento,
       },
+      marcarParaHoje,
     }
 
     iniciarTransicao(async () => {
@@ -234,6 +238,19 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
             )}
           </div>
         </div>
+
+        <label className="flex min-h-12 cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            checked={marcarParaHoje}
+            onChange={(e) => setMarcarParaHoje(e.target.checked)}
+            className="size-5 shrink-0 rounded border-line-2 bg-surface-2 accent-[var(--acc-2)]"
+          />
+          <span className="text-corpo text-txt">
+            Aceitar horário para hoje pelo link
+            <span className="block text-secundario text-txt-2">Desligado, quem marca pelo link escolhe a partir de amanhã e, para hoje, chama no seu WhatsApp.</span>
+          </span>
+        </label>
 
         {erro ? (
           <p role="alert" className="text-secundario text-bad">

@@ -112,6 +112,7 @@ export default async function PaginaAgendar({
             whatsappDoSalao={perfil.whatsapp}
             telefoneDoSalao={perfil.phone}
             timezone={perfil.timezone}
+            diasDeAntecedencia={perfil.diasDeAntecedencia}
             hours={perfil.hours}
             services={perfil.services}
             professionals={perfil.professionals}
