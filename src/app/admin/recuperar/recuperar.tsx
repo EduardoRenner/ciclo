@@ -12,7 +12,7 @@ import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
 import { ASSUNTO_MOTOR_PARADO, canalDeContato } from '@/lib/contato'
-import { linkWhatsApp, linkWhatsAppCompartilhar, primeiroNome, textoDeVolta } from '@/lib/mensagens'
+import { linkWhatsApp, linkWhatsAppCompartilhar, primeiroNome, textoDoRetorno } from '@/lib/mensagens'
 import FilterRow from '@/components/ui/filter-row'
 import IconeAnel from '@/components/ui/icone-anel'
 import IconeWhatsApp from '@/components/ui/icone-whatsapp'
@@ -53,8 +53,13 @@ export default function RecuperarReceita({
   temAtendimentosConcluidos,
   quandoOProximoVolta,
   servicosSemMaterial,
+  modeloDeVolta,
+  nomeDoNegocio,
 }: {
   inicial: ListaRecuperar
+  /** RET-01: o "Sumiu, chamar de volta" do negócio; o texto de cada botão sai de `textoDoRetorno`. */
+  modeloDeVolta: { body: string; active: boolean } | null
+  nomeDoNegocio: string
   /**
    * Quantos serviços ativos ainda não têm material confiável. A frase abaixo promete que o lucro
    * é "o que sobra depois da comissão e do produto" — e depois da 0069 o produto vale zero até o
@@ -309,7 +314,7 @@ export default function RecuperarReceita({
           />
         </Card>
       ) : modoFila ? (
-        <FilaDeChamadas itens={visiveis} anotarChamada={anotarChamada} pararDeChamar={pararDeChamar} sair={() => setModoFila(false)} />
+        <FilaDeChamadas itens={visiveis} modeloDeVolta={modeloDeVolta} nomeDoNegocio={nomeDoNegocio}anotarChamada={anotarChamada} pararDeChamar={pararDeChamar} sair={() => setModoFila(false)} />
       ) : visiveis.length === 0 ? (
         <Card>
           <p className="text-corpo font-semibold">Ninguém com esse recorte.</p>
@@ -367,8 +372,8 @@ export default function RecuperarReceita({
                     ) : (
                       <a
                         href={
-                          linkWhatsApp(item.phone, textoDeVolta({ nome: item.name, servico: item.serviceName, sujeito: item.subjectName, link: item.linkVolta })) ??
-                          linkWhatsAppCompartilhar(textoDeVolta({ nome: item.name, servico: item.serviceName, sujeito: item.subjectName, link: item.linkVolta }))
+                          linkWhatsApp(item.phone, textoDoRetorno({ modelo: modeloDeVolta, nome: item.name, servico: item.serviceName, sujeito: item.subjectName, link: item.linkVolta, negocio: nomeDoNegocio })) ??
+                          linkWhatsAppCompartilhar(textoDoRetorno({ modelo: modeloDeVolta, nome: item.name, servico: item.serviceName, sujeito: item.subjectName, link: item.linkVolta, negocio: nomeDoNegocio }))
                         }
                         target="_blank"
                         rel="noreferrer"

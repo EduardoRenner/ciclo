@@ -9,7 +9,7 @@ import { chaveDaFila, proximoDaFila } from '@/core/ciclo/fila-de-chamadas'
 import { fraseDoRitmo, ritmoDoCliente } from '@/core/ciclo/ritmo-do-cliente'
 import { ROTULO_DA_CLASSE, ROTULO_DO_PERFIL } from '@/core/crm/nota-do-cliente'
 import { dinheiro } from '@/lib/formato'
-import { linkWhatsApp, linkWhatsAppCompartilhar, textoDeVolta } from '@/lib/mensagens'
+import { linkWhatsApp, linkWhatsAppCompartilhar, textoDoRetorno } from '@/lib/mensagens'
 
 import type { ItemRecuperar } from '@/server/services/recuperar-receita'
 
@@ -51,8 +51,13 @@ export default function FilaDeChamadas({
   anotarChamada,
   pararDeChamar,
   sair,
+  modeloDeVolta,
+  nomeDoNegocio,
 }: {
   itens: ItemRecuperar[]
+  /** RET-01: o mesmo texto do botão da lista (`textoDoRetorno`). */
+  modeloDeVolta: { body: string; active: boolean } | null
+  nomeDoNegocio: string
   /** Anota a chamada para o Motor medir a volta (mesma rota do "Chamar" da lista). */
   anotarChamada: (item: ItemRecuperar) => Promise<void>
   /** Marca o opt-out do WhatsApp da pessoa (`docs/95` E2.4). Devolve se gravou. */
@@ -119,8 +124,8 @@ export default function FilaDeChamadas({
 
           <a
             href={
-              linkWhatsApp(atual.phone, textoDeVolta({ nome: atual.name, servico: atual.serviceName, sujeito: atual.subjectName, link: atual.linkVolta })) ??
-              linkWhatsAppCompartilhar(textoDeVolta({ nome: atual.name, servico: atual.serviceName, sujeito: atual.subjectName, link: atual.linkVolta }))
+              linkWhatsApp(atual.phone, textoDoRetorno({ modelo: modeloDeVolta, nome: atual.name, servico: atual.serviceName, sujeito: atual.subjectName, link: atual.linkVolta, negocio: nomeDoNegocio })) ??
+              linkWhatsAppCompartilhar(textoDoRetorno({ modelo: modeloDeVolta, nome: atual.name, servico: atual.serviceName, sujeito: atual.subjectName, link: atual.linkVolta, negocio: nomeDoNegocio }))
             }
             target="_blank"
             rel="noreferrer"

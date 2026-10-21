@@ -138,3 +138,39 @@ export function textoDeVolta({
   // mede se a mensagem foi aberta e se virou horário marcado.
   return link ? `${base} É só escolher o horário aqui: ${link}` : base
 }
+
+/**
+ * Os textos que o CICLO já semeou como `sentimos_falta` (`MODELOS_PADRAO` lê o primeiro). Corpo igual
+ * a um deles quer dizer que o negócio não escreveu o dele. O segundo é o de antes de 2026-08-19, que
+ * ficou como linha nos negócios que abriram a tela de mensagens até lá.
+ */
+export const CORPOS_PADRAO_DE_VOLTA = [
+  'Oi {{nome}}, quanto tempo! Faz um tempinho que a gente não se fala. Bora marcar um horário? Me chama que eu encaixo.',
+  'Oi {{nome}}, quanto tempo! Faz um tempinho que você não aparece na {{negocio}}. Bora marcar um horário? Me chama que eu encaixo.',
+]
+
+/**
+ * RET-01: o botão do WhatsApp no Recuperar usa o "Sumiu, chamar de volta" quando o negócio o
+ * reescreveu, a mesma mensagem que a ficha da cliente já usava. Sem edição (ou com o modelo
+ * desligado), continua o `textoDeVolta`, que é mais específico que o padrão genérico. O texto
+ * editado não ganha link no fim: quem decide é o `{{link}}` que a pessoa pôs nele.
+ */
+export function textoDoRetorno({
+  modelo,
+  nome,
+  servico,
+  sujeito,
+  link,
+  negocio,
+}: {
+  modelo: { body: string; active: boolean } | null
+  nome: string
+  servico: string
+  sujeito?: string | null
+  link?: string | null
+  negocio?: string | null
+}): string {
+  const corpo = modelo?.active ? modelo.body.trim() : null
+  if (corpo && !CORPOS_PADRAO_DE_VOLTA.includes(corpo)) return aplicarVariaveis(corpo, { nome, servico, link, negocio })
+  return textoDeVolta({ nome, servico, sujeito, link })
+}

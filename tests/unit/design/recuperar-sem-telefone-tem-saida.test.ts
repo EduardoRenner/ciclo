@@ -33,8 +33,10 @@ const fonteRota = semComentarios(
 
 describe('Recuperar: "Chamar" é o caminho padrão, com ou sem telefone', () => {
   it('o link manual existe e leva o texto de volta, endereçado quando há telefone', () => {
-    expect(fonte).toContain('linkWhatsApp(item.phone, textoDeVolta(')
-    expect(fonte).toContain('linkWhatsAppCompartilhar(textoDeVolta(')
+    // RET-01: `textoDoRetorno` cai no `textoDeVolta` quando o negócio não reescreveu a mensagem.
+    expect(fonte).toContain('linkWhatsApp(item.phone, textoDoRetorno({ modelo: modeloDeVolta,')
+    expect(fonte).toContain('linkWhatsAppCompartilhar(textoDoRetorno({ modelo: modeloDeVolta,')
+    expect(fonte).toContain('link: item.linkVolta')
   })
 
   it('a tela não manda pelo número do CICLO: nenhuma chamada à rota de envio em lote', () => {
@@ -46,7 +48,7 @@ describe('Recuperar: "Chamar" é o caminho padrão, com ou sem telefone', () => 
 
   it('a fila de chamadas (docs/95 E2) também só chama pelo WhatsApp do dono, com o link de volta', () => {
     expect(fonteFila).not.toMatch(/\/api\/v1\/cycle\/recover\/send/)
-    expect(fonteFila).toContain('linkWhatsApp(atual.phone, textoDeVolta(')
+    expect(fonteFila).toContain('linkWhatsApp(atual.phone, textoDoRetorno({ modelo: modeloDeVolta,')
     expect(fonteFila).toContain('link: atual.linkVolta')
     // Quem pediu para não receber nem entra na fila.
     expect(fonteFila).toMatch(/itens\.filter\(\(i\) => !i\.optOut\)/)

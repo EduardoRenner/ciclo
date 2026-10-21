@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { parcialSemPadroes } from '@/server/http/esquema-parcial'
 
 import { AppError } from '@/server/http/errors'
+import { CORPOS_PADRAO_DE_VOLTA } from '@/lib/mensagens'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -38,7 +39,7 @@ type EntradaParcial = z.infer<typeof EsquemaModeloParcial>
 export const MODELOS_PADRAO: { slug: string; title: string; body: string }[] = [
   { slug: 'confirmacao', title: 'Confirmar horário', body: 'Oi {{nome}}! Confirmando: {{servico}} no dia {{data}} às {{hora}}. Posso confirmar?' },
   { slug: 'lembrete', title: 'Lembrete de amanhã', body: 'Oi {{nome}}! Passando pra lembrar do seu horário amanhã, {{data}} às {{hora}}. Até lá!' },
-  { slug: 'sentimos_falta', title: 'Sumiu, chamar de volta', body: 'Oi {{nome}}, quanto tempo! Faz um tempinho que a gente não se fala. Bora marcar um horário? Me chama que eu encaixo.' },
+  { slug: 'sentimos_falta', title: 'Sumiu, chamar de volta', body: CORPOS_PADRAO_DE_VOLTA[0]! },
   { slug: 'aniversario', title: 'Feliz aniversário', body: 'Parabéns, {{nome}}! 🎉 Te desejo tudo de bom, e que o ano seja lindo.' },
   { slug: 'pos_atendimento', title: 'Depois do atendimento', body: 'Que bom te atender, {{nome}}! Qualquer dúvida sobre o que foi feito, é só chamar.' },
   { slug: 'reagendar', title: 'Preciso remarcar', body: 'Oi {{nome}}, tudo bem? Preciso remarcar seu horário do dia {{data}}. Tenho outros horários livres. Qual fica melhor pra você?' },
