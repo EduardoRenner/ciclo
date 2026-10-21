@@ -597,7 +597,7 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.input<typ
       notificarEquipe(svc, tenant.id, {
         title: 'Novo pedido de agendamento',
         body: `${entrada.name} pediu horário para ${quandoLocal(entrada.startsAt, tenant.timezone)}.${notaProduto ? ` ${notaProduto}` : ''}`,
-      }).catch((erro: unknown) => {
+      }, { professionalId: professionalId ?? null }).catch((erro: unknown) => {
         console.error(JSON.stringify({ level: 'error', event: 'push_equipe_falhou', tenantId: tenant.id }), erro)
       }),
     )

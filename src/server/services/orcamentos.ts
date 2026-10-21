@@ -194,7 +194,7 @@ async function transicaoPublica(
     throw new AppError('INVALID_TRANSITION', { message: 'Esse orçamento não está mais esperando resposta.' })
   }
 
-  await notificarEquipe(db, quote.tenant_id, notificacao).catch(() => {
+  await notificarEquipe(db, quote.tenant_id, notificacao, { professionalId: null }).catch(() => {
     // best-effort — igual ao resto do produto (mensageria.ts), notificação nunca trava a resposta do cliente
   })
 
