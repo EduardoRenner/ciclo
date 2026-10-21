@@ -29,7 +29,7 @@
  * sem supor o gênero de ninguém.
  */
 
-export type MotivoPulado = 'opt_out' | 'rate_limited' | 'fora_de_janela' | 'falha_de_envio'
+export type MotivoPulado = 'opt_out' | 'sem_consentimento' | 'rate_limited' | 'fora_de_janela' | 'falha_de_envio'
 
 const JANELA_INICIO = 8
 const JANELA_FIM = 21
@@ -48,6 +48,12 @@ const FRASES: Record<string, { uma: string; varias: string }> = {
     uma: 'pediu para não receber, ou está sem telefone cadastrado.',
     varias: 'pediram para não receber, ou estão sem telefone cadastrado.',
   },
+  // docs/112 EXP-A08: chamar de volta é marketing e pede consentimento. Pelo WhatsApp dela, com um
+  // toque no "Chamar", a profissional continua podendo falar com quem ela atende.
+  sem_consentimento: {
+    uma: 'não autorizou receber convite para voltar; dá para chamar pelo seu WhatsApp, no "Chamar".',
+    varias: 'não autorizaram receber convite para voltar; dá para chamar pelo seu WhatsApp, no "Chamar".',
+  },
   falha_de_envio: {
     uma: 'não recebeu; tentar de novo agora não resolve.',
     varias: 'não receberam; tentar de novo agora não resolve.',
@@ -63,7 +69,7 @@ function frase(motivo: string, quantas: number): string {
 }
 
 /** A ordem é a da ação: primeiro o que a pessoa resolve sozinha, por último o que não depende dela. */
-const ORDEM: readonly string[] = ['fora_de_janela', 'rate_limited', 'opt_out', 'falha_de_envio']
+const ORDEM: readonly string[] = ['fora_de_janela', 'rate_limited', 'opt_out', 'sem_consentimento', 'falha_de_envio']
 
 /**
  * `motivos` é a lista crua de `skipped[].reason` — uma entrada por pessoa pulada, códigos

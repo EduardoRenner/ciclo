@@ -81,7 +81,7 @@ async function criarClienteEmCiclo(nome: string, opcoes: { state: Database['publ
   const telefone = `+551198877${String(contadorTelefone).padStart(4, '0')}`
   const cliente = await svc
     .from('clients')
-    .insert({ tenant_id: tenantId, name: nome, phone_e164: telefone, whatsapp_opt_out: opcoes.optOut ?? false })
+    .insert({ tenant_id: tenantId, name: nome, phone_e164: telefone, whatsapp_opt_out: opcoes.optOut ?? false, marketing_opt_in: true })
     .select('id')
     .single()
   if (cliente.error) throw cliente.error

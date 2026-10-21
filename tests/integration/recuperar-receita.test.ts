@@ -88,7 +88,14 @@ let contadorTelefone = 0
  */
 async function criarClienteEmCiclo(
   nome: string,
-  opcoes: { state: Database['public']['Enums']['cycle_state']; valueAtRiskCents: number; profitAtRiskCents?: number; optOut?: boolean },
+  opcoes: {
+    state: Database['public']['Enums']['cycle_state']
+    valueAtRiskCents: number
+    profitAtRiskCents?: number
+    optOut?: boolean
+    /** docs/112 EXP-A08: chamar de volta é marketing e pede consentimento. Os casos daqui o declaram. */
+    marketing?: boolean
+  },
 ) {
   contadorTelefone++
   // Telefone único por cliente: `clients_unique_phone` (tenant_id, phone_e164) rejeitaria o
@@ -96,7 +103,13 @@ async function criarClienteEmCiclo(
   const telefone = `+551198899${String(contadorTelefone).padStart(4, '0')}`
   const cliente = await svc
     .from('clients')
-    .insert({ tenant_id: tenantId, name: nome, phone_e164: telefone, whatsapp_opt_out: opcoes.optOut ?? false })
+    .insert({
+      tenant_id: tenantId,
+      name: nome,
+      phone_e164: telefone,
+      whatsapp_opt_out: opcoes.optOut ?? false,
+      marketing_opt_in: opcoes.marketing ?? true,
+    })
     .select('id')
     .single()
   if (cliente.error) throw cliente.error
@@ -162,6 +175,38 @@ describe('listarParaRecuperar', () => {
 })
 
 describe('enviarParaRecuperar', () => {
+  /*
+    docs/112 EXP-A08 (achado D11): a campanha manual (`crm.ts`) só chama quem tem
+    `marketing_opt_in`; este envio em lote, que é o da campanha automática, só olhava o "não quero
+    WhatsApp". Chamar de volta é marketing.
+  */
+  it(
+    'quem não autorizou mensagem de marketing é pulado com o motivo certo; quem autorizou recebe',
+    async () => {
+      const autorizou = await criarClienteEmCiclo('Autorizou Marketing', { state: 'due', valueAtRiskCents: 8_500 })
+      const naoAutorizou = await criarClienteEmCiclo('Sem Consentimento', { state: 'due', valueAtRiskCents: 8_500, marketing: false })
+
+      const resultado = await enviarParaRecuperar(
+        svc,
+        tenantId,
+        TZ,
+        {
+          items: [
+            { clientId: autorizou, serviceId: servicoId },
+            { clientId: naoAutorizou, serviceId: servicoId },
+          ],
+          mode: 'template',
+        },
+        providerQueSempreFunciona(),
+        DENTRO_DA_JANELA,
+      )
+
+      expect(resultado.queued, 'controle positivo: quem autorizou tinha que receber').toBe(1)
+      expect(resultado.skipped).toEqual([{ clientId: naoAutorizou, reason: 'sem_consentimento' }])
+    },
+    30_000,
+  )
+
   it(
     'envia para quem não está em opt-out, pula quem está',
     async () => {

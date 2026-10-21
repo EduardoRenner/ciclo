@@ -267,12 +267,18 @@ export async function enviarParaRecuperar(
 
       const { data: cliente, error: erroCliente } = await db
         .from('clients')
-        .select('name, phone_e164, email, whatsapp_opt_out')
+        .select('name, phone_e164, email, whatsapp_opt_out, marketing_opt_in')
         .eq('id', item.clientId)
         .single()
       if (erroCliente) throw new AppError('INTERNAL', { cause: erroCliente })
       if (cliente.whatsapp_opt_out || !cliente.phone_e164) {
         skipped.push({ clientId: item.clientId, reason: 'opt_out' })
+        continue
+      }
+      // docs/112 EXP-A08: chamar de volta é marketing. A campanha manual (`crm.ts`) já exigia o
+      // consentimento; este envio, que é o da campanha automática, não.
+      if (!cliente.marketing_opt_in) {
+        skipped.push({ clientId: item.clientId, reason: 'sem_consentimento' })
         continue
       }
 
