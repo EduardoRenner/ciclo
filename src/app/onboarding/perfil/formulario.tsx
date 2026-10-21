@@ -27,11 +27,16 @@ const ROTULO_BASE_EM: Record<BaseEm, string> = {
 }
 
 const ROTULO_SISTEMA: Record<SistemaAnterior, string> = {
-  appbarber: 'AppBarber',
   trinks: 'Trinks',
-  belasis: 'Belasis',
-  barbup: 'BarbUp',
   booksy: 'Booksy',
+  avec: 'Avec (Salão VIP, Beauty Date)',
+  gendo: 'Gendo',
+  fresha: 'Fresha',
+  agendapro: 'AgendaPro',
+  agendiva: 'Agendiva',
+  belasis: 'Belasis',
+  appbarber: 'AppBarber',
+  barbup: 'BarbUp',
   outro: 'Outro',
 }
 
