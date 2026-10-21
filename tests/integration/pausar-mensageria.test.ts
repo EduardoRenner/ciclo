@@ -39,6 +39,13 @@ async function criarTenant(nome: string) {
   const slug = `pausar-msg-${marca}`
   const { tenant } = await executarOnboarding(svc, { userId: data.user.id, businessName: nome, vertical: 'barber', slug, timezone: TZ })
   tenants.push(tenant.id)
+  // docs/112 EXP-A01: sem o dial no nível 3 o lembrete nunca é elegível, e o "pausado não aparece"
+  // daqui passaria vazio. O que este arquivo mede é o interruptor de pausa, não o dial.
+  const { error: erroDial } = await svc
+    .from('tenants')
+    .update({ settings: { automacoes: { lembrete_de_agendamento: 3 } } })
+    .eq('id', tenant.id)
+  if (erroDial) throw new Error(`não deu para ligar o dial: ${erroDial.message}`)
   return tenant.id
 }
 

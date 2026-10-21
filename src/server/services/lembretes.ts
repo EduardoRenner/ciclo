@@ -1,3 +1,4 @@
+import { fazSozinha } from '@/core/automacoes/config'
 import { lembretesDevidos } from '@/core/reminders/schedule'
 import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import { gerarTokenConfirmacao } from '@/server/services/confirmacao-token'
@@ -87,6 +88,8 @@ export async function identificarLembretesPendentes(db: Cliente, now: string): P
     // Interruptor manual do dono (F0, docs/25-ESTRATEGIA-E-EXECUCAO.md) — o teto diário
     // (mensageria.ts) limita volume, isto aqui é "não mandar nada", ligado por escolha do dono.
     if (lerMensageria(linha.tenants.settings).paused) continue
+    // docs/112 EXP-A01: o dial de Automações. Só sai sozinho no "Faz e me conta" (nível 3).
+    if (!fazSozinha(linha.tenants.settings, 'lembrete_de_agendamento')) continue
     // Confirmação transacional passa por cima de opt-out de marketing (H110),
     // mas sem telefone não tem para onde mandar — nem WhatsApp nem SMS existe.
     if (!linha.clients.phone_e164) continue

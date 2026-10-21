@@ -86,7 +86,11 @@ export const AUTOMACOES: readonly Automacao[] = [
     descricao: 'A cada atendimento concluído, os pontos entram sozinhos, sem ninguém lançar na mão.',
     nivelMaximo: 3,
     rota: null,
-    motivoDoTeto: 'Escreve só na ficha de quem foi atendido, e não manda mensagem.',
+    // docs/112 EXP-A01, padrão provisório (Do Vitor): o dial desta não tinha leitor, e "Só me avisa"
+    // lançava pontos do mesmo jeito. Até ele decidir se o nível deve mudar o comportamento, o dial
+    // sai e a tela diz o que acontece de verdade: segue o programa de pontos.
+    sempreLigada: true,
+    motivoDoTeto: 'Os pontos entram sozinhos quando o programa de pontos está ligado. Para parar, desligue o programa.',
   },
   {
     chave: 'alertas_de_estoque',
