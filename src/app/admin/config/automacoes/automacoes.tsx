@@ -97,8 +97,8 @@ export default function Automacoes({ automacoes, config }: { automacoes: Automac
 
             {!roda ? (
               <p className="text-secundario text-txt-3">
-                Está pronta, mas ainda não roda sozinha: falta ligar o envio no WhatsApp. Enquanto isso, ela aparece
-                para você resolver na mão.
+                Está pronta, mas ainda não roda sozinha: {a.motivoDeParada ?? 'ainda não está agendada'}. Enquanto
+                isso, ela aparece para você resolver na mão.
               </p>
             ) : null}
 

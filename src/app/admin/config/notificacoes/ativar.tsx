@@ -156,8 +156,12 @@ export default function AtivarPush() {
 
   return (
     <Card>
-      <p className="text-corpo font-semibold">Lembretes e alertas no aparelho</p>
-      <p className="mt-1 text-secundario text-txt-2">Receba avisos mesmo com o app fechado.</p>
+      {/* docs/112 EXP-A02: dizia "Lembretes e alertas", e o aparelho só recebe pedido novo,
+          cancelamento pelo link e resposta de orçamento. Prometer lembrete que não chega é pior que não ter. */}
+      <p className="text-corpo font-semibold">Avisos de pedidos e cancelamentos no aparelho</p>
+      <p className="mt-1 text-secundario text-txt-2">
+        Quando alguém pede horário, cancela pelo link ou responde um orçamento, o aviso chega mesmo com o app fechado.
+      </p>
       {erro ? <p className="mt-2 text-secundario text-bad">{erro}</p> : null}
       {estado === 'inscrito' ? (
         <Button variante="secondary" className="mt-3" onClick={desativar} carregando={pendente}>
