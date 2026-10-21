@@ -100,18 +100,19 @@ export const SLUGS_DE_DEMONSTRACAO_PARA_TESTE = SLUGS_DE_DEMONSTRACAO
  * Ficam de fora `teste-*` (degrau de plano), e os legados `dom-rocha`/`ruivo-barber`/`lang-*`, que
  * não existem mais em produção (conferido por requisição: respondem 404).
  *
- * **A ORDEM é a preferência**, e é decisão de produto: barbearia primeiro, porque é onde o esforço
- * de venda está (`docs/18` §B.2), e dentro dela a de conteúdo mais cheio primeiro — uma vitrine com
- * três profissionais demonstra mais que uma com um. Quem resolve pega o primeiro que existir de
- * fato no banco (`server/services/demonstracao.ts`), então a ordem é o que decide na prática.
+ * **A ORDEM é a preferência**, e é decisão de produto: salão primeiro, porque o público é a beleza
+ * feminina desde o `docs/108-norte` (a barbearia saiu do alvo em 16/10; até 21/10 esta lista abria
+ * na Barbearia Dom Estilo, `docs/112` EXP-S01). As barbearias ficam como reserva, depois de todos os
+ * salões. Quem resolve pega o primeiro que existir de fato no banco (`server/services/demonstracao.ts`),
+ * então a ordem é o que decide na prática.
  */
 export const SLUGS_DE_VITRINE: readonly string[] = [
-  'demo-dom-estilo',
-  'demo-corte-fino',
-  'demo-navalha-de-ouro',
   'demo-studio-bella',
   'demo-salao-encanto',
   'demo-espaco-vitoria',
+  'demo-dom-estilo',
+  'demo-corte-fino',
+  'demo-navalha-de-ouro',
   /*
     Último recurso, e não engano: `dom-rocha` não existe mais em PRODUÇÃO (404, conferido por
     requisição), mas existe no banco de desenvolvimento — que é outro projeto Supabase, medido em

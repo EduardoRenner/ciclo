@@ -51,7 +51,7 @@ const SLUGS_COM_PRINT = [
   "demo-salao-encanto",
   "demo-espaco-vitoria",
 ];
-const SLUG_PADRAO = "demo-dom-estilo";
+const SLUG_PADRAO = "demo-studio-bella"; // docs/112 EXP-S01: o print padrão é de salão
 
 export default function PainelDoDonoExemplo({ slug }: { slug: string }) {
   const [aba, setAba] = useState<AbaInterna>("recuperar");
