@@ -109,7 +109,7 @@ export default function EditorPlanos({
             rotulo="Nome do plano"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            placeholder="Corte ilimitado"
+            placeholder="2 manutenções por mês"
           />
           <MoneyInput rotulo="Preço mensal" centavos={precoCentavos} aoMudar={setPrecoCentavos} />
 

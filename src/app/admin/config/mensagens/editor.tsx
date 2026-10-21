@@ -15,11 +15,11 @@ type Modelo = { id: string; slug: string; title: string; body: string; active: b
 
 /** Exemplo fixo só para a prévia — a pessoa precisa VER como o texto chega, não imaginar. */
 const EXEMPLO = {
-  nome: 'Bruno Almeida',
-  servico: 'Corte + barba',
+  nome: 'Fernanda Lima',
+  servico: 'Manutenção de cílios',
   data: '12/09',
   hora: '15:30',
-  valor: 'R$ 70,00',
+  valor: 'R$ 120,00',
 }
 
 export default function EditorModelos({ iniciais, nomeDoNegocio }: { iniciais: Modelo[]; nomeDoNegocio: string }) {

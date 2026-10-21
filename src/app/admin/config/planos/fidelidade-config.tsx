@@ -113,7 +113,7 @@ export default function EditorFidelidade({
           <input
             value={rewardLabel}
             onChange={(e) => setRewardLabel(e.target.value)}
-            placeholder="Corte grátis"
+            placeholder="Design de sobrancelha grátis"
             className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
           />
         </label>

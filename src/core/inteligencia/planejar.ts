@@ -209,7 +209,7 @@ export function planejar(ent: Entendimento, ctx: ContextoDoMotor): Passo {
       // Dia extra: o dado é a procura em dia fechado (docs/84 §2.2), nunca um R$.
       if (/\babr(ir|isse|o)\b|dia a mais/.test(t)) return seDisponivel(ctx, 'procuras_sem_horario')
       const servico = e.trechos.map((x) => x.palavras.filter((p) => !/\d/.test(p)).join(' ')).filter(Boolean).join(' ')
-      if (!servico) return texto('De qual serviço? Por exemplo: "e se eu subir o corte para R$ 55?"')
+      if (!servico) return texto('De qual serviço? Por exemplo: "e se eu subir a manutenção para R$ 130?"')
       // "de R$ 45 para R$ 55": o preço novo é o ÚLTIMO valor da frase, não o primeiro.
       const novo = e.valoresCents && e.valoresCents.length > 0 ? e.valoresCents.at(-1) : e.valorCents
       if (novo === undefined && e.percentualBps === undefined) return texto(`Para quanto? Por exemplo: "e se eu subir ${servico} para R$ 55?" ou "10% a mais".`)

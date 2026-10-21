@@ -293,7 +293,7 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
             <input
               value={motivoPontos}
               onChange={(e) => setMotivoPontos(e.target.value)}
-              placeholder="Corte de hoje, resgate de brinde..."
+              placeholder="Manutenção de hoje, resgate de brinde..."
               className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
             />
           </label>

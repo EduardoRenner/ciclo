@@ -314,7 +314,7 @@ export default function FormularioQuemJaAtendo({ servicos, servicoPadrao, temCli
               value={textoColado}
               onChange={(e) => setTextoColado(e.target.value)}
               rows={6}
-              placeholder={'Marcos - 49 99999-0001\nRafael\nDona Alzira'}
+              placeholder={'Fernanda - 49 99999-0001\nBia da academia\nDona Alzira'}
             />
             <label className="flex flex-col gap-1">
               <span className="text-label font-semibold text-txt-2">Quando essas pessoas vieram, mais ou menos?</span>
