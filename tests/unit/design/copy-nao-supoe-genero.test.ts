@@ -272,6 +272,13 @@ describe('a copy não supõe que quem usa o produto é homem', () => {
     const prompt = promptDeSistema('2026-09-03')
     expect(/sem supor o g[êe]nero|neutr/i.test(prompt), 'o prompt não diz nada sobre gênero').toBe(true)
   })
+
+  // docs/112 EXP-S16: o próprio prompt falava de quem usa como "ele" ("Se ele precisar, ele pergunta"),
+  // ensinando ao modelo o masculino que a regra de cima proíbe.
+  it('o prompt do assistente não chama quem usa de "ele"', () => {
+    const prompt = promptDeSistema('2026-09-03')
+    expect(prompt.match(/\bele\b/gi) ?? [], 'o prompt chama quem usa de "ele"').toEqual([])
+  })
 })
 
 /**

@@ -37,7 +37,7 @@ export function GET(): Response {
 
   const texto = `# CICLO
 
-> Sistema de gestão para quem atende com hora marcada: agenda, página de agendamento própria,
+> Agenda e retorno de clientes para salão e beleza: agenda, página de agendamento própria,
 > ficha de cliente, comanda e caixa. Feito para celular, em português do Brasil.
 
 O diferencial é o Motor de Ciclo: a partir do intervalo entre as visitas de cada cliente, o CICLO
