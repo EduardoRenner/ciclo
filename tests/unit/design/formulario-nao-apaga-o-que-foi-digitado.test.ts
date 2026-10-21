@@ -41,8 +41,9 @@ const TELAS = formularios(RAIZ)
 
 describe('o leitor deste teste', () => {
   it('acha os formulários de autenticação — não passa por não ter olhado nada', () => {
-    expect(TELAS.length, 'nenhum formulário encontrado em (auth)').toBeGreaterThanOrEqual(4)
-    for (const obrigatoria of ['entrar', 'cadastro', 'nova-senha', 'recuperar-senha']) {
+    expect(TELAS.length, 'nenhum formulário encontrado em (auth)').toBeGreaterThanOrEqual(3)
+    // docs/114 L-03: `recuperar-senha` deixou de ter formulário (sem e-mail, a senha nova é com a equipe).
+    for (const obrigatoria of ['entrar', 'cadastro', 'nova-senha']) {
       expect(
         TELAS.some((t) => t.includes(`/${obrigatoria}/`)),
         `${obrigatoria} saiu do alcance da guarda`,

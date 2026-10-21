@@ -209,7 +209,7 @@ export default function ListaProfissionais({
 
   function enviarConvite(formData: FormData) {
 
-    const email = String(formData.get('email') ?? '').trim() || undefined
+
 
     const telefone = telefoneParaE164(String(formData.get('telefone') ?? '')) ?? undefined
 
@@ -223,7 +223,7 @@ export default function ListaProfissionais({
 
       try {
 
-        const resultado = (await postar('/api/v1/memberships/invite', { email, telefone, role, displayName })) as {
+        const resultado = (await postar('/api/v1/memberships/invite', { telefone, role, displayName })) as {
 
           invite: Convite
 
@@ -622,6 +622,7 @@ export default function ListaProfissionais({
             <span className="text-label font-semibold text-txt-2">WhatsApp de quem você está chamando</span>
             <input
               name="telefone"
+              required
               type="tel"
               inputMode="tel"
               autoComplete="off"
@@ -630,15 +631,7 @@ export default function ListaProfissionais({
             />
           </label>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-label font-semibold text-txt-2">Ou o e-mail (se a pessoa entra por e-mail)</span>
-            <input
-              name="email"
-              type="email"
-              autoComplete="off"
-              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-            />
-          </label>
+          {/* docs/114 L-03 (decisão do Vitor, 21/10): sem e-mail em lugar nenhum. O convite é pelo WhatsApp. */}
 
 
 

@@ -38,7 +38,7 @@ export default function FormularioEntrar() {
       const resposta = await fetch('/api/v1/auth/login', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email: formData.get('email'), password: formData.get('password') }),
+        body: JSON.stringify({ identificador: formData.get('identificador'), password: formData.get('password') }),
       })
       const json = (await resposta.json()) as {
         data?: { tenants: unknown[]; mfaRequired?: boolean; factorId?: string }
@@ -102,7 +102,12 @@ export default function FormularioEntrar() {
       }}
       className="flex w-full max-w-sm flex-col gap-3"
     >
-      <Input rotulo="E-mail" name="email" type="email" autoComplete="email" required />
+      {/*
+        docs/114 L-03: o WhatsApp é o login. Teclado comum (não `type="tel"`) de propósito: a conta
+        criada antes de 21/10 entra digitando o e-mail neste mesmo campo, e o teclado de número não
+        tem "@". `EsquemaLogin` decide pelo "@".
+      */}
+      <Input rotulo="Seu WhatsApp" name="identificador" autoComplete="username" placeholder="(11) 99999-9999" required />
       <Input rotulo="Senha" name="password" type="password" autoComplete="current-password" required />
       {erro ? (
         <p role="alert" className="text-secundario text-bad">

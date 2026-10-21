@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
-import { loginPorNumeroDisponivel } from '@/server/auth/login-por-numero'
+import { ENTRAR_COM_CODIGO, loginPorNumeroDisponivel } from '@/server/auth/login-por-numero'
 
 import { semComentarios } from '../../helpers/fonte'
 
@@ -36,10 +36,17 @@ describe('o login por número só é porta de entrada quando o código sai', () 
 
   it('a tela de entrar passa a decisão para o formulário, e o formulário obedece', () => {
     const pagina = semComentarios(readFileSync('src/app/(auth)/entrar/page.tsx', 'utf8'))
-    expect(pagina).toMatch(/numeroDisponivel=\{loginPorNumeroDisponivel\(\)\}/)
+    // docs/114 L-03: além do envio estar configurado, o código só volta à tela com `ENTRAR_COM_CODIGO`.
+    expect(pagina).toMatch(/numeroDisponivel=\{ENTRAR_COM_CODIGO && loginPorNumeroDisponivel\(\)\}/)
     const jeitos = semComentarios(readFileSync('src/app/(auth)/entrar/jeitos-de-entrar.tsx', 'utf8'))
     expect(jeitos, 'sem envio, o formulário de número não pode aparecer').toMatch(
       /if \(!numeroDisponivel\) return <FormularioEntrar \/>/,
     )
+  })
+})
+
+describe('lançamento sem a Meta (docs/114 L-03)', () => {
+  it('o código pelo WhatsApp está fora da tela: entra com número e senha', () => {
+    expect(ENTRAR_COM_CODIGO).toBe(false)
   })
 })

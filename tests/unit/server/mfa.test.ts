@@ -214,7 +214,8 @@ describe('POST /api/v1/auth/login · desafio de MFA', () => {
     }
   }
 
-  const CORPO_LOGIN = { email: USUARIO.email, password: 'senha-correta' }
+  // docs/114 L-03: o campo é o WhatsApp, que também aceita o e-mail de conta antiga (o caso desta conta).
+const CORPO_LOGIN = { identificador: USUARIO.email, password: 'senha-correta' }
 
   it('conta com TOTP verificado pede o código em vez de devolver os tenants', async () => {
     vi.mocked(criarClienteDoUsuario).mockResolvedValue(

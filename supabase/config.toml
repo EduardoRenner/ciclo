@@ -275,7 +275,10 @@ content_path = "./supabase/templates/confirmar-cadastro.html"
 # e manda pelo WhatsApp oficial. Em produção isto se liga no painel (Authentication > Providers >
 # Phone), não aqui: este arquivo só governa o stack local. Runbook: docs/runbooks/login-por-numero.md
 enable_signup = true
-enable_confirmations = true
+# docs/114 L-03 (decisão do Vitor, 21/10): cadastro com número + senha, sem e-mail. Sem a Meta ligada
+# o código não sai, então o número entra SEM verificação e a conta nasce com sessão. Volta a `true`
+# quando o envio pelo WhatsApp estiver no ar. Em produção é o mesmo interruptor, no painel.
+enable_confirmations = false
 template = "Seu código do CICLO é {{ .Code }}"
 # Um código a cada 30 s por número. Cada envio custa uma mensagem de autenticação da Meta.
 max_frequency = "30s"

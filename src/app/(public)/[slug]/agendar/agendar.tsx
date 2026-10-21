@@ -236,10 +236,6 @@ export default function Agendar({
   */
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
-  // Opcional: o WhatsApp já é o canal principal (`telefone`), então este campo
-  // nunca bloqueia a confirmação — só existe para quem prefere ser avisado
-  // por e-mail também.
-  const [email, setEmail] = useState("");
   // docs/09-PLATAFORMA.md G3+G13 (P2.5): opcional pra qualquer negócio, não só
   // pra quem "vai até o cliente" — sem geocodificação, é só texto.
   const [endereco, setEndereco] = useState("");
@@ -535,7 +531,6 @@ export default function Agendar({
             startsAt: slotEscolhido.startsAt,
             name: nome,
             phone: telefone,
-            email: email.trim() || undefined,
             address: endereco.trim() || undefined,
             website: website || undefined,
             ind: ind || undefined,
@@ -1134,19 +1129,7 @@ export default function Agendar({
             ajuda={textoDoCanalDeConfirmacao()}
             required
           />
-          {/*
-            Opcional e nunca trava a confirmação — o WhatsApp já é o canal principal
-            (`textoDoCanalDeConfirmacao` acima). Existe só para quem prefere ser avisado também
-            por e-mail; `clients.email` já existe no banco desde a migration base.
-          */}
-          <Input
-            rotulo="E-mail (opcional)"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            inputMode="email"
-          />
+          {/* docs/114 L-03 (decisão do Vitor, 21/10): sem e-mail em lugar nenhum; o campo opcional saiu. */}
           {/* Opcional: pedir endereço sempre (não só de quem "vai até o cliente")
               evita ramificar a tela por eixo de profissão só pra isto — o campo
               some sozinho da conversa se ninguém preencher. */}

@@ -28,14 +28,15 @@ const LIMITE_POR_CONTA = { limite: 10, janelaSegundos: 900 }
 export const POST = rota(async (req) => {
   await limitarRotaPublica(req, 'login', { limite: 30, janelaSegundos: 300 })
 
-  const { email, password } = await lerCorpo(req, EsquemaLogin)
+  // docs/114 L-03: o WhatsApp é o login; o e-mail só chega aqui de conta criada antes de 21/10.
+  const { identificador, password } = await lerCorpo(req, EsquemaLogin)
 
-  const chaveConta = createHash('sha256').update(email.toLowerCase()).digest('hex')
+  const chaveConta = createHash('sha256').update('email' in identificador ? identificador.email : identificador.phone).digest('hex')
   const porConta = await limitador(`login:conta:${chaveConta}`, LIMITE_POR_CONTA)
   if (!porConta.permitido) throw AppError.limiteDeTaxa(LIMITE_POR_CONTA.janelaSegundos)
 
   const db = await criarClienteDoUsuario()
-  const { data, error } = await db.auth.signInWithPassword({ email, password })
+  const { data, error } = await db.auth.signInWithPassword({ ...identificador, password })
 
   if (error || !data.session) {
     if (error?.status === 429) throw AppError.limiteDeTaxa(60)
@@ -56,7 +57,7 @@ export const POST = rota(async (req) => {
 
     // Uma única mensagem para "e-mail não existe" e "senha errada": separar as
     // duas entrega a lista de quem tem conta.
-    throw new AppError('UNAUTHENTICATED', { message: 'E-mail ou senha não conferem.' })
+    throw new AppError('UNAUTHENTICATED', { message: 'WhatsApp ou senha não conferem.' })
   }
 
   // Senha certa não é a sessão inteira quando a conta tem segundo fator: `signInWithPassword`

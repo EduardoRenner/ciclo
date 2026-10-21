@@ -46,7 +46,6 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'POST v1/auth/mfa/verify': 'fora',
   'POST v1/auth/password/forgot': 'fora',
   'POST v1/auth/password/reset': 'fora',
-  'POST v1/auth/signup/resend': 'fora',
   'POST v1/auth/signup': 'fora',
   'POST v1/billing/assinar': 'permite',
   'POST v1/billing/cancelar': 'permite',

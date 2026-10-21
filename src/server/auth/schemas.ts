@@ -14,8 +14,11 @@ export const TelefoneBR = z
   .refine((digitos) => /^(55)?\d{10,11}$/.test(digitos), 'Digite o telefone com DDD, como (11) 99999-9999.')
   .transform((digitos) => `+${digitos.startsWith('55') ? digitos : `55${digitos}`}`)
 
+/**
+ * docs/114 L-03 (decisão do Vitor, 21/10): a conta nasce com nome, WhatsApp e senha. Sem e-mail, nem
+ * opcional: o número é o login.
+ */
 export const EsquemaCadastro = z.object({
-  email: z.email('Digite um e-mail válido.'),
   // O tamanho mínimo real vem de `exigirSenhaForte`, que tem a mensagem certa
   // para cada motivo. Aqui só garantimos que veio string não vazia.
   password: z.string().min(1, 'Escolha uma senha.'),
@@ -38,8 +41,26 @@ export const EsquemaEntrarComCodigo = z.object({
     .regex(/^\d{6}$/, 'O código tem 6 números.'),
 })
 
+/**
+ * docs/114 L-03: entra com o WhatsApp e a senha. O mesmo campo aceita o e-mail de quem criou a conta
+ * antes de 21/10, para essas contas continuarem entrando sem um campo de e-mail na tela.
+ */
 export const EsquemaLogin = z.object({
-  email: z.email('Digite um e-mail válido.'),
+  identificador: z
+    .string()
+    .trim()
+    .min(1, 'Digite seu WhatsApp.')
+    .transform((bruto, ctx): { email: string } | { phone: string } => {
+      if (bruto.includes('@')) {
+        const email = z.email().safeParse(bruto)
+        if (email.success) return { email: email.data.toLowerCase() }
+      } else {
+        const telefone = TelefoneBR.safeParse(bruto)
+        if (telefone.success) return { phone: telefone.data }
+      }
+      ctx.addIssue({ code: 'custom', message: 'Digite o WhatsApp com DDD, como (11) 99999-9999.' })
+      return z.NEVER
+    }),
   password: z.string().min(1, 'Digite sua senha.'),
 })
 

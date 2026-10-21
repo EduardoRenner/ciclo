@@ -19,30 +19,37 @@ export const POST = rota(async (req) => {
    */
   await limitarRotaPublica(req, 'cadastro', { limite: 5, janelaSegundos: 600 })
 
-  const { email, password, fullName, phone } = await lerCorpo(req, EsquemaCadastro)
+  const { password, fullName, phone } = await lerCorpo(req, EsquemaCadastro)
 
   await exigirSenhaForte(password)
 
-  // docs/82 §6: a origem vai junto com a conta. O link de confirmação costuma abrir em OUTRO
-  // navegador (o do app de e-mail), sem o cookie — sem isto a atribuição se perdia justo no caminho
-  // mais comum do celular. Relida por `lerOrigem`: só entra o que já passou pelo filtro.
+  // docs/82 §6: a origem vai junto com a conta. Relida por `lerOrigem`: só entra o que já passou pelo filtro.
   const origem = lerOrigem((await cookies()).get(COOKIE_ORIGEM)?.value)
 
+  /*
+    docs/114 L-03 (decisão do Vitor, 21/10): número + senha, sem e-mail. Com `[auth.sms]
+    enable_confirmations = false` o número entra sem código (o código depende da Meta) e o `signUp`
+    devolve a sessão na hora. Risco aceito e anotado: sem verificar, dá para cadastrar o número de
+    outra pessoa; a verificação volta quando o envio pelo WhatsApp estiver no ar.
+  */
   const db = await criarClienteDoUsuario()
   const { data, error } = await db.auth.signUp({
-    email,
+    phone,
     password,
     options: {
-      // A trigger `on_auth_user_created` (migration 0006) lê estes campos para
-      // montar a linha de `profiles`.
+      // A trigger `on_auth_user_created` (migrations 0006 e 0142) lê estes campos para montar `profiles`.
       data: { full_name: fullName, phone, ...(origem ? { origem: serializarOrigem(origem) } : {}) },
-      // Sem isso, o link do e-mail de confirmação usa o Site URL configurado
-      // no painel do Supabase — que aponta pra localhost até alguém trocar lá.
-      // `NEXT_PUBLIC_APP_URL` já é a variável certa (é o que o resto do app usa
-      // pra montar link absoluto, ver `EsquemaEsqueciSenha`/mensageria).
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
     },
   })
+
+  /*
+    Número já cadastrado: diz que já tem conta e manda entrar. Isto conta a quem digita que o número
+    tem conta no CICLO; com o número como login não há como esconder sem deixar a dona de uma conta
+    antiga presa num "conta criada" que não abre. O limite por IP acima segura a varredura.
+  */
+  if (error?.code === 'phone_exists' || error?.code === 'user_already_exists') {
+    throw AppError.validacao({ phone: 'Esse número já tem conta no CICLO. Entre com ele e a sua senha.' })
+  }
 
   // APR-025: cada recusa com a sua resposta — ver `desfechoDoCadastro`.
   const desfecho = desfechoDoCadastro(error)
@@ -50,25 +57,18 @@ export const POST = rota(async (req) => {
   if (desfecho === 'senha_fraca') {
     throw AppError.validacao({ password: `Essa senha é curta ou fraca demais. Use pelo menos ${SENHA_MINIMA} caracteres, sem palavra óbvia.` })
   }
-  if (desfecho === 'email_invalido') throw AppError.validacao({ email: 'Confira o e-mail: ele não parece completo.' })
-  if (desfecho === 'envio_indisponivel') {
-    // LOJA-02: alarme próprio, sem o e-mail da pessoa no log; a tela diz que o envio falhou em vez de "mandamos o link".
-    console.error(JSON.stringify({ level: 'error', event: 'signup_email_nao_enviado', status: error?.status ?? null, code: error?.code ?? null }))
-    throw new AppError('EMAIL_UNAVAILABLE')
-  }
-  if (desfecho === 'falha') {
+  if (desfecho !== 'aceito') {
     console.warn(JSON.stringify({ level: 'warn', event: 'signup_recusado', status: error?.status ?? null, code: error?.code ?? null }))
     throw new AppError('INTERNAL', { cause: error })
   }
 
-  // docs/108 M8: com a confirmação de e-mail desligada no Supabase, o `signUp` já devolve a sessão (o
-  // cliente do servidor grava o cookie) e a pessoa entra direto, sem depender de e-mail. O público de
-  // 40+ não abre e-mail, e sem SMTP o e-mail nem sai. E-mail já cadastrado nunca volta com sessão, então
-  // isto não distingue quem tem conta.
   if (data?.session) return { status: 'conta_criada' }
 
-  // Daqui para baixo a resposta é idêntica para e-mail novo e e-mail já cadastrado (o
-  // `desfechoDoCadastro` devolve `aceito` para os dois). A diferença transformaria o cadastro num
-  // verificador de quem tem conta no CICLO.
-  return { status: 'confirmacao_enviada' }
+  /*
+    Sem sessão e sem erro é o Auth esperando um código que não vai sair: a confirmação de telefone
+    está ligada no painel (passo do docs/118). Dizer "conta criada" deixaria a pessoa presa no
+    login; o alarme é o que faz alguém consertar o interruptor.
+  */
+  console.error(JSON.stringify({ level: 'error', event: 'signup_numero_sem_sessao' }))
+  throw new AppError('INTERNAL')
 })

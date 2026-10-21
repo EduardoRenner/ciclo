@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+import { CICLO_COBRANCA } from '@/core/billing/cobranca'
 import { ofertaDoCadastro } from '@/core/billing/prelancamento'
 import Selo from '@/components/shell/selo'
 import TelaPublica from '@/components/shell/tela-publica'
@@ -48,9 +49,16 @@ export default async function PaginaCadastro({ searchParams }: { searchParams: P
           {daCalculadora
             ? 'Crie a conta, escreva quem você lembra e o CICLO mostra quem passou da hora de voltar. '
             : 'Leva menos de um minuto. '}
-          Você começa com {oferta.chamada[0]?.toLowerCase()}
-          {oferta.chamada.slice(1)}
-          {oferta.aberto ? '. Sem prazo por enquanto.' : `: o último dia é ${oferta.fim}.`}
+          {/* docs/114 L-01: com a cobrança desligada não há teste nem prazo para anunciar. */}
+          {!CICLO_COBRANCA ? (
+            'É grátis no lançamento, sem cartão.'
+          ) : (
+            <>
+              Você começa com {oferta.chamada[0]?.toLowerCase()}
+              {oferta.chamada.slice(1)}
+              {oferta.aberto ? '. Sem prazo por enquanto.' : `: o último dia é ${oferta.fim}.`}
+            </>
+          )}
         </p>
       </div>
       <LoginSocial provedores={provedores} />
