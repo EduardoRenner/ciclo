@@ -15,7 +15,7 @@ import { ImageResponse } from 'next/og'
  */
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
-export const alt = 'CICLO: a agenda que avisa quem parou de voltar'
+export const alt = 'CICLO: a agenda que avisa quem sumiu da manutenção'
 
 export default function Image() {
   return new ImageResponse(
@@ -37,11 +37,11 @@ export default function Image() {
         </div>
 
         <div style={{ fontSize: 74, color: '#f5f5f4', fontWeight: 700, lineHeight: 1.1, marginTop: 36 }}>
-          A agenda que avisa quem parou de voltar
+          A agenda que avisa quem sumiu da manutenção
         </div>
 
         <div style={{ fontSize: 34, color: '#a8a29e', marginTop: 28, lineHeight: 1.35 }}>
-          Agenda, site de agendamento e caixa para quem atende com hora marcada.
+          Para quem faz unha, cílios, sobrancelha e cabelo.
         </div>
       </div>
     ),

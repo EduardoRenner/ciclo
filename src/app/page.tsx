@@ -87,12 +87,12 @@ import type { Metadata } from 'next'
 export const revalidate = 600
 
 export const metadata: Metadata = {
-  title: 'CICLO · a agenda que avisa quem parou de voltar',
+  title: 'CICLO · a agenda que avisa quem sumiu da manutenção',
   description:
-    'Agenda e site de agendamento para quem atende com hora marcada. O CICLO calcula de quanto em quanto tempo cada cliente volta, mostra quem atrasou e te dá a mensagem pronta para chamar.',
+    'Agenda e página de agendamento para quem faz unha, cílios, sobrancelha e cabelo. O CICLO calcula de quanto em quanto tempo cada cliente volta, mostra quem passou do dia e te dá a mensagem pronta para chamar.',
   openGraph: {
-    title: 'CICLO · a agenda que avisa quem parou de voltar',
-    description: 'Para qualquer trabalho que dependa de cliente que volta. O CICLO mostra quem sumiu, há quanto tempo, e quanto vale chamar de volta.',
+    title: 'CICLO · a agenda que avisa quem sumiu da manutenção',
+    description: 'Para quem faz unha, cílios, sobrancelha e cabelo. O CICLO mostra quem passou do dia da manutenção, há quanto tempo, e quanto vale chamar de volta.',
     type: 'website',
     locale: 'pt_BR',
   },
@@ -121,7 +121,7 @@ const RECURSOS = [
     icone: IconeAnel,
     titulo: 'Quem sumiu tem nome',
     texto:
-      'O ritmo é de cada pessoa, não uma média do salão. A lista chama primeiro quem vale mais chamar, com o texto pronto pro WhatsApp.',
+      'O ritmo é de cada cliente, não uma média do estúdio. A lista chama primeiro quem vale mais chamar, com o texto pronto pro seu WhatsApp.',
   },
   {
     icone: Link2,
@@ -175,11 +175,14 @@ const PASSOS = [
  * Os nomes saem de `supabase/migrations/0022_professions_catalog.sql` e `0026_catalogo_profundo.sql`
  * (17 linhas em `professions`), conferidos no arquivo. Não é lista inventada para a página.
  */
+/*
+  20/10/2026 (`docs/109-marca-feminina`): a vitrine passou a abrir pela beleza feminina, que é o
+  foco desde o `docs/108-norte`. As outras profissões continuam no catálogo e no cadastro; aqui
+  ficam três, num grupo só, para quem chega de fora da beleza saber que também serve.
+*/
 const GRUPOS_DE_PROFISSAO: readonly { grupo: string; itens: readonly string[] }[] = [
-  { grupo: 'Beleza', itens: ['Barbearia', 'Cabelo', 'Unhas', 'Cílios', 'Sobrancelhas', 'Depilação', 'Estética', 'Tatuagem'] },
-  { grupo: 'Casa', itens: ['Faxina e diarista', 'Eletricista', 'Encanamento', 'Jardinagem'] },
-  { grupo: 'Saúde, aula e treino', itens: ['Psicologia', 'Aula particular', 'Personal trainer'] },
-  { grupo: 'Pet e eventos', itens: ['Banho e tosa', 'Fotografia'] },
+  { grupo: 'Beleza', itens: ['Unhas', 'Cílios', 'Sobrancelhas', 'Cabelo', 'Depilação', 'Estética'] },
+  { grupo: 'Também atende', itens: ['Faxina e diarista', 'Barbearia', 'Tatuagem'] },
 ]
 
 /**
@@ -342,7 +345,7 @@ export default async function Home() {
           afirmado.
         */}
         <h1 className="font-display text-numero font-semibold sm:text-[2.75rem] sm:leading-[1.05] sm:tracking-[-0.02em]">
-          Quantos clientes pararam de voltar sem você notar?
+          Quanta gente sumiu da manutenção sem você notar?
         </h1>
         {/*
           `docs/20-COPY-PLANO.md` §D.3, variante C — recomendada e até agora não implementada. Não
@@ -378,8 +381,8 @@ export default async function Home() {
           que entra é o fato verificável; o slogan é o resumo dele para quem já entendeu.
         */}
         <p className="mt-4 max-w-[46ch] text-corpo text-txt-2">
-          Para qualquer trabalho que dependa de cliente que volta. Quem for marcar abre no navegador: sem baixar app
-          e sem ver seus concorrentes.
+          Para quem faz unha, cílios, sobrancelha e cabelo. Quem for marcar abre no navegador: sem baixar app e
+          sem ver a concorrência.
         </p>
         {/*
           TICKET-UX17: pedido do usuário foi uma auditoria de copywriting na página inteira. Dois
@@ -445,7 +448,7 @@ export default async function Home() {
         <Link href="/calculadora" className="mt-2 flex min-h-12 items-center text-secundario text-txt-2">
           <span>
             Ainda não quer criar conta?{' '}
-            <span className="font-semibold text-acc-2 underline underline-offset-2">Veja quanto os clientes que sumiram custam por mês</span>
+            <span className="font-semibold text-acc-2 underline underline-offset-2">Veja quanto custa por mês quem sumiu</span>
           </span>
         </Link>
         {/*
@@ -609,7 +612,7 @@ export default async function Home() {
           <span className="mx-2 hidden sm:inline" aria-hidden>
             ·
           </span>
-          CICLO · para quem atende com hora marcada
+          CICLO · para quem vive de cliente que volta
         </span>
       </footer>
       </main>

@@ -122,7 +122,7 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
             rotulo="Sua profissão"
             value={buscaProfissao}
             onChange={(e) => setBuscaProfissao(e.target.value)}
-            placeholder="Ex.: barbeiro, diarista, personal…"
+            placeholder="Ex.: manicure, lash, sobrancelha…"
           />
           <div className="flex max-h-[220px] flex-col gap-1 overflow-y-auto rounded-[var(--radius-sm)] border border-line-2 p-1">
             {filtradas.length === 0 ? (

@@ -51,7 +51,7 @@ Rosé mais forte (`#d98fa0`) e mais seco (`#c98a95`) também foram medidos. O pr
 ## 5. Copy: o que muda e o que não muda
 
 - **A pessoa que usa o CICLO continua tratada sem gênero** ("você", "que bom te ver"). A guarda `copy-nao-supoe-genero` fica como está: há homem fazendo unha e sobrancelha, e o produto segue aberto a quem chegar.
-- **O feminino entra pelo assunto, não pela gramática:** os exemplos, as profissões na ordem certa (unhas, cílios, sobrancelha primeiro), a palavra **manutenção** (que é como ela fala do retorno) e, no marketing da home, **"as clientes"** quando se fala da clientela dela, que nessas profissões é quase toda de mulheres. **Decisão consciente:** "clientes" é substantivo de dois gêneros, e o artigo feminino na home é escolha de marketing, não suposição sobre quem usa o painel.
+- **O feminino entra pelo assunto, não pela gramática:** os exemplos, as profissões na ordem certa (unhas, cílios, sobrancelha primeiro) e a palavra **manutenção** (que é como ela fala do retorno). **Corrigido na implementação:** a primeira versão punha "as clientes" na home, e a guarda `copy-nao-supoe-genero` reprovou (ela também proíbe supor que quem é ATENDIDO é mulher). A guarda ficou: a home diz "quanta gente sumiu da manutenção".
 - **Não brigar com o Gendo na mesma frase.** "Clientes que voltam" já é o título deles. O CICLO fala do que só ele faz: **quem passou do dia da manutenção, quanto isso vale, e chamar pelo seu WhatsApp** (`docs/108-norte/00-decisao.md` §1).
 
 ## Fontes

@@ -46,8 +46,9 @@ entrega a mensagem pronta para chamar de volta.
 
 ## Para quem é
 
-Barbearia, unhas, cílios, sobrancelha, depilação, estética, tatuagem e cabelo. Também serve para
-quem atende com hora marcada fora da beleza — personal trainer, eletricista, faxineira.
+Feito primeiro para a beleza feminina: unhas, cílios, sobrancelha, cabelo, depilação e estética,
+de quem trabalha por conta a quem tem salão com equipe. Também serve para barbearia, tatuagem e quem
+atende com hora marcada fora da beleza, como faxina e personal trainer.
 
 ## O que faz
 
