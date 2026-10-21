@@ -402,6 +402,9 @@ describe('o vocabulário das profissões não supõe o gênero de quem usa o pro
 const SUPOE_MULHER = [
   /\b[Aa]s? clientes?\b/,
   /\b[Dd]as? clientes?\b/,
+  // docs/114 F1 (B6): o possessivo também conjuga. "Cadastre suas clientes" estava no vazio do
+  // Recuperar, e nenhum padrão daqui pegava, porque todos exigiam o artigo.
+  /\b(?:[Ss]uas?|[Mm]inhas?|[Nn]ossas?)\s+clientes?\b/,
   /*
    * O `(?:\(s\))?` no meio, e `sumidas?` na lista, entraram em 2026-09-09 por um achado vivo: a
    * resposta rápida do assistente dizia "3 cliente(s) sumida(s) há mais de 60 dias". A construção
@@ -586,6 +589,9 @@ describe('a copy também não supõe que quem é ATENDIDO é mulher', () => {
       supoeMulherEm('Cadastre a primeira cliente para começar a marcar horários.'),
       'não pegou o artigo separado de "cliente" por um adjetivo',
     ).toBe(true)
+    // O possessivo (docs/114 F1, B6): a frase real do vazio do Recuperar.
+    expect(supoeMulherEm('Cadastre suas clientes para o Motor começar'), 'não pegou o possessivo').toBe(true)
+    expect(supoeMulherEm('Mande para sua cliente'), 'não pegou o possessivo no singular').toBe(true)
     // O oitavo padrão: "todas" elíptica, sem a palavra "cliente" ao lado.
     expect(
       supoeMulherEm('mandar a mesma mensagem para todas de uma vez'),
@@ -628,4 +634,35 @@ describe('a copy também não supõe que quem é ATENDIDO é mulher', () => {
       expect(supoeMulher(arquivo), `${arquivo} voltou a supor que quem é atendido é mulher`).toBe(false)
     }
   })
+})
+
+/*
+  docs/114 F1 (B6): o masculino genérico nas primeiras telas de quem acabou de criar a conta, "Onde
+  estão seus clientes hoje?", "Só marque se o cliente disse que pode", "Novo cliente". O outro lado
+  do mesmo defeito: o produto é para salão, e a profissional lê "o cliente" no lugar de quem ela
+  atende. Neutro passa nas duas guardas; o resto do produto (EXP-S12, ~80 linhas) vem em lote.
+*/
+// O último ramo pega `${vocabulario.cliente} novo`: o título da tela de cadastro vinha assim, com o
+// substantivo numa variável que nenhum padrão de palavra alcança.
+const MASCULINO_GENERICO = /\b(?:seus|os|dos|aos)\s+clientes\b|\b(?:o|do|ao|um|novo)\s+cliente\b|\bcliente\s+novo\b|\}\s+novo\b/i
+
+describe('as telas de entrada da profissional não usam masculino genérico (docs/114 B6)', () => {
+  it('controle positivo', () => {
+    expect(MASCULINO_GENERICO.test('Onde estão seus clientes hoje?')).toBe(true)
+    expect(MASCULINO_GENERICO.test('Só marque se o cliente disse que pode.')).toBe(true)
+    expect(MASCULINO_GENERICO.test('Cliente novo')).toBe(true)
+    expect(MASCULINO_GENERICO.test('Onde está sua clientela hoje?')).toBe(false)
+  })
+
+  it.each(['src/app/onboarding/perfil/formulario.tsx', 'src/app/admin/clientes/nova/formulario.tsx', 'src/app/admin/clientes/nova/page.tsx'])(
+    '%s',
+    (arquivo) => {
+      expect(existsSync(arquivo), `${arquivo} sumiu`).toBe(true)
+      const linhas = semComentarios(readFileSync(arquivo, 'utf8'))
+        .split('\n')
+        .filter((l) => MASCULINO_GENERICO.test(l))
+        .map((l) => l.trim())
+      expect(linhas).toEqual([])
+    },
+  )
 })

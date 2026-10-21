@@ -132,14 +132,14 @@ export default function FormularioPerfil() {
         {etapa === 'pergunta' ? (
           <>
             <div>
-              <h2 className="text-corpo font-semibold text-txt">Onde estão seus clientes hoje?</h2>
+              <h2 className="text-corpo font-semibold text-txt">Onde está sua clientela hoje?</h2>
               <p className="mt-1 text-label text-txt-3">
                 A gente já te leva pro jeito mais rápido de trazer todo mundo, e te mostra na hora quem já passou do
                 tempo de voltar.
               </p>
             </div>
 
-            <div role="radiogroup" aria-label="Onde estão seus clientes hoje?" className="flex flex-col gap-2">
+            <div role="radiogroup" aria-label="Onde está sua clientela hoje?" className="flex flex-col gap-2">
               {BASES_EM.map((baseEm) => (
                 <button
                   key={baseEm}

@@ -46,7 +46,7 @@ export function vazioDeRecuperar(
 ): VazioDeRecuperar {
   if (!temClientes) {
     return {
-      titulo: 'Cadastre suas clientes para o Motor começar',
+      titulo: 'Cadastre quem você atende para o Motor começar',
       descricao: 'Ele usa o intervalo entre as visitas de cada pessoa para saber quando ela costuma voltar. Sem ficha, não há o que acompanhar.',
       acaoRotulo: 'Cadastrar cliente',
       acaoHref: '/admin/clientes/nova',

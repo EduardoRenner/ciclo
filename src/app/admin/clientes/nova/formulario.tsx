@@ -6,7 +6,6 @@ import { useState, useTransition } from 'react'
 
 import { useVocabulario } from '@/components/shell/vocabulario'
 import { mensagemDeClienteCadastrado } from '@/core/ciclo/primeiro-cliente'
-import { comMaiuscula } from '@/core/text/vocabulario'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import PageHeader from '@/components/ui/page-header'
@@ -87,7 +86,7 @@ export default function FormularioCliente({ vertical, ehPrimeiroCliente = false 
   return (
     <div className="pb-8">
       {/* O voltar mora na Topbar desde o redesenho — dois numa tela só confundem. */}
-      <PageHeader titulo={`${comMaiuscula(vocabulario.cliente)} novo`} />
+      <PageHeader titulo={`Cadastrar ${vocabulario.cliente}`} />
 
       <div className="flex flex-col gap-3">
         <Input rotulo="Nome" value={nome} onChange={(e) => setNome(e.target.value)} autoFocus autoComplete="name" />
@@ -153,7 +152,7 @@ export default function FormularioCliente({ vertical, ehPrimeiroCliente = false 
           />
           <span className="text-corpo text-txt">
             Autorizou receber promoções e lembretes
-            <span className="block text-secundario text-txt-3">Só marque se o cliente disse que pode.</span>
+            <span className="block text-secundario text-txt-3">Só marque se a pessoa disse que pode.</span>
           </span>
         </label>
 
@@ -164,7 +163,7 @@ export default function FormularioCliente({ vertical, ehPrimeiroCliente = false 
         ) : null}
 
         <Button largura="cheia" carregando={salvando} onClick={salvar} disabled={nome.trim().length < 2}
-          motivoDesabilitado={nome.trim().length < 2 ? 'Digite o nome do cliente primeiro.' : undefined}>
+          motivoDesabilitado={nome.trim().length < 2 ? 'Digite o nome primeiro.' : undefined}>
           Cadastrar cliente
         </Button>
       </div>

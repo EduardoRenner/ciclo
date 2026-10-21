@@ -477,7 +477,7 @@ export default function Hoje({
         <Card className="mb-6 flex items-start gap-3">
           <Gift aria-hidden className="mt-0.5 size-5 shrink-0 text-acc-2" />
           <p className="text-corpo text-txt">
-            Suas clientes trouxeram{' '}
+            Quem você atende trouxe{' '}
             <span className="font-semibold">
               {resumo.indicacoesEsteMes} {resumo.indicacoesEsteMes === 1 ? 'pessoa nova' : 'pessoas novas'}
             </span>{' '}
