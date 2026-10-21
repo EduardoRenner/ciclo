@@ -6,8 +6,8 @@ import { PRELANCAMENTO, cortesiaDoCadastro, descreverDia, ultimoDiaDaCortesia } 
 import { dataLegivel, VERSOES_LEGAIS } from '@/core/legal/versoes'
 import { canalDeContato } from '@/lib/contato'
 
-import wordmark from '../../../../public/marca/ciclo-wordmark-rose.png'
-import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-rose-claro.png'
+import wordmark from '../../../../public/marca/ciclo-logo-escrita-branca.svg'
+import wordmarkClaro from '../../../../public/marca/ciclo-logo-escrita-preta.svg'
 
 const CANAL = canalDeContato('Oi! Tenho uma dúvida sobre os termos de uso do CICLO.')
 

@@ -31,16 +31,17 @@ function hexes(caminho: string): string[] {
   return [...fonte.matchAll(/#[0-9a-f]{6}\b/gi)].map((m) => m[0].toLowerCase())
 }
 
-describe('a marca cravada fora do CSS acompanha o --acc', () => {
+/*
+  docs/114 F3 (21/10): a logo final aprovada pelo Vitor tem cor própria, anel azul e seta rosa, que
+  não é o --acc do app. A prévia do link (`opengraph-image.png`) e o favicon (`icon.svg`) passaram a
+  ser os arquivos aprovados, conferidos pela `logo-final.test.ts`. O --acc continua mandando onde a
+  marca é cor de botão: a tela de erro total e a página sem internet.
+*/
+describe('a cor de botão cravada fora do CSS acompanha o --acc', () => {
   const acc = accDoRoot()
 
-  it('a prévia do link usa o --acc no símbolo e no nome', () => {
-    const cores = hexes('src/app/opengraph-image.tsx')
-    expect(cores.filter((c) => c === acc).length, `a prévia não usa ${acc}`).toBeGreaterThanOrEqual(2)
-  })
-
-  it.each(['src/app/icon.svg', 'src/app/global-error.tsx'])('%s usa o --acc', (caminho) => {
-    expect(hexes(caminho), `${caminho} não usa ${acc}`).toContain(acc)
+  it('a tela de erro total usa o --acc', () => {
+    expect(hexes('src/app/global-error.tsx'), `global-error.tsx não usa ${acc}`).toContain(acc)
   })
 
   /*
@@ -56,9 +57,10 @@ describe('a marca cravada fora do CSS acompanha o --acc', () => {
     expect(pagina.match(/--acc:\s*(#[0-9a-f]{6})/i)?.[1]?.toLowerCase(), 'sem-internet.html').toBe(accClaro)
   })
 
-  it('nenhum dos três ficou com a cor anterior da marca', () => {
-    for (const caminho of ['src/app/opengraph-image.tsx', 'src/app/icon.svg', 'src/app/global-error.tsx']) {
+  it('a tela de erro total e o favicon não ficaram com as cores anteriores da marca', () => {
+    for (const caminho of ['src/app/icon.svg', 'src/app/global-error.tsx']) {
       expect(hexes(caminho), caminho).not.toContain('#14b8a6')
     }
+    expect(hexes('src/app/icon.svg'), 'o favicon ainda tem o rosé da logo de 20/10').not.toContain('#d4949f')
   })
 })

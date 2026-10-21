@@ -6,8 +6,8 @@ import Card from '@/components/ui/card'
 import { linksDaBio, type LinkDaBio } from '@/core/aquisicao/links-da-bio'
 import { slugDeDemonstracaoNoAr } from '@/server/services/demonstracao'
 
-import wordmark from '../../../../public/marca/ciclo-wordmark-rose.png'
-import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-rose-claro.png'
+import wordmark from '../../../../public/marca/ciclo-logo-escrita-branca.svg'
+import wordmarkClaro from '../../../../public/marca/ciclo-logo-escrita-preta.svg'
 
 import type { Metadata } from 'next'
 
@@ -32,6 +32,8 @@ export const metadata = {
     description: 'Quanto você deixou de faturar com quem parou de voltar? A conta sai em um minuto.',
     type: 'website',
     locale: 'pt_BR',
+    // docs/114 F3: é o link da bio. O `openGraph` daqui substitui o da raiz e levava junto a imagem.
+    images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'CICLO' }],
   },
 } satisfies Metadata
 

@@ -1,7 +1,7 @@
 import Image from 'next/image'
 
-import wordmark from '../../../public/marca/ciclo-wordmark-rose.png'
-import wordmarkClaro from '../../../public/marca/ciclo-wordmark-rose-claro.png'
+import wordmark from '../../../public/marca/ciclo-logo-escrita-branca.svg'
+import wordmarkClaro from '../../../public/marca/ciclo-logo-escrita-preta.svg'
 
 /**
  * Marca do CICLO — o uróboros: anel aberto com cabeça de seta, lê `C` num
@@ -33,7 +33,7 @@ import wordmarkClaro from '../../../public/marca/ciclo-wordmark-rose-claro.png'
  * Dois arquivos, mesmo mecanismo do `topbar.tsx`: o "iclo" do wordmark padrão é quase branco e
  * some contra fundo claro — medido ao vivo forçando `/entrar` para `[data-theme="light"]`, achado
  * ao preparar `/onboarding` para ficar sempre clara (`onboarding/layout.tsx`). Até então nenhuma
- * tela que usa `Selo` tinha tema claro, então o segundo arquivo (`ciclo-wordmark-rose-claro.png`,
+ * tela que usa `Selo` tinha tema claro, então o segundo arquivo (`ciclo-logo-escrita-preta.svg`,
  * já existia no repo) nunca tinha sido ligado aqui. O CSS (`globals.css`,
  * `.marca-no-escuro`/`.marca-no-claro`) mostra um por vez conforme o `data-theme` do ancestral.
  */

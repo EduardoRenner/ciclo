@@ -3,8 +3,8 @@ import Link from 'next/link'
 
 import Calculadora from './calculadora'
 
-import wordmark from '../../../../public/marca/ciclo-wordmark-rose.png'
-import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-rose-claro.png'
+import wordmark from '../../../../public/marca/ciclo-logo-escrita-branca.svg'
+import wordmarkClaro from '../../../../public/marca/ciclo-logo-escrita-preta.svg'
 
 import type { Metadata } from 'next'
 
@@ -30,6 +30,9 @@ export const metadata = {
     description: 'Três números que você sabe de cabeça e a conta aparece. Grátis, sem cadastro.',
     type: 'website',
     locale: 'pt_BR',
+    // docs/114 F3: o `openGraph` desta página substitui o da raiz e levava junto a imagem; sem
+    // ela, o link colado no Instagram ou no WhatsApp saía sem prévia.
+    images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'CICLO' }],
   },
 } satisfies Metadata
 

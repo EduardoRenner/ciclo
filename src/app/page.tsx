@@ -6,8 +6,8 @@ import { ofertaDoCadastro } from '@/core/billing/prelancamento'
 import { slugDeDemonstracaoNoAr } from '@/server/services/demonstracao'
 import IconeAnel from '@/components/ui/icone-anel'
 
-import wordmark from '../../public/marca/ciclo-wordmark-rose.png'
-import wordmarkClaro from '../../public/marca/ciclo-wordmark-rose-claro.png'
+import wordmark from '../../public/marca/ciclo-logo-escrita-branca.svg'
+import wordmarkClaro from '../../public/marca/ciclo-logo-escrita-preta.svg'
 
 import type { Metadata } from 'next'
 

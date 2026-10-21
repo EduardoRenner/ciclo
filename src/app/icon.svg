@@ -1,4 +1,1 @@
-<svg viewBox="28 28 144 144" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CICLO">
-  <path d="M138.6 146 A60 60 0 1 1 146 61.4" stroke="#D4949F" stroke-width="24" stroke-linecap="butt"/>
-  <polygon points="160.5,41.4 167.9,87.4 123.7,72.2" fill="#D4949F"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="CICLO"><rect width="1024" height="1024" rx="200.0" fill="#0D0C0C"/><g transform="translate(36.57 36.57) scale(9.50857)"><path d="M68 18.82 A36 36 0 1 1 18.82 32" fill="none" stroke="#3B5BDB" stroke-width="14"/><path d="M7.56 25.5 L30.08 38.5 L28.82 14.68 Z" fill="#F06595" stroke="#F06595" stroke-width="3" stroke-linejoin="round"/><line x1="50" y1="50" x2="50" y2="31" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round"/><line x1="50" y1="50" x2="64" y2="57" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round"/></g></svg>

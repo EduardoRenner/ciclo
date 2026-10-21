@@ -9,8 +9,8 @@ import { PRELANCAMENTO, ofertaDoCadastro } from '@/core/billing/prelancamento'
 import { canalDeContato } from '@/lib/contato'
 import { CARTOES } from '@/lib/planos-cartoes'
 
-import wordmark from '../../../../public/marca/ciclo-wordmark-rose.png'
-import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-rose-claro.png'
+import wordmark from '../../../../public/marca/ciclo-logo-escrita-branca.svg'
+import wordmarkClaro from '../../../../public/marca/ciclo-logo-escrita-preta.svg'
 
 import type { Metadata } from 'next'
 
