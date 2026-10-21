@@ -94,7 +94,7 @@ describe('calibrarProbabilidadeDeResolvidas', () => {
   const HOJE = '2026-06-01'
 
   function previsao(predictedOn: string, actualReturnOn: string | null): PrevisaoAuditada {
-    return { predictedOn, actualReturnOn }
+    return { predictedOn, actualReturnOn, predictedAt: '2000-01-01' }
   }
 
   it('resolvida no dia certo (atraso 0) vira estado due, e conta como conversão', () => {

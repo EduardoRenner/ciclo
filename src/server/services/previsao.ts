@@ -229,12 +229,12 @@ async function previsoesRecentesDoTenant(db: Cliente, tenantId: string, hoje: st
   const linhas = await buscarTudoPaginado(() =>
     db
       .from('cycle_predictions')
-      .select('predicted_on, actual_return_on')
+      .select('predicted_on, actual_return_on, predicted_at')
       .eq('tenant_id', tenantId)
       .gte('predicted_on', desde)
       .order('id'),
   )
-  return linhas.map((l) => ({ predictedOn: l.predicted_on, actualReturnOn: l.actual_return_on }))
+  return linhas.map((l) => ({ predictedOn: l.predicted_on, actualReturnOn: l.actual_return_on, predictedAt: l.predicted_at.slice(0, 10) }))
 }
 
 /**

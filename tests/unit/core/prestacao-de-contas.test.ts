@@ -4,7 +4,8 @@ import { JANELA_DE_ESPERA_DIAS, MINIMO_PARA_AFIRMAR, prestacaoDeContas, TOLERANC
 
 const HOJE = '2026-09-06'
 
-const prevista = (predictedOn: string, actualReturnOn: string | null = null) => ({ predictedOn, actualReturnOn })
+// `predictedAt` padrão bem antes de tudo: a previsão comum é feita no dia da visita, antes da data prevista.
+const prevista = (predictedOn: string, actualReturnOn: string | null = null, predictedAt = '2000-01-01') => ({ predictedOn, actualReturnOn, predictedAt })
 
 /** Oito previsões certeiras — o piso para o percentual poder ser afirmado. */
 function oitoAcertos() {
@@ -100,6 +101,31 @@ describe('prestacaoDeContas', () => {
     const r = prestacaoDeContas([...oitoAcertos(), ...Array.from({ length: 20 }, () => prevista('2026-01-01', null))], HOJE)
     expect(r.detalhe.naoVoltou).toBe(20)
     expect(r.erroMedianoDias, 'a mediana passou a contar quem nunca voltou').toBeLessThanOrEqual(TOLERANCIA_DIAS)
+  })
+
+  /*
+    docs/112, achado de 21/10: na primeira rodada o Motor registra previsão para todo mundo, inclusive
+    quem sumiu há meses, com data prevista JÁ PASSADA. Cada uma virava "não voltou" na hora, e a conta
+    da Carol (demonstração) abria com "O Motor acertou 0% das 8 previsões já conferidas"; um salão
+    que importa a base do sistema antigo veria o mesmo no primeiro dia. Previsão feita depois da data
+    que ela prevê não é previsão.
+  */
+  it('previsão registrada depois da data que ela prevê não entra na conta', () => {
+    const importadas = Array.from({ length: 9 }, () => prevista('2026-06-10', null, HOJE))
+    const r = prestacaoDeContas(importadas, HOJE)
+    expect(r).toMatchObject({ conferidas: 0, acertoBps: null, emAberto: 0 })
+    expect(r.detalhe.naoVoltou).toBe(0)
+  })
+
+  it('a de verdade continua contando ao lado da registrada depois do fato', () => {
+    const r = prestacaoDeContas([...oitoAcertos(), prevista('2026-06-10', null, '2026-08-01')], HOJE)
+    expect(r.conferidas).toBe(8)
+    expect(r.acertoBps).toBe(10_000)
+  })
+
+  it('registrada no próprio dia previsto ainda é previsão', () => {
+    const r = prestacaoDeContas([prevista('2026-07-01', null, '2026-07-01')], HOJE)
+    expect(r.detalhe.naoVoltou).toBe(1)
   })
 
   it('sem previsão nenhuma, tudo zero e nada afirmado', () => {
