@@ -5,8 +5,8 @@ import { useMemo, useState } from 'react'
 
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
+import { buscarProfissoes } from '@/core/onboarding/buscar-profissao'
 import { SLUG_PROFISSAO_GENERICA } from '@/core/profissoes'
-import { semAcento } from '@/core/text/normalizar'
 import { APP_HOST } from '@/lib/app-url'
 import { fetchComTentativa } from '@/lib/tentativa'
 
@@ -55,9 +55,7 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
   const generica = profissoes.find((p) => p.slug === SLUG_PROFISSAO_GENERICA) ?? null
 
   const filtradas = useMemo(() => {
-    const termo = semAcento(buscaProfissao)
-    if (!termo) return profissoes
-    return profissoes.filter((p) => semAcento(p.nome).includes(termo) || p.sinonimos.some((s) => semAcento(s).includes(termo)))
+    return buscarProfissoes(profissoes, buscaProfissao)
   }, [buscaProfissao, profissoes])
 
   async function enviar(e: React.FormEvent) {

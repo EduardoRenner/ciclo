@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { describe, expect, it } from 'vitest'
 
+import { buscarProfissoes } from '@/core/onboarding/buscar-profissao'
 import type { Database } from '@/server/db/types.gen'
 
 dotenv.config({ path: '.env.local' })
@@ -96,5 +97,44 @@ describe('catálogo de profissões (docs/09-PLATAFORMA.md §5)', () => {
     for (const s of servicos!) {
       expect(idsValidos.has(s.profession_id), s.profession_id).toBe(true)
     }
+  })
+})
+
+/**
+ * docs/112 EXP-S03 (migration 0144): o que a dona de salão digita na busca do cadastro acha a
+ * profissão dela em primeiro lugar, e SÓ ela. Roda a mesma busca da tela contra as linhas do banco,
+ * porque o defeito morava no dado (Cílios e Depilação sem sinônimo), não no código.
+ */
+const TERMOS_DE_SALAO: ReadonlyArray<[string, string]> = [
+  ['lash', 'lashes'],
+  ['lash designer', 'lashes'],
+  ['extensão de cílios', 'lashes'],
+  ['lash lifting', 'lashes'],
+  ['nail', 'nails'],
+  ['nail designer', 'nails'],
+  ['esmalteria', 'nails'],
+  ['unha em gel', 'nails'],
+  ['pedicure', 'nails'],
+  ['designer de sobrancelha', 'brows'],
+  ['brow', 'brows'],
+  ['henna', 'brows'],
+  ['salão de beleza', 'hair'],
+  ['colorista', 'hair'],
+  ['escova', 'hair'],
+  ['cabelereira', 'hair'],
+  ['trancista', 'hair'],
+  ['depiladora', 'waxing'],
+  ['cera', 'waxing'],
+  ['depilação a laser', 'waxing'],
+  ['limpeza de pele', 'aesthetics'],
+  ['drenagem', 'aesthetics'],
+  ['massagem', 'aesthetics'],
+]
+
+describe('busca do cadastro com os termos de salão (docs/112 EXP-S03)', () => {
+  it.each(TERMOS_DE_SALAO)('"%s" acha só %s', async (termo, slug) => {
+    const { data, error } = await svc.from('professions').select('slug, nome, sinonimos').eq('ativa', true).order('posicao').order('nome')
+    if (error) throw error
+    expect(buscarProfissoes(data!, termo).map((p) => p.slug)).toEqual([slug])
   })
 })
