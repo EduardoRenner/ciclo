@@ -22,6 +22,22 @@ describe('o aviso de horário novo para a equipe sobrevive à resposta (APR-218)
     }
   })
 
+  /*
+    docs/112 EXP-A03: cancelar pelo link liberava a vaga sem avisar ninguém. A rota passou a avisar,
+    e o aviso tem que vir DEPOIS de cancelar (avisar e falhar ao cancelar seria mentir) e dentro de
+    `agendarDepois`, pelo mesmo motivo do APR-218.
+  */
+  it('cancelar pelo link avisa a equipe, depois de cancelar e dentro de `agendarDepois(() =>`', () => {
+    const src = semComentarios(readFileSync('src/app/api/v1/public/appointments/cancel/[token]/route.ts', 'utf8'))
+    const iCancela = src.indexOf('await cancelarAgendamento(')
+    const iAvisa = src.indexOf('notificarEquipe(')
+    expect(iCancela, 'a rota não cancela mais: a guarda ficou sem objeto').toBeGreaterThan(-1)
+    expect(iAvisa, 'cancelar pelo link deixou de avisar a equipe').toBeGreaterThan(-1)
+    expect(iAvisa, 'o aviso sai antes de o cancelamento acontecer').toBeGreaterThan(iCancela)
+    const antes = src.slice(Math.max(0, iAvisa - 80), iAvisa)
+    expect(/agendarDepois\(\(\) =>\s*$/.test(antes), 'notificarEquipe( fora de agendarDepois(() =>').toBe(true)
+  })
+
   it('`agendarDepois` usa o `after()` do Next, não um `void` disfarçado', () => {
     const src = semComentarios(readFileSync('src/server/http/depois.ts', 'utf8'))
     expect(/\bafter\(\(\) => tarefa\(\)\)/.test(src)).toBe(true)

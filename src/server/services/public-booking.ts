@@ -21,6 +21,7 @@ import { criarAgendamento } from '@/server/services/agendamentos'
 import { verificarTokenIndicacao } from '@/server/services/indicacao'
 import { lerTokenDeVolta, registrarAberturaDoLinkDeVolta, registrarAgendamentoPeloLinkDeVolta } from '@/server/services/link-de-volta'
 import { notificarEquipe } from '@/server/services/mensageria'
+import { quandoLocal } from '@/core/text/quando-local'
 import { agendarDepois } from '@/server/http/depois'
 import { registrarEvento } from '@/server/services/product-events'
 import { gerarTokenReconhecimento } from '@/server/services/reconhecimento'
@@ -302,13 +303,6 @@ function misturarComBranco(hex: string, fator: number): string {
   return `#${hex2(canal(m[1]!))}${hex2(canal(m[2]!))}${hex2(canal(m[3]!))}`
 }
 
-/** "quinta, 14:30" no fuso do TENANT — nunca fatiar o ISO em UTC direto (armadilha conhecida). */
-function quandoLocal(startsAtIso: string, timezone: string): string {
-  const zoned = Temporal.Instant.from(startsAtIso).toZonedDateTimeISO(timezone)
-  const dia = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'][zoned.dayOfWeek % 7]
-  const hora = `${String(zoned.hour).padStart(2, '0')}:${String(zoned.minute).padStart(2, '0')}`
-  return `${dia}, ${hora}`
-}
 
 export type SlotPublico = { startsAt: string; endsAt: string; professionalId: string }
 

@@ -32,3 +32,5 @@ Pedido do Vitor (21/10, madrugada, repassado pela sessão "Ciclo: mudanças e la
 | Hora | Ticket | Resultado | Commit |
 | --- | --- | --- | --- |
 | 00:50 | EXP-J08 | número só quando o código sai; teste visto reprovando nas duas metades | `0a5e2b8b` |
+| 01:40 | EXP-A06 | push da equipe só para quem administra e para a profissional do horário; integração no banco local (2 profissionais, visão restrita) e 2 mutações reprovando. Suíte: 12 testes estouraram 5 s sob carga, todos passaram sozinhos (34/34); integração 95 arquivos, isolamento 16 | `26978f27` |
+| 02:30 | EXP-A03 (parte 1) | cancelar pelo link avisa a profissional do horário e quem administra, depois da resposta; `quandoLocal` saiu do `public-booking` para o `core` (uma cópia só); 3 mutações reprovando. A guarda de gênero pegou "A cliente cancelou" no texto reserva: virou "Quem tinha marcado". **Parte 2 pendente:** acionar a lista de espera no cancelamento pelo link só depois do EXP-A04 (hoje ela marcaria "avisada" sem avisar) | ver git log |
