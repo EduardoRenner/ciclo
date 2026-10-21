@@ -12,8 +12,8 @@ import { ATALHOS_DO_MENU } from '@/core/navegacao/atalhos-do-menu'
 
 import { EVENTO_ABRIR_ASSISTENTE } from './assistente-flutuante'
 import { paiDaRota } from './navegacao'
-import wordmark from '../../../public/marca/ciclo-wordmark-aqua.png'
-import wordmarkClaro from '../../../public/marca/ciclo-wordmark-aqua-claro.png'
+import wordmark from '../../../public/marca/ciclo-wordmark-rose.png'
+import wordmarkClaro from '../../../public/marca/ciclo-wordmark-rose-claro.png'
 
 /**
  * Atalhos do menu de funcionalidades (docs/61 §4, pedido do Eduardo em 2026-09-13 de comparar

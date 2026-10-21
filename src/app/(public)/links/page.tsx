@@ -6,8 +6,8 @@ import Card from '@/components/ui/card'
 import { linksDaBio, type LinkDaBio } from '@/core/aquisicao/links-da-bio'
 import { slugDeDemonstracaoNoAr } from '@/server/services/demonstracao'
 
-import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
-import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-aqua-claro.png'
+import wordmark from '../../../../public/marca/ciclo-wordmark-rose.png'
+import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-rose-claro.png'
 
 import type { Metadata } from 'next'
 

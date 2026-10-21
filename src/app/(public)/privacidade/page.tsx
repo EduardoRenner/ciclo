@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { dataLegivel, VERSOES_LEGAIS } from '@/core/legal/versoes'
 import { canalDeContato } from '@/lib/contato'
 
-import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
-import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-aqua-claro.png'
+import wordmark from '../../../../public/marca/ciclo-wordmark-rose.png'
+import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-rose-claro.png'
 
 const CANAL = canalDeContato('Oi! É sobre os meus dados no CICLO.')
 

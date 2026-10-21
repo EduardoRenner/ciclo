@@ -10,7 +10,7 @@ import { ImageResponse } from 'next/og'
  *
  * Cores cravadas de propósito: aqui não há CSS nem variável de tema, e `--acc` do `globals.css`
  * não existe neste contexto de renderização. São os mesmos valores (#0d0c0c do `themeColor` e
- * #14b8a6 do `--acc`), e a guarda em `tests/unit/design/og-usa-a-cor-da-marca.test.ts` reprova se
+ * #d4949f do `--acc`), e a guarda em `tests/unit/design/og-usa-a-cor-da-marca.test.ts` reprova se
  * um dos dois mudar sem o outro.
  */
 export const size = { width: 1200, height: 630 }
@@ -32,8 +32,8 @@ export default function Image() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <div style={{ width: 24, height: 24, borderRadius: 999, background: '#14b8a6' }} />
-          <div style={{ fontSize: 40, color: '#14b8a6', letterSpacing: 6, fontWeight: 700 }}>CICLO</div>
+          <div style={{ width: 24, height: 24, borderRadius: 999, background: '#d4949f' }} />
+          <div style={{ fontSize: 40, color: '#d4949f', letterSpacing: 6, fontWeight: 700 }}>CICLO</div>
         </div>
 
         <div style={{ fontSize: 74, color: '#f5f5f4', fontWeight: 700, lineHeight: 1.1, marginTop: 36 }}>

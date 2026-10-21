@@ -52,26 +52,20 @@
   --txt-3: #99938c;
 
   /*
-   * Acento do PRODUTO — aqua, a cor da marca. Fixo.
+   * Acento do PRODUTO — rosé antigo, a cor da marca. Fixo.
    *
-   * Era osso (#f0ebe3, 16,46:1) desde o redesenho E0–E6. Trocado em 2026-08-26,
-   * depois de uma medição que mostrou o problema: o uróboros entrou como marca
-   * nova em turquesa e a varredura de CSS da landing achou o turquesa em ZERO
-   * propriedades — ele existia só dentro do PNG do logo. O produto era osso
-   * monocromático com um símbolo colorido colado por cima, e o logo lia como
-   * adesivo em vez de origem do sistema. Aqui a cor da marca passa a ser a cor
-   * do produto: botão primário, link, aba ativa, foco.
+   * Foi osso (#f0ebe3) até 2026-08-26 e turquesa (#14b8a6) até 2026-10-20. O
+   * turquesa saiu com o foco no público feminino (`docs/109-marca-feminina`):
+   * era neutro de propósito porque o produto servia barbearia, e medido no
+   * navegador ficava parecido com o Booksy (fundo escuro, botão turquesa). Roxo
+   * (Gendo, Fresha), rosa-choque (Agendiva) e azul estão ocupados; rosé apagado
+   * com ameixa no tema claro não está.
    *
-   * O que se perde e foi aceito conscientemente: osso dava 16,46:1 e aqua dá
-   * 7,85:1. Continua bem acima do piso de 4,5 do §7, e o teste de contraste
-   * guarda isso — mas não é mais o caso de "nunca precisa pensar no contraste".
-   *
-   * --acc-2 é #99F6E4 e NÃO a menta #5EEAD4 do arquivo de marca, por um motivo
-   * medido: menta tem Δ luminância de 0,037 contra --ok (#90dfba). As duas são
-   * da família verde, e em daltonismo vermelho-verde (~8% dos homens, público
-   * direto de barbearia) seriam a mesma cor — link ativo indistinguível de selo
-   * de sucesso. #99F6E4 dá Δ0,160, acima do piso de 0,15 que o resto da paleta
-   * já respeita. Há teste guardando esse par agora.
+   * --acc-2 é um blush quase branco, e não um rosé médio, por conta: os
+   * semânticos ocupam luminância de 0,266 (--bad) a 0,622 (--ok), e o link
+   * precisa de Δ0,15 contra cada um para não virar selo de estado em
+   * daltonismo. Só sobra L ≤ 0,116 (escuro demais sobre preto) ou L ≥ 0,772.
+   * #f9dfe3 dá L 0,785 (Δ0,162 contra --ok, o mais perto). Há teste.
    *
    * O acento do site público de cada salão (`/[slug]`) é OUTRA coisa e vem de
    * `tenants.settings.site.accent`, escolha do dono. NÃO vem mais de
@@ -79,13 +73,13 @@
    * voltava em salão de cílios e sobrancelha (`docs/13-CAUSA-RAIZ-LAYOUT-
    * LEGADO.md` T3, executado no 14). Cor de acento nunca é hardcoded em
    * componente, nem o valor antigo nem o novo. É também por isso que a marca
-   * (`IconeAnel`, wordmark, favicon) segue com o aqua CRAVADO e não `var(--acc)`: na
+   * (`IconeAnel`, wordmark, favicon) segue com o rosé CRAVADO e não `var(--acc)`: na
    * página do salão o `--acc` é do tenant, e o logo do CICLO não pode vestir a
    * cor do cliente.
    */
-  --acc: #14b8a6;
-  --acc-2: #99f6e4;
-  --acc-soft: rgba(20, 184, 166, 0.14);
+  --acc: #d4949f;
+  --acc-2: #f9dfe3;
+  --acc-soft: rgba(212, 148, 159, 0.14);
   --on-acc: #0d0c0c;
   --ring: var(--acc-2);
 
@@ -155,10 +149,10 @@
     --txt-2: #5b544c;
     --txt-3: #655d53;
 
-    /* Aqua mais fundo: o #14b8a6 do escuro dá 2,5:1 com texto branco num botão de fundo claro. */
-    --acc: #0b7d6f;
-    --acc-2: #0a6a5e;
-    --acc-soft: rgba(11, 125, 111, 0.12);
+    /* Ameixa: o rosé #d4949f do escuro dá 2,46:1 com texto branco num botão de fundo claro. */
+    --acc: #8c4766;
+    --acc-2: #7f3f5e;
+    --acc-soft: rgba(140, 71, 102, 0.12);
     --on-acc: #ffffff;
     --ring: var(--acc);
 
@@ -188,10 +182,10 @@
   --txt-2: #5b544c;
   --txt-3: #655d53;
 
-  /* Aqua mais fundo: o #14b8a6 do escuro dá 2,5:1 com texto branco num botão de fundo claro. */
-  --acc: #0b7d6f;
-  --acc-2: #0a6a5e;
-  --acc-soft: rgba(11, 125, 111, 0.12);
+  /* Ameixa: o rosé #d4949f do escuro dá 2,46:1 com texto branco num botão de fundo claro. */
+  --acc: #8c4766;
+  --acc-2: #7f3f5e;
+  --acc-soft: rgba(140, 71, 102, 0.12);
   --on-acc: #ffffff;
   --ring: var(--acc);
 
@@ -226,9 +220,9 @@
   --txt-2: #a8a29c;
   --txt-3: #99938c;
 
-  --acc: #14b8a6;
-  --acc-2: #99f6e4;
-  --acc-soft: rgba(20, 184, 166, 0.14);
+  --acc: #d4949f;
+  --acc-2: #f9dfe3;
+  --acc-soft: rgba(212, 148, 159, 0.14);
   --on-acc: #0d0c0c;
   --ring: var(--acc-2);
 
