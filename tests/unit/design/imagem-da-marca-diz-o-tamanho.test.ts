@@ -67,9 +67,11 @@ describe('a imagem da marca diz de que tamanho ela é', () => {
     // que parece — desde 2026-09-21 as seis páginas/componentes desta lista forçam tema claro
     // (a "frente de casa" inteira: home, preços, privacidade, termos, selo das telas de auth e o
     // painel), então as seis têm 2 tags cada agora (claro e escuro) — 12 no total.
+    // docs/114 L-01: `/precos` ganhou a página "grátis no lançamento", com o seu próprio cabeçalho
+    // (2 tags a mais): 14 no total, todas conferidas pelo `sizes` no caso abaixo.
     expect(PAGINAS).toHaveLength(6)
     const total = PAGINAS.reduce((soma, p) => soma + tagsDoWordmark(p).length, 0)
-    expect(total).toBe(12)
+    expect(total).toBe(14)
   })
 
   it.each(PAGINAS)('%s declara sizes em TODA tag, senão o navegador baixa a variante mais larga', (arquivo) => {

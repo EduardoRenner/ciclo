@@ -6,6 +6,7 @@ import { headers } from 'next/headers'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 import SectionHeader from '@/components/ui/section-header'
+import { CICLO_COBRANCA } from '@/core/billing/cobranca'
 import { NOME_DO_PLANO, type PlanoTier } from '@/core/billing/planos'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
@@ -199,7 +200,8 @@ export default async function PaginaConfig() {
                 </p>
               </div>
             </Card>
-            <ItemDeConfig item={CONTA.meuPlano} falta={null} />
+            {/* docs/114 L-01: grátis no lançamento, "Meu plano" só aparece com a cobrança ligada. */}
+            {CICLO_COBRANCA ? <ItemDeConfig item={CONTA.meuPlano} falta={null} /> : null}
             <Card>
               <SeletorDeTema />
             </Card>

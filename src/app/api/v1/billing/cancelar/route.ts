@@ -1,7 +1,9 @@
+import { CICLO_COBRANCA } from '@/core/billing/cobranca'
 import { writeAudit } from '@/server/audit/write'
 import { exigirPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
 import { cancelarAssinatura } from '@/server/services/assinatura-mp'
@@ -20,6 +22,8 @@ import { cancelarAssinatura } from '@/server/services/assinatura-mp'
  * `/assinar` — é decisão, não esquecimento.
  */
 export const POST = rota(async (req, _params, requestId) => {
+  // docs/114 L-01: grátis no lançamento; com a chave desligada a rota não existe para ninguém.
+  if (!CICLO_COBRANCA) throw new AppError('NOT_FOUND')
   const ctx = await contextoAtual(req)
   exigirPermissao(ctx.papel, 'tenant:update')
 
