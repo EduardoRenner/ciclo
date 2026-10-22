@@ -1,3 +1,5 @@
+> **Substituído em 22/10/2026 pelo `docs/119-login-whatsapp-twilio.md`** (Twilio Verify, só para número cadastrado). O roteiro abaixo, pela Meta e pelo hook `send_sms`, fica como histórico: com o Twilio Verify ligado no Supabase, o hook tem que ficar DESLIGADO.
+
 # Runbook · ligar o login por número em produção (docs/110 L1)
 
 O código está pronto e testado no banco local. Em produção ele fica **escondido atrás de um erro honesto** ("Não consegui mandar o código agora... entre com e-mail") até os quatro passos abaixo estarem feitos. Só o Vitor faz, porque são contas e painéis.

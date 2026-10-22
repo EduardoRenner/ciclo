@@ -15,7 +15,8 @@ import { semComentarios } from '../../helpers/fonte'
  * a página vira "grátis no lançamento" antes de ler qualquer preço. "Meu plano" sai das
  * Configurações e as rotas de assinar e cancelar respondem 404.
  */
-const fonte = (arquivo: string) => semComentarios(readFileSync(arquivo, 'utf8'))
+// CRLF vira LF: com core.autocrlf no Windows o arquivo chega com CRLF e o fim da função não casava.
+const fonte = (arquivo: string) => semComentarios(readFileSync(arquivo, 'utf8').replace(/\r\n/g, '\n'))
 
 /** O corpo da função a partir da assinatura dela, para conferir a ORDEM: a chave antes do resto. */
 function corpoDe(texto: string, assinatura: string): string {

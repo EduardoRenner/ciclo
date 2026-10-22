@@ -16,6 +16,7 @@ import { semComentarios } from '../../helpers/fonte'
 
 const ENTRAR = semComentarios(readFileSync('src/app/api/v1/auth/codigo/entrar/route.ts', 'utf8'))
 const PEDIR = semComentarios(readFileSync('src/app/api/v1/auth/codigo/route.ts', 'utf8'))
+const SERVICO = semComentarios(readFileSync('src/server/services/codigo-de-acesso.ts', 'utf8'))
 const HOOK = semComentarios(readFileSync('src/app/api/v1/auth/codigo/hook/route.ts', 'utf8'))
 
 /** Jeitos de abrir sessão sem o código que a pessoa recebeu. */
@@ -45,9 +46,22 @@ describe('login por número sempre pede o código', () => {
     expect(PEDIR).toMatch(/\.auth\.signInWithOtp\(/)
     expect(PEDIR).not.toMatch(/verifyOtp\(/)
     expect(PEDIR).not.toMatch(OUTRAS_PORTAS)
-    expect(PEDIR, 'shouldCreateUser: false faria o pedido falhar só para quem não tem conta').toMatch(/shouldCreateUser:\s*true/)
-    expect([...PEDIR.matchAll(/\breturn\b/g)].length, 'um único retorno de sucesso').toBe(1)
-    expect(PEDIR).toMatch(/return \{ enviado: true \}/)
+    expect(PEDIR, 'a rota tem que passar pela regra neutra do serviço').toMatch(/return pedirCodigoDeAcesso\(\{/)
+    expect(PEDIR, 'a consulta de cadastro tem que estar ligada').toMatch(/temCadastro: \(\) => numeroTemCadastro\(telefone,/)
+    expect(SERVICO).not.toMatch(OUTRAS_PORTAS)
+    expect([...SERVICO.matchAll(/\breturn\b/g)].length, 'um único retorno de sucesso').toBe(1)
+    expect(SERVICO).toMatch(/return \{ enviado: true \}/)
+  })
+
+  it('docs/119: só número cadastrado recebe código, e o limite conta antes de olhar o cadastro', () => {
+    const limite = posicao(SERVICO, /await d\.limitarPorNumero\(\)/, 'o limite por número')
+    const porta = posicao(SERVICO, /if \(await d\.temCadastro\(\)\) \{/, 'o if do cadastro')
+    const envio = posicao(SERVICO, /await d\.enviar\(/, 'a chamada do envio')
+    expect(limite).toBeLessThan(porta)
+    expect(porta).toBeLessThan(envio)
+    // O envio mora dentro do bloco do `if`: o primeiro `}` depois da porta vem depois do envio.
+    expect(SERVICO.indexOf('}', porta + 30)).toBeGreaterThan(envio)
+    expect(SERVICO.match(/d\.enviar\(/g)?.length, 'nenhum outro envio fora da porta').toBe(1)
   })
 
   it('o hook confere a assinatura antes de ler o corpo', () => {

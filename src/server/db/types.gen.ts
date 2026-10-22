@@ -5736,6 +5736,10 @@ export type Database = {
       my_professional_id: { Args: { t: string }; Returns: string }
       my_professional_keys: { Args: never; Returns: string[] }
       my_tenant_ids: { Args: never; Returns: string[] }
+      numero_tem_cadastro: {
+        Args: { p_phone_hash: string; p_telefone: string }
+        Returns: boolean
+      }
       privilegios_report: {
         Args: never
         Returns: {

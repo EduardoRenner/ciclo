@@ -80,3 +80,20 @@ export async function apagarContaVaziaDoLoginPorNumero(userId: string): Promise<
   const { error } = await svc.auth.admin.deleteUser(userId)
   return !error
 }
+
+/**
+ * O número é de alguém que já existe no CICLO? (docs/119, migration 0147.) Só a rota de pedir o
+ * código de acesso chama, e ela responde igual nos dois casos: esta resposta nunca sai do servidor.
+ * Erro do banco conta como "não": na dúvida, nenhuma mensagem sai.
+ */
+export async function numeroTemCadastro(telefone: string, phoneHash: string | null): Promise<boolean> {
+  const { data, error } = await createServiceClient().rpc('numero_tem_cadastro', {
+    p_telefone: telefone,
+    p_phone_hash: phoneHash ?? '',
+  })
+  if (error) {
+    console.warn(JSON.stringify({ level: 'warn', event: 'numero_tem_cadastro_falhou', codigo: error.code }))
+    return false
+  }
+  return data === true
+}
