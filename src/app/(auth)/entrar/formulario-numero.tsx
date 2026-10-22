@@ -8,11 +8,11 @@ import Input from '@/components/ui/input'
 import { formatarTelefone, telefoneParaE164 } from '@/core/text/telefone'
 import { caminhoInternoSeguro } from '@/server/auth/destino'
 
-/** Nome e número da última vez, para quem volta não digitar de novo. Só neste aparelho. */
+/** Número da última vez, para quem volta não digitar de novo. Só neste aparelho. */
 const CHAVE_LEMBRADO = 'ciclo:entrar-com-numero'
 const ESPERA_PARA_REENVIAR_S = 30
 
-type Lembrado = { nome: string; telefone: string }
+type Lembrado = { telefone: string }
 
 function lerLembrado(): Lembrado | null {
   try {
@@ -37,15 +37,14 @@ type Resposta = {
 }
 
 /**
- * Login por número (docs/110 L1): nome e WhatsApp, depois o código de 6 dígitos que chega lá.
- * `aoPedirEmail` troca para o formulário de e-mail, que é a saída quando o número já está numa
- * conta com e-mail ou quando o código não sai.
+ * Código pelo WhatsApp (docs/119): o número, depois o código de 6 dígitos que chega lá. A tela
+ * seguinte diz "se o número tiver cadastro" porque o servidor responde igual para qualquer número.
+ * `aoPedirEmail` troca para o formulário de senha, que é a saída quando o código não chega.
  */
 export default function FormularioNumero({ aoPedirEmail }: { aoPedirEmail: () => void }) {
   const router = useRouter()
   const params = useSearchParams()
   const [etapa, setEtapa] = useState<'numero' | 'codigo'>('numero')
-  const [nome, setNome] = useState('')
   const [telefone, setTelefone] = useState('')
   const [codigo, setCodigo] = useState('')
   const [pendente, setPendente] = useState(false)
@@ -55,10 +54,7 @@ export default function FormularioNumero({ aoPedirEmail }: { aoPedirEmail: () =>
 
   useEffect(() => {
     const l = lerLembrado()
-    if (l) {
-      setNome(l.nome)
-      setTelefone(formatarTelefone(l.telefone) ?? l.telefone)
-    }
+    if (l?.telefone) setTelefone(formatarTelefone(l.telefone) ?? l.telefone)
   }, [])
 
   useEffect(() => {
@@ -80,14 +76,14 @@ export default function FormularioNumero({ aoPedirEmail }: { aoPedirEmail: () =>
       const r = await fetch('/api/v1/auth/codigo', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ telefone: e164, nome }),
+        body: JSON.stringify({ telefone: e164 }),
       })
       const json = (await r.json()) as Resposta
       if (!r.ok) {
         setErro(json.error?.message ?? 'Não consegui mandar o código. Tente de novo.')
         return
       }
-      guardarLembrado({ nome, telefone: e164 })
+      guardarLembrado({ telefone: e164 })
       setEtapa('codigo')
       setCodigo('')
       setEspera(ESPERA_PARA_REENVIAR_S)
@@ -135,7 +131,7 @@ export default function FormularioNumero({ aoPedirEmail }: { aoPedirEmail: () =>
   // pela pessoa. Nos outros erros o "Entrar com e-mail e senha" logo abaixo já basta.
   const saidaParaEmail = mostrarEmail ? (
     <Button type="button" variante="secondary" largura="cheia" onClick={aoPedirEmail}>
-      Entrar com e-mail
+      Entrar com senha
     </Button>
   ) : null
 
@@ -150,7 +146,8 @@ export default function FormularioNumero({ aoPedirEmail }: { aoPedirEmail: () =>
         className="flex w-full max-w-sm flex-col gap-3"
       >
         <p className="text-secundario text-txt-2">
-          Mandamos um código de 6 números no WhatsApp {formatarTelefone(telefoneParaE164(telefone)) ?? telefone}.
+          Se o número {formatarTelefone(telefoneParaE164(telefone)) ?? telefone} tiver cadastro no CICLO, o código de 6
+          números chega no WhatsApp em instantes. Ele vale por 10 minutos.
         </p>
         <Input
           rotulo="Código"
@@ -213,7 +210,6 @@ export default function FormularioNumero({ aoPedirEmail }: { aoPedirEmail: () =>
       }}
       className="flex w-full max-w-sm flex-col gap-3"
     >
-      <Input rotulo="Seu nome" name="nome" autoComplete="name" required minLength={2} value={nome} onChange={(e) => setNome(e.target.value)} />
       <Input
         rotulo="Seu WhatsApp"
         name="telefone"
@@ -224,7 +220,7 @@ export default function FormularioNumero({ aoPedirEmail }: { aoPedirEmail: () =>
         required
         value={telefone}
         onChange={(e) => setTelefone(e.target.value)}
-        ajuda="Vamos mandar um código por lá. Neste aparelho, você só faz isso uma vez."
+        ajuda="O código vai para o WhatsApp do número cadastrado. Neste aparelho, você só faz isso uma vez."
       />
       {erro ? (
         <p role="alert" className="text-secundario text-bad">

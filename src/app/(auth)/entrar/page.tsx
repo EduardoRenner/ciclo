@@ -8,7 +8,7 @@ import TelaPublica from '@/components/shell/tela-publica'
 import Card from '@/components/ui/card'
 import { portaDeEntrada } from '@/core/auth/porta-de-entrada'
 import { BUSCA_ABERTA } from '@/core/busca/negocios'
-import { ENTRAR_COM_CODIGO, loginPorNumeroDisponivel } from '@/server/auth/login-por-numero'
+import { loginPorNumeroDisponivel } from '@/server/auth/login-por-numero'
 import { provedoresSociaisParaRequisicao } from '@/server/auth/provedores-sociais'
 import { sessaoAtual } from '@/server/auth/session'
 
@@ -109,7 +109,7 @@ export default async function PaginaEntrar({ searchParams }: { searchParams: Pro
         <p className="mt-1 text-secundario text-txt-2">Entre para ver o resumo do seu dia.</p>
       </div>
       <LoginSocial provedores={provedores} />
-      <JeitosDeEntrar numeroDisponivel={ENTRAR_COM_CODIGO && loginPorNumeroDisponivel()} />
+      <JeitosDeEntrar numeroDisponivel={loginPorNumeroDisponivel()} />
       <Link href="/entrar?porta=cliente" className={linkVoltar}>
         Sou cliente
       </Link>

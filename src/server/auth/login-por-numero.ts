@@ -1,23 +1,28 @@
 /**
- * O login por número só pode ser a porta de entrada quando o código consegue sair (docs/112 EXP-J08).
+ * De onde sai o código de acesso pelo WhatsApp (docs/119).
  *
- * Em produção, sem a credencial do WhatsApp oficial e sem o segredo do hook do Supabase, o pedido
- * de código sempre falha, e a tela que abre no número deixava a pessoa num "tente de novo" que
- * nunca ia funcionar. Fora de produção o hook escreve o código no log, então fica sempre ligado.
+ * - `twilio`: as três chaves do Twilio estão no ambiente. O Supabase Auth gera e confere o código
+ *   pelo **Twilio Verify**, canal `whatsapp` (provedor ligado no painel do Supabase com as mesmas
+ *   chaves, ver o runbook). O app pede com `channel: 'whatsapp'`.
+ * - `teste`: fora de produção e sem as chaves. O pedido vai para o Auth LOCAL, que não tem
+ *   credencial de verdade (`[auth.sms.twilio]` de mentira no `config.toml`): nada sai da máquina.
+ *   Os números de `[auth.sms.test_otp]` aceitam o código fixo e são os que os testes usam.
+ * - `desligado`: produção sem as chaves. A tela não oferece o código, e a rota recusa igual para
+ *   qualquer número.
  *
- * Confere variável, não envio real: com tudo preenchido e o hook desligado no painel do Supabase,
- * o pedido ainda falha, e a tela mostra o erro com a saída para o e-mail.
+ * Confere variável, não envio real: com as chaves na Vercel e o provedor desligado no painel do
+ * Supabase, o envio falha, e a pessoa vê a resposta neutra de sempre (o log do servidor acusa).
  */
-/**
- * docs/114 L-03 (decisão do Vitor, 21/10): entrar e cadastrar é com número + senha. O código pelo
- * WhatsApp sai da tela até a Meta estar ligada; aí volta como segundo caminho (e para o "esqueci a
- * senha"). O código continua no lugar, atrás desta chave.
- */
-export const ENTRAR_COM_CODIGO = false
+export type ModoDoCodigo = 'twilio' | 'teste' | 'desligado'
 
+export const CHAVES_DO_TWILIO = ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_VERIFY_SERVICE_SID'] as const
+
+export function modoDoCodigo(env: Record<string, string | undefined> = process.env): ModoDoCodigo {
+  if (CHAVES_DO_TWILIO.every((k) => Boolean(env[k]?.trim()))) return 'twilio'
+  return env.NODE_ENV === 'production' ? 'desligado' : 'teste'
+}
+
+/** O código pelo WhatsApp só aparece na tela quando consegue sair (docs/112 EXP-J08). */
 export function loginPorNumeroDisponivel(env: Record<string, string | undefined> = process.env): boolean {
-  if (env.NODE_ENV !== 'production') return true
-  return Boolean(
-    env.WHATSAPP_PHONE_NUMBER_ID && env.WHATSAPP_ACCESS_TOKEN && env.WHATSAPP_APP_SECRET && env.SEND_SMS_HOOK_SECRET,
-  )
+  return modoDoCodigo(env) !== 'desligado'
 }

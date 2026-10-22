@@ -330,6 +330,17 @@ account_sid = "local-sem-envio"
 message_service_sid = "local-sem-envio"
 auth_token = "local-sem-envio"
 
+# docs/119 · código pelo WhatsApp via Twilio Verify. Em produção isto se liga no PAINEL do Supabase
+# (Authentication > Providers > Phone > Twilio Verify), com as mesmas três chaves da Vercel, e o
+# hook `send_sms` fica DESLIGADO (hook ligado passa por cima do provedor). Para testar o envio de
+# verdade na sua máquina, numa cópia desta pasta, troque o bloco `[auth.sms.twilio]` acima por este
+# e exporte as variáveis. Sem elas o stack local segue no provedor de mentira e nada sai.
+# [auth.sms.twilio_verify]
+# enabled = true
+# account_sid = "env(TWILIO_ACCOUNT_SID)"
+# message_service_sid = "env(TWILIO_VERIFY_SERVICE_SID)"
+# auth_token = "env(TWILIO_AUTH_TOKEN)"
+
 # Multi-factor-authentication is available to Supabase Pro plan.
 [auth.mfa]
 # Control how many MFA factors can be enrolled at once per user.

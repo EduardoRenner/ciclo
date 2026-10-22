@@ -1,45 +1,57 @@
 import { createHash } from 'node:crypto'
 
+import { modoDoCodigo } from '@/server/auth/login-por-numero'
 import { EsquemaPedirCodigo } from '@/server/auth/schemas'
+import { numeroTemCadastro } from '@/server/db/with-tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { lerCorpo } from '@/server/http/body'
-import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
 import { limitarRotaPublica } from '@/server/http/limite-publico'
+import { pedirCodigoDeAcesso } from '@/server/services/codigo-de-acesso'
 import { limitador } from '@/server/services/rate-limit'
+import { hashTelefone } from '@/server/services/telefone'
 
 /**
- * Login por número, passo 1 (docs/110 L1): manda o código de 6 dígitos pelo WhatsApp.
+ * Login por número, passo 1 (docs/119): manda o código de 6 dígitos pelo WhatsApp (Twilio Verify),
+ * **só para número já cadastrado**. A regra de resposta neutra mora em `pedirCodigoDeAcesso`.
  *
- * **A resposta é a mesma exista conta ou não.** O código sai sempre, e a conta só nasce de verdade
- * quando alguém digita o código certo. Responder diferente para número com conta entregaria a lista
- * de quem usa o CICLO, mesmo motivo da mensagem única do login por e-mail.
- *
- * Cada código é uma mensagem paga da Meta, então são três baldes: por IP (script varrendo números),
- * por número (alguém bombardeando o WhatsApp de uma pessoa) e o `max_frequency` do próprio Auth.
+ * Três baldes: por IP (script varrendo números), por número (alguém bombardeando o WhatsApp de uma
+ * pessoa) e o `max_frequency` do próprio Auth. Os dois primeiros contam antes de olhar o cadastro.
  */
 const LIMITE_POR_NUMERO = { limite: 5, janelaSegundos: 3600 }
+
+function hashOuNulo(e164: string): string | null {
+  try {
+    return hashTelefone(e164)
+  } catch {
+    return null
+  }
+}
 
 export const POST = rota(async (req) => {
   await limitarRotaPublica(req, 'codigo-de-acesso', { limite: 10, janelaSegundos: 600 })
 
-  const { telefone, nome } = await lerCorpo(req, EsquemaPedirCodigo)
-
+  const { telefone } = await lerCorpo(req, EsquemaPedirCodigo)
+  const modo = modoDoCodigo()
   const chave = createHash('sha256').update(telefone).digest('hex')
-  const porNumero = await limitador(`codigo:numero:${chave}`, LIMITE_POR_NUMERO)
-  if (!porNumero.permitido) throw AppError.limiteDeTaxa(LIMITE_POR_NUMERO.janelaSegundos)
 
-  const db = await criarClienteDoUsuario()
-  const { error } = await db.auth.signInWithOtp({
-    phone: telefone,
-    options: { shouldCreateUser: true, data: { full_name: nome, phone: telefone } },
+  return pedirCodigoDeAcesso({
+    modo,
+    janelaDoLimiteSegundos: LIMITE_POR_NUMERO.janelaSegundos,
+    limitarPorNumero: async () => (await limitador(`codigo:numero:${chave}`, LIMITE_POR_NUMERO)).permitido,
+    temCadastro: () => numeroTemCadastro(telefone, hashOuNulo(telefone)),
+    enviar: async (canal) => {
+      const db = await criarClienteDoUsuario()
+      // `shouldCreateUser: true` só porque a cliente cadastrada num negócio ainda não tem conta no
+      // Auth: quem chega aqui já passou por `temCadastro`. Número desconhecido nunca chega.
+      const { error } = await db.auth.signInWithOtp({
+        phone: telefone,
+        options: { shouldCreateUser: true, channel: canal, data: { phone: telefone } },
+      })
+      return error ? { ok: false, motivo: `${error.status ?? ''} ${error.code ?? ''}`.trim() } : { ok: true }
+    },
+    esperar: (ms) => new Promise((r) => setTimeout(r, ms)),
+    agora: () => Date.now(),
+    registrar: (evento, extra) => console.warn(JSON.stringify({ level: 'warn', event: evento, ...extra })),
   })
-
-  if (error) {
-    if (error.status === 429) throw AppError.limiteDeTaxa(60)
-    console.warn(JSON.stringify({ level: 'warn', event: 'codigo_de_acesso_recusado', codigo: error.code, status: error.status }))
-    throw new AppError('CODE_UNAVAILABLE')
-  }
-
-  return { enviado: true }
 })

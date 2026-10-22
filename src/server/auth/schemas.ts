@@ -26,10 +26,11 @@ export const EsquemaCadastro = z.object({
   phone: TelefoneBR,
 })
 
-/** Login por número, passo 1 (docs/110 L1). O nome só vale na primeira vez, quando a conta nasce. */
+/** Login por número, passo 1 (docs/119). */
 export const EsquemaPedirCodigo = z.object({
   telefone: TelefoneBR,
-  nome: z.string().trim().min(2, 'Diga seu nome.').max(80),
+  // docs/119: o código só vai para número cadastrado, então não cria conta nova e não pede nome.
+  nome: z.string().trim().max(80).optional(),
 })
 
 /** Login por número, passo 2. */

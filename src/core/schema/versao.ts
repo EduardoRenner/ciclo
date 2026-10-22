@@ -167,6 +167,7 @@ export const MIGRATIONS_DO_CODIGO: readonly string[] = [
   '0144_sinonimos_de_salao',
   '0145_ordem_das_profissoes_de_salao',
   '0146_catalogo_de_salao_revisado',
+  '0147_codigo_so_para_numero_cadastrado',
 ]
 
 /** Quantos arquivos existem em `supabase/migrations/`. */
